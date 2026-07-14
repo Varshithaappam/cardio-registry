@@ -1,0 +1,6 @@
+{
+  "name": "Cardiovascular Registry and Nurse Portal",
+  "description": "A comprehensive clinical registry portal enabling nurse login, a dashboard, and a patient registry to enter STEMI, NSTEMI, CABG, and Heart Failure (HF) cases through simplified distinct forms.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
