@@ -5,6 +5,7 @@
 
 
 import { calculateDataQualityScore } from '../data/mockPatients';
+import { calculateAge } from '../utils/calculateAge';
 import {
   Plus,
   Calendar,
@@ -344,7 +345,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onVie
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-y border-slate-100 text-xs">
           <div>
             <span className="text-slate-400 font-semibold block uppercase">Age & Gender</span>
-            <span className="text-slate-700 font-bold block mt-1">{record.patient.age} years / {record.patient.gender}</span>
+            <span className="text-slate-700 font-bold block mt-1">{calculateAge(record.patient.dob) ?? '—'} years / {record.patient.gender}</span>
           </div>
           <div>
             <span className="text-slate-400 font-semibold block uppercase">CARE MR Number</span>

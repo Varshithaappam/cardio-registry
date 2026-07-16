@@ -5,7 +5,10 @@
 
 import React, { useState } from 'react';
 
+import { createPatient } from '../../api/patientApi';
 import { calculateDataQualityScore } from '../data/mockPatients';
+import { calculateAge } from '../utils/calculateAge';
+import { buildPatientPayload, mapPatientRecord } from '../utils/patientMapper';
 import {
   Plus,
   Search,
@@ -35,16 +38,12 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
 
   // New Patient Form State
   const [name, setName] = useState('');
-  const [age, setAge] = useState(60);
   const [dob, setDob] = useState('1966-01-01');
   const [gender, setGender] = useState('Male');
-  const [mrNo, setMrNo] = useState('');
-  const [ipNo, setIpNo] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [insuranceMode, setInsuranceMode] = useState('Direct');
+  const [insuranceMode, setInsuranceMode] = useState('Direct Cash / Self-Pay');
   const [bloodGroup, setBloodGroup] = useState('Unknown');
-  const [primaryConsultant, setPrimaryConsultant] = useState('Dr. K. Sridhar');
 
   // Co-morbidities state
   const [hypertension, setHypertension] = useState('No');
@@ -63,109 +62,60 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
 
   });
 
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !mrNo) {
-      alert('Patient Name and MR Number are strictly required clinical parameters.');
+
+    if (!name) {
+      alert('Patient Name is required.');
       return;
     }
 
-    // Auto-generate duplicate prevention
-    const duplicate = patients.find((p) => p.patient.mrNo.toLowerCase() === mrNo.toLowerCase());
-    if (duplicate) {
-      alert(`MR Number Duplicate Detected: MR No ${mrNo} already exists for patient "${duplicate.patient.name}". Duplicate patients are prohibited in this cardiovascular registry.`);
-      return;
+    const payload = buildPatientPayload({
+      name,
+      dob,
+      gender,
+      bloodGroup,
+      insuranceMode,
+      phone,
+      email,
+      hypertension,
+      smoking,
+      diabetes,
+      diabetesControl,
+      renalFailure,
+      dialysisStatus
+    });
+
+    try {
+      const response = await createPatient(payload);
+
+      if (response?.success) {
+        const createdPatient = response.data;
+        const newRecord = mapPatientRecord(createdPatient);
+
+        alert('Patient registered successfully.');
+        setIsRegistering(false);
+        setName('');
+        setDob('1966-01-01');
+        setGender('Male');
+        setPhone('');
+        setEmail('');
+        setInsuranceMode('Direct Cash / Self-Pay');
+        setBloodGroup('Unknown');
+        setHypertension('No');
+        setDiabetes('No');
+        setDiabetesControl('None');
+        setSmoking('No');
+        setRenalFailure('No');
+        setDialysisStatus('No');
+        onRegisterPatient(newRecord);
+      } else {
+        alert(response?.message || 'Patient registration failed.');
+      }
+    } catch (error) {
+      const message = error?.response?.data?.message || error?.message || 'Patient registration failed.';
+      alert(message);
     }
-
-    const newRecord = {
-      patient: {
-        id: `pat-${Date.now()}`,
-        name,
-        age,
-        dob,
-        gender,
-        mrNo,
-        ipNo,
-        ssn: `SSN-${Math.floor(100 + Math.random() * 900)}-${Math.floor(10 + Math.random() * 90)}-${Math.floor(1000 + Math.random() * 9000)}`,
-        zipCode: '500001',
-        address: 'Registered Address, Outpatient Clinic',
-        phone,
-        email,
-        highestEducation: 'Unknown',
-        monthlyIncome: 'Unknown',
-        occupation: 'Unknown',
-        caregiverName: '',
-        caregiverRelationship: '',
-        caregiverPhone: '',
-        insuranceMode,
-        bloodGroup,
-        primaryConsultant,
-        referringDoctor: '',
-        referredFromDept: '',
-        race: 'Unknown',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      comorbidities: {
-        hypertension,
-        diabetes,
-        diabetesControl: diabetes === 'Yes' ? diabetesControl : undefined,
-        smoking,
-        renalFailure,
-        dialysisStatus: renalFailure === 'Yes' ? dialysisStatus : undefined,
-        copd: 'Unknown',
-        cvaOrStroke: 'Unknown',
-        priorACS: 'Unknown',
-        priorPTCA: 'Unknown',
-        priorCABG: 'Unknown',
-        dyslipidemia: 'Unknown',
-        familyHistoryCAD: 'Unknown',
-        peripheralVascularDisease: 'Unknown',
-        cerebrovascularDisease: 'Unknown',
-        infectiousEndocarditis: 'Unknown',
-        immunosuppressiveTherapy: 'Unknown',
-        chronicLungDisease: 'No'
-      },
-      hospitalizations: [],
-      hfAssessments: [],
-      acsEvents: [],
-      cabgProcedures: [],
-      investigations: [],
-      labResults: [],
-      medications: [],
-      followUps: [],
-      auditTrail: [
-      {
-        id: `aud-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        user: 'registered_nurse',
-        action: 'CREATE_PATIENT',
-        module: 'Patient Master',
-        details: `Patient master record created for ${name} (${mrNo}).`
-      }]
-
-    };
-
-    onRegisterPatient(newRecord);
-    setIsRegistering(false);
-
-    // Reset states
-    setName('');
-    setAge(60);
-    setDob('1966-01-01');
-    setGender('Male');
-    setMrNo('');
-    setIpNo('');
-    setPhone('');
-    setEmail('');
-    setInsuranceMode('Direct');
-    setBloodGroup('Unknown');
-    setHypertension('No');
-    setDiabetes('No');
-    setDiabetesControl('None');
-    setSmoking('No');
-    setRenalFailure('No');
-    setDialysisStatus('No');
   };
 
   return (
@@ -254,22 +204,27 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
               
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Date of Birth</label>
+                <input
+                id="reg-dob"
+                type="date"
+                required
+                className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)} />
+              
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Age (Years) *</label>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1">Age (Years)</label>
                   <input
                   id="reg-age"
                   type="number"
-                  required
+                  readOnly
                   className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  value={age}
-                  onChange={(e) => {
-                    setAge(Number(e.target.value));
-                    // Rough birth year calculation to keep consistency
-                    const currentYear = new Date().getFullYear();
-                    const bYear = currentYear - Number(e.target.value);
-                    setDob(`${bYear}-01-01`);
-                  }} />
+                  value={calculateAge(dob) ?? ''} />
                 
                 </div>
                 <div>
@@ -286,48 +241,12 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                   </select>
                 </div>
               </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Date of Birth</label>
-                <input
-                id="reg-dob"
-                type="date"
-                className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                value={dob}
-                onChange={(e) => setDob(e.target.value)} />
-              
-              </div>
             </div>
 
-            {/* Clinical ID & Admin Parameters */}
+            {/* Clinical & Contact Parameters */}
             <div className="space-y-3.5 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Clinical IDs & Contact</h4>
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Clinical & Contact</h4>
               
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">MR Number *</label>
-                  <input
-                  id="reg-mrno"
-                  type="text"
-                  required
-                  placeholder="E.g. MR-2026-0489"
-                  className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  value={mrNo}
-                  onChange={(e) => setMrNo(e.target.value)} />
-                
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">IP Number</label>
-                  <input
-                  id="reg-ipno"
-                  type="text"
-                  placeholder="E.g. IP-900812"
-                  className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  value={ipNo}
-                  onChange={(e) => setIpNo(e.target.value)} />
-                
-                </div>
-              </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -357,10 +276,10 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                   value={insuranceMode}
                   onChange={(e) => setInsuranceMode(e.target.value)}>
                   
-                    <option value="Direct">Direct Cash / Self-Pay</option>
+                    <option value="Direct Cash / Self-Pay">Direct Cash / Self-Pay</option>
                     <option value="Private Insurance">Private Insurance</option>
                     <option value="Government Reimbursement">Government Reimbursement</option>
-                    <option value="Arogyasree">Arogyasree Scheme</option>
+                    <option value="Arogyasree Scheme">Arogyasree Scheme</option>
                     <option value="Unknown">Unknown</option>
                   </select>
                 </div>
@@ -572,7 +491,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                           <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 font-medium">
                             <span className="px-1.5 py-0.2 bg-slate-100 rounded text-slate-600 font-bold uppercase text-[9px]">{record.patient.gender}</span>
                             <span>•</span>
-                            <span>{record.patient.age} Yrs</span>
+                            <span>{calculateAge(record.patient.dob) ?? '—'} Yrs</span>
                             {record.patient.bloodGroup && record.patient.bloodGroup !== 'Unknown' &&
                           <>
                                 <span>•</span>
@@ -752,7 +671,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       </h4>
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-semibold text-slate-600">
-                          {record.patient.gender} • {record.patient.age} Yrs
+                          {record.patient.gender} • {calculateAge(record.patient.dob) ?? '—'} Yrs
                         </span>
                         <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs font-bold">
                           MR: {record.patient.mrNo}

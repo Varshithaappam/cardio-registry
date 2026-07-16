@@ -5,6 +5,7 @@
 
 
 import { calculateDataQualityScore } from '../data/mockPatients';
+import { calculateAge } from '../utils/calculateAge';
 import {
   Users,
   Activity,
@@ -333,7 +334,7 @@ export default function Dashboard({ patients, onSelectPatient }) {
             
               <Users className="w-3.5 h-3.5 text-blue-500" />
               <span>{p.patient.name} ({p.patient.mrNo})</span>
-              <span className="px-1.5 py-0.2 bg-slate-100 rounded text-[10px] text-slate-500 font-bold uppercase">{p.patient.gender[0]} - {p.patient.age}y</span>
+              <span className="px-1.5 py-0.2 bg-slate-100 rounded text-[10px] text-slate-500 font-bold uppercase">{p.patient.gender[0]} - {calculateAge(p.patient.dob) ?? '—'}y</span>
             </button>
           )}
         </div>

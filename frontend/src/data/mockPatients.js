@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { calculateAge } from '../utils/calculateAge';
+
 
 
 // Generate some high-quality mock data showing the powerful longitudinal, patient-centric timeline
@@ -11,7 +13,6 @@ export const MOCK_PATIENTS = [
   patient: {
     id: 'pat-1',
     name: 'Ramesh Chandra Malhotra',
-    age: 68,
     dob: '1958-03-12',
     gender: 'Male',
     mrNo: 'MR-2026-0489',
@@ -611,7 +612,6 @@ export const MOCK_PATIENTS = [
   patient: {
     id: 'pat-2',
     name: 'Amrita Venkatraman',
-    age: 62,
     dob: '1964-08-22',
     gender: 'Female',
     mrNo: 'MR-2026-1022',
@@ -885,7 +885,7 @@ export const MOCK_PATIENTS = [
 export const FORM_MAPPING_MATRIX = [
 // Patient Master Demographics
 { id: 'm-1', sourceForm: 'Shared', sourceSection: 'Demographics', originalFieldName: 'Name', digitalFieldName: 'patient.name', entityType: 'PatientMaster', dataType: 'String', inputControl: 'Input Text', isMandatory: true, repeatable: false, classification: 'Patient-Level' },
-{ id: 'm-2', sourceForm: 'Shared', sourceSection: 'Demographics', originalFieldName: 'Age', digitalFieldName: 'patient.age', entityType: 'PatientMaster', dataType: 'Number', inputControl: 'Input Number', isMandatory: true, repeatable: false, classification: 'Patient-Level' },
+{ id: 'm-2', sourceForm: 'Shared', sourceSection: 'Demographics', originalFieldName: 'Age', digitalFieldName: 'calculateAge(patient.dob)', entityType: 'PatientMaster', dataType: 'Number', inputControl: 'Calculated Field', isMandatory: true, repeatable: false, classification: 'Patient-Level' },
 { id: 'm-3', sourceForm: 'Shared', sourceSection: 'Demographics', originalFieldName: 'Gender (M/F)', digitalFieldName: 'patient.gender', entityType: 'PatientMaster', dataType: 'Enum', inputControl: 'Radio / Select', isMandatory: true, repeatable: false, classification: 'Patient-Level' },
 { id: 'm-4', sourceForm: 'Shared', sourceSection: 'Demographics', originalFieldName: 'MR No / Patient ID', digitalFieldName: 'patient.mrNo', entityType: 'PatientMaster', dataType: 'String', inputControl: 'Input Text', isMandatory: true, repeatable: false, classification: 'Patient-Level' },
 { id: 'm-5', sourceForm: 'Shared', sourceSection: 'Demographics', originalFieldName: 'IP No', digitalFieldName: 'patient.ipNo', entityType: 'PatientMaster', dataType: 'String', inputControl: 'Input Text', isMandatory: false, repeatable: false, classification: 'Patient-Level' },
@@ -1005,7 +1005,11 @@ export function calculateDataQualityScore(record) {
 
   // 1. Basic Demographics Checklist
   if (!record.patient.name) {score -= 15;alerts.push('Missing Patient Name in Demographics');}
-  if (!record.patient.age || record.patient.age <= 0) {score -= 10;alerts.push('Invalid Patient Age');}
+  if (!record.patient.dob) {score -= 10;alerts.push('Missing Patient Date of Birth');}
+  else {
+    const age = calculateAge(record.patient.dob);
+    if (age === null || age < 0) {score -= 10;alerts.push('Invalid Patient Date of Birth');}
+  }
   if (!record.patient.mrNo) {score -= 15;alerts.push('Missing MR Number in Master Record');}
 
   // 2. Clinical consistency check - EF and ECG Rhythm

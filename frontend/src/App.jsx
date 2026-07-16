@@ -3,28 +3,26 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from "react";
+import { getAllPatients } from "../api/patientApi";
+import { mapPatientRecords } from "./utils/patientMapper";
 
-import { MOCK_PATIENTS } from './data/mockPatients';
-import Dashboard from './components/Dashboard';
-import PatientList from './components/PatientList';
-import MappingMatrix from './components/MappingMatrix';
-import PatientTimeline from './components/PatientTimeline';
-import ClinicalForm from './components/ClinicalForm';
-import EventViewer from './components/EventViewer';
-import NurseLogin from './components/NurseLogin';
+import Dashboard from "./components/Dashboard";
+import PatientList from "./components/PatientList";
+import MappingMatrix from "./components/MappingMatrix";
+import PatientTimeline from "./components/PatientTimeline";
+import ClinicalForm from "./components/ClinicalForm";
+import EventViewer from "./components/EventViewer";
+import NurseLogin from "./components/NurseLogin";
+
 import {
   Heart,
   Users,
   Layers,
   LayoutDashboard,
-
-
-
-
   LogOut,
-  UserCheck } from
-'lucide-react';
+  UserCheck,
+} from "lucide-react";
 
 export default function App() {
   // Nurse login status
@@ -32,7 +30,7 @@ export default function App() {
   const [nurse, setNurse] = useState(null);
 
   // 1. Central Registry State (Prefilled with high-fidelity, representative clinical portfolios)
-  const [records, setRecords] = useState(MOCK_PATIENTS);
+const [records, setRecords] = useState([]);
 
   // 2. Navigation & Router States
   const [currentView, setCurrentView] = useState('dashboard');
@@ -45,16 +43,19 @@ export default function App() {
   const [activeViewerType, setActiveViewerType] = useState('');
 
   // 4. Helper to find active patient record
-  const activePatientRecord = records.find((r) => r.patient.id === selectedPatientId);
+  const activePatientRecord = records.find((r) => r?.patient?.id === selectedPatientId) || null;
 
   // --- ACTIONS & MUTATORS ---
 
   // Register a brand new patient
-  const handleRegisterPatient = (newPatientRecord) => {
-    setRecords((prev) => [...prev, newPatientRecord]);
-    // Auto-navigate to their timeline so clinicians can immediately add assessments/events
-    setSelectedPatientId(newPatientRecord.patient.id);
-    setCurrentView('timeline');
+  const handleRegisterPatient = async (newPatientRecord) => {
+    try {
+      await loadPatients();
+      setSelectedPatientId(newPatientRecord?.patient?.id || null);
+      setCurrentView('patients');
+    } catch (error) {
+      console.error('Failed to refresh patients after registration:', error);
+    }
   };
 
   // Add or update an event in a patient's portfolio
@@ -180,6 +181,27 @@ export default function App() {
     setEditingRecord(null);
     setCurrentView('form');
   };
+
+
+  const loadPatients = async () => {
+    try {
+        const response = await getAllPatients();
+
+        if (response.success) {
+            const mappedPatients = mapPatientRecords(response.data);
+            setRecords(mappedPatients);
+            return mappedPatients;
+        }
+    } catch (error) {
+        console.error("Failed to load patients:", error);
+    }
+
+    return [];
+};
+
+useEffect(() => {
+    loadPatients();
+}, []);
 
   if (!isLoggedIn) {
     return <NurseLogin onLogin={(name, role) => {setIsLoggedIn(true);setNurse({ name, role });}} />;
@@ -385,3 +407,5 @@ export default function App() {
     </div>);
 
 }
+
+

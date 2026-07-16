@@ -20,6 +20,7 @@ import {
   calculateSTEMITimi,
   calculateNSTEMITimi } from
 '../data/mockPatients';
+import { calculateAge } from '../utils/calculateAge';
 import {
 
 
@@ -43,6 +44,8 @@ import {
 
 
 export default function ClinicalForm({ patientRecord, formType, editingRecord, onCancel, onSave }) {
+  const patientAge = calculateAge(patientRecord.patient.dob) ?? 0;
+
   // Common states
   const [isDraft, setIsDraft] = useState(editingRecord?.isDraft ?? false);
   const [activeTab, setActiveTab] = useState('vitals'); // For subform pagination
@@ -153,8 +156,8 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
   const [acs_dbp, setAcsDbp] = useState(editingRecord?.presentation?.dbp ?? 80);
 
   // STEMI TIMI Score checkboxes
-  const [acs_t_age75, setAcsTAge75] = useState(editingRecord?.timiDetails?.age75OrOver ?? patientRecord.patient.age >= 75);
-  const [acs_t_age65_74, setAcsTAge6574] = useState(editingRecord?.timiDetails?.age65To74 ?? (patientRecord.patient.age >= 65 && patientRecord.patient.age < 75));
+  const [acs_t_age75, setAcsTAge75] = useState(editingRecord?.timiDetails?.age75OrOver ?? patientAge >= 75);
+  const [acs_t_age65_74, setAcsTAge6574] = useState(editingRecord?.timiDetails?.age65To74 ?? (patientAge >= 65 && patientAge < 75));
   const [acs_t_history, setAcsTHistory] = useState(editingRecord?.timiDetails?.historyDM_HTN_Angina ?? (patientRecord.comorbidities.diabetes === 'Yes' || patientRecord.comorbidities.hypertension === 'Yes'));
   const [acs_t_sbp100, setAcsTSbp100] = useState(editingRecord?.timiDetails?.sbpLessThan100 ?? false);
   const [acs_t_hr100, setAcsTHr100] = useState(editingRecord?.timiDetails?.hrGreaterThan100 ?? false);
@@ -164,7 +167,7 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
   const [acs_t_reperfusion4h, setAcsTReperfusion4h] = useState(editingRecord?.timiDetails?.timeToReperfusionGreaterThan4h ?? false);
 
   // NSTEMI TIMI Score checkboxes
-  const [acs_n_age65, setAcsNAge65] = useState(editingRecord?.timiDetails?.age65OrOver ?? patientRecord.patient.age >= 65);
+  const [acs_n_age65, setAcsNAge65] = useState(editingRecord?.timiDetails?.age65OrOver ?? patientAge >= 65);
   const [acs_n_chd, setAcsNChd] = useState(editingRecord?.timiDetails?.atLeast3CHD_RiskFactors ?? false);
   const [acs_n_stenosis, setAcsNStenosis] = useState(editingRecord?.timiDetails?.priorCoronaryStenosis50Plus ?? false);
   const [acs_n_st, setAcsNSt] = useState(editingRecord?.timiDetails?.stDeviationAtAdmission ?? false);
