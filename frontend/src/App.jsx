@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from "react";
 import { getAllPatients } from "../api/patientApi";
+import api from "../api/axios";
 import { mapPatientRecords } from "./utils/patientMapper";
 
 import Dashboard from "./components/Dashboard";
@@ -59,8 +60,23 @@ const [records, setRecords] = useState([]);
   };
 
   // Add or update an event in a patient's portfolio
-  const handleSaveClinicalEvent = (eventData, formType) => {
+  const handleSaveClinicalEvent = async (eventData, formType) => {
     if (!selectedPatientId) return;
+
+    if (formType === 'HF') {
+      try {
+        console.log("Saving HF Assessment to backend:", eventData);
+        const response = await api.post("/hf-assessment", eventData);
+        if (response.data && response.data.success) {
+          alert("Heart Failure Assessment details saved into database successfully.");
+        } else {
+          alert(response.data?.message || "Failed to save Heart Failure Assessment details.");
+        }
+      } catch (error) {
+        console.error("Error saving HF assessment:", error);
+        alert(error.response?.data?.message || "Failed to save Heart Failure Assessment details.");
+      }
+    }
 
     setRecords((prevRecords) => {
       return prevRecords.map((rec) => {
@@ -130,7 +146,6 @@ const [records, setRecords] = useState([]);
       });
     });
 
-    // Reset editing states & navigate back to the timeline view
     setEditingRecord(null);
     setCurrentView('timeline');
   };

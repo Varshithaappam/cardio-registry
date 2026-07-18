@@ -10,6 +10,7 @@ require("./config/db");
 
 // Import Routes
 const patientRoutes = require("./routes/patientRoutes");
+const hfRoutes = require("./routes/hfRoutes");
 
 // Middleware
 app.use(cors());
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 
 // Patient Routes
 app.use("/api/patients", patientRoutes);
+app.use("/api/hf-assessment", hfRoutes);
 
 // Handle Unknown Routes
 app.use((req, res) => {
