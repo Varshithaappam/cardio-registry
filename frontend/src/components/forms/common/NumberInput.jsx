@@ -12,7 +12,8 @@ export default function NumberInput({
   max,
   step,
   disabled = false,
-  className = ''
+  className = '',
+  readOnly = false
 }) {
   return (
     <FormField label={label} required={required} className={className}>
@@ -22,7 +23,7 @@ export default function NumberInput({
         min={min}
         max={max}
         step={step}
-        disabled={disabled}
+        disabled={disabled || readOnly}
         required={required}
         value={value ?? ''}
         placeholder={placeholder}

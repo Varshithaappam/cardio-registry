@@ -188,11 +188,25 @@ async function deletePatient(patientId) {
     return result;
 }
 
+
+async function getPatientCounts(patientId) {
+    const query = `
+        SELECT 
+            (SELECT COUNT(*) FROM hf_registry WHERE patient_id = ?) as hfCount,
+            (SELECT COUNT(*) FROM stemi_registry WHERE patient_id = ?) as stemiCount,
+            (SELECT COUNT(*) FROM nstemi_registry WHERE patient_id = ?) as nstemiCount,
+            (SELECT COUNT(*) FROM cabg_registry WHERE patient_id = ?) as cabgCount
+    `;
+    const [rows] = await db.execute(query, [patientId, patientId, patientId, patientId]);
+    return rows[0];
+}
+
 module.exports = {
     createPatient,
     updatePatientNumbers,
     getAllPatients,
     getPatientById,
     updatePatient,
-    deletePatient
+    deletePatient,
+    getPatientCounts
 };

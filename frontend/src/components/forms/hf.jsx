@@ -31,19 +31,18 @@ const REFERRING_DOCTORS = [
 ];
 
 const HIGHEST_EDUCATION_OPTIONS = [
-  'Uneducated',
   'Primary',
-  'High School',
+  'Secondary',
   'Graduate',
-  'Post Graduate'
+  'Post Graduate',
+  'None'
 ];
 
 const INSURANCE_OPTIONS = [
-  'Arogyasree',
-  'CGHS',
-  'EHS',
   'Private Insurance',
-  'Self Pay'
+  'Government Reimbursement',
+  'Arogyasree',
+  'Direct '
 ];
 
 const PRECIPITATING_FACTORS_OPTIONS = [
@@ -160,7 +159,7 @@ const DEVICE_TYPES = [
 ];
 
 const hf = forwardRef(function hf(
-  { patientRecord, editingRecord, onCompletionChange },
+  { patientRecord, editingRecord, onCompletionChange, readOnly = false },
   ref
 ) {
   const patient = patientRecord?.patient || {};
@@ -1311,7 +1310,8 @@ const hf = forwardRef(function hf(
   }));
 
   return (
-    <div className="space-y-6">
+    <fieldset disabled={readOnly} className="contents border-none p-0 m-0">
+      <div className="space-y-6">
       {/* 1. Patient Profile */}
       <SectionCard title="1. Patient Profile" subtitle="Master registry demographics and baseline comorbidities">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -1324,7 +1324,7 @@ const hf = forwardRef(function hf(
             <span className="text-slate-800 font-bold block mt-1">{patient.mrNo || '—'}</span>
           </div>
           <div>
-            <RadioGroup
+            <RadioGroup readOnly={readOnly}
               label="Visit Type"
               name="hf-visit-type"
               value={visitType}
@@ -1362,7 +1362,7 @@ const hf = forwardRef(function hf(
         <div className="grid grid-cols-1 gap-4 mb-4">
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
             <span className="text-slate-400 font-semibold uppercase block mb-1">Address</span>
-            <textarea
+            <textarea disabled={readOnly}
               readOnly
               className="w-full bg-transparent border-0 p-0 text-slate-800 font-medium focus:ring-0 resize-none text-xs"
               rows={2}
@@ -1372,7 +1372,7 @@ const hf = forwardRef(function hf(
         </div>
 
         <div className="grid grid-cols-1 gap-4 mb-4">
-          <RadioGroup
+          <RadioGroup readOnly={readOnly}
             label="Highest Education Level"
             name="hf-education"
             value={highestEducation}
@@ -1383,14 +1383,14 @@ const hf = forwardRef(function hf(
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <TextInput
+          <TextInput readOnly={readOnly}
             id="hf-monthly-income"
             label="Monthly Income"
             value={monthlyIncome}
             onChange={setMonthlyIncome}
             placeholder="E.g. ₹40,000"
           />
-          <TextInput
+          <TextInput readOnly={readOnly}
             id="hf-occupation"
             label="Occupation"
             value={occupation}
@@ -1400,21 +1400,21 @@ const hf = forwardRef(function hf(
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <TextInput
+          <TextInput readOnly={readOnly}
             id="hf-caregiver-name"
             label="Caregiver Name"
             value={caregiverName}
             onChange={setCaregiverName}
             placeholder="Caregiver Name"
           />
-          <TextInput
+          <TextInput readOnly={readOnly}
             id="hf-caregiver-rel"
             label="Relationship to Patient"
             value={caregiverRelationship}
             onChange={setCaregiverRelationship}
             placeholder="E.g. Son / Spouse"
           />
-          <TextInput
+          <TextInput readOnly={readOnly}
             id="hf-caregiver-phone"
             label="Caregiver Phone No."
             value={caregiverPhone}
@@ -1424,7 +1424,7 @@ const hf = forwardRef(function hf(
         </div>
 
         <div className="grid grid-cols-1 gap-4 mb-4">
-          <RadioGroup
+          <RadioGroup readOnly={readOnly}
             label="Insurance / Payment Mode"
             name="hf-insurance"
             value={insuranceMode}
@@ -1435,13 +1435,13 @@ const hf = forwardRef(function hf(
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <DateInput
+          <DateInput readOnly={readOnly}
             id="hf-visit-date"
             label="Date of Visit / Hospitalization"
             value={assessmentDate}
             onChange={setAssessmentDate}
           />
-          <DateInput
+          <DateInput readOnly={readOnly}
             id="hf-discharge-date"
             label="Date of Discharge"
             value={dischargeDate}
@@ -1450,14 +1450,14 @@ const hf = forwardRef(function hf(
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <Select
+          <Select readOnly={readOnly}
             id="hf-treating-cardiologist"
             label="Treating Cardiologist"
             value={treatingCardiologist}
             onChange={setTreatingCardiologist}
             options={CARDIOLOGISTS}
           />
-          <Select
+          <Select readOnly={readOnly}
             id="hf-referring-doctor"
             label="Referring Doctor"
             value={referringDoctor}
@@ -1467,7 +1467,7 @@ const hf = forwardRef(function hf(
         </div>
 
         <div className="grid grid-cols-1 gap-4 mb-4">
-          <TextInput
+          <TextInput readOnly={readOnly}
             id="hf-referred-from"
             label="Referred From (Department / Practice)"
             value={referredFrom}
@@ -1477,7 +1477,7 @@ const hf = forwardRef(function hf(
         </div>
 
         <div className="grid grid-cols-1 gap-4 mb-4">
-          <TextArea
+          <TextArea readOnly={readOnly}
             id="hf-present-diagnosis"
             label="Present Diagnosis"
             value={presentDiagnosis}
@@ -1491,7 +1491,7 @@ const hf = forwardRef(function hf(
       {/* 2. Inpatient Details Section */}
       <SectionCard title="2. Inpatient Details" subtitle="Precipitating factors and admission context for heart failure hospitalizations">
         <div className="space-y-4">
-          <CheckboxGroup
+          <CheckboxGroup readOnly={readOnly}
             label="If admission for heart failure, please select precipitating factors for admission:"
             options={PRECIPITATING_FACTORS_OPTIONS}
             values={precipitatingFactors}
@@ -1500,7 +1500,7 @@ const hf = forwardRef(function hf(
           />
 
           <div className="grid grid-cols-1 gap-4">
-            <TextInput
+            <TextInput readOnly={readOnly}
               id="hf-precipitating-other"
               label="Other Precipitating Factor"
               value={otherPrecipitatingFactor}
@@ -1513,7 +1513,7 @@ const hf = forwardRef(function hf(
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
-              <TextInput
+              <TextInput readOnly={readOnly}
                 id="hf-non-hf-reason"
                 label="If admission for reasons other than heart failure, please specify reason(s):"
                 value={nonHfAdmissionReason}
@@ -1522,7 +1522,7 @@ const hf = forwardRef(function hf(
               />
             </div>
             <div>
-              <NumberInput
+              <NumberInput readOnly={readOnly}
                 id="hf-days-hospitalized"
                 label="No. of days hospitalized"
                 value={daysHospitalized}
@@ -1543,7 +1543,7 @@ const hf = forwardRef(function hf(
           
           {/* Subsection: Previous Diagnosis */}
           <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl">
-            <TextInput
+            <TextInput readOnly={readOnly}
               id="hf-prev-diagnosis"
               label="Previous Diagnosis"
               value={previousDiagnosis}
@@ -1557,23 +1557,23 @@ const hf = forwardRef(function hf(
             <span className="block text-xs font-bold text-slate-700 border-b border-slate-200 pb-1">Medical History</span>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
               <label className="flex items-center gap-2 p-2 bg-white rounded-lg border cursor-pointer">
-                <input type="checkbox" checked={historyCabg === 'Yes'} onChange={(e) => setHistoryCabg(e.target.checked ? 'Yes' : 'No')} />
+                <input disabled={readOnly} type="checkbox" checked={historyCabg === 'Yes'} onChange={(e) => setHistoryCabg(e.target.checked ? 'Yes' : 'No')} />
                 <span className="font-medium text-slate-700">CABG</span>
               </label>
               <label className="flex items-center gap-2 p-2 bg-white rounded-lg border cursor-pointer">
-                <input type="checkbox" checked={historyPtca === 'Yes'} onChange={(e) => setHistoryPtca(e.target.checked ? 'Yes' : 'No')} />
+                <input disabled={readOnly} type="checkbox" checked={historyPtca === 'Yes'} onChange={(e) => setHistoryPtca(e.target.checked ? 'Yes' : 'No')} />
                 <span className="font-medium text-slate-700">PTCA</span>
               </label>
               <label className="flex items-center gap-2 p-2 bg-white rounded-lg border cursor-pointer">
-                <input type="checkbox" checked={historyStroke === 'Yes'} onChange={(e) => setHistoryStroke(e.target.checked ? 'Yes' : 'No')} />
+                <input disabled={readOnly} type="checkbox" checked={historyStroke === 'Yes'} onChange={(e) => setHistoryStroke(e.target.checked ? 'Yes' : 'No')} />
                 <span className="font-medium text-slate-700">Stroke</span>
               </label>
               <label className="flex items-center gap-2 p-2 bg-white rounded-lg border cursor-pointer">
-                <input type="checkbox" checked={historyMajorBleed === 'Yes'} onChange={(e) => setHistoryMajorBleed(e.target.checked ? 'Yes' : 'No')} />
+                <input disabled={readOnly} type="checkbox" checked={historyMajorBleed === 'Yes'} onChange={(e) => setHistoryMajorBleed(e.target.checked ? 'Yes' : 'No')} />
                 <span className="font-medium text-slate-700">Major Bleed</span>
               </label>
               <label className="flex items-center gap-2 p-2 bg-white rounded-lg border cursor-pointer">
-                <input type="checkbox" checked={historyThrombolysis === 'Yes'} onChange={(e) => setHistoryThrombolysis(e.target.checked ? 'Yes' : 'No')} />
+                <input disabled={readOnly} type="checkbox" checked={historyThrombolysis === 'Yes'} onChange={(e) => setHistoryThrombolysis(e.target.checked ? 'Yes' : 'No')} />
                 <span className="font-medium text-slate-700">Thrombolysis</span>
               </label>
             </div>
@@ -1581,24 +1581,24 @@ const hf = forwardRef(function hf(
             <div className="p-3 bg-white rounded-lg border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="flex items-center h-full">
                 <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
-                  <input type="checkbox" checked={historyPastMi === 'Yes'} onChange={(e) => setHistoryPastMi(e.target.checked ? 'Yes' : 'No')} />
+                  <input disabled={readOnly} type="checkbox" checked={historyPastMi === 'Yes'} onChange={(e) => setHistoryPastMi(e.target.checked ? 'Yes' : 'No')} />
                   <span>Past MI</span>
                 </label>
               </div>
               {historyPastMi === 'Yes' && (
                 <>
-                  <NumberInput id="hf-mi-years" label="No. of years ago" value={pastMiYearsAgo} onChange={setPastMiYearsAgo} placeholder="Years" />
-                  <TextInput id="hf-mi-loc" label="Location of MI" value={pastMiLocation} onChange={setPastMiLocation} placeholder="Anterior / Inferior etc." />
+                  <NumberInput readOnly={readOnly} id="hf-mi-years" label="No. of years ago" value={pastMiYearsAgo} onChange={setPastMiYearsAgo} placeholder="Years" />
+                  <TextInput readOnly={readOnly} id="hf-mi-loc" label="Location of MI" value={pastMiLocation} onChange={setPastMiLocation} placeholder="Anterior / Inferior etc." />
                 </>
               )}
             </div>
-            <TextInput id="hf-history-other" label="Others (Specify separate medical histories)" value={historyOther} onChange={setHistoryOther} placeholder="E.g. Dyslipidemia, PVD" />
+            <TextInput readOnly={readOnly} id="hf-history-other" label="Others (Specify separate medical histories)" value={historyOther} onChange={setHistoryOther} placeholder="E.g. Dyslipidemia, PVD" />
           </div>
 
           {/* Subsection: Recent Hospitalization logs */}
           <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl space-y-3">
             <span className="block text-xs font-bold text-slate-700 border-b border-slate-200 pb-1">Recent Hospitalization(s)</span>
-            <RadioGroup
+            <RadioGroup readOnly={readOnly}
               label="History of hospitalization for heart failure:"
               name="hf-history-hosp"
               value={previousHfHospitalization}
@@ -1608,8 +1608,8 @@ const hf = forwardRef(function hf(
             />
             {previousHfHospitalization === 'Yes' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <TextInput id="hf-hosp-dates" label="Date(s)" value={recentHospitalizationDates} onChange={setRecentHospitalizationDates} placeholder="E.g. March 2026, Dec 2025" />
-                <TextInput id="hf-hosp-reasons" label="Reason(s)" value={recentHospitalizationReasons} onChange={setRecentHospitalizationReasons} placeholder="E.g. Decompensated HF secondary to infection" />
+                <TextInput readOnly={readOnly} id="hf-hosp-dates" label="Date(s)" value={recentHospitalizationDates} onChange={setRecentHospitalizationDates} placeholder="E.g. March 2026, Dec 2025" />
+                <TextInput readOnly={readOnly} id="hf-hosp-reasons" label="Reason(s)" value={recentHospitalizationReasons} onChange={setRecentHospitalizationReasons} placeholder="E.g. Decompensated HF secondary to infection" />
               </div>
             )}
           </div>
@@ -1621,7 +1621,7 @@ const hf = forwardRef(function hf(
               
               <div className="space-y-3 bg-white p-3 rounded-lg border border-slate-200">
                 <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
-                  <input type="checkbox" checked={documentedVtVf === 'Yes'} onChange={(e) => setDocumentedVtVf(e.target.checked ? 'Yes' : 'No')} />
+                  <input disabled={readOnly} type="checkbox" checked={documentedVtVf === 'Yes'} onChange={(e) => setDocumentedVtVf(e.target.checked ? 'Yes' : 'No')} />
                   <span>Documented episode of VT/VF</span>
                 </label>
                 
@@ -1629,11 +1629,11 @@ const hf = forwardRef(function hf(
                 
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
-                    <input type="checkbox" checked={complaintsSyncope === 'Yes'} onChange={(e) => setComplaintsSyncope(e.target.checked ? 'Yes' : 'No')} />
+                    <input disabled={readOnly} type="checkbox" checked={complaintsSyncope === 'Yes'} onChange={(e) => setComplaintsSyncope(e.target.checked ? 'Yes' : 'No')} />
                     <span>Complaints of Syncope / Pre-syncope</span>
                   </label>
                   {complaintsSyncope === 'Yes' && (
-                    <TextInput id="hf-syncope-freq" label="Frequency of episodes" value={syncopeFrequency} onChange={setSyncopeFrequency} placeholder="E.g. Twice in last month" />
+                    <TextInput readOnly={readOnly} id="hf-syncope-freq" label="Frequency of episodes" value={syncopeFrequency} onChange={setSyncopeFrequency} placeholder="E.g. Twice in last month" />
                   )}
                 </div>
               </div>
@@ -1641,13 +1641,13 @@ const hf = forwardRef(function hf(
               <div className="space-y-3 bg-white p-3 rounded-lg border border-slate-200">
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
-                    <input type="checkbox" checked={documentedPvcs === 'Yes'} onChange={(e) => setDocumentedPvcs(e.target.checked ? 'Yes' : 'No')} />
+                    <input disabled={readOnly} type="checkbox" checked={documentedPvcs === 'Yes'} onChange={(e) => setDocumentedPvcs(e.target.checked ? 'Yes' : 'No')} />
                     <span>Documented PVCs</span>
                   </label>
                   {documentedPvcs === 'Yes' && (
                     <div className="grid grid-cols-2 gap-2">
-                      <NumberInput id="hf-pvc-count" label="Number of PVCs" value={pvcCount} onChange={setPvcCount} />
-                      <TextInput id="hf-pvc-freq" label="Frequency / Pattern" value={pvcFrequency} onChange={setPvcFrequency} placeholder="E.g. Bigeminy" />
+                      <NumberInput readOnly={readOnly} id="hf-pvc-count" label="Number of PVCs" value={pvcCount} onChange={setPvcCount} />
+                      <TextInput readOnly={readOnly} id="hf-pvc-freq" label="Frequency / Pattern" value={pvcFrequency} onChange={setPvcFrequency} placeholder="E.g. Bigeminy" />
                     </div>
                   )}
                 </div>
@@ -1656,11 +1656,11 @@ const hf = forwardRef(function hf(
 
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
-                    <input type="checkbox" checked={documentedNsvt === 'Yes'} onChange={(e) => setDocumentedNsvt(e.target.checked ? 'Yes' : 'No')} />
+                    <input disabled={readOnly} type="checkbox" checked={documentedNsvt === 'Yes'} onChange={(e) => setDocumentedNsvt(e.target.checked ? 'Yes' : 'No')} />
                     <span>Documented NSVT</span>
                   </label>
                   {documentedNsvt === 'Yes' && (
-                    <TextInput id="hf-nsvt-freq" label="Frequency of episodes" value={nsvtFrequency} onChange={setNsvtFrequency} placeholder="Runs / duration" />
+                    <TextInput readOnly={readOnly} id="hf-nsvt-freq" label="Frequency of episodes" value={nsvtFrequency} onChange={setNsvtFrequency} placeholder="Runs / duration" />
                   )}
                 </div>
               </div>
@@ -1674,18 +1674,18 @@ const hf = forwardRef(function hf(
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <NumberInput id="hf-weight" label="Weight (kg)" disabled={vUnableToWeigh === 'Yes'} value={vWeight} onChange={setVWeight} required={vUnableToWeigh === 'No'} />
+                <NumberInput readOnly={readOnly} id="hf-weight" label="Weight (kg)" disabled={vUnableToWeigh === 'Yes'} value={vWeight} onChange={setVWeight} required={vUnableToWeigh === 'No'} />
                 <label className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 cursor-pointer">
-                  <input type="checkbox" checked={vUnableToWeigh === 'Yes'} onChange={(e) => setVUnableToWeigh(e.target.checked ? 'Yes' : 'No')} />
+                  <input disabled={readOnly} type="checkbox" checked={vUnableToWeigh === 'Yes'} onChange={(e) => setVUnableToWeigh(e.target.checked ? 'Yes' : 'No')} />
                   <span>Unable to weigh (Measure at earliest opportunity)</span>
                 </label>
                 {vUnableToWeigh === 'Yes' && (
                   <div className="mt-2">
-                    <TextInput id="hf-weigh-reason" label="Specify Reason" value={vUnableToWeighReason} onChange={setVUnableToWeighReason} />
+                    <TextInput readOnly={readOnly} id="hf-weigh-reason" label="Specify Reason" value={vUnableToWeighReason} onChange={setVUnableToWeighReason} />
                   </div>
                 )}
               </div>
-              <NumberInput id="hf-height" label="Height (Cm)" value={vHeight} onChange={setVHeight} />
+              <NumberInput readOnly={readOnly} id="hf-height" label="Height (Cm)" value={vHeight} onChange={setVHeight} />
               <div className="p-3 bg-white rounded-lg border border-slate-200 flex flex-col justify-center">
                 <span className="text-slate-400 font-semibold text-[10px] uppercase block">Calculated BMI</span>
                 <span className="text-slate-800 font-bold text-sm block mt-0.5">{vBmi ?? '—'}</span>
@@ -1693,19 +1693,19 @@ const hf = forwardRef(function hf(
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <NumberInput id="hf-hr" label="Heart Rate (resting) (Bpm)" required value={vHr} onChange={setVHr} />
+              <NumberInput readOnly={readOnly} id="hf-hr" label="Heart Rate (resting) (Bpm)" required value={vHr} onChange={setVHr} />
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-2">Variability</label>
                 <div className="grid grid-cols-2 gap-4">
                   <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer p-2 bg-white rounded-lg border">
-                    <input type="checkbox" checked={vHrRegular === 'Yes'} onChange={(e) => {
+                    <input disabled={readOnly} type="checkbox" checked={vHrRegular === 'Yes'} onChange={(e) => {
                       setVHrRegular(e.target.checked ? 'Yes' : 'No');
                       if(e.target.checked) setVHrIrregular('No');
                     }} />
                     <span>Regular</span>
                   </label>
                   <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer p-2 bg-white rounded-lg border">
-                    <input type="checkbox" checked={vHrIrregular === 'Yes'} onChange={(e) => {
+                    <input disabled={readOnly} type="checkbox" checked={vHrIrregular === 'Yes'} onChange={(e) => {
                       setVHrIrregular(e.target.checked ? 'Yes' : 'No');
                       if(e.target.checked) setVHrRegular('No');
                     }} />
@@ -1716,25 +1716,25 @@ const hf = forwardRef(function hf(
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <NumberInput id="hf-rr" label="Respiratory Rate" value={vRr} onChange={setVRr} />
-              <NumberInput id="hf-o2" label="O₂ Saturation (%)" max={100} value={vO2} onChange={setVO2} />
+              <NumberInput readOnly={readOnly} id="hf-rr" label="Respiratory Rate" value={vRr} onChange={setVRr} />
+              <NumberInput readOnly={readOnly} id="hf-o2" label="O₂ Saturation (%)" max={100} value={vO2} onChange={setVO2} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-3 bg-white rounded-lg border border-slate-200">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Blood Pressure: Sitting / Supine (mmHg)</label>
                 <div className="flex gap-2">
-                  <NumberInput id="hf-bps-sys" value={vBpSittingSystolic} onChange={setVBpSittingSystolic} placeholder="Sys" />
+                  <NumberInput readOnly={readOnly} id="hf-bps-sys" value={vBpSittingSystolic} onChange={setVBpSittingSystolic} placeholder="Sys" />
                   <span className="self-center text-slate-400">/</span>
-                  <NumberInput id="hf-bps-dia" value={vBpSittingDiastolic} onChange={setVBpSittingDiastolic} placeholder="Dia" />
+                  <NumberInput readOnly={readOnly} id="hf-bps-dia" value={vBpSittingDiastolic} onChange={setVBpSittingDiastolic} placeholder="Dia" />
                 </div>
               </div>
               <div className="p-3 bg-white rounded-lg border border-slate-200">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Blood Pressure: Standing (mmHg)</label>
                 <div className="flex gap-2">
-                  <NumberInput id="hf-bpd-sys" value={vBpStandingSystolic} onChange={setVBpStandingSystolic} placeholder="Sys" />
+                  <NumberInput readOnly={readOnly} id="hf-bpd-sys" value={vBpStandingSystolic} onChange={setVBpStandingSystolic} placeholder="Sys" />
                   <span className="self-center text-slate-400">/</span>
-                  <NumberInput id="hf-bpd-dia" value={vBpStandingDiastolic} onChange={setVBpStandingDiastolic} placeholder="Dia" />
+                  <NumberInput readOnly={readOnly} id="hf-bpd-dia" value={vBpStandingDiastolic} onChange={setVBpStandingDiastolic} placeholder="Dia" />
                 </div>
               </div>
             </div>
@@ -1743,21 +1743,21 @@ const hf = forwardRef(function hf(
               <label className="block text-xs font-bold text-slate-700">Mental Status</label>
               <div className="grid grid-cols-3 gap-3 text-xs">
                 <label className="flex items-center gap-2 p-2 bg-white rounded-lg border cursor-pointer">
-                  <input type="checkbox" checked={vMentalAlert === 'Yes'} onChange={(e) => {
+                  <input disabled={readOnly} type="checkbox" checked={vMentalAlert === 'Yes'} onChange={(e) => {
                     setVMentalAlert(e.target.checked ? 'Yes' : 'No');
                     if(e.target.checked) { setVMentalConfused('No'); setVMentalDrowsy('No'); }
                   }} />
                   <span>Alert / Oriented</span>
                 </label>
                 <label className="flex items-center gap-2 p-2 bg-white rounded-lg border cursor-pointer">
-                  <input type="checkbox" checked={vMentalConfused === 'Yes'} onChange={(e) => {
+                  <input disabled={readOnly} type="checkbox" checked={vMentalConfused === 'Yes'} onChange={(e) => {
                     setVMentalConfused(e.target.checked ? 'Yes' : 'No');
                     if(e.target.checked) { setVMentalAlert('No'); setVMentalDrowsy('No'); }
                   }} />
                   <span>Confused</span>
                 </label>
                 <label className="flex items-center gap-2 p-2 bg-white rounded-lg border cursor-pointer">
-                  <input type="checkbox" checked={vMentalDrowsy === 'Yes'} onChange={(e) => {
+                  <input disabled={readOnly} type="checkbox" checked={vMentalDrowsy === 'Yes'} onChange={(e) => {
                     setVMentalDrowsy(e.target.checked ? 'Yes' : 'No');
                     if(e.target.checked) { setVMentalAlert('No'); setVMentalConfused('No'); }
                   }} />
@@ -1774,70 +1774,70 @@ const hf = forwardRef(function hf(
               
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Dyspnea at rest:</span>
-                <RadioGroup name="s-dar" value={symptomDyspneaAtRest} onChange={setSymptomDyspneaAtRest} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-dar" value={symptomDyspneaAtRest} onChange={setSymptomDyspneaAtRest} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Weight Loss:</span>
-                <RadioGroup name="s-wl" value={symptomWeightLoss} onChange={setSymptomWeightLoss} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-wl" value={symptomWeightLoss} onChange={setSymptomWeightLoss} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Dyspnea with exertion:</span>
-                <RadioGroup name="s-dwe" value={symptomDyspneaWithExertion} onChange={setSymptomDyspneaWithExertion} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-dwe" value={symptomDyspneaWithExertion} onChange={setSymptomDyspneaWithExertion} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Syncopy:</span>
-                <RadioGroup name="s-sync" value={symptomSyncope} onChange={setSymptomSyncope} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-sync" value={symptomSyncope} onChange={setSymptomSyncope} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Fatigue:</span>
-                <RadioGroup name="s-fat" value={symptomFatigue} onChange={setSymptomFatigue} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-fat" value={symptomFatigue} onChange={setSymptomFatigue} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>PND:</span>
-                <RadioGroup name="s-pnd" value={symptomPnd} onChange={setSymptomPnd} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-pnd" value={symptomPnd} onChange={setSymptomPnd} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Orthopnea:</span>
-                <RadioGroup name="s-orth" value={symptomOrthopnea} onChange={setSymptomOrthopnea} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-orth" value={symptomOrthopnea} onChange={setSymptomOrthopnea} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Muscle Cramps:</span>
-                <RadioGroup name="s-mc" value={symptomMuscleCramps} onChange={setSymptomMuscleCramps} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-mc" value={symptomMuscleCramps} onChange={setSymptomMuscleCramps} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Loss of appetite/Bloating:</span>
-                <RadioGroup name="s-loa" value={symptomLossOfAppetite} onChange={setSymptomLossOfAppetite} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-loa" value={symptomLossOfAppetite} onChange={setSymptomLossOfAppetite} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Wheeze:</span>
-                <RadioGroup name="s-whz" value={symptomWheeze} onChange={setSymptomWheeze} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-whz" value={symptomWheeze} onChange={setSymptomWheeze} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Decreased exercise tolerance:</span>
-                <RadioGroup name="s-det" value={symptomDecreasedExercise} onChange={setSymptomDecreasedExercise} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-det" value={symptomDecreasedExercise} onChange={setSymptomDecreasedExercise} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Giddiness:</span>
-                <RadioGroup name="s-gid" value={symptomGiddiness} onChange={setSymptomGiddiness} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-gid" value={symptomGiddiness} onChange={setSymptomGiddiness} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1">
                 <span>Weight Gain:</span>
-                <RadioGroup name="s-wg" value={symptomWeightGain} onChange={setSymptomWeightGain} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="s-wg" value={symptomWeightGain} onChange={setSymptomWeightGain} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex flex-col justify-center py-1">
                 <div className="flex items-center justify-between">
                   <span>Other:</span>
-                  <RadioGroup name="s-oth" value={symptomOther} onChange={setSymptomOther} options={['Yes', 'No']} columns={2} hideLabel />
+                  <RadioGroup readOnly={readOnly} name="s-oth" value={symptomOther} onChange={setSymptomOther} options={['Yes', 'No']} columns={2} hideLabel />
                 </div>
                 {symptomOther === 'Yes' && (
                   <div className="mt-1">
-                    <TextInput id="hf-sym-oth-det" value={symptomOtherDetails} onChange={setSymptomOtherDetails} placeholder="Specify other symptom details" />
+                    <TextInput readOnly={readOnly} id="hf-sym-oth-det" value={symptomOtherDetails} onChange={setSymptomOtherDetails} placeholder="Specify other symptom details" />
                   </div>
                 )}
               </div>
@@ -1852,34 +1852,34 @@ const hf = forwardRef(function hf(
               
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Peripheral edema:</span>
-                <RadioGroup name="sg-pe" value={signPeripheralEdema} onChange={setSignPeripheralEdema} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="sg-pe" value={signPeripheralEdema} onChange={setSignPeripheralEdema} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Ascites:</span>
-                <RadioGroup name="sg-asc" value={signAscites} onChange={setSignAscites} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="sg-asc" value={signAscites} onChange={setSignAscites} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Rales:</span>
-                <RadioGroup name="sg-ral" value={signRales} onChange={setSignRales} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="sg-ral" value={signRales} onChange={setSignRales} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Jugular venous pressure:</span>
-                <RadioGroup name="sg-jvp" value={signJvp} onChange={setSignJvp} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="sg-jvp" value={signJvp} onChange={setSignJvp} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1">
                 <span>Hepatomegaly:</span>
-                <RadioGroup name="sg-hep" value={signHepatomegaly} onChange={setSignHepatomegaly} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup readOnly={readOnly} name="sg-hep" value={signHepatomegaly} onChange={setSignHepatomegaly} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex flex-col justify-center py-1">
                 <div className="flex items-center justify-between">
                   <span>Other:</span>
-                  <RadioGroup name="sg-oth" value={signClinicalOther} onChange={setSignClinicalOther} options={['Yes', 'No']} columns={2} hideLabel />
+                  <RadioGroup readOnly={readOnly} name="sg-oth" value={signClinicalOther} onChange={setSignClinicalOther} options={['Yes', 'No']} columns={2} hideLabel />
                 </div>
                 {signClinicalOther === 'Yes' && (
                   <div className="mt-1">
-                    <TextInput id="hf-sign-oth-det" value={signClinicalOtherDetails} onChange={setSignClinicalOtherDetails} placeholder="Specify other signs" />
+                    <TextInput readOnly={readOnly} id="hf-sign-oth-det" value={signClinicalOtherDetails} onChange={setSignClinicalOtherDetails} placeholder="Specify other signs" />
                   </div>
                 )}
               </div>
@@ -1895,7 +1895,7 @@ const hf = forwardRef(function hf(
           
           {/* Type of Heart Failure Row */}
           <div className="p-3 bg-slate-50 border-b border-slate-200">
-            <RadioGroup 
+            <RadioGroup readOnly={readOnly} 
               label="Type of Heart Failure" 
               name="hf-type" 
               value={hfType} 
@@ -1913,14 +1913,14 @@ const hf = forwardRef(function hf(
             </div>
             <div className="p-3 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <CheckboxGroup label="Cardiovascular" options={HF_ETIOLOGY_CV} values={hfEtiologyCv} onChange={setHfEtiologyCv} columns={1} />
+                <CheckboxGroup readOnly={readOnly} label="Cardiovascular" options={HF_ETIOLOGY_CV} values={hfEtiologyCv} onChange={setHfEtiologyCv} columns={1} />
               </div>
               <div className="space-y-4">
-                <CheckboxGroup label="Non-cardiac" options={HF_ETIOLOGY_NON_CV} values={hfEtiologyNonCv} onChange={setHfEtiologyNonCv} columns={1} />
-                <CheckboxGroup label="Pulmonary" options={HF_ETIOLOGY_PULM} values={hfEtiologyPulm} onChange={setHfEtiologyPulm} columns={1} />
+                <CheckboxGroup readOnly={readOnly} label="Non-cardiac" options={HF_ETIOLOGY_NON_CV} values={hfEtiologyNonCv} onChange={setHfEtiologyNonCv} columns={1} />
+                <CheckboxGroup readOnly={readOnly} label="Pulmonary" options={HF_ETIOLOGY_PULM} values={hfEtiologyPulm} onChange={setHfEtiologyPulm} columns={1} />
                 <div>
                   <span className="block font-bold text-slate-700 mb-1">Others (please specify):</span>
-                  <input type="text" className="w-full border border-slate-300 rounded p-1 text-xs" placeholder="Specify other etiology..." />
+                  <input disabled={readOnly} type="text" className="w-full border border-slate-300 rounded p-1 text-xs" placeholder="Specify other etiology..." />
                 </div>
               </div>
             </div>
@@ -1933,17 +1933,17 @@ const hf = forwardRef(function hf(
             </div>
             <div className="p-3 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <CheckboxGroup label="Comorbidities" options={COMORBIDITIES_OPTIONS} values={comorbidities} onChange={setComorbidities} columns={1} />
+                <CheckboxGroup readOnly={readOnly} label="Comorbidities" options={COMORBIDITIES_OPTIONS} values={comorbidities} onChange={setComorbidities} columns={1} />
                 <div className="mt-2 pl-1">
                   <span className="text-[11px] font-medium text-slate-600">Others:</span>
-                  <input type="text" value={otherComorbidity} onChange={(e) => setOtherComorbidity(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-xs mt-0.5" />
+                  <input disabled={readOnly} type="text" value={otherComorbidity} onChange={(e) => setOtherComorbidity(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-xs mt-0.5" />
                 </div>
               </div>
               <div>
-                <CheckboxGroup label="Risk Factors" options={RISK_FACTOR_OPTIONS} values={riskFactors} onChange={setRiskFactors} columns={1} />
+                <CheckboxGroup readOnly={readOnly} label="Risk Factors" options={RISK_FACTOR_OPTIONS} values={riskFactors} onChange={setRiskFactors} columns={1} />
                 <div className="mt-2 pl-1">
                   <span className="text-[11px] font-medium text-slate-600">Others:</span>
-                  <input type="text" value={otherRiskFactor} onChange={(e) => setOtherRiskFactor(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-xs mt-0.5" />
+                  <input disabled={readOnly} type="text" value={otherRiskFactor} onChange={(e) => setOtherRiskFactor(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-xs mt-0.5" />
                 </div>
               </div>
             </div>
@@ -1951,11 +1951,11 @@ const hf = forwardRef(function hf(
 
           {/* Stage, Functional Status, and AF Rows */}
           <div className="p-3 border-b border-slate-200 grid grid-cols-1 gap-3">
-            <RadioGroup label="Stage of HF" name="hf-stage" value={hfStage} onChange={setHfStage} required columns={4} options={['Stage A', 'Stage B', 'Stage C', 'Stage D']} />
+            <RadioGroup readOnly={readOnly} label="Stage of HF" name="hf-stage" value={hfStage} onChange={setHfStage} required columns={4} options={['Stage A', 'Stage B', 'Stage C', 'Stage D']} />
             <hr className="border-slate-100" />
-            <RadioGroup label="Functional Status *required" name="hf-nyha" value={hfNyha} onChange={setHfNyha} required columns={4} options={['NYHA Class I', 'NYHA Class II', 'NYHA Class III', 'NYHA Class IV']} />
+            <RadioGroup readOnly={readOnly} label="Functional Status *required" name="hf-nyha" value={hfNyha} onChange={setHfNyha} required columns={4} options={['NYHA Class I', 'NYHA Class II', 'NYHA Class III', 'NYHA Class IV']} />
             <hr className="border-slate-100" />
-            <RadioGroup label="AF Status *required" name="hf-af" value={hfAf} onChange={setHfAf} required columns={4} options={['Permanent', 'Paroxysmal', 'Persistent', 'NSR']} />
+            <RadioGroup readOnly={readOnly} label="AF Status *required" name="hf-af" value={hfAf} onChange={setHfAf} required columns={4} options={['Permanent', 'Paroxysmal', 'Persistent', 'NSR']} />
           </div>
 
           {/* Complex Major Adverse Cardiac Events (MACE) Table Layout */}
@@ -1967,19 +1967,19 @@ const hf = forwardRef(function hf(
               {/* Col 1 */}
               <div className="space-y-2">
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="checkbox" checked={maceHospitalization === 'Yes'} onChange={(e) => setMaceHospitalization(e.target.checked ? 'Yes' : 'No')} />
+                  <input disabled={readOnly} type="checkbox" checked={maceHospitalization === 'Yes'} onChange={(e) => setMaceHospitalization(e.target.checked ? 'Yes' : 'No')} />
                   <span>Hospitalization</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="checkbox" checked={maceStroke === 'Yes'} onChange={(e) => setMaceStroke(e.target.checked ? 'Yes' : 'No')} />
+                  <input disabled={readOnly} type="checkbox" checked={maceStroke === 'Yes'} onChange={(e) => setMaceStroke(e.target.checked ? 'Yes' : 'No')} />
                   <span>Stroke</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="checkbox" checked={maceMajorBleed === 'Yes'} onChange={(e) => setMaceMajorBleed(e.target.checked ? 'Yes' : 'No')} />
+                  <input disabled={readOnly} type="checkbox" checked={maceMajorBleed === 'Yes'} onChange={(e) => setMaceMajorBleed(e.target.checked ? 'Yes' : 'No')} />
                   <span>Major Bleed</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="checkbox" checked={maceSevereArrhythmia === 'Yes'} onChange={(e) => setMaceSevereArrhythmia(e.target.checked ? 'Yes' : 'No')} />
+                  <input disabled={readOnly} type="checkbox" checked={maceSevereArrhythmia === 'Yes'} onChange={(e) => setMaceSevereArrhythmia(e.target.checked ? 'Yes' : 'No')} />
                   <span>Severe Arrhythmia</span>
                 </label>
               </div>
@@ -1987,40 +1987,40 @@ const hf = forwardRef(function hf(
               {/* Col 2 */}
               <div className="space-y-2">
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="checkbox" checked={maceProcedures === 'Yes'} onChange={(e) => setMaceProcedures(e.target.checked ? 'Yes' : 'No')} />
+                  <input disabled={readOnly} type="checkbox" checked={maceProcedures === 'Yes'} onChange={(e) => setMaceProcedures(e.target.checked ? 'Yes' : 'No')} />
                   <span>Major Procedures:</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="checkbox" checked={maceOther === 'Yes'} onChange={(e) => setMaceOther(e.target.checked ? 'Yes' : 'No')} />
+                  <input disabled={readOnly} type="checkbox" checked={maceOther === 'Yes'} onChange={(e) => setMaceOther(e.target.checked ? 'Yes' : 'No')} />
                   <span>Other:</span>
                 </label>
                 {maceOther === 'Yes' && (
-                  <input type="text" value={maceOtherDetails} onChange={(e) => setMaceOtherDetails(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-[11px]" placeholder="Specify details..." />
+                  <input disabled={readOnly} type="text" value={maceOtherDetails} onChange={(e) => setMaceOtherDetails(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-[11px]" placeholder="Specify details..." />
                 )}
               </div>
 
               {/* Col 3: Death Context */}
               <div className="space-y-2 bg-slate-50 p-2 rounded border border-slate-200">
                 <label className="flex items-center gap-1.5 cursor-pointer font-bold text-red-700">
-                  <input type="checkbox" checked={maceDeath === 'Yes'} onChange={(e) => setMaceDeath(e.target.checked ? 'Yes' : 'No')} />
+                  <input disabled={readOnly} type="checkbox" checked={maceDeath === 'Yes'} onChange={(e) => setMaceDeath(e.target.checked ? 'Yes' : 'No')} />
                   <span>Death:</span>
                 </label>
                 {maceDeath === 'Yes' && (
                   <div className="space-y-1.5 mt-1">
                     <div>
                       <span className="text-[10px] text-slate-500 block">Date:</span>
-                      <input type="date" value={maceDeathDate} onChange={(e) => setMaceDeathDate(e.target.value)} className="w-full border border-slate-300 rounded p-0.5 text-xs" />
+                      <input disabled={readOnly} type="date" value={maceDeathDate} onChange={(e) => setMaceDeathDate(e.target.value)} className="w-full border border-slate-300 rounded p-0.5 text-xs" />
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-500 block">Location:</span>
                       <div className="flex gap-2">
-                        <label className="flex items-center gap-1"><input type="radio" name="d-loc" checked={maceDeathLocation === 'Home'} onChange={() => setMaceDeathLocation('Home')} /> Home</label>
-                        <label className="flex items-center gap-1"><input type="radio" name="d-loc" checked={maceDeathLocation === 'Hospital'} onChange={() => setMaceDeathLocation('Hospital')} /> Hospital</label>
+                        <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="d-loc" checked={maceDeathLocation === 'Home'} onChange={() => setMaceDeathLocation('Home')} /> Home</label>
+                        <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="d-loc" checked={maceDeathLocation === 'Hospital'} onChange={() => setMaceDeathLocation('Hospital')} /> Hospital</label>
                       </div>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-500 block">Reason:</span>
-                      <input type="text" value={maceDeathReason} onChange={(e) => setMaceDeathReason(e.target.value)} className="w-full border border-slate-300 rounded p-0.5 text-xs" placeholder="Cause of death" />
+                      <input disabled={readOnly} type="text" value={maceDeathReason} onChange={(e) => setMaceDeathReason(e.target.value)} className="w-full border border-slate-300 rounded p-0.5 text-xs" placeholder="Cause of death" />
                     </div>
                   </div>
                 )}
@@ -2030,7 +2030,7 @@ const hf = forwardRef(function hf(
         </div>
 
         <div className="mt-4">
-          <TextArea id="hf-final-notes" label="Final Clinical Notes / Summary" value={finalClinicalNotes} onChange={setFinalClinicalNotes} placeholder="Document final assessment, response to therapy and discharge summary." rows={3} />
+          <TextArea readOnly={readOnly} id="hf-final-notes" label="Final Clinical Notes / Summary" value={finalClinicalNotes} onChange={setFinalClinicalNotes} placeholder="Document final assessment, response to therapy and discharge summary." rows={3} />
         </div>
       </SectionCard>
 
@@ -2049,11 +2049,11 @@ const hf = forwardRef(function hf(
               <div className="flex flex-wrap gap-4 border-b border-slate-100 pb-2">
                 <div className="flex items-center gap-1">
                   <span className="font-semibold text-slate-600">Date of test:</span>
-                  <input type="date" value={ecgDate} onChange={(e) => setEcgDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                  <input disabled={readOnly} type="date" value={ecgDate} onChange={(e) => setEcgDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="font-semibold text-slate-600">QRS duration:</span>
-                  <input type="text" value={ecgQrsDuration} onChange={(e) => setEcgQrsDuration(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs w-24" />
+                  <input disabled={readOnly} type="text" value={ecgQrsDuration} onChange={(e) => setEcgQrsDuration(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs w-24" />
                 </div>
               </div>
               
@@ -2061,55 +2061,55 @@ const hf = forwardRef(function hf(
                 <div className="border border-slate-200 rounded p-2 bg-slate-50/50">
                   <span className="block font-bold mb-1 text-slate-700">Rhythm</span>
                   {['Sinus', 'AF'].map(r => (
-                    <label key={r} className="flex items-center gap-1.5 mt-0.5"><input type="radio" name="ecg_rhy" checked={ecgRhythm === r} onChange={() => setEcgRhythm(r)} /> {r}</label>
+                    <label key={r} className="flex items-center gap-1.5 mt-0.5"><input disabled={readOnly} type="radio" name="ecg_rhy" checked={ecgRhythm === r} onChange={() => setEcgRhythm(r)} /> {r}</label>
                   ))}
                   <div className="mt-1 flex items-center gap-1">
-                    <input type="radio" name="ecg_rhy" checked={ecgRhythm === 'Other'} onChange={() => setEcgRhythm('Other')} />
-                    <input type="text" placeholder="Other:" value={ecgRhythmOther} onChange={(e) => { setEcgRhythm('Other'); setEcgRhythmOther(e.target.value); }} className="border-b border-slate-300 p-0 text-xs w-full bg-transparent focus:ring-0" />
+                    <input disabled={readOnly} type="radio" name="ecg_rhy" checked={ecgRhythm === 'Other'} onChange={() => setEcgRhythm('Other')} />
+                    <input disabled={readOnly} type="text" placeholder="Other:" value={ecgRhythmOther} onChange={(e) => { setEcgRhythm('Other'); setEcgRhythmOther(e.target.value); }} className="border-b border-slate-300 p-0 text-xs w-full bg-transparent focus:ring-0" />
                   </div>
                 </div>
 
                 <div className="border border-slate-200 rounded p-2 bg-slate-50/50">
                   <span className="block font-bold mb-1 text-slate-700">AV Conduction</span>
                   {['Normal', '1st degree AV block', '2nd degree AV block', '3rd degree AV block'].map(av => (
-                    <label key={av} className="flex items-center gap-1.5 mt-0.5"><input type="radio" name="ecg_av" checked={ecgAvConduction === av} onChange={() => setEcgAvConduction(av)} /> {av}</label>
+                    <label key={av} className="flex items-center gap-1.5 mt-0.5"><input disabled={readOnly} type="radio" name="ecg_av" checked={ecgAvConduction === av} onChange={() => setEcgAvConduction(av)} /> {av}</label>
                   ))}
                 </div>
 
                 <div className="border border-slate-200 rounded p-2 bg-slate-50/50">
                   <span className="block font-bold mb-1 text-slate-700">Q Waves</span>
-                  <label className="flex items-center gap-1.5"><input type="radio" name="ecg_qw" checked={ecgQWaves === 'Yes'} onChange={() => setEcgQWaves('Yes')} /> Yes</label>
+                  <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="ecg_qw" checked={ecgQWaves === 'Yes'} onChange={() => setEcgQWaves('Yes')} /> Yes</label>
                   {ecgQWaves === 'Yes' && (
                     <div className="pl-4 flex items-center gap-1 mt-0.5">
                       <span className="text-[10px] text-slate-500">• Leads:</span>
-                      <input type="text" value={ecgQWavesLeads} onChange={(e) => setEcgQWavesLeads(e.target.value)} className="border-b border-slate-300 p-0 text-xs w-full focus:ring-0" />
+                      <input disabled={readOnly} type="text" value={ecgQWavesLeads} onChange={(e) => setEcgQWavesLeads(e.target.value)} className="border-b border-slate-300 p-0 text-xs w-full focus:ring-0" />
                     </div>
                   )}
-                  <label className="flex items-center gap-1.5 mt-0.5"><input type="radio" name="ecg_qw" checked={ecgQWaves === 'None'} onChange={() => setEcgQWaves('None')} /> None</label>
+                  <label className="flex items-center gap-1.5 mt-0.5"><input disabled={readOnly} type="radio" name="ecg_qw" checked={ecgQWaves === 'None'} onChange={() => setEcgQWaves('None')} /> None</label>
                 </div>
 
                 <div className="border border-slate-200 rounded p-2 bg-slate-50/50">
                   <span className="block font-bold mb-1 text-slate-700">Blockages</span>
                   {['LBBB', 'RBB'].map(bl => (
-                    <label key={bl} className="flex items-center gap-1.5 mt-0.5"><input type="radio" name="ecg_bl" checked={ecgBlockages === bl} onChange={() => setEcgBlockages(bl)} /> {bl}</label>
+                    <label key={bl} className="flex items-center gap-1.5 mt-0.5"><input disabled={readOnly} type="radio" name="ecg_bl" checked={ecgBlockages === bl} onChange={() => setEcgBlockages(bl)} /> {bl}</label>
                   ))}
                   <div className="mt-1 flex items-center gap-1">
-                    <input type="radio" name="ecg_bl" checked={ecgBlockages === 'Other'} onChange={() => setEcgBlockages('Other')} />
-                    <input type="text" placeholder="Other:" value={ecgBlockagesOther} onChange={(e) => { setEcgBlockages('Other'); setEcgBlockagesOther(e.target.value); }} className="border-b border-slate-300 p-0 text-xs w-full bg-transparent focus:ring-0" />
+                    <input disabled={readOnly} type="radio" name="ecg_bl" checked={ecgBlockages === 'Other'} onChange={() => setEcgBlockages('Other')} />
+                    <input disabled={readOnly} type="text" placeholder="Other:" value={ecgBlockagesOther} onChange={(e) => { setEcgBlockages('Other'); setEcgBlockagesOther(e.target.value); }} className="border-b border-slate-300 p-0 text-xs w-full bg-transparent focus:ring-0" />
                   </div>
                 </div>
 
                 <div className="border border-slate-200 rounded p-2 bg-slate-50/50">
                   <span className="block font-bold mb-1 text-slate-700">Extra Beats</span>
                   {['APC', 'VPC', 'None'].map(eb => (
-                    <label key={eb} className="flex items-center gap-1.5 mt-0.5"><input type="radio" name="ecg_ex" checked={ecgExtraBeats === eb} onChange={() => setEcgExtraBeats(eb)} /> {eb}</label>
+                    <label key={eb} className="flex items-center gap-1.5 mt-0.5"><input disabled={readOnly} type="radio" name="ecg_ex" checked={ecgExtraBeats === eb} onChange={() => setEcgExtraBeats(eb)} /> {eb}</label>
                   ))}
                 </div>
 
                 <div className="border border-slate-200 rounded p-2 bg-slate-50/50 space-y-1">
                   <span className="block font-bold text-slate-700">QT Interval</span>
-                  <div className="flex items-center gap-1"><span className="w-8 font-medium">QT:</span><input type="text" value={ecgQt} onChange={(e) => setEcgQt(e.target.value)} className="border-b border-slate-300 p-0 w-full text-xs focus:ring-0" /></div>
-                  <div className="flex items-center gap-1"><span className="w-8 font-medium">QTC:</span><input type="text" value={ecgQtc} onChange={(e) => setEcgQtc(e.target.value)} className="border-b border-slate-300 p-0 w-full text-xs focus:ring-0" /></div>
+                  <div className="flex items-center gap-1"><span className="w-8 font-medium">QT:</span><input disabled={readOnly} type="text" value={ecgQt} onChange={(e) => setEcgQt(e.target.value)} className="border-b border-slate-300 p-0 w-full text-xs focus:ring-0" /></div>
+                  <div className="flex items-center gap-1"><span className="w-8 font-medium">QTC:</span><input disabled={readOnly} type="text" value={ecgQtc} onChange={(e) => setEcgQtc(e.target.value)} className="border-b border-slate-300 p-0 w-full text-xs focus:ring-0" /></div>
                 </div>
               </div>
             </div>
@@ -2121,20 +2121,20 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 space-y-2">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
                 <span className="font-semibold text-slate-600">Date of test:</span>
-                <input type="date" value={cxrDate} onChange={(e) => setCxrDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                <input disabled={readOnly} type="date" value={cxrDate} onChange={(e) => setCxrDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
                 <div className="flex items-center gap-1">
                   <span className="font-medium">CT ratio:</span>
-                  <input type="text" value={cxrCtRatio} onChange={(e) => setCxrCtRatio(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs w-full" />
+                  <input disabled={readOnly} type="text" value={cxrCtRatio} onChange={(e) => setCxrCtRatio(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs w-full" />
                 </div>
-                <label className="flex items-center gap-1.5"><input type="checkbox" checked={cxrPleuralEffusion} onChange={(e) => setCxrPleuralEffusion(e.target.checked)} /> Pleural effusion</label>
-                <label className="flex items-center gap-1.5"><input type="checkbox" checked={cxrPvh} onChange={(e) => setCxrPvh(e.target.checked)} /> PVH</label>
+                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={cxrPleuralEffusion} onChange={(e) => setCxrPleuralEffusion(e.target.checked)} /> Pleural effusion</label>
+                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={cxrPvh} onChange={(e) => setCxrPvh(e.target.checked)} /> PVH</label>
                 <div className="flex items-center gap-1">
                   <span className="text-slate-500">Others:</span>
-                  <input type="text" value={cxrOthers} onChange={(e) => setCxrOthers(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs w-full" />
+                  <input disabled={readOnly} type="text" value={cxrOthers} onChange={(e) => setCxrOthers(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs w-full" />
                 </div>
-                <label className="flex items-center gap-1.5"><input type="checkbox" checked={cxrPulmonaryEdema} onChange={(e) => setCxrPulmonaryEdema(e.target.checked)} /> Pulmonary edema</label>
+                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={cxrPulmonaryEdema} onChange={(e) => setCxrPulmonaryEdema(e.target.checked)} /> Pulmonary edema</label>
               </div>
             </div>
           </div>
@@ -2145,54 +2145,54 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 space-y-3">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
                 <span className="font-semibold text-slate-600">Date of test:</span>
-                <input type="date" value={echoDate} onChange={(e) => setEchoDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                <input disabled={readOnly} type="date" value={echoDate} onChange={(e) => setEchoDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
               </div>
               
               {/* Metric inputs section */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 border-b border-slate-100 pb-2">
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5"><input type="checkbox" checked={echoEfPercent !== ''} readOnly /><span className="w-20 font-medium">EF%:</span><input type="text" value={echoEfPercent} onChange={(e) => setEchoEfPercent(e.target.value)} className="border-b border-slate-300 p-0 w-full focus:ring-0 text-xs" /></div>
-                  <div className="flex items-center gap-1.5"><input type="checkbox" checked={echoEaRatio !== ''} readOnly /><span className="w-20 font-medium">E/A ratio:</span><input type="text" value={echoEaRatio} onChange={(e) => setEchoEaRatio(e.target.value)} className="border-b border-slate-300 p-0 w-full focus:ring-0 text-xs" /></div>
-                  <div className="flex items-center gap-1.5"><input type="checkbox" checked={echoRvTapsv !== ''} readOnly /><span className="w-20 font-medium">RV TAPSV:</span><input type="text" value={echoRvTapsv} onChange={(e) => setEchoRvTapsv(e.target.value)} className="border-b border-slate-300 p-0 w-full focus:ring-0 text-xs" /></div>
+                  <div className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={echoEfPercent !== ''} readOnly /><span className="w-20 font-medium">EF%:</span><input disabled={readOnly} type="text" value={echoEfPercent} onChange={(e) => setEchoEfPercent(e.target.value)} className="border-b border-slate-300 p-0 w-full focus:ring-0 text-xs" /></div>
+                  <div className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={echoEaRatio !== ''} readOnly /><span className="w-20 font-medium">E/A ratio:</span><input disabled={readOnly} type="text" value={echoEaRatio} onChange={(e) => setEchoEaRatio(e.target.value)} className="border-b border-slate-300 p-0 w-full focus:ring-0 text-xs" /></div>
+                  <div className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={echoRvTapsv !== ''} readOnly /><span className="w-20 font-medium">RV TAPSV:</span><input disabled={readOnly} type="text" value={echoRvTapsv} onChange={(e) => setEchoRvTapsv(e.target.value)} className="border-b border-slate-300 p-0 w-full focus:ring-0 text-xs" /></div>
                 </div>
                 <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5"><input type="checkbox" checked={echoEePrimeRatio !== ''} readOnly /><span className="w-32 font-medium">E/E' ratio:</span><input type="text" value={echoEePrimeRatio} onChange={(e) => setEchoEePrimeRatio(e.target.value)} className="border-b border-slate-300 p-0 w-full focus:ring-0 text-xs" /></div>
-                  <div className="flex items-center gap-1.5"><input type="checkbox" checked={echoEDecelTime !== ''} readOnly /><span className="w-32 font-medium">E deceleration time:</span><input type="text" value={echoEDecelTime} onChange={(e) => setEchoEDecelTime(e.target.value)} className="border-b border-slate-300 p-0 w-full focus:ring-0 text-xs" /></div>
+                  <div className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={echoEePrimeRatio !== ''} readOnly /><span className="w-32 font-medium">E/E' ratio:</span><input disabled={readOnly} type="text" value={echoEePrimeRatio} onChange={(e) => setEchoEePrimeRatio(e.target.value)} className="border-b border-slate-300 p-0 w-full focus:ring-0 text-xs" /></div>
+                  <div className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={echoEDecelTime !== ''} readOnly /><span className="w-32 font-medium">E deceleration time:</span><input disabled={readOnly} type="text" value={echoEDecelTime} onChange={(e) => setEchoEDecelTime(e.target.value)} className="border-b border-slate-300 p-0 w-full focus:ring-0 text-xs" /></div>
                 </div>
               </div>
 
               {/* Binary evaluation blocks */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="flex items-center gap-1.5"><input type="checkbox" checked={echoLaDimension} onChange={(e) => setEchoLaDimension(e.target.checked)} /> Left Atrium Dimension</label>
-                  <label className="flex items-center gap-1.5"><input type="checkbox" checked={echoLvSystole} onChange={(e) => setEchoLvSystole(e.target.checked)} /> Left Ventricle Systole</label>
-                  <label className="flex items-center gap-1.5"><input type="checkbox" checked={echoLvDiastole} onChange={(e) => setEchoLvDiastole(e.target.checked)} /> Left Ventricle Diastole</label>
+                  <label className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={echoLaDimension} onChange={(e) => setEchoLaDimension(e.target.checked)} /> Left Atrium Dimension</label>
+                  <label className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={echoLvSystole} onChange={(e) => setEchoLvSystole(e.target.checked)} /> Left Ventricle Systole</label>
+                  <label className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={echoLvDiastole} onChange={(e) => setEchoLvDiastole(e.target.checked)} /> Left Ventricle Diastole</label>
                   
                   <div className="pt-1.5 border-t border-slate-100 mt-1">
-                    <span className="block font-semibold text-slate-600 mb-0.5"><input type="checkbox" checked={echoMrMitralRegurg !== ''} readOnly /> MR mitral regurgitation:</span>
+                    <span className="block font-semibold text-slate-600 mb-0.5"><input disabled={readOnly} type="checkbox" checked={echoMrMitralRegurg !== ''} readOnly /> MR mitral regurgitation:</span>
                     <div className="grid grid-cols-3 gap-1">
                       {['None', '1plus', '2plus', '3plus', '4plus'].map(lvl => (
-                        <label key={lvl} className="flex items-center gap-1 text-[11px]"><input type="radio" name="echo_mr" checked={echoMrMitralRegurg === lvl} onChange={() => setEchoMrMitralRegurg(lvl)} /> {lvl}</label>
+                        <label key={lvl} className="flex items-center gap-1 text-[11px]"><input disabled={readOnly} type="radio" name="echo_mr" checked={echoMrMitralRegurg === lvl} onChange={() => setEchoMrMitralRegurg(lvl)} /> {lvl}</label>
                       ))}
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2 bg-slate-50/50 p-2 rounded border border-slate-200">
-                  <div className="flex items-center gap-1"><span className="font-semibold text-slate-600">Other Valves:</span><input type="text" value={echoOtherValves} onChange={(e) => setEchoOtherValves(e.target.value)} className="border-b border-slate-300 p-0 bg-transparent text-xs w-full focus:ring-0" /></div>
-                  <div className="flex items-center gap-1"><span className="font-semibold text-slate-600">RV Systolic Pressure:</span><input type="text" value={echoRvSystolicPressure} onChange={(e) => setEchoRvSystolicPressure(e.target.value)} className="border-b border-slate-300 p-0 bg-transparent text-xs w-full focus:ring-0" /></div>
+                  <div className="flex items-center gap-1"><span className="font-semibold text-slate-600">Other Valves:</span><input disabled={readOnly} type="text" value={echoOtherValves} onChange={(e) => setEchoOtherValves(e.target.value)} className="border-b border-slate-300 p-0 bg-transparent text-xs w-full focus:ring-0" /></div>
+                  <div className="flex items-center gap-1"><span className="font-semibold text-slate-600">RV Systolic Pressure:</span><input disabled={readOnly} type="text" value={echoRvSystolicPressure} onChange={(e) => setEchoRvSystolicPressure(e.target.value)} className="border-b border-slate-300 p-0 bg-transparent text-xs w-full focus:ring-0" /></div>
                   
                   <div className="flex items-center gap-4 py-0.5">
                     <span className="font-semibold text-slate-600">RV Function:</span>
-                    <label className="flex items-center gap-1"><input type="radio" name="echo_rvf" checked={echoRvFunction === 'Normal'} onChange={() => setEchoRvFunction('Normal')} /> Normal</label>
-                    <label className="flex items-center gap-1"><input type="radio" name="echo_rvf" checked={echoRvFunction === 'Impaired'} onChange={() => setEchoRvFunction('Impaired')} /> Impaired</label>
+                    <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="echo_rvf" checked={echoRvFunction === 'Normal'} onChange={() => setEchoRvFunction('Normal')} /> Normal</label>
+                    <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="echo_rvf" checked={echoRvFunction === 'Impaired'} onChange={() => setEchoRvFunction('Impaired')} /> Impaired</label>
                   </div>
 
                   <div className="border-t border-slate-200 pt-1">
                     <span className="block font-semibold text-slate-600 mb-0.5">RWMI:</span>
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                       {['None', 'Global', 'Inferior', 'Anterior', 'Lateral'].map(r => (
-                        <label key={r} className="flex items-center gap-1 text-[11px]"><input type="radio" name="echo_rwmi" checked={echoRwmi === r} onChange={() => setEchoRwmi(r)} /> {r}</label>
+                        <label key={r} className="flex items-center gap-1 text-[11px]"><input disabled={readOnly} type="radio" name="echo_rwmi" checked={echoRwmi === r} onChange={() => setEchoRwmi(r)} /> {r}</label>
                       ))}
                     </div>
                   </div>
@@ -2207,15 +2207,15 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 space-y-2">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
                 <span className="font-semibold text-slate-600">Date of test:</span>
-                <input type="date" value={holterDate} onChange={(e) => setHolterDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                <input disabled={readOnly} type="date" value={holterDate} onChange={(e) => setHolterDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
               </div>
               <div className="space-y-1.5">
                 <div>
-                  <label className="flex items-center gap-1.5 font-semibold text-slate-700"><input type="checkbox" checked={holterVpcChecked} onChange={(e) => setHolterVpcChecked(e.target.checked)} /> VPC:</label>
+                  <label className="flex items-center gap-1.5 font-semibold text-slate-700"><input disabled={readOnly} type="checkbox" checked={holterVpcChecked} onChange={(e) => setHolterVpcChecked(e.target.checked)} /> VPC:</label>
                   <div className="pl-5 flex flex-wrap gap-4 items-center mt-1 bg-slate-50 p-1.5 rounded border">
                     <span className="font-medium text-slate-600">Ventricular Arrhythmia:</span>
                     {['No', 'Yes', 'Complex VPC', 'NSVT', 'VT'].map(opt => (
-                      <label key={opt} className="flex items-center gap-1 text-[11px]"><input type="radio" name="holter_va" checked={holterVentricularArrhythmia === opt} onChange={() => setHolterVentricularArrhythmia(opt)} /> {opt}</label>
+                      <label key={opt} className="flex items-center gap-1 text-[11px]"><input disabled={readOnly} type="radio" name="holter_va" checked={holterVentricularArrhythmia === opt} onChange={() => setHolterVentricularArrhythmia(opt)} /> {opt}</label>
                     ))}
                   </div>
                 </div>
@@ -2223,13 +2223,13 @@ const hf = forwardRef(function hf(
                 <div className="flex flex-wrap gap-4 items-center pt-1">
                   <span className="font-semibold text-slate-700">Atrial Arrhythmias:</span>
                   {['None', 'APCs', 'AF'].map(opt => (
-                    <label key={opt} className="flex items-center gap-1"><input type="radio" name="holter_aa" checked={holterAtrialArrhythmias === opt} onChange={() => setHolterAtrialArrhythmias(opt)} /> {opt}</label>
+                    <label key={opt} className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="holter_aa" checked={holterAtrialArrhythmias === opt} onChange={() => setHolterAtrialArrhythmias(opt)} /> {opt}</label>
                   ))}
                 </div>
 
                 <div className="flex items-center gap-1 pt-1">
                   <span className="font-semibold text-slate-700">Heart rate variability:</span>
-                  <input type="text" value={holterHrv} onChange={(e) => setHolterHrv(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs w-full" />
+                  <input disabled={readOnly} type="text" value={holterHrv} onChange={(e) => setHolterHrv(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs w-full" />
                 </div>
               </div>
             </div>
@@ -2241,25 +2241,25 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 space-y-2">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
                 <span className="font-semibold text-slate-600">Date of test:</span>
-                <input type="date" value={stressDate} onChange={(e) => setStressDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                <input disabled={readOnly} type="date" value={stressDate} onChange={(e) => setStressDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
               </div>
               <div className="space-y-1.5">
-                <label className="flex items-center gap-1.5"><input type="radio" name="stress_status" checked={stressStatus === 'Not Done'} onChange={() => setStressStatus('Not Done')} /> Not Done</label>
+                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Not Done'} onChange={() => setStressStatus('Not Done')} /> Not Done</label>
                 <div>
-                  <label className="flex items-center gap-1.5"><input type="radio" name="stress_status" checked={stressStatus === 'Done'} onChange={() => setStressStatus('Done')} /> Done</label>
+                  <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Done'} onChange={() => setStressStatus('Done')} /> Done</label>
                   {stressStatus === 'Done' && (
                     <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 pl-5 bg-slate-50 p-2 rounded border">
-                      <div className="flex items-center gap-1"><span>▪ METS achieved:</span><input type="text" value={stressMets} onChange={(e) => setStressMets(e.target.value)} className="border-b border-slate-300 bg-transparent p-0 text-xs w-full focus:ring-0" /></div>
+                      <div className="flex items-center gap-1"><span>▪ METS achieved:</span><input disabled={readOnly} type="text" value={stressMets} onChange={(e) => setStressMets(e.target.value)} className="border-b border-slate-300 bg-transparent p-0 text-xs w-full focus:ring-0" /></div>
                       <div className="flex items-center gap-3">
                         <span>▪ Ischemic changes:</span>
-                        <label className="flex items-center gap-1"><input type="radio" name="stress_isc" checked={stressIschemicChanges === 'Yes'} onChange={() => setStressIschemicChanges('Yes')} /> Yes</label>
-                        <label className="flex items-center gap-1"><input type="radio" name="stress_isc" checked={stressIschemicChanges === 'No'} onChange={() => setStressIschemicChanges('No')} /> No</label>
+                        <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="stress_isc" checked={stressIschemicChanges === 'Yes'} onChange={() => setStressIschemicChanges('Yes')} /> Yes</label>
+                        <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="stress_isc" checked={stressIschemicChanges === 'No'} onChange={() => setStressIschemicChanges('No')} /> No</label>
                       </div>
-                      <div className="flex items-center gap-1"><span>▪ Target heart rate achieved:</span><input type="text" value={stressTargetHr} onChange={(e) => setStressTargetHr(e.target.value)} className="border-b border-slate-300 bg-transparent p-0 text-xs w-full focus:ring-0" /></div>
+                      <div className="flex items-center gap-1"><span>▪ Target heart rate achieved:</span><input disabled={readOnly} type="text" value={stressTargetHr} onChange={(e) => setStressTargetHr(e.target.value)} className="border-b border-slate-300 bg-transparent p-0 text-xs w-full focus:ring-0" /></div>
                       <div className="flex items-center gap-3">
                         <span>▪ Arrhythmias:</span>
-                        <label className="flex items-center gap-1"><input type="radio" name="stress_arr" checked={stressArrhythmias === 'Yes'} onChange={() => setStressArrhythmias('Yes')} /> Yes</label>
-                        <label className="flex items-center gap-1"><input type="radio" name="stress_arr" checked={stressArrhythmias === 'No'} onChange={() => setStressArrhythmias('No')} /> No</label>
+                        <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="stress_arr" checked={stressArrhythmias === 'Yes'} onChange={() => setStressArrhythmias('Yes')} /> Yes</label>
+                        <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="stress_arr" checked={stressArrhythmias === 'No'} onChange={() => setStressArrhythmias('No')} /> No</label>
                       </div>
                     </div>
                   )}
@@ -2273,17 +2273,17 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 bg-slate-100 font-bold border-r border-slate-300 text-slate-700 flex items-center">MRI</div>
             <div className="p-2.5 md:col-span-3 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-1">
-                <input type="checkbox" checked={mriLvef !== ''} readOnly />
+                <input disabled={readOnly} type="checkbox" checked={mriLvef !== ''} readOnly />
                 <span className="font-semibold">LVEF:</span>
-                <input type="text" value={mriLvef} onChange={(e) => setMriLvef(e.target.value)} className="border-b border-slate-300 p-0 text-xs w-28 focus:ring-0" />
+                <input disabled={readOnly} type="text" value={mriLvef} onChange={(e) => setMriLvef(e.target.value)} className="border-b border-slate-300 p-0 text-xs w-28 focus:ring-0" />
               </div>
               <div className="flex items-center gap-4">
-                <label className="flex items-center gap-1.5"><input type="radio" name="mri_scar" checked={mriScar === 'Present'} onChange={() => setMriScar('Present')} /> Scar Present</label>
-                <label className="flex items-center gap-1.5"><input type="radio" name="mri_scar" checked={mriScar === 'Absent'} onChange={() => setMriScar('Absent')} /> Scar Absent</label>
+                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="mri_scar" checked={mriScar === 'Present'} onChange={() => setMriScar('Present')} /> Scar Present</label>
+                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="mri_scar" checked={mriScar === 'Absent'} onChange={() => setMriScar('Absent')} /> Scar Absent</label>
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-slate-500 font-medium">Date of test:</span>
-                <input type="date" value={mriDate} onChange={(e) => setMriDate(e.target.value)} className="border-b border-slate-300 p-0 text-xs focus:ring-0" />
+                <input disabled={readOnly} type="date" value={mriDate} onChange={(e) => setMriDate(e.target.value)} className="border-b border-slate-300 p-0 text-xs focus:ring-0" />
               </div>
             </div>
           </div>
@@ -2293,7 +2293,7 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 bg-slate-100 font-bold border-r border-slate-300 text-slate-700 flex items-center">PET</div>
             <div className="p-2.5 md:col-span-3 flex items-center justify-end gap-1">
               <span className="text-slate-500 font-medium">Date of test:</span>
-              <input type="date" value={petDate} onChange={(e) => setPetDate(e.target.value)} className="border-b border-slate-300 p-0 text-xs focus:ring-0" />
+              <input disabled={readOnly} type="date" value={petDate} onChange={(e) => setPetDate(e.target.value)} className="border-b border-slate-300 p-0 text-xs focus:ring-0" />
             </div>
           </div>
 
@@ -2303,22 +2303,22 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 space-y-2">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
                 <span className="font-semibold text-slate-600">Date of test:</span>
-                <input type="date" value={sixMwtDate} onChange={(e) => setSixMwtDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                <input disabled={readOnly} type="date" value={sixMwtDate} onChange={(e) => setSixMwtDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
               </div>
               <div className="space-y-2">
                 <div>
-                  <label className="flex items-center gap-1.5 font-bold text-slate-700"><input type="radio" name="six_mwt" checked={sixMwtStatus === 'Done'} onChange={() => setSixMwtStatus('Done')} /> Done:</label>
+                  <label className="flex items-center gap-1.5 font-bold text-slate-700"><input disabled={readOnly} type="radio" name="six_mwt" checked={sixMwtStatus === 'Done'} onChange={() => setSixMwtStatus('Done')} /> Done:</label>
                   {sixMwtStatus === 'Done' && (
                     <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-4 pl-5 bg-slate-50 p-2 rounded border">
-                      <div className="flex items-center gap-1"><span>▪ Distance walked in m:</span><input type="text" value={sixMwtDistance} onChange={(e) => setSixMwtDistance(e.target.value)} className="border-b border-slate-300 bg-transparent p-0 text-xs w-full focus:ring-0" /></div>
-                      <div className="flex items-center gap-1"><span>▪ Heart rate recovery in first 1 minute:</span><input type="text" value={sixMwtHrRecovery} onChange={(e) => setSixMwtHrRecovery(e.target.value)} className="border-b border-slate-300 bg-transparent p-0 text-xs w-full focus:ring-0" /></div>
+                      <div className="flex items-center gap-1"><span>▪ Distance walked in m:</span><input disabled={readOnly} type="text" value={sixMwtDistance} onChange={(e) => setSixMwtDistance(e.target.value)} className="border-b border-slate-300 bg-transparent p-0 text-xs w-full focus:ring-0" /></div>
+                      <div className="flex items-center gap-1"><span>▪ Heart rate recovery in first 1 minute:</span><input disabled={readOnly} type="text" value={sixMwtHrRecovery} onChange={(e) => setSixMwtHrRecovery(e.target.value)} className="border-b border-slate-300 bg-transparent p-0 text-xs w-full focus:ring-0" /></div>
                     </div>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1.5 font-bold text-slate-700 whitespace-nowrap"><input type="radio" name="six_mwt" checked={sixMwtStatus === 'Not Done'} onChange={() => setSixMwtStatus('Not Done')} /> Not Done, Reasons:</label>
+                  <label className="flex items-center gap-1.5 font-bold text-slate-700 whitespace-nowrap"><input disabled={readOnly} type="radio" name="six_mwt" checked={sixMwtStatus === 'Not Done'} onChange={() => setSixMwtStatus('Not Done')} /> Not Done, Reasons:</label>
                   {sixMwtStatus === 'Not Done' && (
-                    <input type="text" value={sixMwtNotDoneReason} onChange={(e) => setSixMwtNotDoneReason(e.target.value)} className="border-b border-slate-300 p-0 text-xs w-full focus:ring-0" placeholder="Specify clinical barriers..." />
+                    <input disabled={readOnly} type="text" value={sixMwtNotDoneReason} onChange={(e) => setSixMwtNotDoneReason(e.target.value)} className="border-b border-slate-300 p-0 text-xs w-full focus:ring-0" placeholder="Specify clinical barriers..." />
                   )}
                 </div>
               </div>
@@ -2330,7 +2330,7 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 bg-slate-100 font-bold border-r border-slate-300 text-slate-700 flex items-center">Anaerobic Threshold</div>
             <div className="p-2.5 md:col-span-3 flex items-center justify-end gap-1">
               <span className="text-slate-500 font-medium">Date of test:</span>
-              <input type="date" value={anaerobicDate} onChange={(e) => setAnaerobicDate(e.target.value)} className="border-b border-slate-300 p-0 text-xs focus:ring-0" />
+              <input disabled={readOnly} type="date" value={anaerobicDate} onChange={(e) => setAnaerobicDate(e.target.value)} className="border-b border-slate-300 p-0 text-xs focus:ring-0" />
             </div>
           </div>
 
@@ -2340,20 +2340,20 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 space-y-2">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
                 <span className="font-semibold text-slate-600">Date of test:</span>
-                <input type="date" value={angioDate} onChange={(e) => setAngioDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                <input disabled={readOnly} type="date" value={angioDate} onChange={(e) => setAngioDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
               </div>
               <div className="space-y-1.5">
                 <div>
-                  <label className="flex items-center gap-1.5 font-bold text-slate-700"><input type="radio" name="angio_st" checked={angioStatus === 'Done'} onChange={() => setAngioStatus('Done')} /> Done:</label>
+                  <label className="flex items-center gap-1.5 font-bold text-slate-700"><input disabled={readOnly} type="radio" name="angio_st" checked={angioStatus === 'Done'} onChange={() => setAngioStatus('Done')} /> Done:</label>
                   {angioStatus === 'Done' && (
                     <div className="mt-1 flex flex-wrap gap-4 pl-5 bg-slate-50 p-2 rounded border">
                       {['Normal', '1 vessel disease', '2 vessel disease', '3 vessel disease', 'LMCA'].map(f => (
-                        <label key={f} className="flex items-center gap-1"><input type="radio" name="angio_find" checked={angioFinding === f} onChange={() => setAngioFinding(f)} /> {f}</label>
+                        <label key={f} className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="angio_find" checked={angioFinding === f} onChange={() => setAngioFinding(f)} /> {f}</label>
                       ))}
                     </div>
                   )}
                 </div>
-                <label className="flex items-center gap-1.5 font-bold text-slate-700"><input type="radio" name="angio_st" checked={angioStatus === 'Not Done'} onChange={() => setAngioStatus('Not Done')} /> Not Done</label>
+                <label className="flex items-center gap-1.5 font-bold text-slate-700"><input disabled={readOnly} type="radio" name="angio_st" checked={angioStatus === 'Not Done'} onChange={() => setAngioStatus('Not Done')} /> Not Done</label>
               </div>
             </div>
           </div>
@@ -2364,11 +2364,11 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-1">
                 <span className="font-semibold text-slate-700">Date of test:</span>
-                <input type="date" value={biopsyDate} onChange={(e) => setBiopsyDate(e.target.value)} className="border-b border-slate-300 p-0 text-xs focus:ring-0" />
+                <input disabled={readOnly} type="date" value={biopsyDate} onChange={(e) => setBiopsyDate(e.target.value)} className="border-b border-slate-300 p-0 text-xs focus:ring-0" />
               </div>
               <div className="flex items-center gap-4">
-                <label className="flex items-center gap-1.5"><input type="radio" name="biopsy_st" checked={biopsyStatus === 'Done'} onChange={() => setBiopsyStatus('Done')} /> Done</label>
-                <label className="flex items-center gap-1.5"><input type="radio" name="biopsy_st" checked={biopsyStatus === 'Not Done'} onChange={() => setBiopsyStatus('Not Done')} /> Not Done</label>
+                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="biopsy_st" checked={biopsyStatus === 'Done'} onChange={() => setBiopsyStatus('Done')} /> Done</label>
+                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="biopsy_st" checked={biopsyStatus === 'Not Done'} onChange={() => setBiopsyStatus('Not Done')} /> Not Done</label>
               </div>
             </div>
           </div>
@@ -2378,14 +2378,14 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 bg-slate-100 font-bold border-r border-slate-300 text-slate-700 flex items-center">Vaccinations</div>
             <div className="p-2.5 md:col-span-3 flex flex-wrap gap-6 items-center">
               <div className="flex items-center gap-2">
-                <input type="checkbox" id="v-pneumo" checked={vacPneumococcal} onChange={(e) => setVacPneumococcal(e.target.checked)} />
+                <input disabled={readOnly} type="checkbox" id="v-pneumo" checked={vacPneumococcal} onChange={(e) => setVacPneumococcal(e.target.checked)} />
                 <label htmlFor="v-pneumo" className="font-medium">Pneumococcal (Date of test:</label>
-                <input type="date" value={vacPneumococcalDate} onChange={(e) => setVacPneumococcalDate(e.target.value)} className="border-b border-slate-400 p-0 text-xs w-28 focus:ring-0 outline-none" />
+                <input disabled={readOnly} type="date" value={vacPneumococcalDate} onChange={(e) => setVacPneumococcalDate(e.target.value)} className="border-b border-slate-400 p-0 text-xs w-28 focus:ring-0 outline-none" />
               </div>
               <div className="flex items-center gap-2">
-                <input type="checkbox" id="v-flu" checked={vacInfluenza} onChange={(e) => setVacInfluenza(e.target.checked)} />
+                <input disabled={readOnly} type="checkbox" id="v-flu" checked={vacInfluenza} onChange={(e) => setVacInfluenza(e.target.checked)} />
                 <label htmlFor="v-flu" className="font-medium">Influenza (Date of test:</label>
-                <input type="date" value={vacInfluenzaDate} onChange={(e) => setVacInfluenzaDate(e.target.value)} className="border-b border-slate-400 p-0 text-xs w-28 focus:ring-0 outline-none" />
+                <input disabled={readOnly} type="date" value={vacInfluenzaDate} onChange={(e) => setVacInfluenzaDate(e.target.value)} className="border-b border-slate-400 p-0 text-xs w-28 focus:ring-0 outline-none" />
               </div>
             </div>
           </div>
@@ -2396,7 +2396,7 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 grid grid-cols-4 sm:grid-cols-8 gap-2">
               {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((bg) => (
                 <label key={bg} className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="radio" name="blood_group_options" checked={bloodGroup === bg} onChange={() => setBloodGroup(bg)} />
+                  <input disabled={readOnly} type="radio" name="blood_group_options" checked={bloodGroup === bg} onChange={() => setBloodGroup(bg)} />
                   <span>{bg}</span>
                 </label>
               ))}
@@ -2436,11 +2436,11 @@ const hf = forwardRef(function hf(
                 ].map((item) => (
                   <div key={item.key} className="grid grid-cols-3 items-center gap-2 py-0.5">
                     <label className="flex items-center gap-1.5 truncate">
-                      <input type="checkbox" checked={labTests[item.key].checked} onChange={(e) => handleLabChange(item.key, 'checked', e.target.checked)} />
+                      <input disabled={readOnly} type="checkbox" checked={labTests[item.key].checked} onChange={(e) => handleLabChange(item.key, 'checked', e.target.checked)} />
                       <span className="truncate">{item.label}</span>
                     </label>
-                    <input type="text" value={labTests[item.key].result} onChange={(e) => handleLabChange(item.key, 'result', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-center text-xs focus:ring-0 outline-none w-full" />
-                    <input type="date" value={labTests[item.key].date} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />
+                    <input disabled={readOnly} type="text" value={labTests[item.key].result} onChange={(e) => handleLabChange(item.key, 'result', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-center text-xs focus:ring-0 outline-none w-full" />
+                    <input disabled={readOnly} type="date" value={labTests[item.key].date} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />
                   </div>
                 ))}
               </div>
@@ -2461,21 +2461,21 @@ const hf = forwardRef(function hf(
                 ].map((item) => (
                   <div key={item.key} className="grid grid-cols-3 items-center gap-2 py-0.5">
                     <label className="flex items-center gap-1.5 truncate">
-                      <input type="checkbox" checked={labTests[item.key].checked} onChange={(e) => handleLabChange(item.key, 'checked', e.target.checked)} />
+                      <input disabled={readOnly} type="checkbox" checked={labTests[item.key].checked} onChange={(e) => handleLabChange(item.key, 'checked', e.target.checked)} />
                       <span className="truncate">{item.label}</span>
                     </label>
-                    <input type="text" value={labTests[item.key].result} onChange={(e) => handleLabChange(item.key, 'result', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-center text-xs focus:ring-0 outline-none w-full" />
-                    <input type="date" value={labTests[item.key].date} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />
+                    <input disabled={readOnly} type="text" value={labTests[item.key].result} onChange={(e) => handleLabChange(item.key, 'result', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-center text-xs focus:ring-0 outline-none w-full" />
+                    <input disabled={readOnly} type="date" value={labTests[item.key].date} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />
                   </div>
                 ))}
                 {/* Custom Lab Field */}
                 <div className="grid grid-cols-3 items-center gap-2 py-0.5">
                   <div className="flex items-center gap-1">
-                    <input type="checkbox" checked={labTests.other.checked} onChange={(e) => handleLabChange('other', 'checked', e.target.checked)} />
-                    <input type="text" placeholder="Other:" value={labTests.other.name || ''} onChange={(e) => handleLabChange('other', 'name', e.target.value)} className="border-b border-slate-300 p-0 text-xs w-full focus:ring-0 outline-none" />
+                    <input disabled={readOnly} type="checkbox" checked={labTests.other.checked} onChange={(e) => handleLabChange('other', 'checked', e.target.checked)} />
+                    <input disabled={readOnly} type="text" placeholder="Other:" value={labTests.other.name || ''} onChange={(e) => handleLabChange('other', 'name', e.target.value)} className="border-b border-slate-300 p-0 text-xs w-full focus:ring-0 outline-none" />
                   </div>
-                  <input type="text" value={labTests.other.result} onChange={(e) => handleLabChange('other', 'result', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-center text-xs focus:ring-0 outline-none w-full" />
-                  <input type="date" value={labTests.other.date} onChange={(e) => handleLabChange('other', 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />
+                  <input disabled={readOnly} type="text" value={labTests.other.result} onChange={(e) => handleLabChange('other', 'result', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-center text-xs focus:ring-0 outline-none w-full" />
+                  <input disabled={readOnly} type="date" value={labTests.other.date} onChange={(e) => handleLabChange('other', 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />
                 </div>
               </div>
 
@@ -2502,7 +2502,7 @@ const hf = forwardRef(function hf(
               <span className="font-bold text-slate-800 text-[11px] uppercase">Recommended Consults</span>
             </div>
             <div className="lg:col-span-9 p-3">
-              <input
+              <input disabled={readOnly}
                 type="text"
                 value={recommendedConsults}
                 onChange={(e) => setRecommendedConsults(e.target.value)}
@@ -2518,7 +2518,7 @@ const hf = forwardRef(function hf(
               <span className="font-bold text-slate-800 text-[11px] uppercase">Drug Intolerance(s) / Contraindications</span>
             </div>
             <div className="lg:col-span-9 p-3">
-              <input
+              <input disabled={readOnly}
                 type="text"
                 value={drugIntoleranceContraindications}
                 onChange={(e) => setDrugIntoleranceContraindications(e.target.value)}
@@ -2543,7 +2543,7 @@ const hf = forwardRef(function hf(
               ].map((drug) => (
                 <div key={drug.label} className="flex items-center justify-between gap-2 py-0.5">
                   <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={drug.val === 'Yes'}
                       onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
@@ -2554,7 +2554,7 @@ const hf = forwardRef(function hf(
                   {drug.val === 'Yes' && (
                     <div className="flex items-center gap-1.5">
                       {drug.name !== undefined && (
-                        <input
+                        <input disabled={readOnly}
                           type="text"
                           value={drug.name}
                           onChange={(e) => drug.setName(e.target.value)}
@@ -2562,7 +2562,7 @@ const hf = forwardRef(function hf(
                           placeholder="Name"
                         />
                       )}
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={drug.dose}
                         onChange={(e) => drug.setDose(e.target.value)}
@@ -2586,7 +2586,7 @@ const hf = forwardRef(function hf(
                   { val: betaNotUsedOther, set: setBetaNotUsedOther, label: 'Other' }
                 ].map((item) => (
                   <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={item.val === 'Yes'}
                       onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
@@ -2598,7 +2598,7 @@ const hf = forwardRef(function hf(
               </div>
               {betaNotUsedOther === 'Yes' && (
                 <div className="mt-1.5">
-                  <input
+                  <input disabled={readOnly}
                     type="text"
                     value={betaNotUsedOtherReason}
                     onChange={(e) => setBetaNotUsedOtherReason(e.target.value)}
@@ -2625,7 +2625,7 @@ const hf = forwardRef(function hf(
               ].map((drug) => (
                 <div key={drug.label} className="flex items-center justify-between gap-2 py-0.5">
                   <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={drug.val === 'Yes'}
                       onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
@@ -2636,7 +2636,7 @@ const hf = forwardRef(function hf(
                   {drug.val === 'Yes' && (
                     <div className="flex items-center gap-1.5">
                       {drug.name !== undefined && (
-                        <input
+                        <input disabled={readOnly}
                           type="text"
                           value={drug.name}
                           onChange={(e) => drug.setName(e.target.value)}
@@ -2644,7 +2644,7 @@ const hf = forwardRef(function hf(
                           placeholder="Name"
                         />
                       )}
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={drug.dose}
                         onChange={(e) => drug.setDose(e.target.value)}
@@ -2668,7 +2668,7 @@ const hf = forwardRef(function hf(
                   { val: aceNotUsedOther, set: setAceNotUsedOther, label: 'Other' }
                 ].map((item) => (
                   <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={item.val === 'Yes'}
                       onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
@@ -2680,7 +2680,7 @@ const hf = forwardRef(function hf(
               </div>
               {aceNotUsedOther === 'Yes' && (
                 <div className="mt-1.5">
-                  <input
+                  <input disabled={readOnly}
                     type="text"
                     value={aceNotUsedOtherReason}
                     onChange={(e) => setAceNotUsedOtherReason(e.target.value)}
@@ -2707,7 +2707,7 @@ const hf = forwardRef(function hf(
               ].map((drug) => (
                 <div key={drug.label} className="flex items-center justify-between gap-2 py-0.5">
                   <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={drug.val === 'Yes'}
                       onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
@@ -2718,7 +2718,7 @@ const hf = forwardRef(function hf(
                   {drug.val === 'Yes' && (
                     <div className="flex items-center gap-1.5">
                       {drug.name !== undefined && (
-                        <input
+                        <input disabled={readOnly}
                           type="text"
                           value={drug.name}
                           onChange={(e) => drug.setName(e.target.value)}
@@ -2726,7 +2726,7 @@ const hf = forwardRef(function hf(
                           placeholder="Name"
                         />
                       )}
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={drug.dose}
                         onChange={(e) => drug.setDose(e.target.value)}
@@ -2749,7 +2749,7 @@ const hf = forwardRef(function hf(
                   { val: arbNotUsedOther, set: setArbNotUsedOther, label: 'Others' }
                 ].map((item) => (
                   <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={item.val === 'Yes'}
                       onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
@@ -2761,7 +2761,7 @@ const hf = forwardRef(function hf(
               </div>
               {arbNotUsedOther === 'Yes' && (
                 <div className="mt-1.5">
-                  <input
+                  <input disabled={readOnly}
                     type="text"
                     value={arbNotUsedOtherReason}
                     onChange={(e) => setArbNotUsedOtherReason(e.target.value)}
@@ -2785,7 +2785,7 @@ const hf = forwardRef(function hf(
               ].map((drug) => (
                 <div key={drug.label} className="flex items-center justify-between gap-2 py-0.5">
                   <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={drug.val === 'Yes'}
                       onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
@@ -2795,7 +2795,7 @@ const hf = forwardRef(function hf(
                   </label>
                   {drug.val === 'Yes' && (
                     <div className="flex items-center gap-1">
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={drug.dose}
                         onChange={(e) => drug.setDose(e.target.value)}
@@ -2818,7 +2818,7 @@ const hf = forwardRef(function hf(
                   { val: aldosteroneNotUsedOther, set: setAldosteroneNotUsedOther, label: 'Other' }
                 ].map((item) => (
                   <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={item.val === 'Yes'}
                       onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
@@ -2830,7 +2830,7 @@ const hf = forwardRef(function hf(
               </div>
               {aldosteroneNotUsedOther === 'Yes' && (
                 <div className="mt-1.5">
-                  <input
+                  <input disabled={readOnly}
                     type="text"
                     value={aldosteroneNotUsedOtherReason}
                     onChange={(e) => setAldosteroneNotUsedOtherReason(e.target.value)}
@@ -2849,7 +2849,7 @@ const hf = forwardRef(function hf(
             </div>
             <div className="lg:col-span-9 p-3">
               <div className="flex items-center gap-3">
-                <input
+                <input disabled={readOnly}
                   type="checkbox"
                   checked={hydralazine === 'Yes'}
                   onChange={(e) => setHydralazine(e.target.checked ? 'Yes' : 'No')}
@@ -2857,14 +2857,14 @@ const hf = forwardRef(function hf(
                 />
                 {hydralazine === 'Yes' && (
                   <div className="flex items-center gap-1.5 flex-1">
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={hydralazineName}
                       onChange={(e) => setHydralazineName(e.target.value)}
                       className="border border-slate-300 rounded p-1.5 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
                       placeholder="Details"
                     />
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={hydralazineDose}
                       onChange={(e) => setHydralazineDose(e.target.value)}
@@ -2889,7 +2889,7 @@ const hf = forwardRef(function hf(
                 { val: nitrate2, set: setNitrate2, name: nitrate2Name, setName: setNitrate2Name, dose: nitrate2Dose, setDose: setNitrate2Dose, label: 'Nitrate 2' }
               ].map((nitrate, idx) => (
                 <div key={idx} className="flex items-center gap-3">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={nitrate.val === 'Yes'}
                     onChange={(e) => nitrate.set(e.target.checked ? 'Yes' : 'No')}
@@ -2897,14 +2897,14 @@ const hf = forwardRef(function hf(
                   />
                   {nitrate.val === 'Yes' && (
                     <div className="flex items-center gap-1.5 flex-1">
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={nitrate.name}
                         onChange={(e) => nitrate.setName(e.target.value)}
                         className="border border-slate-300 rounded p-1.5 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
                         placeholder={`${nitrate.label} Details`}
                       />
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={nitrate.dose}
                         onChange={(e) => nitrate.setDose(e.target.value)}
@@ -2928,7 +2928,7 @@ const hf = forwardRef(function hf(
               {/* Warfarin */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-2 border-b border-slate-100">
                 <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={warfarin === 'Yes'}
                     onChange={(e) => setWarfarin(e.target.checked ? 'Yes' : 'No')}
@@ -2940,7 +2940,7 @@ const hf = forwardRef(function hf(
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-slate-600">INR:</span>
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={warfarinInr}
                         onChange={(e) => setWarfarinInr(e.target.value)}
@@ -2950,7 +2950,7 @@ const hf = forwardRef(function hf(
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-slate-600">Target INR:</span>
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={warfarinTargetInr}
                         onChange={(e) => setWarfarinTargetInr(e.target.value)}
@@ -2965,7 +2965,7 @@ const hf = forwardRef(function hf(
               {/* Vitamin K Inhibitor */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
                 <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={vitaminKInhibitor === 'Yes'}
                     onChange={(e) => setVitaminKInhibitor(e.target.checked ? 'Yes' : 'No')}
@@ -2975,14 +2975,14 @@ const hf = forwardRef(function hf(
                 </label>
                 {vitaminKInhibitor === 'Yes' && (
                   <div className="flex items-center gap-1.5">
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={vitaminKInhibitorName}
                       onChange={(e) => setVitaminKInhibitorName(e.target.value)}
                       className="border border-slate-300 rounded p-1 text-xs w-36 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
                       placeholder="Name"
                     />
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={vitaminKInhibitorDose}
                       onChange={(e) => setVitaminKInhibitorDose(e.target.value)}
@@ -2997,7 +2997,7 @@ const hf = forwardRef(function hf(
               {/* NOAC */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
                 <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={noac === 'Yes'}
                     onChange={(e) => setNoac(e.target.checked ? 'Yes' : 'No')}
@@ -3007,14 +3007,14 @@ const hf = forwardRef(function hf(
                 </label>
                 {noac === 'Yes' && (
                   <div className="flex items-center gap-1.5">
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={noacName}
                       onChange={(e) => setNoacName(e.target.value)}
                       className="border border-slate-300 rounded p-1 text-xs w-36 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
                       placeholder="Name"
                     />
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={noacDose}
                       onChange={(e) => setNoacDose(e.target.value)}
@@ -3035,7 +3035,7 @@ const hf = forwardRef(function hf(
                 ].map((drug) => (
                   <div key={drug.label} className="flex items-center justify-between gap-2">
                     <label className="flex items-center gap-1.5 cursor-pointer">
-                      <input
+                      <input disabled={readOnly}
                         type="checkbox"
                         checked={drug.val === 'Yes'}
                         onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
@@ -3045,7 +3045,7 @@ const hf = forwardRef(function hf(
                     </label>
                     {drug.val === 'Yes' && (
                       <div className="flex items-center gap-1">
-                        <input
+                        <input disabled={readOnly}
                           type="text"
                           value={drug.dose}
                           onChange={(e) => drug.setDose(e.target.value)}
@@ -3075,7 +3075,7 @@ const hf = forwardRef(function hf(
               ].map((drug) => (
                 <div key={drug.label} className="flex items-center justify-between gap-2 py-0.5">
                   <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={drug.val === 'Yes'}
                       onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
@@ -3085,7 +3085,7 @@ const hf = forwardRef(function hf(
                   </label>
                   {drug.val === 'Yes' && (
                     <div className="flex items-center gap-1">
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={drug.dose}
                         onChange={(e) => drug.setDose(e.target.value)}
@@ -3112,7 +3112,7 @@ const hf = forwardRef(function hf(
               ].map((drug) => (
                 <div key={drug.label} className="flex items-center justify-between gap-2 py-0.5">
                   <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={drug.val === 'Yes'}
                       onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
@@ -3123,7 +3123,7 @@ const hf = forwardRef(function hf(
                   {drug.val === 'Yes' && (
                     <div className="flex items-center gap-1.5">
                       {drug.name !== undefined && (
-                        <input
+                        <input disabled={readOnly}
                           type="text"
                           value={drug.name}
                           onChange={(e) => drug.setName(e.target.value)}
@@ -3131,7 +3131,7 @@ const hf = forwardRef(function hf(
                           placeholder="Details"
                         />
                       )}
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={drug.dose}
                         onChange={(e) => drug.setDose(e.target.value)}
@@ -3160,7 +3160,7 @@ const hf = forwardRef(function hf(
               ].map((drug) => (
                 <div key={drug.label} className="flex items-center justify-between gap-2 py-0.5">
                   <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={drug.val === 'Yes'}
                       onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
@@ -3171,7 +3171,7 @@ const hf = forwardRef(function hf(
                   {drug.val === 'Yes' && (
                     <div className="flex items-center gap-1.5">
                       {drug.name !== undefined && (
-                        <input
+                        <input disabled={readOnly}
                           type="text"
                           value={drug.name}
                           onChange={(e) => drug.setName(e.target.value)}
@@ -3179,7 +3179,7 @@ const hf = forwardRef(function hf(
                           placeholder="Details"
                         />
                       )}
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={drug.dose}
                         onChange={(e) => drug.setDose(e.target.value)}
@@ -3203,7 +3203,7 @@ const hf = forwardRef(function hf(
                   { val: diureticNotUsedOther, set: setDiureticNotUsedOther, label: 'Other' }
                 ].map((item) => (
                   <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={item.val === 'Yes'}
                       onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
@@ -3215,7 +3215,7 @@ const hf = forwardRef(function hf(
               </div>
               {diureticNotUsedOther === 'Yes' && (
                 <div className="mt-1.5">
-                  <input
+                  <input disabled={readOnly}
                     type="text"
                     value={diureticNotUsedOtherReason}
                     onChange={(e) => setDiureticNotUsedOtherReason(e.target.value)}
@@ -3234,7 +3234,7 @@ const hf = forwardRef(function hf(
             </div>
             <div className="lg:col-span-9 p-3">
               <div className="flex items-center gap-3">
-                <input
+                <input disabled={readOnly}
                   type="checkbox"
                   checked={digoxin === 'Yes'}
                   onChange={(e) => setDigoxin(e.target.checked ? 'Yes' : 'No')}
@@ -3242,14 +3242,14 @@ const hf = forwardRef(function hf(
                 />
                 {digoxin === 'Yes' && (
                   <div className="flex items-center gap-1.5 flex-1">
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={digoxinName}
                       onChange={(e) => setDigoxinName(e.target.value)}
                       className="border border-slate-300 rounded p-1.5 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
                       placeholder="Details"
                     />
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={digoxinDose}
                       onChange={(e) => setDigoxinDose(e.target.value)}
@@ -3271,7 +3271,7 @@ const hf = forwardRef(function hf(
             <div className="lg:col-span-9 p-3">
               <div className="flex items-center justify-between gap-2 py-0.5">
                 <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={ivabradine === 'Yes'}
                     onChange={(e) => setIvabradine(e.target.checked ? 'Yes' : 'No')}
@@ -3281,7 +3281,7 @@ const hf = forwardRef(function hf(
                 </label>
                 {ivabradine === 'Yes' && (
                   <div className="flex items-center gap-1">
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={ivabradineDose}
                       onChange={(e) => setIvabradineDose(e.target.value)}
@@ -3308,7 +3308,7 @@ const hf = forwardRef(function hf(
               ].map((drug) => (
                 <div key={drug.label} className="flex items-center justify-between gap-2 py-0.5">
                   <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={drug.val === 'Yes'}
                       onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
@@ -3318,7 +3318,7 @@ const hf = forwardRef(function hf(
                   </label>
                   {drug.val === 'Yes' && (
                     <div className="flex items-center gap-1">
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={drug.dose}
                         onChange={(e) => drug.setDose(e.target.value)}
@@ -3350,7 +3350,7 @@ const hf = forwardRef(function hf(
               ].map((drug) => (
                 <div key={drug.label} className="flex items-center justify-between gap-2 py-0.5">
                   <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={drug.val === 'Yes'}
                       onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
@@ -3360,7 +3360,7 @@ const hf = forwardRef(function hf(
                   </label>
                   {drug.val === 'Yes' && (
                     <div className="flex items-center gap-1">
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={drug.dose}
                         onChange={(e) => drug.setDose(e.target.value)}
@@ -3384,7 +3384,7 @@ const hf = forwardRef(function hf(
               {/* Anti-hypertensive */}
               <div className="flex items-center justify-between gap-2 py-0.5">
                 <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={antihypertensive === 'Yes'}
                     onChange={(e) => setAntihypertensive(e.target.checked ? 'Yes' : 'No')}
@@ -3394,14 +3394,14 @@ const hf = forwardRef(function hf(
                 </label>
                 {antihypertensive === 'Yes' && (
                   <div className="flex items-center gap-1.5">
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={antihypertensiveName}
                       onChange={(e) => setAntihypertensiveName(e.target.value)}
                       className="border border-slate-300 rounded p-1 text-xs w-36 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
                       placeholder="Details"
                     />
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={antihypertensiveDose}
                       onChange={(e) => setAntihypertensiveDose(e.target.value)}
@@ -3416,7 +3416,7 @@ const hf = forwardRef(function hf(
               {/* Thyroxine */}
               <div className="flex items-center justify-between gap-2 py-0.5">
                 <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={thyroxine === 'Yes'}
                     onChange={(e) => setThyroxine(e.target.checked ? 'Yes' : 'No')}
@@ -3426,7 +3426,7 @@ const hf = forwardRef(function hf(
                 </label>
                 {thyroxine === 'Yes' && (
                   <div className="flex items-center gap-1">
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={thyroxineDose}
                       onChange={(e) => setThyroxineDose(e.target.value)}
@@ -3447,7 +3447,7 @@ const hf = forwardRef(function hf(
               ].map((drug, idx) => (
                 <div key={idx} className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100 last:border-0">
                   <div className="flex items-center gap-3 flex-1">
-                    <input
+                    <input disabled={readOnly}
                       type="checkbox"
                       checked={drug.val === 'Yes'}
                       onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
@@ -3455,14 +3455,14 @@ const hf = forwardRef(function hf(
                     />
                     {drug.val === 'Yes' && (
                       <div className="flex items-center gap-1.5 flex-1">
-                        <input
+                        <input disabled={readOnly}
                           type="text"
                           value={drug.name}
                           onChange={(e) => drug.setName(e.target.value)}
                           className="border border-slate-300 rounded p-1 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
                           placeholder={`Other Medication ${idx + 1} Name`}
                         />
-                        <input
+                        <input disabled={readOnly}
                           type="text"
                           value={drug.dose}
                           onChange={(e) => drug.setDose(e.target.value)}
@@ -3491,7 +3491,7 @@ const hf = forwardRef(function hf(
             <div className="lg:col-span-9 p-3 space-y-3">
               <div className="flex items-center gap-6 pb-2 border-b border-slate-100">
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={currentDeviceNone === 'Yes'}
                     onChange={(e) => {
@@ -3515,7 +3515,7 @@ const hf = forwardRef(function hf(
                   <span className="font-medium text-slate-700">No Device</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={currentDeviceYes === 'Yes'}
                     onChange={(e) => {
@@ -3545,7 +3545,7 @@ const hf = forwardRef(function hf(
                     ].map((device) => (
                       <div key={device.label} className="flex flex-col gap-1">
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
+                          <input disabled={readOnly}
                             type="checkbox"
                             checked={device.val === 'Yes'}
                             onChange={(e) => device.set(e.target.checked ? 'Yes' : 'No')}
@@ -3554,7 +3554,7 @@ const hf = forwardRef(function hf(
                           <span className="text-slate-700">{device.label}</span>
                         </label>
                         {device.isOther && device.val === 'Yes' && (
-                          <input
+                          <input disabled={readOnly}
                             type="text"
                             value={currentDeviceOtherName}
                             onChange={(e) => setCurrentDeviceOtherName(e.target.value)}
@@ -3567,7 +3567,7 @@ const hf = forwardRef(function hf(
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1">Device Brand / Model</label>
-                    <input
+                    <input disabled={readOnly}
                       type="text"
                       value={currentDeviceBrand}
                       onChange={(e) => setCurrentDeviceBrand(e.target.value)}
@@ -3588,7 +3588,7 @@ const hf = forwardRef(function hf(
             <div className="lg:col-span-9 p-3 space-y-3">
               <div className="flex items-center gap-6 pb-2 border-b border-slate-100">
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={eligibleNo === 'Yes'}
                     onChange={(e) => {
@@ -3615,7 +3615,7 @@ const hf = forwardRef(function hf(
                   <span className="font-medium text-slate-700">Not Eligible</span>
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={eligibleYes === 'Yes'}
                     onChange={(e) => {
@@ -3645,7 +3645,7 @@ const hf = forwardRef(function hf(
                     ].map((device) => (
                       <div key={device.label} className="flex flex-col gap-1">
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
+                          <input disabled={readOnly}
                             type="checkbox"
                             checked={device.val === 'Yes'}
                             onChange={(e) => device.set(e.target.checked ? 'Yes' : 'No')}
@@ -3654,7 +3654,7 @@ const hf = forwardRef(function hf(
                           <span className="text-slate-700">{device.label}</span>
                         </label>
                         {device.isOther && device.val === 'Yes' && (
-                          <input
+                          <input disabled={readOnly}
                             type="text"
                             value={eligibleOtherName}
                             onChange={(e) => setEligibleOtherName(e.target.value)}
@@ -3669,7 +3669,7 @@ const hf = forwardRef(function hf(
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 mb-1">Recommended Brand / Model</label>
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={eligibleDeviceBrand}
                         onChange={(e) => setEligibleDeviceBrand(e.target.value)}
@@ -3681,7 +3681,7 @@ const hf = forwardRef(function hf(
                       <label className="block text-xs font-semibold text-slate-600 mb-1">Patient Acceptance</label>
                       <div className="flex items-center gap-4 mt-2">
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
+                          <input disabled={readOnly}
                             type="checkbox"
                             checked={patientAcceptanceYes === 'Yes'}
                             onChange={(e) => {
@@ -3697,7 +3697,7 @@ const hf = forwardRef(function hf(
                           <span className="text-slate-700">Yes</span>
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input
+                          <input disabled={readOnly}
                             type="checkbox"
                             checked={patientAcceptanceNo === 'Yes'}
                             onChange={(e) => {
@@ -3718,7 +3718,7 @@ const hf = forwardRef(function hf(
                   {patientAcceptanceNo === 'Yes' && (
                     <div className="animate-fadeIn">
                       <label className="block text-xs font-semibold text-slate-600 mb-1">If No, reasons:</label>
-                      <textarea
+                      <textarea disabled={readOnly}
                         value={patientAcceptanceReason}
                         onChange={(e) => setPatientAcceptanceReason(e.target.value)}
                         className="border border-slate-300 rounded p-1.5 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
@@ -3738,7 +3738,7 @@ const hf = forwardRef(function hf(
               <span className="font-bold text-slate-800 text-[11px] uppercase">Date of Implant</span>
             </div>
             <div className="lg:col-span-9 p-3">
-              <input
+              <input disabled={readOnly}
                 type="date"
                 value={implantDate}
                 onChange={(e) => setImplantDate(e.target.value)}
@@ -3756,7 +3756,7 @@ const hf = forwardRef(function hf(
               {/* ICD Shock */}
               <div className="space-y-3 pb-3 border-b border-slate-100">
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={icdShock === 'Yes'}
                     onChange={(e) => setIcdShock(e.target.checked ? 'Yes' : 'No')}
@@ -3768,7 +3768,7 @@ const hf = forwardRef(function hf(
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pl-5 animate-fadeIn">
                     <div>
                       <label className="block text-[10px] text-slate-600 mb-1"># of shocks</label>
-                      <input
+                      <input disabled={readOnly}
                         type="number"
                         value={numberOfShocks}
                         onChange={(e) => setNumberOfShocks(e.target.value)}
@@ -3777,7 +3777,7 @@ const hf = forwardRef(function hf(
                     </div>
                     <div>
                       <label className="block text-[10px] text-slate-600 mb-1"># of appropriate shocks</label>
-                      <input
+                      <input disabled={readOnly}
                         type="number"
                         value={appropriateShocks}
                         onChange={(e) => setAppropriateShocks(e.target.value)}
@@ -3786,7 +3786,7 @@ const hf = forwardRef(function hf(
                     </div>
                     <div>
                       <label className="block text-[10px] text-slate-600 mb-1"># of inappropriate shocks</label>
-                      <input
+                      <input disabled={readOnly}
                         type="number"
                         value={inappropriateShocks}
                         onChange={(e) => setInappropriateShocks(e.target.value)}
@@ -3795,7 +3795,7 @@ const hf = forwardRef(function hf(
                     </div>
                     <div className="md:col-span-3">
                       <label className="block text-[10px] text-slate-600 mb-1">Cause of Shocks</label>
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={causeOfShocks}
                         onChange={(e) => setCauseOfShocks(e.target.value)}
@@ -3810,7 +3810,7 @@ const hf = forwardRef(function hf(
               {/* ATP */}
               <div className="space-y-3">
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={atp === 'Yes'}
                     onChange={(e) => setAtp(e.target.checked ? 'Yes' : 'No')}
@@ -3822,7 +3822,7 @@ const hf = forwardRef(function hf(
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-5 animate-fadeIn">
                     <div>
                       <label className="block text-[10px] text-slate-600 mb-1"># of times</label>
-                      <input
+                      <input disabled={readOnly}
                         type="number"
                         value={atpTimes}
                         onChange={(e) => setAtpTimes(e.target.value)}
@@ -3839,7 +3839,7 @@ const hf = forwardRef(function hf(
                           { val: atpSuccessNotSuccessful, set: setAtpSuccessNotSuccessful, label: 'Not successful' }
                         ].map((choice) => (
                           <label key={choice.label} className="flex items-center gap-1 cursor-pointer text-slate-700">
-                            <input
+                            <input disabled={readOnly}
                               type="checkbox"
                               checked={choice.val === 'Yes'}
                               onChange={(e) => {
@@ -3873,7 +3873,7 @@ const hf = forwardRef(function hf(
             <div className="lg:col-span-9 p-3 grid grid-cols-2 md:grid-cols-3 gap-3">
               <div>
                 <label className="block text-[10px] text-slate-600 mb-1">BiV pacing (%)</label>
-                <input
+                <input disabled={readOnly}
                   type="text"
                   value={bivPacingPercent}
                   onChange={(e) => setBivPacingPercent(e.target.value)}
@@ -3883,7 +3883,7 @@ const hf = forwardRef(function hf(
               </div>
               <div>
                 <label className="block text-[10px] text-slate-600 mb-1">AFib burden</label>
-                <input
+                <input disabled={readOnly}
                   type="text"
                   value={afibBurden}
                   onChange={(e) => setAfibBurden(e.target.value)}
@@ -3893,7 +3893,7 @@ const hf = forwardRef(function hf(
               </div>
               <div>
                 <label className="block text-[10px] text-slate-600 mb-1">NSVT episodes (#)</label>
-                <input
+                <input disabled={readOnly}
                   type="number"
                   value={nsvtEpisodes}
                   onChange={(e) => setNsvtEpisodes(e.target.value)}
@@ -3902,7 +3902,7 @@ const hf = forwardRef(function hf(
               </div>
               <div>
                 <label className="block text-[10px] text-slate-600 mb-1">SVT episodes (#)</label>
-                <input
+                <input disabled={readOnly}
                   type="number"
                   value={svtEpisodes}
                   onChange={(e) => setSvtEpisodes(e.target.value)}
@@ -3911,7 +3911,7 @@ const hf = forwardRef(function hf(
               </div>
               <div className="col-span-2">
                 <label className="block text-[10px] text-slate-600 mb-1">Device Volume alert</label>
-                <input
+                <input disabled={readOnly}
                   type="text"
                   value={deviceVolumeAlert}
                   onChange={(e) => setDeviceVolumeAlert(e.target.value)}
@@ -3928,7 +3928,7 @@ const hf = forwardRef(function hf(
               <span className="font-bold text-slate-800 text-[11px] uppercase">Notes</span>
             </div>
             <div className="lg:col-span-9 p-3">
-              <textarea
+              <textarea disabled={readOnly}
                 value={deviceNotes}
                 onChange={(e) => setDeviceNotes(e.target.value)}
                 className="w-full border border-slate-300 rounded p-1.5 text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
@@ -3964,7 +3964,7 @@ const hf = forwardRef(function hf(
                 ].map((item) => (
                   <div key={item.label} className="flex flex-col gap-1.5 py-0.5">
                     <label className="flex items-center gap-1.5 cursor-pointer">
-                      <input
+                      <input disabled={readOnly}
                         type="checkbox"
                         checked={item.val === 'Yes'}
                         onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
@@ -3973,7 +3973,7 @@ const hf = forwardRef(function hf(
                       <span className="text-slate-700">{item.label}</span>
                     </label>
                     {item.isOther && item.val === 'Yes' && (
-                      <input
+                      <input disabled={readOnly}
                         type="text"
                         value={eduOtherDetails}
                         onChange={(e) => setEduOtherDetails(e.target.value)}
@@ -4006,7 +4006,7 @@ const hf = forwardRef(function hf(
             <div key={rec.label} className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
               <div className="lg:col-span-3 bg-slate-50/70 p-3 flex items-center">
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
+                  <input disabled={readOnly}
                     type="checkbox"
                     checked={rec.val === 'Yes'}
                     onChange={(e) => rec.set(e.target.checked ? 'Yes' : 'No')}
@@ -4017,7 +4017,7 @@ const hf = forwardRef(function hf(
               </div>
               <div className="lg:col-span-9 p-3">
                 {rec.val === 'Yes' ? (
-                  <textarea
+                  <textarea disabled={readOnly}
                     value={rec.details}
                     onChange={(e) => rec.setDetails(e.target.value)}
                     className="w-full border border-slate-300 rounded p-1.5 text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none animate-fadeIn"
@@ -4033,6 +4033,7 @@ const hf = forwardRef(function hf(
         </div>
       </SectionCard>
     </div>
+    </fieldset>
   );
 });
 

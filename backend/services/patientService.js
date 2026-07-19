@@ -85,10 +85,16 @@ async function deletePatient(patientId) {
     return await patientModel.deletePatient(patientId);
 }
 
+
+async function getPatientCounts(patientId) {
+    return await patientModel.getPatientCounts(patientId);
+}
+
 module.exports = {
     registerPatient,
     getAllPatients,
     getPatientById,
     updatePatient,
-    deletePatient
+    deletePatient,
+    getPatientCounts
 };

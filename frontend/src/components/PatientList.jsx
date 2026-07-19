@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../../api/axios';
 
 import { createPatient } from '../../api/patientApi';
 import { calculateDataQualityScore } from '../data/mockPatients';
@@ -30,6 +31,63 @@ import {
 
 
 
+
+
+function EncounterCounter({ patientId }) {
+  const [counts, setCounts] = useState({ hfCount: 0, stemiCount: 0, nstemiCount: 0, cabgCount: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchCounts() {
+      try {
+        const res = await api.get(`/patients/counts/${patientId}`);
+        if (active && res.data && res.data.success) {
+          setCounts(res.data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching patient counts:", err);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    fetchCounts();
+    return () => { active = false; };
+  }, [patientId]);
+
+  return (
+    <>
+      <td className="px-4 py-4 text-center font-mono text-[11px]">
+        <div className="inline-flex items-center justify-center min-w-[32px] px-1.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg">
+          <span className={`font-extrabold ${counts.hfCount > 0 ? 'text-teal-600' : 'text-slate-400'}`}>
+            {loading ? '...' : counts.hfCount}
+          </span>
+        </div>
+      </td>
+      <td className="px-4 py-4 text-center font-mono text-[11px]">
+        <div className="inline-flex items-center justify-center min-w-[32px] px-1.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg">
+          <span className={`font-extrabold ${counts.stemiCount > 0 ? 'text-red-500' : 'text-slate-400'}`}>
+            {loading ? '...' : counts.stemiCount}
+          </span>
+        </div>
+      </td>
+      <td className="px-4 py-4 text-center font-mono text-[11px]">
+        <div className="inline-flex items-center justify-center min-w-[32px] px-1.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg">
+          <span className={`font-extrabold ${counts.nstemiCount > 0 ? 'text-orange-500' : 'text-slate-400'}`}>
+            {loading ? '...' : counts.nstemiCount}
+          </span>
+        </div>
+      </td>
+      <td className="px-4 py-4 text-center font-mono text-[11px]">
+        <div className="inline-flex items-center justify-center min-w-[32px] px-1.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg">
+          <span className={`font-extrabold ${counts.cabgCount > 0 ? 'text-purple-600' : 'text-slate-400'}`}>
+            {loading ? '...' : counts.cabgCount}
+          </span>
+        </div>
+      </td>
+    </>
+  );
+}
 
 export default function PatientList({ patients, onSelectPatient, onRegisterPatient, onAddEventClick }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -137,35 +195,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
 
         <div className="flex items-center gap-3 w-full md:w-auto justify-end flex-wrap sm:flex-nowrap">
           {/* Tabular/Card Switcher Button Group */}
-          <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 shrink-0">
-            <button
-              id="btn-view-mode-table"
-              type="button"
-              onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'table' ?
-              'bg-white text-blue-700 shadow-sm border-slate-250' :
-              'text-slate-500 hover:text-slate-800'}`
-              }>
-              
-              <Table className="w-3.5 h-3.5" />
-              <span>Tabular Registry</span>
-            </button>
-            <button
-              id="btn-view-mode-cards"
-              type="button"
-              onClick={() => setViewMode('cards')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              viewMode === 'cards' ?
-              'bg-white text-blue-700 shadow-sm border-slate-250' :
-              'text-slate-500 hover:text-slate-800'}`
-              }>
-              
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Clinical Cards</span>
-            </button>
-          </div>
-
+          
           <button
             id="btn-register-patient"
             onClick={() => setIsRegistering(!isRegistering)}
@@ -468,7 +498,10 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                   <th className="px-4 py-4">Registry Identifiers</th>
                   <th className="px-4 py-4">Primary Consultant</th>
                   <th className="px-4 py-4">Co-morbidities</th>
-                  <th className="px-4 py-4 text-center">Encounter Counts</th>
+                                    <th className="px-4 py-4 text-center">HF</th>
+                  <th className="px-4 py-4 text-center">STEMI</th>
+                  <th className="px-4 py-4 text-center">NSTEMI</th>
+                  <th className="px-4 py-4 text-center">CABG</th>
                   <th className="px-4 py-4 text-center">Audit Quality</th>
                   <th className="px-5 py-4 text-right">Registry Shortcuts</th>
                 </tr>
@@ -546,24 +579,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       </td>
 
                       {/* Encounter Counts */}
-                      <td className="px-4 py-4 text-center">
-                        <div className="inline-flex items-center gap-2 bg-slate-50 border border-slate-200/60 p-1.5 rounded-xl font-mono text-[11px]">
-                          <div className="flex flex-col items-center px-2">
-                            <span className="text-[8px] text-slate-400 font-black tracking-wider uppercase">HF</span>
-                            <span className={`font-extrabold ${record.hfAssessments.length > 0 ? 'text-teal-600' : 'text-slate-400'}`}>{record.hfAssessments.length}</span>
-                          </div>
-                          <span className="w-[1px] h-5 bg-slate-200"></span>
-                          <div className="flex flex-col items-center px-2">
-                            <span className="text-[8px] text-slate-400 font-black tracking-wider uppercase">ACS</span>
-                            <span className={`font-extrabold ${record.acsEvents.length > 0 ? 'text-red-500' : 'text-slate-400'}`}>{record.acsEvents.length}</span>
-                          </div>
-                          <span className="w-[1px] h-5 bg-slate-200"></span>
-                          <div className="flex flex-col items-center px-2">
-                            <span className="text-[8px] text-slate-400 font-black tracking-wider uppercase">CABG</span>
-                            <span className={`font-extrabold ${record.cabgProcedures.length > 0 ? 'text-purple-600' : 'text-slate-400'}`}>{record.cabgProcedures.length}</span>
-                          </div>
-                        </div>
-                      </td>
+                      <EncounterCounter patientId={record.patient.id} />
 
                       {/* Quality Score */}
                       <td className="px-4 py-4 text-center">

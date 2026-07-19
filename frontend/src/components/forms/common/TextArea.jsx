@@ -9,7 +9,8 @@ export default function TextArea({
   required = false,
   rows = 3,
   id,
-  className = ''
+  className = '',
+  readOnly = false
 }) {
   return (
     <FormField label={label} required={required} className={className}>
@@ -19,6 +20,7 @@ export default function TextArea({
         value={value ?? ''}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
+        disabled={readOnly}
         className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
       />
     </FormField>

@@ -14,7 +14,8 @@ export default function CheckboxGroup({
   values = [],
   onChange,
   columns = 2,
-  className = ''
+  className = '',
+  readOnly = false
 }) {
   const toggleValue = (optionValue) => {
     if (values.includes(optionValue)) {
@@ -34,13 +35,14 @@ export default function CheckboxGroup({
           return (
             <label
               key={optionValue}
-              className="flex items-center gap-2 p-2.5 bg-white border border-slate-100 rounded-lg cursor-pointer text-xs text-slate-700 font-medium hover:border-slate-200 transition-colors"
+              className={`flex items-center gap-2 p-2.5 bg-white border border-slate-100 rounded-lg cursor-pointer text-xs text-slate-700 font-medium hover:border-slate-200 transition-colors ${readOnly ? "pointer-events-none opacity-80 bg-slate-50" : ""}`}
             >
               <input
                 type="checkbox"
                 checked={values.includes(optionValue)}
                 onChange={() => toggleValue(optionValue)}
                 className="shrink-0"
+                disabled={readOnly}
               />
               <span>{optionLabel}</span>
             </label>

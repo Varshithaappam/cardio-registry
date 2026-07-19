@@ -7,7 +7,8 @@ export default function DateInput({
   onChange,
   required = false,
   id,
-  className = ''
+  className = '',
+  readOnly = false
 }) {
   return (
     <FormField label={label} required={required} className={className}>
@@ -17,6 +18,7 @@ export default function DateInput({
         required={required}
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
+        disabled={readOnly}
         className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
       />
     </FormField>

@@ -133,10 +133,25 @@ async function deletePatient(req, res) {
     }
 }
 
+
+async function getPatientCounts(req, res) {
+    try {
+        const patientId = req.params.patientId;
+        const counts = await patientService.getPatientCounts(patientId);
+        return res.status(200).json({
+            success: true,
+            data: counts
+        });
+    } catch (error) {
+        return handlePatientError(res, error, "Get Patient Counts");
+    }
+}
+
 module.exports = {
     registerPatient,
     getAllPatients,
     getPatientById,
     updatePatient,
-    deletePatient
+    deletePatient,
+    getPatientCounts
 };

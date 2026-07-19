@@ -6,6 +6,7 @@
 
 import { calculateDataQualityScore } from '../data/mockPatients';
 import { calculateAge } from '../utils/calculateAge';
+import HFHistoryList from './HFHistoryList';
 import {
   Plus,
   Calendar,
@@ -392,7 +393,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onVie
       </div>
 
       {/* Visual Longitudinal Trends & Charts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* EF% Chart */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
@@ -442,6 +443,9 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onVie
             }
           </div>
         </div>
+
+        {/* HF History List */}
+        <HFHistoryList patientId={record.patient.id} />
 
       </div>
 

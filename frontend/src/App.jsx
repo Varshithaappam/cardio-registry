@@ -4,6 +4,8 @@
  */
 
 import { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import HFFormView from "./components/forms/HFFormView";
 import { getAllPatients } from "../api/patientApi";
 import api from "../api/axios";
 import { mapPatientRecords } from "./utils/patientMapper";
@@ -25,7 +27,7 @@ import {
   UserCheck,
 } from "lucide-react";
 
-export default function App() {
+function MainApp() {
   // Nurse login status
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [nurse, setNurse] = useState(null);
@@ -424,3 +426,15 @@ useEffect(() => {
 }
 
 
+
+
+export default function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/hf-form/view/:recordId" element={<HFFormView />} />
+        <Route path="*" element={<MainApp />} />
+      </Routes>
+    </Router>
+  );
+}
