@@ -1,0 +1,6 @@
+recommendation_id,hf_id,fluid_and_diet,fluid_and_diet_details,exercise,exercise_details,yoga,yoga_details,smoking_cessation,smoking_cessation_details,stress_management,stress_management_details,drugs,drugs_details,investigations,investigations_details,procedures,procedures_details,other_recommendation,other_recommendation_details,created_at,updated_at
+1,1,No,NULL,No,NULL,No,NULL,No,NULL,No,NULL,No,NULL,No,NULL,No,NULL,No,NULL,"2026-07-18 23:26:04","2026-07-18 23:26:04"
+2,2,No,NULL,No,NULL,No,NULL,No,NULL,No,NULL,No,NULL,No,NULL,No,NULL,No,NULL,"2026-07-18 23:30:42","2026-07-18 23:30:42"
+3,3,Yes,hello,Yes,NULL,Yes,hello,Yes,NULL,Yes,NULL,Yes,hello,Yes,NULL,Yes,NULL,Yes,NULL,"2026-07-19 17:09:04","2026-07-19 17:09:04"
+4,4,Yes,5:9,Yes,NULL,Yes,NULL,Yes,NULL,Yes,NULL,Yes,5:9,Yes,NULL,Yes,NULL,Yes,5:9,"2026-07-19 18:27:17","2026-07-19 18:27:17"
+5,6,Yes,hello,Yes,NULL,Yes,NULL,Yes,hello,Yes,hello,Yes,hello,Yes,NULL,Yes,NULL,Yes,hello,"2026-07-20 07:52:41","2026-07-20 07:52:41"

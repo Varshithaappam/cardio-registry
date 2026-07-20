@@ -96,11 +96,16 @@ const [records, setRecords] = useState([]);
           }
         } else
         if (formType === 'HF') {
+          const formattedHf = {
+            ...eventData,
+            vitals: eventData.vitals || { bmi: eventData.bmi ? Number(eventData.bmi) : null },
+            volumeOverloadSigns: eventData.volumeOverloadSigns || { peripheralEdema: eventData.peripheral_edema === 'Yes' }
+          };
           const exists = updated.hfAssessments.some((h) => h.id === eventData.id);
           if (exists) {
-            updated.hfAssessments = updated.hfAssessments.map((h) => h.id === eventData.id ? eventData : h);
+            updated.hfAssessments = updated.hfAssessments.map((h) => h.id === eventData.id ? formattedHf : h);
           } else {
-            updated.hfAssessments = [eventData, ...updated.hfAssessments];
+            updated.hfAssessments = [formattedHf, ...updated.hfAssessments];
           }
         } else
         if (formType === 'STEMI' || formType === 'NSTEMI') {
@@ -149,7 +154,8 @@ const [records, setRecords] = useState([]);
     });
 
     setEditingRecord(null);
-    setCurrentView('timeline');
+    setSelectedPatientId(null);
+    setCurrentView('patients');
   };
 
   // Delete an event

@@ -502,7 +502,6 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                   <th className="px-4 py-4 text-center">STEMI</th>
                   <th className="px-4 py-4 text-center">NSTEMI</th>
                   <th className="px-4 py-4 text-center">CABG</th>
-                  <th className="px-4 py-4 text-center">Audit Quality</th>
                   <th className="px-5 py-4 text-right">Registry Shortcuts</th>
                 </tr>
               </thead>
@@ -582,26 +581,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       <EncounterCounter patientId={record.patient.id} />
 
                       {/* Quality Score */}
-                      <td className="px-4 py-4 text-center">
-                        <div className="inline-block">
-                          <span className={`inline-flex items-center gap-1 font-extrabold text-xs px-2.5 py-1 rounded-lg border ${
-                        dq.score >= 85 ?
-                        'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                        'bg-amber-50 text-amber-700 border-amber-100'}`
-                        }>
-                            <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
-                            {dq.score}%
-                          </span>
-                          {dq.alerts.length > 0 &&
-                        <div
-                          className="text-[9px] text-amber-600 font-bold mt-1 max-w-[130px] mx-auto truncate"
-                          title={dq.alerts.join('\n')}>
-                          
-                              ⚠️ {dq.alerts[0]}
-                            </div>
-                        }
-                        </div>
-                      </td>
+                      
 
                       {/* Table Actions */}
                       <td className="px-5 py-4 text-right">

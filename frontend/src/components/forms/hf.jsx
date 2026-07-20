@@ -167,15 +167,15 @@ const hf = forwardRef(function hf(
   // State Management
   // 1. Patient Profile Fields
   
-  const [address, setAddress] = useState(editingRecord?.patient?.address || patient.address || '');
-  const [highestEducation, setHighestEducation] = useState(patient.highestEducation ?? editingRecord?.patient?.highestEducation ?? '');
-  const [monthlyIncome, setMonthlyIncome] = useState(patient.monthlyIncome ?? editingRecord?.patient?.monthlyIncome ?? '');
-  const [occupation, setOccupation] = useState(patient.occupation ?? editingRecord?.patient?.occupation ?? '');
-  const [caregiverName, setCaregiverName] = useState(patient.caregiverName ?? editingRecord?.patient?.caregiverName ?? '');
-  const [caregiverRelationship, setCaregiverRelationship] = useState(patient.caregiverRelationship ?? editingRecord?.patient?.caregiverRelationship ?? '');
-  const [caregiverPhone, setCaregiverPhone] = useState(patient.caregiverPhone ?? editingRecord?.patient?.caregiverPhone ?? '');
-  const [insuranceMode, setInsuranceMode] = useState(patient.insuranceMode ?? editingRecord?.patient?.insuranceMode ?? '');
-  const [referredFrom, setReferredFrom] = useState(editingRecord?.patient?.referredFrom ?? '');
+  const [address, setAddress] = useState(editingRecord?.patient?.address || editingRecord?.address || patient.address || '');
+  const [highestEducation, setHighestEducation] = useState(editingRecord?.patient?.highestEducation || patient.highestEducation || '');
+  const [monthlyIncome, setMonthlyIncome] = useState(editingRecord?.patient?.monthlyIncome || patient.monthlyIncome || '');
+  const [occupation, setOccupation] = useState(editingRecord?.patient?.occupation || patient.occupation || '');
+  const [caregiverName, setCaregiverName] = useState(editingRecord?.patient?.caregiverName || patient.caregiverName || '');
+  const [caregiverRelationship, setCaregiverRelationship] = useState(editingRecord?.patient?.caregiverRelationship || patient.caregiverRelationship || '');
+  const [caregiverPhone, setCaregiverPhone] = useState(editingRecord?.patient?.caregiverPhone || patient.caregiverPhone || '');
+  const [insuranceMode, setInsuranceMode] = useState(editingRecord?.patient?.insuranceMode || patient.insuranceMode || '');
+  const [referredFrom, setReferredFrom] = useState(editingRecord?.patient?.referredFrom || editingRecord?.referredFrom || editingRecord?.inpatientDetails?.referredFrom || '');
   const [presentDiagnosis, setPresentDiagnosis] = useState(editingRecord?.patient?.presentDiagnosis ?? '');
 
   // 2. Inpatient Course Metrics
@@ -1395,12 +1395,16 @@ const hf = forwardRef(function hf(
         <div className="grid grid-cols-1 gap-4 mb-4">
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
             <span className="text-slate-400 font-semibold uppercase block mb-1">Address</span>
-            <textarea disabled={readOnly}
-              className="w-full bg-white border border-slate-200 p-2 text-slate-800 font-medium focus:ring-0 resize-none text-xs rounded-lg"
-              rows={2}
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-            />
+            {readOnly ? (
+              <span className="text-slate-800 font-bold block mt-1 whitespace-pre-wrap">{address || editingRecord?.address || editingRecord?.patient?.address || patient.address || '—'}</span>
+            ) : (
+              <textarea
+                className="w-full bg-white border border-slate-200 p-2 text-slate-800 font-medium focus:ring-0 resize-none text-xs rounded-lg"
+                rows={2}
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+              />
+            )}
           </div>
         </div>
 
@@ -2406,14 +2410,16 @@ const hf = forwardRef(function hf(
           <div className="grid grid-cols-1 md:grid-cols-4">
             <div className="p-2.5 bg-slate-100 font-bold border-r border-slate-300 text-slate-700 flex items-center">Endomyocardial biopsy</div>
             <div className="p-2.5 md:col-span-3 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-1">
-                <span className="font-semibold text-slate-700">Date of test:</span>
-                {renderInlineDate(biopsyDate, setBiopsyDate)}
-              </div>
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="biopsy_st" checked={biopsyStatus === 'Done'} onChange={() => setBiopsyStatus('Done')} /> Done</label>
                 <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="biopsy_st" checked={biopsyStatus === 'Not Done'} onChange={() => setBiopsyStatus('Not Done')} /> Not Done</label>
               </div>
+              {biopsyStatus === 'Done' && (
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-slate-700">Date of test:</span>
+                  {renderInlineDate(biopsyDate, setBiopsyDate)}
+                </div>
+              )}
             </div>
           </div>
 
@@ -2600,18 +2606,20 @@ const hf = forwardRef(function hf(
                       {drug.name !== undefined && (
                         <input disabled={readOnly}
                           type="text"
+                          required={drug.val === 'Yes'}
                           value={drug.name}
                           onChange={(e) => drug.setName(e.target.value)}
                           className="border border-slate-300 rounded p-1 text-xs w-36 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                          placeholder="Name"
+                          placeholder="Name *"
                         />
                       )}
                       <input disabled={readOnly}
                         type="text"
+                        required={drug.val === 'Yes'}
                         value={drug.dose}
                         onChange={(e) => drug.setDose(e.target.value)}
                         className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right"
-                        placeholder="Dose"
+                        placeholder="Dose *"
                       />
                       <span className="text-[10px] text-slate-400">/per day</span>
                     </div>
@@ -2682,18 +2690,20 @@ const hf = forwardRef(function hf(
                       {drug.name !== undefined && (
                         <input disabled={readOnly}
                           type="text"
+                          required={drug.val === 'Yes'}
                           value={drug.name}
                           onChange={(e) => drug.setName(e.target.value)}
                           className="border border-slate-300 rounded p-1 text-xs w-36 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                          placeholder="Name"
+                          placeholder="Name *"
                         />
                       )}
                       <input disabled={readOnly}
                         type="text"
+                        required={drug.val === 'Yes'}
                         value={drug.dose}
                         onChange={(e) => drug.setDose(e.target.value)}
                         className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right"
-                        placeholder="Dose"
+                        placeholder="Dose *"
                       />
                       <span className="text-[10px] text-slate-400">/per day</span>
                     </div>
@@ -2764,18 +2774,20 @@ const hf = forwardRef(function hf(
                       {drug.name !== undefined && (
                         <input disabled={readOnly}
                           type="text"
+                          required={drug.val === 'Yes'}
                           value={drug.name}
                           onChange={(e) => drug.setName(e.target.value)}
                           className="border border-slate-300 rounded p-1 text-xs w-36 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                          placeholder="Name"
+                          placeholder="Name *"
                         />
                       )}
                       <input disabled={readOnly}
                         type="text"
+                        required={drug.val === 'Yes'}
                         value={drug.dose}
                         onChange={(e) => drug.setDose(e.target.value)}
                         className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right"
-                        placeholder="Dose"
+                        placeholder="Dose *"
                       />
                       <span className="text-[10px] text-slate-400">/per day</span>
                     </div>

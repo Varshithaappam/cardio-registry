@@ -78,7 +78,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onVie
       date: hf.assessmentDate,
       type: 'HF Assessment',
       title: 'CARE CHF Assessment',
-      summary: `NYHA: ${hf.nyhaClass} • Stage: ${hf.stageOfHF} • EF: ${hf.vitals.bmi ? `BMI ${hf.vitals.bmi.toFixed(1)}` : 'N/A'} • Volume Overload: ${hf.volumeOverloadSigns.peripheralEdema ? 'Yes' : 'No'}`,
+      summary: `NYHA: ${hf.nyhaClass || 'N/A'} • Stage: ${hf.stageOfHF || 'N/A'} • BMI: ${hf.vitals?.bmi ? Number(hf.vitals.bmi).toFixed(1) : 'N/A'} • Volume Overload: ${hf.volumeOverloadSigns?.peripheralEdema ? 'Yes' : 'No'}`,
       raw: hf,
       color: 'bg-teal-500 border-teal-500 text-teal-500',
       icon: Heart

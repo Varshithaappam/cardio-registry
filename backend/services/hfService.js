@@ -45,7 +45,7 @@ async function saveHfAssessment(data) {
             discharge_date: data.inpatientDetails?.dischargeDate,
             treating_cardiologist: data.inpatientDetails?.treatingCardiologist,
             referring_doctor: data.inpatientDetails?.referringDoctor,
-            referred_from: data.inpatientDetails?.referredFrom,
+            referred_from: data.patient?.referredFrom || data.inpatientDetails?.referredFrom || null,
             present_diagnosis: data.patient?.presentDiagnosis,
             myocardial_ischemia: data.inpatientDetails?.precipitatingFactors?.includes('Myocardial ischemia') ? 'Yes' : 'No',
             atrial_fibrillation: data.inpatientDetails?.precipitatingFactors?.includes('Atrial fibrillation') ? 'Yes' : 'No',
@@ -156,14 +156,14 @@ async function saveHfAssessment(data) {
             etiology_other: data.finalAssessment?.etiologyOther || 'No',
             etiology_other_details: data.finalAssessment?.etiologyOtherDetails || null,
             cad: data.finalAssessment?.comorbidities?.includes('Associated CAD') ? 'Yes' : 'No',
-            renal_failure: data.finalAssessment?.comorbidities?.includes('Renal failure') ? 'Yes' : 'No',
+            renal_failure: (data.finalAssessment?.comorbidities?.includes('Renal Failure') || data.finalAssessment?.comorbidities?.includes('Renal failure')) ? 'Yes' : 'No',
             diabetes_mellitus: data.finalAssessment?.comorbidities?.includes('Diabetes Mellitus') ? 'Yes' : 'No',
             hypertension: data.finalAssessment?.comorbidities?.includes('Hypertension') ? 'Yes' : 'No',
             valvular_disease: data.finalAssessment?.comorbidities?.includes('Valvular Disease') ? 'Yes' : 'No',
             asthma: data.finalAssessment?.comorbidities?.includes('Asthma') ? 'Yes' : 'No',
             copd: data.finalAssessment?.comorbidities?.includes('COPD') ? 'Yes' : 'No',
             osa: data.finalAssessment?.comorbidities?.includes('OSA') ? 'Yes' : 'No',
-            anemia: data.finalAssessment?.comorbidities?.includes('Anaemia') ? 'Yes' : 'No',
+            anemia: (data.finalAssessment?.comorbidities?.includes('Anemia') || data.finalAssessment?.comorbidities?.includes('Anaemia')) ? 'Yes' : 'No',
             cva: data.finalAssessment?.comorbidities?.includes('CVA') ? 'Yes' : 'No',
             severe_musculoskeletal_disease: data.finalAssessment?.comorbidities?.includes('Severe musculoskeletal disease') ? 'Yes' : 'No',
             cancer: data.finalAssessment?.comorbidities?.includes('Cancer') ? 'Yes' : 'No',
@@ -180,10 +180,10 @@ async function saveHfAssessment(data) {
             stage_b: (data.stageOfHF === 'Stage B' || data.finalAssessment?.finalStage === 'Stage B') ? 'Yes' : 'No',
             stage_c: (data.stageOfHF === 'Stage C' || data.finalAssessment?.finalStage === 'Stage C') ? 'Yes' : 'No',
             stage_d: (data.stageOfHF === 'Stage D' || data.finalAssessment?.finalStage === 'Stage D') ? 'Yes' : 'No',
-            nyha_class_1: ((data.nyhaClass && data.nyhaClass.includes('Class I')) || (data.finalAssessment?.finalNyhaClass && data.finalAssessment.finalNyhaClass.includes('Class I'))) ? 'Yes' : 'No',
-            nyha_class_2: ((data.nyhaClass && data.nyhaClass.includes('Class II')) || (data.finalAssessment?.finalNyhaClass && data.finalAssessment.finalNyhaClass.includes('Class II'))) ? 'Yes' : 'No',
-            nyha_class_3: ((data.nyhaClass && data.nyhaClass.includes('Class III')) || (data.finalAssessment?.finalNyhaClass && data.finalAssessment.finalNyhaClass.includes('Class III'))) ? 'Yes' : 'No',
-            nyha_class_4: ((data.nyhaClass && data.nyhaClass.includes('Class IV')) || (data.finalAssessment?.finalNyhaClass && data.finalAssessment.finalNyhaClass.includes('Class IV'))) ? 'Yes' : 'No',
+            nyha_class_1: (data.nyhaClass === 'NYHA Class I' || data.nyhaClass === 'Class I' || data.finalAssessment?.finalNyhaClass === 'NYHA Class I' || data.finalAssessment?.finalNyhaClass === 'Class I') ? 'Yes' : 'No',
+            nyha_class_2: (data.nyhaClass === 'NYHA Class II' || data.nyhaClass === 'Class II' || data.finalAssessment?.finalNyhaClass === 'NYHA Class II' || data.finalAssessment?.finalNyhaClass === 'Class II') ? 'Yes' : 'No',
+            nyha_class_3: (data.nyhaClass === 'NYHA Class III' || data.nyhaClass === 'Class III' || data.finalAssessment?.finalNyhaClass === 'NYHA Class III' || data.finalAssessment?.finalNyhaClass === 'Class III') ? 'Yes' : 'No',
+            nyha_class_4: (data.nyhaClass === 'NYHA Class IV' || data.nyhaClass === 'Class IV' || data.finalAssessment?.finalNyhaClass === 'NYHA Class IV' || data.finalAssessment?.finalNyhaClass === 'Class IV') ? 'Yes' : 'No',
             af_permanent: data.afStatus === 'Permanent' ? 'Yes' : 'No',
             af_paroxysmal: data.afStatus === 'Paroxysmal' ? 'Yes' : 'No',
             af_persistent: data.afStatus === 'Persistent' ? 'Yes' : 'No',
@@ -275,15 +275,15 @@ async function saveHfAssessment(data) {
 
             const cardiacData = {
                 ecg_test_date: data.investigations.ecgDate || null,
-                ecg_qrs_duration: data.investigations.ecgQrsDuration ? Number(data.investigations.ecgQrsDuration) : null,
-                ecg_rhythm_sinus: data.investigations.ecgRhythm === 'Sinus Rhythm' ? 'Yes' : 'No',
-                ecg_rhythm_af: data.investigations.ecgRhythm === 'Atrial Fibrillation (AF)' ? 'Yes' : 'No',
+                ecg_qrs_duration: (data.investigations?.ecgQrsDuration && !isNaN(parseFloat(data.investigations.ecgQrsDuration))) ? parseFloat(data.investigations.ecgQrsDuration) : null,
+                ecg_rhythm_sinus: (data.investigations?.ecgRhythm === 'Sinus' || data.investigations?.ecgRhythm === 'Sinus Rhythm') ? 'Yes' : 'No',
+                ecg_rhythm_af: (data.investigations?.ecgRhythm === 'AF' || data.investigations?.ecgRhythm === 'Atrial Fibrillation (AF)') ? 'Yes' : 'No',
                 ecg_rhythm_other: data.investigations.ecgRhythm === 'Other' ? 'Yes' : 'No',
                 ecg_rhythm_other_details: data.investigations.ecgRhythmOther || null,
-                ecg_av_normal: data.investigations.ecgAvConduction === 'Normal Conduction' ? 'Yes' : 'No',
-                ecg_av_first_degree_block: data.investigations.ecgAvConduction === '1st Degree AV Block' ? 'Yes' : 'No',
-                ecg_av_second_degree_block: data.investigations.ecgAvConduction === '2nd Degree AV Block' ? 'Yes' : 'No',
-                ecg_av_third_degree_block: data.investigations.ecgAvConduction === 'Complete Heart Block (3rd Degree)' ? 'Yes' : 'No',
+                ecg_av_normal: (data.investigations?.ecgAvConduction === 'Normal' || data.investigations?.ecgAvConduction === 'Normal Conduction') ? 'Yes' : 'No',
+                ecg_av_first_degree_block: (data.investigations?.ecgAvConduction === '1st degree AV block' || data.investigations?.ecgAvConduction === '1st Degree AV Block') ? 'Yes' : 'No',
+                ecg_av_second_degree_block: (data.investigations?.ecgAvConduction === '2nd degree AV block' || data.investigations?.ecgAvConduction === '2nd Degree AV Block') ? 'Yes' : 'No',
+                ecg_av_third_degree_block: (data.investigations?.ecgAvConduction === '3rd degree AV block' || data.investigations?.ecgAvConduction === 'Complete Heart Block (3rd Degree)') ? 'Yes' : 'No',
                 ecg_qwaves_yes: data.investigations.ecgQWaves === 'Yes' ? 'Yes' : 'No',
                 ecg_qwaves_none: (data.investigations.ecgQWaves === 'No' || data.investigations.ecgQWaves === 'None') ? 'Yes' : 'No',
                 ecg_qwave_leads: data.investigations.ecgQWavesLeads || null,
@@ -297,7 +297,7 @@ async function saveHfAssessment(data) {
                 ecg_qt: data.investigations.ecgQt ? Number(data.investigations.ecgQt) : null,
                 ecg_qtc: data.investigations.ecgQtc ? Number(data.investigations.ecgQtc) : null,
                 chest_xray_test_date: data.investigations.cxrDate || null,
-                cardiothoracic_ratio: data.investigations.cxrCtRatio ? Number(data.investigations.cxrCtRatio) : null,
+                cardiothoracic_ratio: (data.investigations?.cxrCtRatio && !isNaN(parseFloat(data.investigations.cxrCtRatio))) ? parseFloat(data.investigations.cxrCtRatio) : null,
                 chest_pvh: data.investigations.cxrPvh ? 'Yes' : 'No',
                 chest_pulmonary_edema: data.investigations.cxrPulmonaryEdema ? 'Yes' : 'No',
                 chest_pleural_effusion: data.investigations.cxrPleuralEffusion ? 'Yes' : 'No',
@@ -364,11 +364,11 @@ async function saveHfAssessment(data) {
                 anaerobic_threshold_test_date: data.investigations.anaerobicDate || null,
                 angiogram_done: data.investigations.angioStatus === 'Done' ? 'Yes' : 'No',
                 angiogram_test_date: data.investigations.angioDate || null,
-                angiogram_normal: data.investigations.angioFinding === 'Normal Coronaries' ? 'Yes' : 'No',
-                angiogram_one_vessel_disease: data.investigations.angioFinding === 'Single Vessel Disease (SVD)' ? 'Yes' : 'No',
-                angiogram_two_vessel_disease: data.investigations.angioFinding === 'Double Vessel Disease (DVD)' ? 'Yes' : 'No',
-                angiogram_three_vessel_disease: data.investigations.angioFinding === 'Triple Vessel Disease (TVD)' ? 'Yes' : 'No',
-                angiogram_lmca: data.investigations.angioFinding === 'Left Main Disease' ? 'Yes' : 'No',
+                angiogram_normal: (data.investigations?.angioFinding === 'Normal' || data.investigations?.angioFinding === 'Normal Coronaries') ? 'Yes' : 'No',
+                angiogram_one_vessel_disease: (data.investigations?.angioFinding === '1 vessel disease' || data.investigations?.angioFinding === 'Single Vessel Disease (SVD)') ? 'Yes' : 'No',
+                angiogram_two_vessel_disease: (data.investigations?.angioFinding === '2 vessel disease' || data.investigations?.angioFinding === 'Double Vessel Disease (DVD)') ? 'Yes' : 'No',
+                angiogram_three_vessel_disease: (data.investigations?.angioFinding === '3 vessel disease' || data.investigations?.angioFinding === 'Triple Vessel Disease (TVD)') ? 'Yes' : 'No',
+                angiogram_lmca: (data.investigations?.angioFinding === 'LMCA' || data.investigations?.angioFinding === 'Left Main Disease') ? 'Yes' : 'No',
                 angiogram_not_done: data.investigations.angioStatus === 'Not Done' ? 'Yes' : 'No',
                 biopsy_done: data.investigations.biopsyStatus === 'Done' ? 'Yes' : 'No',
                 biopsy_test_date: data.investigations.biopsyDate || null,
@@ -484,14 +484,14 @@ async function getHfAssessment(hf_id) {
         // Deconstruct comorbidities
         const comorbidities = [];
         if (final.cad === 'Yes') comorbidities.push('Associated CAD');
-        if (final.renal_failure === 'Yes') comorbidities.push('Renal failure');
+        if (final.renal_failure === 'Yes') comorbidities.push('Renal Failure');
         if (final.diabetes_mellitus === 'Yes') comorbidities.push('Diabetes Mellitus');
         if (final.hypertension === 'Yes') comorbidities.push('Hypertension');
         if (final.valvular_disease === 'Yes') comorbidities.push('Valvular Disease');
         if (final.asthma === 'Yes') comorbidities.push('Asthma');
         if (final.copd === 'Yes') comorbidities.push('COPD');
         if (final.osa === 'Yes') comorbidities.push('OSA');
-        if (final.anemia === 'Yes') comorbidities.push('Anaemia');
+        if (final.anemia === 'Yes') comorbidities.push('Anemia');
         if (final.cva === 'Yes') comorbidities.push('CVA');
         if (final.severe_musculoskeletal_disease === 'Yes') comorbidities.push('Severe musculoskeletal disease');
         if (final.cancer === 'Yes') comorbidities.push('Cancer');
@@ -506,15 +506,15 @@ async function getHfAssessment(hf_id) {
 
         // Parse ECG Rhythm & AV blockages
         let ecgRhythm = '';
-        if (cardiac.ecg_rhythm_sinus === 'Yes') ecgRhythm = 'Sinus Rhythm';
-        else if (cardiac.ecg_rhythm_af === 'Yes') ecgRhythm = 'Atrial Fibrillation (AF)';
+        if (cardiac.ecg_rhythm_sinus === 'Yes') ecgRhythm = 'Sinus';
+        else if (cardiac.ecg_rhythm_af === 'Yes') ecgRhythm = 'AF';
         else if (cardiac.ecg_rhythm_other === 'Yes') ecgRhythm = 'Other';
 
         let ecgAvConduction = '';
-        if (cardiac.ecg_av_normal === 'Yes') ecgAvConduction = 'Normal Conduction';
-        else if (cardiac.ecg_av_first_degree_block === 'Yes') ecgAvConduction = '1st Degree AV Block';
-        else if (cardiac.ecg_av_second_degree_block === 'Yes') ecgAvConduction = '2nd Degree AV Block';
-        else if (cardiac.ecg_av_third_degree_block === 'Yes') ecgAvConduction = 'Complete Heart Block (3rd Degree)';
+        if (cardiac.ecg_av_normal === 'Yes') ecgAvConduction = 'Normal';
+        else if (cardiac.ecg_av_first_degree_block === 'Yes') ecgAvConduction = '1st degree AV block';
+        else if (cardiac.ecg_av_second_degree_block === 'Yes') ecgAvConduction = '2nd degree AV block';
+        else if (cardiac.ecg_av_third_degree_block === 'Yes') ecgAvConduction = '3rd degree AV block';
 
         let ecgQWaves = '';
         if (cardiac.ecg_qwaves_yes === 'Yes') ecgQWaves = 'Yes';
@@ -575,11 +575,11 @@ async function getHfAssessment(hf_id) {
         else if (advanced.angiogram_not_done === 'Yes') angioStatus = 'Not Done';
 
         let angioFinding = '';
-        if (advanced.angiogram_normal === 'Yes') angioFinding = 'Normal Coronaries';
-        else if (advanced.angiogram_one_vessel_disease === 'Yes') angioFinding = 'Single Vessel Disease (SVD)';
-        else if (advanced.angiogram_two_vessel_disease === 'Yes') angioFinding = 'Double Vessel Disease (DVD)';
-        else if (advanced.angiogram_three_vessel_disease === 'Yes') angioFinding = 'Triple Vessel Disease (TVD)';
-        else if (advanced.angiogram_lmca === 'Yes') angioFinding = 'Left Main Disease';
+        if (advanced.angiogram_normal === 'Yes') angioFinding = 'Normal';
+        else if (advanced.angiogram_one_vessel_disease === 'Yes') angioFinding = '1 vessel disease';
+        else if (advanced.angiogram_two_vessel_disease === 'Yes') angioFinding = '2 vessel disease';
+        else if (advanced.angiogram_three_vessel_disease === 'Yes') angioFinding = '3 vessel disease';
+        else if (advanced.angiogram_lmca === 'Yes') angioFinding = 'LMCA';
 
         let biopsyStatus = '';
         if (advanced.biopsy_done === 'Yes') biopsyStatus = 'Done';
@@ -605,7 +605,10 @@ async function getHfAssessment(hf_id) {
             encounterId: admin.care_mr_no,
             assessmentDate: admin.assessment_date,
             visitType: admin.visit_type,
+            address: admin.address,
+            referredFrom: admin.referred_from,
             patient: {
+                address: admin.address,
                 highestEducation: admin.education_level,
                 monthlyIncome: admin.monthly_income,
                 occupation: admin.occupation,
@@ -619,6 +622,7 @@ async function getHfAssessment(hf_id) {
             inpatientDetails: {
                 treatingCardiologist: admin.treating_cardiologist,
                 referringDoctor: admin.referring_doctor,
+                referredFrom: admin.referred_from,
                 dischargeDate: admin.discharge_date,
                 encounterId: admin.care_mr_no,
                 precipitatingFactors,
@@ -698,10 +702,10 @@ async function getHfAssessment(hf_id) {
                 pulmonary: pulmEtiology
             },
             stageOfHF: final.stage_a === 'Yes' ? 'Stage A' : (final.stage_b === 'Yes' ? 'Stage B' : (final.stage_c === 'Yes' ? 'Stage C' : (final.stage_d === 'Yes' ? 'Stage D' : ''))),
-            nyhaClass: final.nyha_class_1 === 'Yes' ? 'Class I' : (final.nyha_class_2 === 'Yes' ? 'Class II' : (final.nyha_class_3 === 'Yes' ? 'Class III' : (final.nyha_class_4 === 'Yes' ? 'Class IV' : ''))),
+            nyhaClass: final.nyha_class_1 === 'Yes' ? 'NYHA Class I' : (final.nyha_class_2 === 'Yes' ? 'NYHA Class II' : (final.nyha_class_3 === 'Yes' ? 'NYHA Class III' : (final.nyha_class_4 === 'Yes' ? 'NYHA Class IV' : ''))),
             afStatus: final.af_permanent === 'Yes' ? 'Permanent' : (final.af_paroxysmal === 'Yes' ? 'Paroxysmal' : (final.af_persistent === 'Yes' ? 'Persistent' : (final.af_nsr === 'Yes' ? 'NSR' : ''))),
             finalAssessment: {
-                finalNyhaClass: final.nyha_class_1 === 'Yes' ? 'Class I' : (final.nyha_class_2 === 'Yes' ? 'Class II' : (final.nyha_class_3 === 'Yes' ? 'Class III' : (final.nyha_class_4 === 'Yes' ? 'Class IV' : ''))),
+                finalNyhaClass: final.nyha_class_1 === 'Yes' ? 'NYHA Class I' : (final.nyha_class_2 === 'Yes' ? 'NYHA Class II' : (final.nyha_class_3 === 'Yes' ? 'NYHA Class III' : (final.nyha_class_4 === 'Yes' ? 'NYHA Class IV' : ''))),
                 finalStage: final.stage_a === 'Yes' ? 'Stage A' : (final.stage_b === 'Yes' ? 'Stage B' : (final.stage_c === 'Yes' ? 'Stage C' : (final.stage_d === 'Yes' ? 'Stage D' : ''))),
                 finalTypeOfHF: final.hfref === 'Yes' ? 'HFrEF' : (final.hfpef === 'Yes' ? 'HFpEF' : 'Unknown'),
                 comorbidities,
