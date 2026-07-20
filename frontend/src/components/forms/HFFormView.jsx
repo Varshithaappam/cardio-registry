@@ -51,22 +51,22 @@ export default function HFFormView() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white">
         <Loader2 className="w-10 h-10 animate-spin text-teal-400 mb-4" />
-        <p className="text-slate-400 text-sm">Retrieving registry records across 13 tables...</p>
+        <p className="text-white/80 text-sm">Retrieving registry records across 13 tables...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 text-white p-6">
-        <div className="max-w-md w-full bg-slate-800 border border-slate-700/60 p-6 rounded-2xl shadow-xl text-center">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-6">
+        <div className="max-w-md w-full bg-black border border-white/20 p-6 rounded-2xl shadow-xl text-center">
           <p className="text-red-400 font-bold mb-4">Error Loading Assessment</p>
-          <p className="text-slate-300 text-sm mb-6">{error}</p>
+          <p className="text-white/80 text-sm mb-6">{error}</p>
           <button
             onClick={() => navigate('/')}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2 bg-black hover:bg-gray-900 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer border border-white/20"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Return to Dashboard
           </button>
@@ -76,9 +76,40 @@ export default function HFFormView() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 print:bg-white print:text-black">
+    <div className="min-h-screen bg-black text-white print:bg-white print:text-black">
       {/* Print-specific style block */}
       <style dangerouslySetInnerHTML={{ __html: `
+        /* General High Contrast styles for disabled fields */
+        input:disabled, select:disabled, textarea:disabled,
+        input[disabled], select[disabled], textarea[disabled] {
+          color: #0f172a !important; /* text-slate-900 */
+          -webkit-text-fill-color: #0f172a !important;
+          opacity: 1 !important;
+          background-color: #f8fafc !important; /* bg-slate-50 */
+        }
+        input[type="radio"], input[type="checkbox"] {
+          accent-color: #000000 !important;
+        }
+        input[type="radio"]:disabled, input[type="checkbox"]:disabled {
+          opacity: 1 !important;
+          accent-color: #000000 !important;
+        }
+        input[type="radio"]:disabled:checked {
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2.5' fill='%23fff'/%3e%3c/svg%3e") !important;
+          background-color: #000000 !important;
+          border-color: #000000 !important;
+          opacity: 1 !important;
+        }
+        input[type="checkbox"]:disabled:checked {
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3e%3c/svg%3e") !important;
+          background-color: #000000 !important;
+          border-color: #000000 !important;
+          opacity: 1 !important;
+        }
+        .text-slate-400 {
+          color: #000000 !important;
+        }
+        
         @media print {
           header, footer, aside, .no-print, button {
             display: none !important;
@@ -95,10 +126,10 @@ export default function HFFormView() {
           .bg-slate-800, .bg-slate-950, .bg-teal-950 {
             background-color: transparent !important;
             color: black !important;
-            border-color: #cbd5e1 !important;
+            border-color: #000000 !important;
           }
           .border-slate-800, .border-teal-900 {
-            border-color: #cbd5e1 !important;
+            border-color: #000000 !important;
           }
           fieldset {
             border: none !important;
@@ -113,12 +144,12 @@ export default function HFFormView() {
       `}} />
 
       {/* Top bar (Hidden when printing) */}
-      <div className="no-print bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-50 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="no-print bg-black/95 backdrop-blur-md border-b border-black sticky top-0 z-50 px-4 py-3 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
-              className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700/60 transition-colors text-slate-300 cursor-pointer"
+              className="p-2 bg-black hover:bg-gray-900 rounded-xl border border-white/20 transition-colors text-white cursor-pointer"
               title="Go Back"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -127,7 +158,7 @@ export default function HFFormView() {
               <h1 className="text-sm font-bold text-white uppercase tracking-wider">
                 Heart Failure Registry Assessment View
               </h1>
-              <p className="text-[10px] text-slate-400 mt-0.5">
+              <p className="text-[10px] text-white/70 mt-0.5">
                 Registry ID: {assessmentData?.id || recordId} • Patient: {patientRecord?.patient?.name}
               </p>
             </div>
@@ -135,7 +166,7 @@ export default function HFFormView() {
 
           <button
             onClick={handlePrint}
-            className="px-4 py-2 bg-teal-600 hover:bg-teal-500 active:scale-95 text-white border border-teal-500 rounded-xl transition-all flex items-center gap-2 text-xs font-bold cursor-pointer"
+            className="px-4 py-2 bg-black hover:bg-gray-900 active:scale-95 text-white border border-white/20 rounded-xl transition-all flex items-center gap-2 text-xs font-bold cursor-pointer"
           >
             <Printer className="w-4 h-4" /> Print / Export to PDF
           </button>
@@ -143,7 +174,7 @@ export default function HFFormView() {
       </div>
 
       {/* Main Form Content Container */}
-      <div className="print-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="print-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-black">
         {patientRecord && assessmentData && (
           <HFForm
             patientRecord={patientRecord}

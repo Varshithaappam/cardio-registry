@@ -35,13 +35,13 @@ export default function CheckboxGroup({
           return (
             <label
               key={optionValue}
-              className={`flex items-center gap-2 p-2.5 bg-white border border-slate-100 rounded-lg cursor-pointer text-xs text-slate-700 font-medium hover:border-slate-200 transition-colors ${readOnly ? "pointer-events-none opacity-80 bg-slate-50" : ""}`}
+              className={`flex items-center gap-2 p-2.5 bg-white border border-slate-200 rounded-lg ${readOnly ? 'pointer-events-none' : 'cursor-pointer hover:border-slate-300'} text-xs text-black font-medium transition-colors`}
             >
               <input
                 type="checkbox"
                 checked={values.includes(optionValue)}
                 onChange={() => toggleValue(optionValue)}
-                className="shrink-0"
+                className="shrink-0 accent-teal-600 disabled:opacity-100 disabled:accent-black"
                 disabled={readOnly}
               />
               <span>{optionLabel}</span>

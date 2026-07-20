@@ -1,3 +1,5 @@
+CREATE DATABASE  IF NOT EXISTS `care_registry` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `care_registry`;
 -- MySQL dump 10.13  Distrib 8.0.46, for Win64 (x86_64)
 --
 -- Host: localhost    Database: care_registry
@@ -756,7 +758,7 @@ CREATE TABLE `hf_administrative` (
   PRIMARY KEY (`admin_id`),
   KEY `fk_hf_admin` (`hf_id`),
   CONSTRAINT `fk_hf_admin` FOREIGN KEY (`hf_id`) REFERENCES `hf_registry` (`hf_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -765,6 +767,7 @@ CREATE TABLE `hf_administrative` (
 
 LOCK TABLES `hf_administrative` WRITE;
 /*!40000 ALTER TABLE `hf_administrative` DISABLE KEYS */;
+INSERT INTO `hf_administrative` VALUES (1,1,NULL,'2026-07-18','Unknown','Outpatient',NULL,'Primary',10000.00,'farmer','supriya','wife','9876543210','Arogyasree','2026-07-18',NULL,'Dr. K. Sridhar','Dr. Ananth Rao',NULL,'community clinic','No','No','No','No','No','No','No','No','No','No','No','No','hi','trauma',7,'2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,2,NULL,'2026-07-18','Unknown','Outpatient',NULL,'Graduate',70000.00,'','','','','Private Insurance','2026-07-18',NULL,'Dr. K. Sridhar','Dr. Ananth Rao',NULL,'','No','No','No','No','No','No','No','No','No','No','No','No',NULL,NULL,NULL,'2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,3,NULL,'1987-07-19','Unknown','Inpatient',NULL,'Post Graduate',78000.00,'Retired','','wife','9876543210','Government Reimbursement','1987-07-19','2000-05-10','Dr. K. Sridhar','Dr. Ananth Rao',NULL,'community clinic','No','No','Yes','No','No','Yes','No','No','No','No','No','No','Excessive water ingestion','trauma',3,'2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_administrative` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -826,7 +829,7 @@ CREATE TABLE `hf_advanced_investigations` (
   PRIMARY KEY (`advanced_investigation_id`),
   KEY `fk_hf_advanced_investigations` (`hf_id`),
   CONSTRAINT `fk_hf_advanced_investigations` FOREIGN KEY (`hf_id`) REFERENCES `hf_registry` (`hf_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -835,6 +838,7 @@ CREATE TABLE `hf_advanced_investigations` (
 
 LOCK TABLES `hf_advanced_investigations` WRITE;
 /*!40000 ALTER TABLE `hf_advanced_investigations` DISABLE KEYS */;
+INSERT INTO `hf_advanced_investigations` VALUES (1,1,NULL,'No','No','No','No','No','No','No','No','1',NULL,'No',NULL,'No',NULL,NULL,'No','No','No','No',NULL,NULL,'No','No',NULL,'No',NULL,NULL,NULL,'No',NULL,NULL,'No',NULL,'No','No','No','No','No','No','No',NULL,'No','2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,2,NULL,'No','No','No','No','No','No','No','No',NULL,NULL,'No',NULL,'No',NULL,NULL,'No','No','No','No',NULL,NULL,'No','No',NULL,'No',NULL,NULL,NULL,'No',NULL,NULL,'No',NULL,'No','No','No','No','No','No','No',NULL,'No','2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,3,'2001-11-11','No','No','No','No','No','No','No','No','1','hello','Yes','2001-11-11','No',0.00,'Anterior','Yes','No','No','Yes','2001-11-11',0.00,'No','No','2001-11-11','Yes','2001-11-11',0.00,'Anterior','No',NULL,'2001-11-11','Yes','2001-11-11','No','No','No','No','No','No','Yes','2001-11-11','No','2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_advanced_investigations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -905,7 +909,7 @@ CREATE TABLE `hf_cardiac_investigations` (
   PRIMARY KEY (`cardiac_investigation_id`),
   KEY `fk_hf_cardiac_investigations` (`hf_id`),
   CONSTRAINT `fk_hf_cardiac_investigations` FOREIGN KEY (`hf_id`) REFERENCES `hf_registry` (`hf_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -914,6 +918,7 @@ CREATE TABLE `hf_cardiac_investigations` (
 
 LOCK TABLES `hf_cardiac_investigations` WRITE;
 /*!40000 ALTER TABLE `hf_cardiac_investigations` DISABLE KEYS */;
+INSERT INTO `hf_cardiac_investigations` VALUES (1,1,NULL,NULL,'No','No','No',NULL,'No','No','No','No','No','No',NULL,'No','No','No','community clinic','No','No','No',NULL,NULL,NULL,NULL,'No','Yes','Yes','No',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'1',NULL,'No','No','No','No','No',NULL,NULL,'No','No','No','No','No','No','No','2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,2,NULL,NULL,'No','No','No',NULL,'No','No','No','No','No','No',NULL,'No','No','No',NULL,'No','No','No',NULL,NULL,NULL,NULL,'No','No','No','No',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'No','No','No','No','No',NULL,NULL,'No','No','No','No','No','No','No','2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,3,'2002-06-19',5.00,'No','No','No',NULL,'No','No','No','No','Yes','No','Excessive water ingestion','No','No','No','Excessive water ingestion','No','No','No',0.00,0.00,'2003-02-19',0.00,'Yes','Yes','Yes','Yes','CT',NULL,0.00,0.00,0.00,0.00,0.00,'1','1','1','No','No','No','No','No','hello','hello','No','Yes','No','No','No','No','No','2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_cardiac_investigations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -975,7 +980,7 @@ CREATE TABLE `hf_device_therapy` (
   PRIMARY KEY (`device_therapy_id`),
   KEY `fk_hf_device_therapy` (`hf_id`),
   CONSTRAINT `fk_hf_device_therapy` FOREIGN KEY (`hf_id`) REFERENCES `hf_registry` (`hf_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -984,6 +989,7 @@ CREATE TABLE `hf_device_therapy` (
 
 LOCK TABLES `hf_device_therapy` WRITE;
 /*!40000 ALTER TABLE `hf_device_therapy` DISABLE KEYS */;
+INSERT INTO `hf_device_therapy` VALUES (1,1,'No','No','No','No','No','No','No','No','No',NULL,NULL,'Yes','No','No','No','No','No','No','No','No',NULL,NULL,'No','No',NULL,NULL,'No',NULL,NULL,NULL,NULL,'No',NULL,'No','No','No','No',NULL,NULL,NULL,NULL,NULL,NULL,'2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,2,'No','No','No','No','No','No','No','No','No',NULL,NULL,'No','No','No','No','No','No','No','No','No',NULL,NULL,'No','No',NULL,NULL,'No',NULL,NULL,NULL,NULL,'No',NULL,'No','No','No','No',NULL,NULL,NULL,NULL,NULL,NULL,'2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,3,'No','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','hello','hello','No','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','hello','hello','No','Yes','hello','2001-11-11','Yes',5,5,4,'hello','Yes',8,'No','Yes','No','No',98.00,'2',32,23,'hello','hello','2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_device_therapy` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1069,7 +1075,7 @@ CREATE TABLE `hf_final_clinical_assessment` (
   PRIMARY KEY (`final_assessment_id`),
   KEY `fk_hf_final_assessment` (`hf_id`),
   CONSTRAINT `fk_hf_final_assessment` FOREIGN KEY (`hf_id`) REFERENCES `hf_registry` (`hf_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1078,6 +1084,7 @@ CREATE TABLE `hf_final_clinical_assessment` (
 
 LOCK TABLES `hf_final_clinical_assessment` WRITE;
 /*!40000 ALTER TABLE `hf_final_clinical_assessment` DISABLE KEYS */;
+INSERT INTO `hf_final_clinical_assessment` VALUES (1,1,'No','No','No','Yes','No','No','Yes','No','No','Yes','No','No','No','No','No','No','No','Yes','No','Yes','No',NULL,'No','No','No','No','No','No','No','No','Yes','No','Yes','No','Yes','No','No','No',NULL,'No','No','Yes','community clinic','No','No','Yes','No','No','No','No','No','No','Yes','No','No','No','No','Yes','No','Yes','No',NULL,'Yes','2023-05-24','Yes','No','community clinic','2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,2,'No','No','No','No','No','No','No','No','No','No','No','No','No','No','No','No','No','No','No','No','No',NULL,'No','No','No','No','No','No','No','No','No','No','No','No','No','No','No','No',NULL,'No','No','No',NULL,'No','No','Yes','No','No','No','No','No','No','No','No','Yes','No','No','No','No','No','No',NULL,'No',NULL,'No','No',NULL,'2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,3,'No','No','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','No',NULL,'Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Excessive water ingestion','Yes','Yes','Yes','Excessive water ingestion','No','No','Yes','No','No','No','No','No','Yes','No','No','No','Yes','Yes','Yes','Yes','Yes','Yes','Excessive water ingestion','Yes','2004-12-14','Yes','No','Excessive water ingestion','2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_final_clinical_assessment` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1157,7 +1164,7 @@ CREATE TABLE `hf_initial_assessment` (
   PRIMARY KEY (`assessment_id`),
   KEY `fk_hf_initial_assessment` (`hf_id`),
   CONSTRAINT `fk_hf_initial_assessment` FOREIGN KEY (`hf_id`) REFERENCES `hf_registry` (`hf_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1166,6 +1173,7 @@ CREATE TABLE `hf_initial_assessment` (
 
 LOCK TABLES `hf_initial_assessment` WRITE;
 /*!40000 ALTER TABLE `hf_initial_assessment` DISABLE KEYS */;
+INSERT INTO `hf_initial_assessment` VALUES (1,1,NULL,'2026-07-18','diagonisis','Yes','No','Yes','No','No','Yes',4,'inferior','PVD','Yes','feb 2020','decompensated HF','Yes','No','No',NULL,NULL,'Yes','4',70.00,'No',NULL,170.00,24.20,72,'Yes','No',18,98.00,120,80,115,76,'Yes','No','No','No','Yes','No','Yes','No','Yes','No','No','No','No','No','Yes','No','No',NULL,'Yes','No','No','Yes','Yes','No',NULL,'2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,2,NULL,'2026-07-18',NULL,'No','No','No','No','No','No',NULL,NULL,NULL,'No',NULL,NULL,'No','No','No',NULL,NULL,'No',NULL,70.00,'No',NULL,170.00,24.20,72,'Yes','No',18,98.00,120,80,115,76,'Yes','No','No','No','No','No','No','No','No','No','No','No','No','No','No','No','No',NULL,'No','No','No','No','No','No',NULL,'2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,3,NULL,'1987-07-19','Excessive water ingestion','Yes','Yes','Yes','Yes','Yes','Yes',5,'inferior','PVD','Yes','feb 2020','decompensated HF','Yes','Yes','Yes',2,'bigrmmy','Yes','4',70.00,'No',NULL,170.00,24.20,72,'Yes','No',18,98.00,120,80,115,76,'No','Yes','No','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','sympton','Yes','Yes','Yes','Yes','Yes','Yes','cold','2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_initial_assessment` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1226,7 +1234,7 @@ CREATE TABLE `hf_lab_tests` (
   PRIMARY KEY (`lab_test_id`),
   KEY `fk_hf_lab_tests` (`hf_id`),
   CONSTRAINT `fk_hf_lab_tests` FOREIGN KEY (`hf_id`) REFERENCES `hf_registry` (`hf_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1235,6 +1243,7 @@ CREATE TABLE `hf_lab_tests` (
 
 LOCK TABLES `hf_lab_tests` WRITE;
 /*!40000 ALTER TABLE `hf_lab_tests` DISABLE KEYS */;
+INSERT INTO `hf_lab_tests` VALUES (1,1,'No',NULL,'No',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'6.7',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,2,'No',NULL,'No',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,3,'No','2001-11-11','No','2001-11-11',NULL,'4.5',NULL,'4.5','2002-06-19','4.5',NULL,'4.5',NULL,'4.5',NULL,'4.5',NULL,'4.5',NULL,'4.5',NULL,'4.5',NULL,'4.5',NULL,'4.5',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'4.5',NULL,NULL,NULL,NULL,'4.55555',NULL,'2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_lab_tests` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1314,7 +1323,7 @@ CREATE TABLE `hf_medical_therapy_part1` (
   PRIMARY KEY (`therapy_part1_id`),
   KEY `fk_hf_medical_therapy_part1` (`hf_id`),
   CONSTRAINT `fk_hf_medical_therapy_part1` FOREIGN KEY (`hf_id`) REFERENCES `hf_registry` (`hf_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1323,6 +1332,7 @@ CREATE TABLE `hf_medical_therapy_part1` (
 
 LOCK TABLES `hf_medical_therapy_part1` WRITE;
 /*!40000 ALTER TABLE `hf_medical_therapy_part1` DISABLE KEYS */;
+INSERT INTO `hf_medical_therapy_part1` VALUES (1,1,'community clinic','community clinic','No',NULL,'Yes',NULL,'No',NULL,'No',NULL,'No',NULL,NULL,'No','No','No','No','No',NULL,'No',NULL,'No',NULL,'No',NULL,'Yes','6.9','No',NULL,NULL,'No','No','Yes','No','No',NULL,'No',NULL,'No',NULL,'Yes','4.5','No',NULL,'No',NULL,NULL,'No','No','No','No',NULL,'No',NULL,'No',NULL,'No','No','No','No',NULL,'2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,2,NULL,NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,NULL,'No','No','No','No','No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,NULL,'No','No','No','No','No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,NULL,'No','No','No','No',NULL,'No',NULL,'No',NULL,'No','No','No','No',NULL,'2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,3,'4.5','4.5','Yes','6','Yes','4','Yes','5','No',NULL,'No',NULL,NULL,'Yes','Yes','Yes','Yes','Yes','4.5','Yes','5','Yes','6','Yes','7','Yes',NULL,'Yes','Varshitha Appam','4','Yes','No','No','No','No',NULL,'Yes',NULL,'Yes',NULL,'Yes',NULL,'Yes',NULL,'Yes','Varshitha Appam','4','Yes','Yes','Yes','Yes','hello','Yes','4','Yes','5','Yes','Yes','Yes','Yes','hello','2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_medical_therapy_part1` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1393,7 +1403,7 @@ CREATE TABLE `hf_medical_therapy_part2` (
   PRIMARY KEY (`therapy_part2_id`),
   KEY `fk_hf_medical_therapy_part2` (`hf_id`),
   CONSTRAINT `fk_hf_medical_therapy_part2` FOREIGN KEY (`hf_id`) REFERENCES `hf_registry` (`hf_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1402,6 +1412,7 @@ CREATE TABLE `hf_medical_therapy_part2` (
 
 LOCK TABLES `hf_medical_therapy_part2` WRITE;
 /*!40000 ALTER TABLE `hf_medical_therapy_part2` DISABLE KEYS */;
+INSERT INTO `hf_medical_therapy_part2` VALUES (1,1,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'Yes','4','No',NULL,'No',NULL,'No',NULL,'No',NULL,NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,NULL,'No','No','No','No','No',NULL,'2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,2,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,NULL,'No','No','No','No','No',NULL,'2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,3,'Yes','hello','5','Yes','hello','5','Yes','hello','6','Yes','34','35','Yes','hello','5','Yes',NULL,NULL,'Yes',NULL,'No',NULL,'No',NULL,'Yes',NULL,'Yes','76','Yes',NULL,'Yes',NULL,'Yes','4','Yes','hello','5','Yes','e','Yes',NULL,'Yes',NULL,'Yes','hello','5','Yes','Yes','Yes','Yes','Yes','hello','2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_medical_therapy_part2` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1462,7 +1473,7 @@ CREATE TABLE `hf_medical_therapy_part3` (
   PRIMARY KEY (`therapy_part3_id`),
   KEY `fk_hf_medical_therapy_part3` (`hf_id`),
   CONSTRAINT `fk_hf_medical_therapy_part3` FOREIGN KEY (`hf_id`) REFERENCES `hf_registry` (`hf_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1471,6 +1482,7 @@ CREATE TABLE `hf_medical_therapy_part3` (
 
 LOCK TABLES `hf_medical_therapy_part3` WRITE;
 /*!40000 ALTER TABLE `hf_medical_therapy_part3` DISABLE KEYS */;
+INSERT INTO `hf_medical_therapy_part3` VALUES (1,1,'No',NULL,NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,NULL,'No',NULL,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,2,'No',NULL,NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,NULL,'No',NULL,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,3,'Yes','hello','4','Yes','6','Yes','9','Yes','8','Yes',NULL,'Yes','4','Yes',NULL,'Yes',NULL,'Yes',NULL,'Yes',NULL,'Yes',NULL,'Yes',NULL,'Yes','hello','e','Yes','e','Yes','hello','e','Yes',NULL,NULL,'No',NULL,NULL,'No',NULL,NULL,'2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_medical_therapy_part3` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1500,7 +1512,7 @@ CREATE TABLE `hf_patient_education` (
   PRIMARY KEY (`patient_education_id`),
   KEY `fk_hf_patient_education` (`hf_id`),
   CONSTRAINT `fk_hf_patient_education` FOREIGN KEY (`hf_id`) REFERENCES `hf_registry` (`hf_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1509,6 +1521,7 @@ CREATE TABLE `hf_patient_education` (
 
 LOCK TABLES `hf_patient_education` WRITE;
 /*!40000 ALTER TABLE `hf_patient_education` DISABLE KEYS */;
+INSERT INTO `hf_patient_education` VALUES (1,1,'No','No','No','No','Yes','No','No','No','No','No',NULL,'2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,2,'No','No','No','No','No','No','No','No','No','No',NULL,'2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,3,'Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','Yes','hello','2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_patient_education` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1545,7 +1558,7 @@ CREATE TABLE `hf_recommendations` (
   PRIMARY KEY (`recommendation_id`),
   KEY `fk_hf_recommendations` (`hf_id`),
   CONSTRAINT `fk_hf_recommendations` FOREIGN KEY (`hf_id`) REFERENCES `hf_registry` (`hf_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1554,6 +1567,7 @@ CREATE TABLE `hf_recommendations` (
 
 LOCK TABLES `hf_recommendations` WRITE;
 /*!40000 ALTER TABLE `hf_recommendations` DISABLE KEYS */;
+INSERT INTO `hf_recommendations` VALUES (1,1,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,2,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'No',NULL,'2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,3,'Yes','hello','Yes',NULL,'Yes','hello','Yes',NULL,'Yes',NULL,'Yes','hello','Yes',NULL,'Yes',NULL,'Yes',NULL,'2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_recommendations` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1574,7 +1588,7 @@ CREATE TABLE `hf_registry` (
   UNIQUE KEY `hf_registry_no` (`hf_registry_no`),
   KEY `fk_hf_patient` (`patient_id`),
   CONSTRAINT `fk_hf_patient` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1583,6 +1597,7 @@ CREATE TABLE `hf_registry` (
 
 LOCK TABLES `hf_registry` WRITE;
 /*!40000 ALTER TABLE `hf_registry` DISABLE KEYS */;
+INSERT INTO `hf_registry` VALUES (1,5,'HF00001','2026-07-18 17:56:04','2026-07-18 17:56:04'),(2,5,'HF00002','2026-07-18 18:00:42','2026-07-18 18:00:42'),(3,7,'HF00003','2026-07-19 11:39:04','2026-07-19 11:39:04');
 /*!40000 ALTER TABLE `hf_registry` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2126,7 +2141,7 @@ CREATE TABLE `patients` (
   PRIMARY KEY (`patient_id`),
   UNIQUE KEY `mr_no` (`mr_no`),
   UNIQUE KEY `ip_no` (`ip_no`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2135,7 +2150,7 @@ CREATE TABLE `patients` (
 
 LOCK TABLES `patients` WRITE;
 /*!40000 ALTER TABLE `patients` DISABLE KEYS */;
-INSERT INTO `patients` VALUES (1,'MR00001','IP00001','Varshitha','2004-01-15','Female','O+','Private Insurance','9876543210','varshitha@gmail.com','No','No','No','Unknown','No','Unknown','2026-07-15 08:32:06','2026-07-15 08:32:06'),(2,'MR00002','IP00002','Rao Ramesh Verma','1967-10-22','Male','AB-','Government Reimbursement','9898987878','','Yes','Yes','No','Unknown','Yes','Unknown','2026-07-15 10:04:11','2026-07-15 10:04:12');
+INSERT INTO `patients` VALUES (1,'MR00001','IP00001','Varshitha','2004-01-15','Female','O+','Private Insurance','9876543210','varshitha@gmail.com','No','No','No','Unknown','No','Unknown','2026-07-15 08:32:06','2026-07-15 08:32:06'),(2,'MR00002','IP00002','Rao Ramesh Verma','1967-10-22','Male','AB-','Government Reimbursement','9898987878','','Yes','Yes','No','Unknown','Yes','Unknown','2026-07-15 10:04:11','2026-07-15 10:04:12'),(3,'MR00003','IP00003','Test Patient Agent','1990-05-15','Male','O+','Direct Cash / Self-Pay','9876543210','test@example.com','No','No','Yes','Oral Hypoglycemics (OHA)','Yes','Under Dialysis','2026-07-16 04:24:19','2026-07-16 04:24:19'),(4,'MR00004','IP00004','test','1985-10-29','Male','B-','Arogyasree Scheme','7657657342',NULL,'Yes','Yes','Yes','Oral Hypoglycemics (OHA)','Yes','Under Dialysis','2026-07-16 04:40:43','2026-07-16 04:40:43'),(5,'MR00005','IP00005','Chandhra Kumar','1975-12-27','Male','O+','Private Insurance','7678789873',NULL,'Yes','Yes','Yes','Insulin Therapy','Yes','Under Dialysis','2026-07-17 05:48:08','2026-07-17 05:48:08'),(6,'MR00006','IP00006','test 2','1977-09-14','Female','B-','Arogyasree Scheme','9879879876',NULL,'Yes','Yes','Yes','Oral Hypoglycemics (OHA)','Yes','No Dialysis','2026-07-17 09:02:38','2026-07-17 09:02:38'),(7,'MR00007','IP00007','test 3','1970-10-30','Male','A-','Private Insurance','9958769873',NULL,'Yes','Yes','No','Unknown','Yes','Under Dialysis','2026-07-18 18:07:15','2026-07-18 18:07:16');
 /*!40000 ALTER TABLE `patients` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -2644,6 +2659,10 @@ LOCK TABLES `stemi_treatment_strategy` WRITE;
 /*!40000 ALTER TABLE `stemi_treatment_strategy` DISABLE KEYS */;
 /*!40000 ALTER TABLE `stemi_treatment_strategy` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Dumping routines for database 'care_registry'
+--
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -2654,4 +2673,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-07-15 18:11:44
+-- Dump completed on 2026-07-19 18:00:31

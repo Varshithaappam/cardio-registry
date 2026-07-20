@@ -20,7 +20,7 @@ export default function Select({
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={readOnly}
-        className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+        className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white text-black placeholder:text-black/60 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
       >
         <option value="" disabled>{placeholder}</option>
         {options.map((option) => {

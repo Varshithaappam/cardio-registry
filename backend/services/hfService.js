@@ -47,18 +47,18 @@ async function saveHfAssessment(data) {
             referring_doctor: data.inpatientDetails?.referringDoctor,
             referred_from: data.inpatientDetails?.referredFrom,
             present_diagnosis: data.patient?.presentDiagnosis,
-            myocardial_ischemia: data.inpatientDetails?.precipitatingFactors?.includes('Myocardial Ischemia') ? 'Yes' : 'No',
-            atrial_fibrillation: data.inpatientDetails?.precipitatingFactors?.includes('Arrhythmia') ? 'Yes' : 'No',
+            myocardial_ischemia: data.inpatientDetails?.precipitatingFactors?.includes('Myocardial ischemia') ? 'Yes' : 'No',
+            atrial_fibrillation: data.inpatientDetails?.precipitatingFactors?.includes('Atrial fibrillation') ? 'Yes' : 'No',
             bradyarrhythmia: data.inpatientDetails?.precipitatingFactors?.includes('Bradyarrhythmia') ? 'Yes' : 'No',
-            ventricular_tachycardia: data.inpatientDetails?.precipitatingFactors?.includes('Ventricular Tachycardia') ? 'Yes' : 'No',
-            uncontrolled_hypertension: data.inpatientDetails?.precipitatingFactors?.includes('Uncontrolled Hypertension') ? 'Yes' : 'No',
+            ventricular_tachycardia: data.inpatientDetails?.precipitatingFactors?.includes('Ventricular tachycardia') ? 'Yes' : 'No',
+            uncontrolled_hypertension: data.inpatientDetails?.precipitatingFactors?.includes('Uncontrolled hypertension') ? 'Yes' : 'No',
             infection: data.inpatientDetails?.precipitatingFactors?.includes('Infection') ? 'Yes' : 'No',
-            renal_failure: data.inpatientDetails?.precipitatingFactors?.includes('Renal Failure') ? 'Yes' : 'No',
-            anaemia: data.inpatientDetails?.precipitatingFactors?.includes('Anemia') ? 'Yes' : 'No',
-            medication_non_adherence: data.inpatientDetails?.precipitatingFactors?.includes('Medication Non-Adherence') ? 'Yes' : 'No',
-            excessive_salt_intake: data.inpatientDetails?.precipitatingFactors?.includes('Excessive Salt Intake') ? 'Yes' : 'No',
-            excessive_water_ingestion: data.inpatientDetails?.precipitatingFactors?.includes('Excessive Water Ingestion') ? 'Yes' : 'No',
-            progressive_worsening: data.inpatientDetails?.precipitatingFactors?.includes('Progressive Worsening') ? 'Yes' : 'No',
+            renal_failure: data.inpatientDetails?.precipitatingFactors?.includes('Renal failure') ? 'Yes' : 'No',
+            anaemia: data.inpatientDetails?.precipitatingFactors?.includes('Anaemia') ? 'Yes' : 'No',
+            medication_non_adherence: data.inpatientDetails?.precipitatingFactors?.includes('Medication non adherence') ? 'Yes' : 'No',
+            excessive_salt_intake: data.inpatientDetails?.precipitatingFactors?.includes('Excessive salt intake') ? 'Yes' : 'No',
+            excessive_water_ingestion: data.inpatientDetails?.precipitatingFactors?.includes('Excessive water ingestion') ? 'Yes' : 'No',
+            progressive_worsening: data.inpatientDetails?.precipitatingFactors?.includes('Progressive worsening') ? 'Yes' : 'No',
             precipitating_other: data.inpatientDetails?.otherPrecipitatingFactor,
             other_admission_reason: data.inpatientDetails?.nonHfAdmissionReason,
             hospitalization_days: data.inpatientDetails?.daysHospitalized ? Number(data.inpatientDetails.daysHospitalized) : null
@@ -133,8 +133,8 @@ async function saveHfAssessment(data) {
 
         // 4. Insert hf_final_clinical_assessment
         const finalData = {
-            hfref: data.typeOfHF === 'HFrEF' ? 'Yes' : 'No',
-            hfpef: data.typeOfHF === 'HFpEF' ? 'Yes' : 'No',
+            hfref: (data.typeOfHF && data.typeOfHF.startsWith('HFrEF')) ? 'Yes' : 'No',
+            hfpef: (data.typeOfHF && data.typeOfHF.startsWith('HFpEF')) ? 'Yes' : 'No',
             etiology_ischemic: data.hfEtiology?.cardiovascular?.includes('Ischemic') ? 'Yes' : 'No',
             etiology_toxic: data.hfEtiology?.cardiovascular?.includes('Toxic (Alcohol, Cocaine, Chemotherapeutic)') ? 'Yes' : 'No',
             etiology_idiopathic: data.hfEtiology?.cardiovascular?.includes('Idiopathic (Dilated)') ? 'Yes' : 'No',
@@ -153,17 +153,17 @@ async function saveHfAssessment(data) {
             etiology_chronic_renal_disease: data.hfEtiology?.nonCardiac?.includes('Chronic Renal Disease') ? 'Yes' : 'No',
             etiology_cor_pulmonale_copd: data.hfEtiology?.pulmonary?.includes('Cor Pulmonale secondary to COPD') ? 'Yes' : 'No',
             etiology_pulmonary_hypertension: data.hfEtiology?.pulmonary?.includes('Pulmonary Hypertension') ? 'Yes' : 'No',
-            etiology_other: 'No',
-            etiology_other_details: null,
+            etiology_other: data.finalAssessment?.etiologyOther || 'No',
+            etiology_other_details: data.finalAssessment?.etiologyOtherDetails || null,
             cad: data.finalAssessment?.comorbidities?.includes('Associated CAD') ? 'Yes' : 'No',
-            renal_failure: data.finalAssessment?.comorbidities?.includes('Renal Failure') ? 'Yes' : 'No',
+            renal_failure: data.finalAssessment?.comorbidities?.includes('Renal failure') ? 'Yes' : 'No',
             diabetes_mellitus: data.finalAssessment?.comorbidities?.includes('Diabetes Mellitus') ? 'Yes' : 'No',
             hypertension: data.finalAssessment?.comorbidities?.includes('Hypertension') ? 'Yes' : 'No',
             valvular_disease: data.finalAssessment?.comorbidities?.includes('Valvular Disease') ? 'Yes' : 'No',
             asthma: data.finalAssessment?.comorbidities?.includes('Asthma') ? 'Yes' : 'No',
             copd: data.finalAssessment?.comorbidities?.includes('COPD') ? 'Yes' : 'No',
             osa: data.finalAssessment?.comorbidities?.includes('OSA') ? 'Yes' : 'No',
-            anemia: data.finalAssessment?.comorbidities?.includes('Anemia') ? 'Yes' : 'No',
+            anemia: data.finalAssessment?.comorbidities?.includes('Anaemia') ? 'Yes' : 'No',
             cva: data.finalAssessment?.comorbidities?.includes('CVA') ? 'Yes' : 'No',
             severe_musculoskeletal_disease: data.finalAssessment?.comorbidities?.includes('Severe musculoskeletal disease') ? 'Yes' : 'No',
             cancer: data.finalAssessment?.comorbidities?.includes('Cancer') ? 'Yes' : 'No',
@@ -180,10 +180,10 @@ async function saveHfAssessment(data) {
             stage_b: (data.stageOfHF === 'Stage B' || data.finalAssessment?.finalStage === 'Stage B') ? 'Yes' : 'No',
             stage_c: (data.stageOfHF === 'Stage C' || data.finalAssessment?.finalStage === 'Stage C') ? 'Yes' : 'No',
             stage_d: (data.stageOfHF === 'Stage D' || data.finalAssessment?.finalStage === 'Stage D') ? 'Yes' : 'No',
-            nyha_class_1: (data.nyhaClass === 'Class I' || data.finalAssessment?.finalNyhaClass === 'Class I') ? 'Yes' : 'No',
-            nyha_class_2: (data.nyhaClass === 'Class II' || data.finalAssessment?.finalNyhaClass === 'Class II') ? 'Yes' : 'No',
-            nyha_class_3: (data.nyhaClass === 'Class III' || data.finalAssessment?.finalNyhaClass === 'Class III') ? 'Yes' : 'No',
-            nyha_class_4: (data.nyhaClass === 'Class IV' || data.finalAssessment?.finalNyhaClass === 'Class IV') ? 'Yes' : 'No',
+            nyha_class_1: ((data.nyhaClass && data.nyhaClass.includes('Class I')) || (data.finalAssessment?.finalNyhaClass && data.finalAssessment.finalNyhaClass.includes('Class I'))) ? 'Yes' : 'No',
+            nyha_class_2: ((data.nyhaClass && data.nyhaClass.includes('Class II')) || (data.finalAssessment?.finalNyhaClass && data.finalAssessment.finalNyhaClass.includes('Class II'))) ? 'Yes' : 'No',
+            nyha_class_3: ((data.nyhaClass && data.nyhaClass.includes('Class III')) || (data.finalAssessment?.finalNyhaClass && data.finalAssessment.finalNyhaClass.includes('Class III'))) ? 'Yes' : 'No',
+            nyha_class_4: ((data.nyhaClass && data.nyhaClass.includes('Class IV')) || (data.finalAssessment?.finalNyhaClass && data.finalAssessment.finalNyhaClass.includes('Class IV'))) ? 'Yes' : 'No',
             af_permanent: data.afStatus === 'Permanent' ? 'Yes' : 'No',
             af_paroxysmal: data.afStatus === 'Paroxysmal' ? 'Yes' : 'No',
             af_persistent: data.afStatus === 'Persistent' ? 'Yes' : 'No',
@@ -285,7 +285,7 @@ async function saveHfAssessment(data) {
                 ecg_av_second_degree_block: data.investigations.ecgAvConduction === '2nd Degree AV Block' ? 'Yes' : 'No',
                 ecg_av_third_degree_block: data.investigations.ecgAvConduction === 'Complete Heart Block (3rd Degree)' ? 'Yes' : 'No',
                 ecg_qwaves_yes: data.investigations.ecgQWaves === 'Yes' ? 'Yes' : 'No',
-                ecg_qwaves_none: data.investigations.ecgQWaves === 'No' ? 'Yes' : 'No',
+                ecg_qwaves_none: (data.investigations.ecgQWaves === 'No' || data.investigations.ecgQWaves === 'None') ? 'Yes' : 'No',
                 ecg_qwave_leads: data.investigations.ecgQWavesLeads || null,
                 ecg_lbbb: data.investigations.ecgBlockages === 'LBBB' ? 'Yes' : 'No',
                 ecg_rbbb: data.investigations.ecgBlockages === 'RBBB' ? 'Yes' : 'No',
@@ -298,9 +298,9 @@ async function saveHfAssessment(data) {
                 ecg_qtc: data.investigations.ecgQtc ? Number(data.investigations.ecgQtc) : null,
                 chest_xray_test_date: data.investigations.cxrDate || null,
                 cardiothoracic_ratio: data.investigations.cxrCtRatio ? Number(data.investigations.cxrCtRatio) : null,
-                chest_pvh: data.investigations.cxrPvh || 'No',
-                chest_pulmonary_edema: data.investigations.cxrPulmonaryEdema || 'No',
-                chest_pleural_effusion: data.investigations.cxrPleuralEffusion || 'No',
+                chest_pvh: data.investigations.cxrPvh ? 'Yes' : 'No',
+                chest_pulmonary_edema: data.investigations.cxrPulmonaryEdema ? 'Yes' : 'No',
+                chest_pleural_effusion: data.investigations.cxrPleuralEffusion ? 'Yes' : 'No',
                 chest_other: data.investigations.cxrOthers ? 'Yes' : 'No',
                 chest_other_details: data.investigations.cxrOthers || null,
                 echo_test_date: data.investigations.echoDate || null,
@@ -309,9 +309,9 @@ async function saveHfAssessment(data) {
                 echo_ee_ratio: data.investigations.echoEePrimeRatio ? Number(data.investigations.echoEePrimeRatio) : null,
                 echo_deceleration_time: data.investigations.echoEDecelTime ? Number(data.investigations.echoEDecelTime) : null,
                 echo_rv_tapsv: data.investigations.echoRvTapsv ? Number(data.investigations.echoRvTapsv) : null,
-                echo_left_atrium_dimension: data.investigations.echoLaDimension || null,
-                echo_left_ventricle_systole: data.investigations.echoLvSystole || null,
-                echo_left_ventricle_diastole: data.investigations.echoLvDiastole || null,
+                echo_left_atrium_dimension: data.investigations.echoLaDimension ? 'Yes' : 'No',
+                echo_left_ventricle_systole: data.investigations.echoLvSystole ? 'Yes' : 'No',
+                echo_left_ventricle_diastole: data.investigations.echoLvDiastole ? 'Yes' : 'No',
                 mitral_regurgitation_none: data.investigations.echoMrMitralRegurg === 'None / Trace' ? 'Yes' : 'No',
                 mitral_regurgitation_1plus: data.investigations.echoMrMitralRegurg === 'Mild (1+)' ? 'Yes' : 'No',
                 mitral_regurgitation_2plus: data.investigations.echoMrMitralRegurg === 'Moderate (2+)' ? 'Yes' : 'No',
@@ -331,29 +331,29 @@ async function saveHfAssessment(data) {
 
             const advancedData = {
                 holter_test_date: data.investigations.holterDate || null,
-                ventricular_arrhythmia_no: data.investigations.holterVentricularArrhythmia === 'No VT/VF/Complex VPCs' ? 'Yes' : 'No',
-                ventricular_arrhythmia_yes: data.investigations.holterVentricularArrhythmia === 'Complex VPCs / NSVT / VT detected' ? 'Yes' : 'No',
-                ventricular_arrhythmia_complex_vpc: 'No',
-                ventricular_arrhythmia_nsvt: 'No',
-                ventricular_arrhythmia_vt: 'No',
-                atrial_arrhythmia_none: data.investigations.holterAtrialArrhythmias === 'Normal / No Arrhythmias' ? 'Yes' : 'No',
-                atrial_arrhythmia_apcs: data.investigations.holterAtrialArrhythmias === 'Frequent APCs' ? 'Yes' : 'No',
-                atrial_arrhythmia_af: data.investigations.holterAtrialArrhythmias === 'Atrial Fibrillation / Flutter Run' ? 'Yes' : 'No',
-                ventricular_pvc: data.investigations.holterVpcChecked || null,
+                ventricular_arrhythmia_no: data.investigations.holterVentricularArrhythmia === 'No' ? 'Yes' : 'No',
+                ventricular_arrhythmia_yes: data.investigations.holterVentricularArrhythmia === 'Yes' ? 'Yes' : 'No',
+                ventricular_arrhythmia_complex_vpc: data.investigations.holterVentricularArrhythmia === 'Complex VPC' ? 'Yes' : 'No',
+                ventricular_arrhythmia_nsvt: data.investigations.holterVentricularArrhythmia === 'NSVT' ? 'Yes' : 'No',
+                ventricular_arrhythmia_vt: data.investigations.holterVentricularArrhythmia === 'VT' ? 'Yes' : 'No',
+                atrial_arrhythmia_none: data.investigations.holterAtrialArrhythmias === 'None' ? 'Yes' : 'No',
+                atrial_arrhythmia_apcs: data.investigations.holterAtrialArrhythmias === 'APCs' ? 'Yes' : 'No',
+                atrial_arrhythmia_af: data.investigations.holterAtrialArrhythmias === 'AF' ? 'Yes' : 'No',
+                ventricular_pvc: data.investigations.holterVpcChecked ? 'Yes' : 'No',
                 heart_rate_variability: data.investigations.holterHrv || null,
                 stress_test_done: data.investigations.stressStatus === 'Done' ? 'Yes' : 'No',
                 stress_test_date: data.investigations.stressDate || null,
                 stress_test_not_done: data.investigations.stressStatus === 'Not Done' ? 'Yes' : 'No',
                 stress_mets_achieved: data.investigations.stressMets ? Number(data.investigations.stressMets) : null,
                 stress_target_heart_rate_achieved: data.investigations.stressTargetHr || null,
-                stress_ischemic_changes_yes: data.investigations.stressIschemicChanges === 'Yes' ? 'Yes' : 'No',
-                stress_ischemic_changes_no: data.investigations.stressIschemicChanges === 'No' ? 'Yes' : 'No',
+                stress_ischemic_changes_yes: (data.investigations.stressIschemicChanges === 'Yes' || data.investigations.stressIschemicChanges === 'Present') ? 'Yes' : 'No',
+                stress_ischemic_changes_no: (data.investigations.stressIschemicChanges === 'No' || data.investigations.stressIschemicChanges === 'Absent') ? 'Yes' : 'No',
                 stress_arrhythmias_yes: data.investigations.stressArrhythmias === 'Yes' ? 'Yes' : 'No',
                 stress_arrhythmias_no: data.investigations.stressArrhythmias === 'No' ? 'Yes' : 'No',
                 mri_test_date: data.investigations.mriDate || null,
                 mri_lvef: data.investigations.mriLvef ? Number(data.investigations.mriLvef) : null,
-                mri_scar_present: data.investigations.mriScar === 'Yes' ? 'Yes' : 'No',
-                mri_scar_absent: data.investigations.mriScar === 'No' ? 'Yes' : 'No',
+                mri_scar_present: (data.investigations.mriScar === 'Yes' || data.investigations.mriScar === 'Present') ? 'Yes' : 'No',
+                mri_scar_absent: (data.investigations.mriScar === 'No' || data.investigations.mriScar === 'Absent') ? 'Yes' : 'No',
                 pet_test_date: data.investigations.petDate || null,
                 six_minute_walk_done: data.investigations.sixMwtStatus === 'Done' ? 'Yes' : 'No',
                 six_minute_walk_date: data.investigations.sixMwtDate || null,
@@ -441,18 +441,18 @@ async function getHfAssessment(hf_id) {
 
         // Deconstruct precipitating factors
         const precipitatingFactors = [];
-        if (admin.myocardial_ischemia === 'Yes') precipitatingFactors.push('Myocardial Ischemia');
-        if (admin.atrial_fibrillation === 'Yes') precipitatingFactors.push('Arrhythmia');
+        if (admin.myocardial_ischemia === 'Yes') precipitatingFactors.push('Myocardial ischemia');
+        if (admin.atrial_fibrillation === 'Yes') precipitatingFactors.push('Atrial fibrillation');
         if (admin.bradyarrhythmia === 'Yes') precipitatingFactors.push('Bradyarrhythmia');
-        if (admin.ventricular_tachycardia === 'Yes') precipitatingFactors.push('Ventricular Tachycardia');
-        if (admin.uncontrolled_hypertension === 'Yes') precipitatingFactors.push('Uncontrolled Hypertension');
+        if (admin.ventricular_tachycardia === 'Yes') precipitatingFactors.push('Ventricular tachycardia');
+        if (admin.uncontrolled_hypertension === 'Yes') precipitatingFactors.push('Uncontrolled hypertension');
         if (admin.infection === 'Yes') precipitatingFactors.push('Infection');
-        if (admin.renal_failure === 'Yes') precipitatingFactors.push('Renal Failure');
-        if (admin.anaemia === 'Yes') precipitatingFactors.push('Anemia');
-        if (admin.medication_non_adherence === 'Yes') precipitatingFactors.push('Medication Non-Adherence');
-        if (admin.excessive_salt_intake === 'Yes') precipitatingFactors.push('Excessive Salt Intake');
-        if (admin.excessive_water_ingestion === 'Yes') precipitatingFactors.push('Excessive Water Ingestion');
-        if (admin.progressive_worsening === 'Yes') precipitatingFactors.push('Progressive Worsening');
+        if (admin.renal_failure === 'Yes') precipitatingFactors.push('Renal failure');
+        if (admin.anaemia === 'Yes') precipitatingFactors.push('Anaemia');
+        if (admin.medication_non_adherence === 'Yes') precipitatingFactors.push('Medication non adherence');
+        if (admin.excessive_salt_intake === 'Yes') precipitatingFactors.push('Excessive salt intake');
+        if (admin.excessive_water_ingestion === 'Yes') precipitatingFactors.push('Excessive water ingestion');
+        if (admin.progressive_worsening === 'Yes') precipitatingFactors.push('Progressive worsening');
 
         // Deconstruct cardiovascular etiologies
         const cvEtiology = [];
@@ -464,7 +464,7 @@ async function getHfAssessment(hf_id) {
         if (final.etiology_valvular_rheumatic === 'Yes') cvEtiology.push('Valvular/ Rheumatic heart disease');
         if (final.etiology_hypertensive === 'Yes') cvEtiology.push('Hypertensive');
         if (final.etiology_tachycardia_induced === 'Yes') cvEtiology.push('Tachycardia Induced');
-        if (final.etiology_metabolic_disease === 'Yes') cvEtiology.push('Metabolic Diseases/Wilson’s/Hemochromatosis');
+        if (final.etiology_metabolic_disease === 'Yes') cvEtiology.push('Metabolic Diseases/Hemochromatosis/Wilson’s Disease');
         if (final.etiology_hiv_viral_cardiomyopathy === 'Yes') cvEtiology.push('HIV and Viral Cardiomyopathy');
         if (final.etiology_inflammatory_cardiomyopathy === 'Yes') cvEtiology.push('Inflammatory cardiomyopathy');
         if (final.etiology_reduced_ef_previous_mi === 'Yes') cvEtiology.push('Reduced EF with/wo previous MI');
@@ -484,14 +484,14 @@ async function getHfAssessment(hf_id) {
         // Deconstruct comorbidities
         const comorbidities = [];
         if (final.cad === 'Yes') comorbidities.push('Associated CAD');
-        if (final.renal_failure === 'Yes') comorbidities.push('Renal Failure');
+        if (final.renal_failure === 'Yes') comorbidities.push('Renal failure');
         if (final.diabetes_mellitus === 'Yes') comorbidities.push('Diabetes Mellitus');
         if (final.hypertension === 'Yes') comorbidities.push('Hypertension');
         if (final.valvular_disease === 'Yes') comorbidities.push('Valvular Disease');
         if (final.asthma === 'Yes') comorbidities.push('Asthma');
         if (final.copd === 'Yes') comorbidities.push('COPD');
         if (final.osa === 'Yes') comorbidities.push('OSA');
-        if (final.anemia === 'Yes') comorbidities.push('Anemia');
+        if (final.anemia === 'Yes') comorbidities.push('Anaemia');
         if (final.cva === 'Yes') comorbidities.push('CVA');
         if (final.severe_musculoskeletal_disease === 'Yes') comorbidities.push('Severe musculoskeletal disease');
         if (final.cancer === 'Yes') comorbidities.push('Cancer');
@@ -518,7 +518,7 @@ async function getHfAssessment(hf_id) {
 
         let ecgQWaves = '';
         if (cardiac.ecg_qwaves_yes === 'Yes') ecgQWaves = 'Yes';
-        else if (cardiac.ecg_qwaves_none === 'Yes') ecgQWaves = 'No';
+        else if (cardiac.ecg_qwaves_none === 'Yes') ecgQWaves = 'None';
 
         let ecgBlockages = '';
         if (cardiac.ecg_lbbb === 'Yes') ecgBlockages = 'LBBB';
@@ -551,13 +551,16 @@ async function getHfAssessment(hf_id) {
 
         // Parse Advanced Investigations
         let holterVentricularArrhythmia = '';
-        if (advanced.ventricular_arrhythmia_no === 'Yes') holterVentricularArrhythmia = 'No VT/VF/Complex VPCs';
-        else if (advanced.ventricular_arrhythmia_yes === 'Yes') holterVentricularArrhythmia = 'Complex VPCs / NSVT / VT detected';
+        if (advanced.ventricular_arrhythmia_no === 'Yes') holterVentricularArrhythmia = 'No';
+        else if (advanced.ventricular_arrhythmia_yes === 'Yes') holterVentricularArrhythmia = 'Yes';
+        else if (advanced.ventricular_arrhythmia_complex_vpc === 'Yes') holterVentricularArrhythmia = 'Complex VPC';
+        else if (advanced.ventricular_arrhythmia_nsvt === 'Yes') holterVentricularArrhythmia = 'NSVT';
+        else if (advanced.ventricular_arrhythmia_vt === 'Yes') holterVentricularArrhythmia = 'VT';
 
         let holterAtrialArrhythmias = '';
-        if (advanced.atrial_arrhythmia_none === 'Yes') holterAtrialArrhythmias = 'Normal / No Arrhythmias';
-        else if (advanced.atrial_arrhythmia_apcs === 'Yes') holterAtrialArrhythmias = 'Frequent APCs';
-        else if (advanced.atrial_arrhythmia_af === 'Yes') holterAtrialArrhythmias = 'Atrial Fibrillation / Flutter Run';
+        if (advanced.atrial_arrhythmia_none === 'Yes') holterAtrialArrhythmias = 'None';
+        else if (advanced.atrial_arrhythmia_apcs === 'Yes') holterAtrialArrhythmias = 'APCs';
+        else if (advanced.atrial_arrhythmia_af === 'Yes') holterAtrialArrhythmias = 'AF';
 
         let stressStatus = '';
         if (advanced.stress_test_done === 'Yes') stressStatus = 'Done';
@@ -596,6 +599,8 @@ async function getHfAssessment(hf_id) {
 
         return {
             id: registry.hf_id,
+            hfRegistryNo: registry.hf_registry_no,
+            hf_registry_no: registry.hf_registry_no,
             patientId: registry.patient_id,
             encounterId: admin.care_mr_no,
             assessmentDate: admin.assessment_date,
@@ -622,6 +627,7 @@ async function getHfAssessment(hf_id) {
                 daysHospitalized: admin.hospitalization_days
             },
             previous_diagnosis: initial.previous_diagnosis,
+            previousDiagnosis: initial.previous_diagnosis,
             history_cabg: initial.history_cabg,
             history_ptca: initial.history_ptca,
             history_stroke: initial.history_stroke,
@@ -701,6 +707,8 @@ async function getHfAssessment(hf_id) {
                 comorbidities,
                 otherComorbidity: final.comorbidity_other_details,
                 riskFactors,
+                etiologyOther: final.etiology_other,
+                etiologyOtherDetails: final.etiology_other_details,
                 otherRiskFactor: final.risk_factor_other_details,
                 maceHospitalization: final.mace_hospitalization,
                 maceStroke: final.mace_stroke,
@@ -755,9 +763,9 @@ async function getHfAssessment(hf_id) {
                 ecgQtc: cardiac.ecg_qtc,
                 cxrDate: cardiac.chest_xray_test_date,
                 cxrCtRatio: cardiac.cardiothoracic_ratio,
-                cxrPvh: cardiac.chest_pvh,
-                cxrPulmonaryEdema: cardiac.chest_pulmonary_edema,
-                cxrPleuralEffusion: cardiac.chest_pleural_effusion,
+                cxrPvh: cardiac.chest_pvh === 'Yes',
+                cxrPulmonaryEdema: cardiac.chest_pulmonary_edema === 'Yes',
+                cxrPleuralEffusion: cardiac.chest_pleural_effusion === 'Yes',
                 cxrOthers: cardiac.chest_other_details,
                 echoDate: cardiac.echo_test_date,
                 echoEfPercent: cardiac.echo_ef,
@@ -765,16 +773,16 @@ async function getHfAssessment(hf_id) {
                 echoRvTapsv: cardiac.echo_rv_tapsv,
                 echoEePrimeRatio: cardiac.echo_ee_ratio,
                 echoEDecelTime: cardiac.echo_deceleration_time,
-                echoLaDimension: cardiac.echo_left_atrium_dimension,
-                echoLvSystole: cardiac.echo_left_ventricle_systole,
-                echoLvDiastole: cardiac.echo_left_ventricle_diastole,
+                echoLaDimension: cardiac.echo_left_atrium_dimension === 'Yes',
+                echoLvSystole: cardiac.echo_left_ventricle_systole === 'Yes',
+                echoLvDiastole: cardiac.echo_left_ventricle_diastole === 'Yes',
                 echoMrMitralRegurg,
                 echoOtherValves: cardiac.other_valves,
                 echoRvSystolicPressure: cardiac.rv_systolic_pressure,
                 echoRvFunction,
                 echoRwmi,
                 holterDate: advanced.holter_test_date,
-                holterVpcChecked: advanced.ventricular_pvc,
+                holterVpcChecked: advanced.ventricular_pvc === 'Yes',
                 holterVentricularArrhythmia,
                 holterAtrialArrhythmias,
                 holterHrv: advanced.heart_rate_variability,

@@ -166,6 +166,8 @@ const hf = forwardRef(function hf(
 
   // State Management
   // 1. Patient Profile Fields
+  
+  const [address, setAddress] = useState(editingRecord?.patient?.address || patient.address || '');
   const [highestEducation, setHighestEducation] = useState(patient.highestEducation ?? editingRecord?.patient?.highestEducation ?? '');
   const [monthlyIncome, setMonthlyIncome] = useState(patient.monthlyIncome ?? editingRecord?.patient?.monthlyIncome ?? '');
   const [occupation, setOccupation] = useState(patient.occupation ?? editingRecord?.patient?.occupation ?? '');
@@ -285,6 +287,8 @@ const hf = forwardRef(function hf(
   const [finalClinicalNotes, setFinalClinicalNotes] = useState(editingRecord?.finalAssessment?.clinicalNotes ?? '');
 
   // New Comorbidities & Risk Factors states
+    const [etiologyOther, setEtiologyOther] = useState(editingRecord?.finalAssessment?.etiologyOther ?? 'No');
+  const [etiologyOtherDetails, setEtiologyOtherDetails] = useState(editingRecord?.finalAssessment?.etiologyOtherDetails ?? '');
   const [comorbidities, setComorbidities] = useState(editingRecord?.finalAssessment?.comorbidities ?? []);
   const [otherComorbidity, setOtherComorbidity] = useState(editingRecord?.finalAssessment?.otherComorbidity ?? '');
   const [riskFactors, setRiskFactors] = useState(editingRecord?.finalAssessment?.riskFactors ?? []);
@@ -316,6 +320,32 @@ const hf = forwardRef(function hf(
   const [bloodGroup, setBloodGroup] = useState(editingRecord?.investigations?.bloodGroup ?? '');
 
   // --- Lab Test State Structure ---
+  
+  const formatDateToView = (val) => {
+    if (!val) return '';
+    const dateStr = val.split('T')[0];
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return val;
+  };
+
+  const renderInlineDate = (val, onChange, className = "border-b border-slate-300 p-0 focus:ring-0 text-xs bg-transparent") => {
+    if (readOnly) {
+      return <span className="text-slate-900 font-bold text-xs px-1">{formatDateToView(val) || '—'}</span>;
+    }
+    const formattedVal = val ? val.split('T')[0] : '';
+    return (
+      <input
+        type="date"
+        value={formattedVal}
+        onChange={(e) => onChange(e.target.value)}
+        className={className}
+      />
+    );
+  };
+
   const [labTests, setLabTests] = useState(editingRecord?.investigations?.labTests ?? {
     potassium: { checked: false, result: '', date: '' },
     creatinine: { checked: false, result: '', date: '' },
@@ -875,7 +905,8 @@ const hf = forwardRef(function hf(
       caregiverPhone,
       insuranceMode,
       referredFrom,
-      presentDiagnosis
+      presentDiagnosis,
+      address
     },
     inpatientDetails: {
       treatingCardiologist,
@@ -969,6 +1000,8 @@ const hf = forwardRef(function hf(
       otherComorbidity,
       riskFactors,
       otherRiskFactor,
+      etiologyOther,
+      etiologyOtherDetails,
       maceHospitalization,
       maceStroke,
       maceProcedures,
@@ -983,9 +1016,9 @@ const hf = forwardRef(function hf(
       clinicalNotes: finalClinicalNotes
     },
     investigations: {
-      vacPneumococcal: vacPneumococcal === 'Yes' ? 'Yes' : 'No',
+      vacPneumococcal: vacPneumococcal ? 'Yes' : 'No',
       vacPneumococcalDate: vacPneumococcalDate || null,
-      vacInfluenza: vacInfluenza === 'Yes' ? 'Yes' : 'No',
+      vacInfluenza: vacInfluenza ? 'Yes' : 'No',
       vacInfluenzaDate: vacInfluenzaDate || null,
       bloodGroup: bloodGroup || null,
       labTests,
@@ -1317,7 +1350,7 @@ const hf = forwardRef(function hf(
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
             <span className="text-slate-400 font-semibold uppercase block">HF ID</span>
-            <span className="text-slate-800 font-bold block mt-1">{patient.hfId || patient.id || '—'}</span>
+            <span className="text-slate-800 font-bold block mt-1">{editingRecord?.hf_registry_no || editingRecord?.hfRegistryNo || 'New'}</span>
           </div>
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
             <span className="text-slate-400 font-semibold uppercase block">CARE MR No.</span>
@@ -1363,10 +1396,10 @@ const hf = forwardRef(function hf(
           <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs">
             <span className="text-slate-400 font-semibold uppercase block mb-1">Address</span>
             <textarea disabled={readOnly}
-              readOnly
-              className="w-full bg-transparent border-0 p-0 text-slate-800 font-medium focus:ring-0 resize-none text-xs"
+              className="w-full bg-white border border-slate-200 p-2 text-slate-800 font-medium focus:ring-0 resize-none text-xs rounded-lg"
               rows={2}
-              value={patient.address || '—'}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
             />
           </div>
         </div>
@@ -1920,7 +1953,18 @@ const hf = forwardRef(function hf(
                 <CheckboxGroup readOnly={readOnly} label="Pulmonary" options={HF_ETIOLOGY_PULM} values={hfEtiologyPulm} onChange={setHfEtiologyPulm} columns={1} />
                 <div>
                   <span className="block font-bold text-slate-700 mb-1">Others (please specify):</span>
-                  <input disabled={readOnly} type="text" className="w-full border border-slate-300 rounded p-1 text-xs" placeholder="Specify other etiology..." />
+                  <input
+                    disabled={readOnly}
+                    type="text"
+                    value={etiologyOtherDetails}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEtiologyOtherDetails(val);
+                      setEtiologyOther(val ? 'Yes' : 'No');
+                    }}
+                    className="w-full border border-slate-300 rounded p-1 text-xs bg-white text-slate-800 font-medium"
+                    placeholder="Specify other etiology..."
+                  />
                 </div>
               </div>
             </div>
@@ -2009,7 +2053,7 @@ const hf = forwardRef(function hf(
                   <div className="space-y-1.5 mt-1">
                     <div>
                       <span className="text-[10px] text-slate-500 block">Date:</span>
-                      <input disabled={readOnly} type="date" value={maceDeathDate} onChange={(e) => setMaceDeathDate(e.target.value)} className="w-full border border-slate-300 rounded p-0.5 text-xs" />
+                      {renderInlineDate(maceDeathDate, setMaceDeathDate, "w-full border border-slate-300 rounded p-0.5 text-xs bg-white")}
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-500 block">Location:</span>
@@ -2049,7 +2093,7 @@ const hf = forwardRef(function hf(
               <div className="flex flex-wrap gap-4 border-b border-slate-100 pb-2">
                 <div className="flex items-center gap-1">
                   <span className="font-semibold text-slate-600">Date of test:</span>
-                  <input disabled={readOnly} type="date" value={ecgDate} onChange={(e) => setEcgDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                  {renderInlineDate(ecgDate, setEcgDate)}
                 </div>
                 <div className="flex items-center gap-1">
                   <span className="font-semibold text-slate-600">QRS duration:</span>
@@ -2121,7 +2165,7 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 space-y-2">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
                 <span className="font-semibold text-slate-600">Date of test:</span>
-                <input disabled={readOnly} type="date" value={cxrDate} onChange={(e) => setCxrDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                {renderInlineDate(cxrDate, setCxrDate)}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
                 <div className="flex items-center gap-1">
@@ -2145,7 +2189,7 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 space-y-3">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
                 <span className="font-semibold text-slate-600">Date of test:</span>
-                <input disabled={readOnly} type="date" value={echoDate} onChange={(e) => setEchoDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                {renderInlineDate(echoDate, setEchoDate)}
               </div>
               
               {/* Metric inputs section */}
@@ -2207,7 +2251,7 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 space-y-2">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
                 <span className="font-semibold text-slate-600">Date of test:</span>
-                <input disabled={readOnly} type="date" value={holterDate} onChange={(e) => setHolterDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                {renderInlineDate(holterDate, setHolterDate)}
               </div>
               <div className="space-y-1.5">
                 <div>
@@ -2241,7 +2285,7 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 space-y-2">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
                 <span className="font-semibold text-slate-600">Date of test:</span>
-                <input disabled={readOnly} type="date" value={stressDate} onChange={(e) => setStressDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                {renderInlineDate(stressDate, setStressDate)}
               </div>
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Not Done'} onChange={() => setStressStatus('Not Done')} /> Not Done</label>
@@ -2283,7 +2327,7 @@ const hf = forwardRef(function hf(
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-slate-500 font-medium">Date of test:</span>
-                <input disabled={readOnly} type="date" value={mriDate} onChange={(e) => setMriDate(e.target.value)} className="border-b border-slate-300 p-0 text-xs focus:ring-0" />
+                {renderInlineDate(mriDate, setMriDate, "border-b border-slate-300 p-0 text-xs focus:ring-0")}
               </div>
             </div>
           </div>
@@ -2293,7 +2337,7 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 bg-slate-100 font-bold border-r border-slate-300 text-slate-700 flex items-center">PET</div>
             <div className="p-2.5 md:col-span-3 flex items-center justify-end gap-1">
               <span className="text-slate-500 font-medium">Date of test:</span>
-              <input disabled={readOnly} type="date" value={petDate} onChange={(e) => setPetDate(e.target.value)} className="border-b border-slate-300 p-0 text-xs focus:ring-0" />
+              {renderInlineDate(petDate, setPetDate, "border-b border-slate-300 p-0 text-xs focus:ring-0")}
             </div>
           </div>
 
@@ -2303,7 +2347,7 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 space-y-2">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
                 <span className="font-semibold text-slate-600">Date of test:</span>
-                <input disabled={readOnly} type="date" value={sixMwtDate} onChange={(e) => setSixMwtDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                {renderInlineDate(sixMwtDate, setSixMwtDate)}
               </div>
               <div className="space-y-2">
                 <div>
@@ -2330,7 +2374,7 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 bg-slate-100 font-bold border-r border-slate-300 text-slate-700 flex items-center">Anaerobic Threshold</div>
             <div className="p-2.5 md:col-span-3 flex items-center justify-end gap-1">
               <span className="text-slate-500 font-medium">Date of test:</span>
-              <input disabled={readOnly} type="date" value={anaerobicDate} onChange={(e) => setAnaerobicDate(e.target.value)} className="border-b border-slate-300 p-0 text-xs focus:ring-0" />
+              {renderInlineDate(anaerobicDate, setAnaerobicDate, "border-b border-slate-300 p-0 text-xs focus:ring-0")}
             </div>
           </div>
 
@@ -2340,7 +2384,7 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 space-y-2">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
                 <span className="font-semibold text-slate-600">Date of test:</span>
-                <input disabled={readOnly} type="date" value={angioDate} onChange={(e) => setAngioDate(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs" />
+                {renderInlineDate(angioDate, setAngioDate)}
               </div>
               <div className="space-y-1.5">
                 <div>
@@ -2364,7 +2408,7 @@ const hf = forwardRef(function hf(
             <div className="p-2.5 md:col-span-3 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-1">
                 <span className="font-semibold text-slate-700">Date of test:</span>
-                <input disabled={readOnly} type="date" value={biopsyDate} onChange={(e) => setBiopsyDate(e.target.value)} className="border-b border-slate-300 p-0 text-xs focus:ring-0" />
+                {renderInlineDate(biopsyDate, setBiopsyDate)}
               </div>
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="biopsy_st" checked={biopsyStatus === 'Done'} onChange={() => setBiopsyStatus('Done')} /> Done</label>
@@ -2380,12 +2424,12 @@ const hf = forwardRef(function hf(
               <div className="flex items-center gap-2">
                 <input disabled={readOnly} type="checkbox" id="v-pneumo" checked={vacPneumococcal} onChange={(e) => setVacPneumococcal(e.target.checked)} />
                 <label htmlFor="v-pneumo" className="font-medium">Pneumococcal (Date of test:</label>
-                <input disabled={readOnly} type="date" value={vacPneumococcalDate} onChange={(e) => setVacPneumococcalDate(e.target.value)} className="border-b border-slate-400 p-0 text-xs w-28 focus:ring-0 outline-none" />
+                {renderInlineDate(vacPneumococcalDate, setVacPneumococcalDate, "border-b border-slate-400 p-0 text-xs w-28 focus:ring-0 outline-none")}
               </div>
               <div className="flex items-center gap-2">
                 <input disabled={readOnly} type="checkbox" id="v-flu" checked={vacInfluenza} onChange={(e) => setVacInfluenza(e.target.checked)} />
                 <label htmlFor="v-flu" className="font-medium">Influenza (Date of test:</label>
-                <input disabled={readOnly} type="date" value={vacInfluenzaDate} onChange={(e) => setVacInfluenzaDate(e.target.value)} className="border-b border-slate-400 p-0 text-xs w-28 focus:ring-0 outline-none" />
+                {renderInlineDate(vacInfluenzaDate, setVacInfluenzaDate, "border-b border-slate-400 p-0 text-xs w-28 focus:ring-0 outline-none")}
               </div>
             </div>
           </div>
@@ -2440,7 +2484,7 @@ const hf = forwardRef(function hf(
                       <span className="truncate">{item.label}</span>
                     </label>
                     <input disabled={readOnly} type="text" value={labTests[item.key].result} onChange={(e) => handleLabChange(item.key, 'result', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-center text-xs focus:ring-0 outline-none w-full" />
-                    <input disabled={readOnly} type="date" value={labTests[item.key].date} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />
+                    {readOnly ? <span className="text-slate-900 font-bold text-xs text-right w-full block">{formatDateToView(labTests[item.key].date) || '—'}</span> : <input type="date" value={labTests[item.key].date ? labTests[item.key].date.split('T')[0] : ''} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />}
                   </div>
                 ))}
               </div>
@@ -2465,7 +2509,7 @@ const hf = forwardRef(function hf(
                       <span className="truncate">{item.label}</span>
                     </label>
                     <input disabled={readOnly} type="text" value={labTests[item.key].result} onChange={(e) => handleLabChange(item.key, 'result', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-center text-xs focus:ring-0 outline-none w-full" />
-                    <input disabled={readOnly} type="date" value={labTests[item.key].date} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />
+                    {readOnly ? <span className="text-slate-900 font-bold text-xs text-right w-full block">{formatDateToView(labTests[item.key].date) || '—'}</span> : <input type="date" value={labTests[item.key].date ? labTests[item.key].date.split('T')[0] : ''} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />}
                   </div>
                 ))}
                 {/* Custom Lab Field */}
@@ -2475,7 +2519,7 @@ const hf = forwardRef(function hf(
                     <input disabled={readOnly} type="text" placeholder="Other:" value={labTests.other.name || ''} onChange={(e) => handleLabChange('other', 'name', e.target.value)} className="border-b border-slate-300 p-0 text-xs w-full focus:ring-0 outline-none" />
                   </div>
                   <input disabled={readOnly} type="text" value={labTests.other.result} onChange={(e) => handleLabChange('other', 'result', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-center text-xs focus:ring-0 outline-none w-full" />
-                  <input disabled={readOnly} type="date" value={labTests.other.date} onChange={(e) => handleLabChange('other', 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />
+                  {readOnly ? <span className="text-slate-900 font-bold text-xs text-right w-full block">{formatDateToView(labTests.other.date) || '—'}</span> : <input type="date" value={labTests.other.date ? labTests.other.date.split('T')[0] : ''} onChange={(e) => handleLabChange('other', 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />}
                 </div>
               </div>
 
