@@ -10,6 +10,8 @@ import { createPatient } from '../../api/patientApi';
 import { calculateDataQualityScore } from '../data/mockPatients';
 import { calculateAge } from '../utils/calculateAge';
 import { buildPatientPayload, mapPatientRecord } from '../utils/patientMapper';
+import RegisterNewPatient from './RegisterNewPatient';
+import { Edit } from 'lucide-react';
 import {
   Plus,
   Search,
@@ -92,6 +94,7 @@ function EncounterCounter({ patientId }) {
 export default function PatientList({ patients, onSelectPatient, onRegisterPatient, onAddEventClick }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [editingPatientRecord, setEditingPatientRecord] = useState(null);
   const [viewMode, setViewMode] = useState('table');
 
   // New Patient Form State
@@ -208,284 +211,36 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
       </div>
 
       {/* Dynamic Master Registration Form Overlay/SlideDown */}
-      {isRegistering &&
-      <form onSubmit={handleRegisterSubmit} className="bg-white rounded-xl shadow-md border border-blue-200 p-6 space-y-6 relative overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-blue-500"></div>
-          <div>
-            <h3 className="text-base font-bold text-slate-800">Master Registry: Patient Registration</h3>
-            <p className="text-xs text-slate-500 mt-1">Initialize the Patient Master Record and Patient Clinical Profile.</p>
+      {isRegistering && (
+        <RegisterNewPatient
+          onSuccess={(newRecord) => {
+            setIsRegistering(false);
+            if (onRegisterPatient) {
+              onRegisterPatient(newRecord);
+            }
+          }}
+          onCancel={() => setIsRegistering(false)}
+        />
+      )}
+
+      {/* Edit Patient Modal Overlay */}
+      {editingPatientRecord && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-5xl max-h-[85vh] my-auto flex flex-col">
+            <RegisterNewPatient
+              initialData={editingPatientRecord}
+              isEditMode={true}
+              onSuccess={(updatedRecord) => {
+                setEditingPatientRecord(null);
+                if (onRegisterPatient) {
+                  onRegisterPatient(updatedRecord);
+                }
+              }}
+              onCancel={() => setEditingPatientRecord(null)}
+            />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Demographic Parameters */}
-            <div className="space-y-3.5 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Demographics</h4>
-              
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Full Name *</label>
-                <input
-                id="reg-name"
-                type="text"
-                required
-                className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="E.g. Ramesh Chandra Malhotra" />
-              
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Date of Birth</label>
-                <input
-                id="reg-dob"
-                type="date"
-                required
-                className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                value={dob}
-                onChange={(e) => setDob(e.target.value)} />
-              
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Age (Years)</label>
-                  <input
-                  id="reg-age"
-                  type="number"
-                  readOnly
-                  className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  value={calculateAge(dob) ?? ''} />
-                
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Gender *</label>
-                  <select
-                  id="reg-gender"
-                  className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}>
-                  
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Clinical & Contact Parameters */}
-            <div className="space-y-3.5 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Clinical & Contact</h4>
-              
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Blood Group</label>
-                  <select
-                  id="reg-bloodgroup"
-                  className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  value={bloodGroup}
-                  onChange={(e) => setBloodGroup(e.target.value)}>
-                  
-                    <option value="Unknown">Unknown</option>
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">Insurance Mode</label>
-                  <select
-                  id="reg-insurance"
-                  className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  value={insuranceMode}
-                  onChange={(e) => setInsuranceMode(e.target.value)}>
-                  
-                    <option value="Direct Cash / Self-Pay">Direct Cash / Self-Pay</option>
-                    <option value="Private Insurance">Private Insurance</option>
-                    <option value="Government Reimbursement">Government Reimbursement</option>
-                    <option value="Arogyasree Scheme">Arogyasree Scheme</option>
-                    <option value="Unknown">Unknown</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Contact Phone</label>
-                <input
-                id="reg-phone"
-                type="text"
-                placeholder="+91 98480 12345"
-                className="w-full p-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)} />
-              
-              </div>
-            </div>
-
-            {/* Core Baseline Co-morbidities & Conditional Checks */}
-            <div className="space-y-3.5 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Baseline Comorbidities</h4>
-              
-              <div className="grid grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Hypertension</label>
-                  <div className="flex gap-1.5">
-                    {['Yes', 'No', 'Unknown'].map((opt) =>
-                  <button
-                    id={`btn-htn-${opt.toLowerCase()}`}
-                    type="button"
-                    key={opt}
-                    onClick={() => setHypertension(opt)}
-                    className={`flex-1 py-1 text-xs font-bold rounded-md border text-center transition-all ${
-                    hypertension === opt ?
-                    'bg-blue-600 border-blue-600 text-white shadow-sm' :
-                    'bg-white border-slate-200 hover:bg-slate-100 text-slate-600'}`
-                    }>
-                    
-                        {opt === 'Unknown' ? 'Unk' : opt}
-                      </button>
-                  )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Smoking</label>
-                  <div className="flex gap-1.5">
-                    {['Yes', 'No', 'Unknown'].map((opt) =>
-                  <button
-                    id={`btn-smoking-${opt.toLowerCase()}`}
-                    type="button"
-                    key={opt}
-                    onClick={() => setSmoking(opt)}
-                    className={`flex-1 py-1 text-xs font-bold rounded-md border text-center transition-all ${
-                    smoking === opt ?
-                    'bg-blue-600 border-blue-600 text-white shadow-sm' :
-                    'bg-white border-slate-200 hover:bg-slate-100 text-slate-600'}`
-                    }>
-                    
-                        {opt === 'Unknown' ? 'Unk' : opt}
-                      </button>
-                  )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Diabetes with Conditional Selection */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Diabetes Mellitus</label>
-                <div className="flex gap-1.5">
-                  {['Yes', 'No', 'Unknown'].map((opt) =>
-                <button
-                  id={`btn-diab-${opt.toLowerCase()}`}
-                  type="button"
-                  key={opt}
-                  onClick={() => setDiabetes(opt)}
-                  className={`flex-1 py-1 text-xs font-bold rounded-md border text-center transition-all ${
-                  diabetes === opt ?
-                  'bg-blue-600 border-blue-600 text-white shadow-sm' :
-                  'bg-white border-slate-200 hover:bg-slate-100 text-slate-600'}`
-                  }>
-                  
-                      {opt === 'Unknown' ? 'Unk' : opt}
-                    </button>
-                )}
-                </div>
-
-                {/* Conditional Diabetes Control Block */}
-                {diabetes === 'Yes' &&
-              <div className="mt-2 p-2.5 bg-blue-50/50 border border-blue-100 rounded-lg animate-fadeIn">
-                    <label className="block text-[10px] font-bold text-blue-800 uppercase mb-1">Diabetes Control Type *</label>
-                    <select
-                  id="reg-diabcontrol"
-                  required
-                  className="w-full p-1.5 text-xs bg-white border border-blue-200 rounded-md focus:outline-none"
-                  value={diabetesControl}
-                  onChange={(e) => setDiabetesControl(e.target.value)}>
-                  
-                      <option value="None">None (Uncontrolled)</option>
-                      <option value="Diet">Dietary Control Only</option>
-                      <option value="Oral">Oral Hypoglycemics (OHA)</option>
-                      <option value="Insulin">Insulin Therapy</option>
-                      <option value="Unknown">Unknown</option>
-                    </select>
-                  </div>
-              }
-              </div>
-
-              {/* Renal Failure with Conditional Dialysis Status */}
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1">Renal Failure (CKD)</label>
-                <div className="flex gap-1.5">
-                  {['Yes', 'No', 'Unknown'].map((opt) =>
-                <button
-                  id={`btn-renal-${opt.toLowerCase()}`}
-                  type="button"
-                  key={opt}
-                  onClick={() => setRenalFailure(opt)}
-                  className={`flex-1 py-1 text-xs font-bold rounded-md border text-center transition-all ${
-                  renalFailure === opt ?
-                  'bg-blue-600 border-blue-600 text-white shadow-sm' :
-                  'bg-white border-slate-200 hover:bg-slate-100 text-slate-600'}`
-                  }>
-                  
-                      {opt === 'Unknown' ? 'Unk' : opt}
-                    </button>
-                )}
-                </div>
-
-                {/* Conditional Dialysis Block */}
-                {renalFailure === 'Yes' &&
-              <div className="mt-2 p-2.5 bg-blue-50/50 border border-blue-100 rounded-lg animate-fadeIn">
-                    <label className="block text-[10px] font-bold text-blue-800 uppercase mb-1">Active Dialysis Status *</label>
-                    <div className="flex gap-2 mt-1">
-                      {['Yes', 'No'].map((opt) =>
-                  <button
-                    id={`btn-dialysis-${opt.toLowerCase()}`}
-                    type="button"
-                    key={opt}
-                    onClick={() => setDialysisStatus(opt)}
-                    className={`flex-1 py-1 text-xs font-semibold rounded-md border text-center ${
-                    dialysisStatus === opt ?
-                    'bg-blue-600 border-blue-600 text-white' :
-                    'bg-white border-slate-200 hover:bg-slate-100 text-slate-600'}`
-                    }>
-                    
-                          {opt === 'Yes' ? 'Under Dialysis' : 'No Dialysis'}
-                        </button>
-                  )}
-                    </div>
-                  </div>
-              }
-              </div>
-
-            </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-3.5 border-t border-slate-100 pt-4">
-            <button
-            id="btn-cancel-reg"
-            type="button"
-            onClick={() => setIsRegistering(false)}
-            className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-bold">
-            
-              Cancel
-            </button>
-            <button
-            id="btn-submit-reg"
-            type="submit"
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm">
-            
-              Verify & Register Patient
-            </button>
-          </div>
-        </form>
-      }
+        </div>
+      )}
 
       {/* Dynamic Master Patient Registry Container */}
       {viewMode === 'table' ?
@@ -586,6 +341,13 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       {/* Table Actions */}
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-2.5">
+                          <button
+                            onClick={() => setEditingPatientRecord(record)}
+                            className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
+                            title="Edit Patient Information"
+                          >
+                            <Edit className="w-3.5 h-3.5 text-blue-600" />
+                          </button>
                           {/* Event Shortcuts */}
                           <div className="flex items-center gap-1 bg-slate-100/50 p-1 rounded-xl border border-slate-200/40">
                             <button

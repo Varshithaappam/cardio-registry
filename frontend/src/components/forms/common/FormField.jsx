@@ -5,7 +5,7 @@ export default function FormField({ label, required = false, children, className
     <div className={className}>
       {label && (
         <label className="block text-xs font-bold text-black mb-1">
-          {label}{required ? ' *' : ''}
+          {label}{required && <span className="text-red-500 font-bold ml-0.5">*</span>}
         </label>
       )}
       {children}

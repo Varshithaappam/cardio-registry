@@ -19,7 +19,10 @@ async function createPatient(patientData) {
         diabetes,
         diabetes_control_type,
         renal_failure,
-        active_dialysis_status
+        active_dialysis_status,
+        address,
+        higher_education,
+        occupation
     } = patientData;
 
     const query = `
@@ -38,9 +41,12 @@ async function createPatient(patientData) {
             diabetes,
             diabetes_control_type,
             renal_failure,
-            active_dialysis_status
+            active_dialysis_status,
+            address,
+            higher_education,
+            occupation
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await db.execute(query, [
@@ -58,7 +64,10 @@ async function createPatient(patientData) {
         diabetes,
         diabetes_control_type,
         renal_failure,
-        active_dialysis_status
+        active_dialysis_status,
+        address || null,
+        higher_education || 'None',
+        occupation || null
     ]);
 
     return result;
@@ -131,7 +140,10 @@ async function updatePatient(patientId, patientData) {
         diabetes,
         diabetes_control_type,
         renal_failure,
-        active_dialysis_status
+        active_dialysis_status,
+        address,
+        higher_education,
+        occupation
     } = patientData;
 
     const query = `
@@ -149,7 +161,10 @@ async function updatePatient(patientId, patientData) {
             diabetes = ?,
             diabetes_control_type = ?,
             renal_failure = ?,
-            active_dialysis_status = ?
+            active_dialysis_status = ?,
+            address = ?,
+            higher_education = ?,
+            occupation = ?
         WHERE patient_id = ?
     `;
 
@@ -167,6 +182,9 @@ async function updatePatient(patientId, patientData) {
         diabetes_control_type,
         renal_failure,
         active_dialysis_status,
+        address || null,
+        higher_education || 'None',
+        occupation || null,
         patientId
     ]);
 
@@ -187,7 +205,6 @@ async function deletePatient(patientId) {
 
     return result;
 }
-
 
 async function getPatientCounts(patientId) {
     const query = `

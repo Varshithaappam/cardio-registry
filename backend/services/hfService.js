@@ -133,8 +133,8 @@ async function saveHfAssessment(data) {
 
         // 4. Insert hf_final_clinical_assessment
         const finalData = {
-            hfref: (data.typeOfHF && data.typeOfHF.startsWith('HFrEF')) ? 'Yes' : 'No',
-            hfpef: (data.typeOfHF && data.typeOfHF.startsWith('HFpEF')) ? 'Yes' : 'No',
+            hfref: (data.typeOfHF && (data.typeOfHF === 'HFrEF (HF with reduced EF)' || data.typeOfHF.includes('reduced'))) || (data.finalAssessment?.finalTypeOfHF && (data.finalAssessment.finalTypeOfHF === 'HFrEF (HF with reduced EF)' || data.finalAssessment.finalTypeOfHF.includes('reduced'))) ? 'Yes' : 'No',
+            hfpef: (data.typeOfHF && (data.typeOfHF === 'HFpEF (HF with preserved EF)' || data.typeOfHF.includes('preserved'))) || (data.finalAssessment?.finalTypeOfHF && (data.finalAssessment.finalTypeOfHF === 'HFpEF (HF with preserved EF)' || data.finalAssessment.finalTypeOfHF.includes('preserved'))) ? 'Yes' : 'No',
             etiology_ischemic: data.hfEtiology?.cardiovascular?.includes('Ischemic') ? 'Yes' : 'No',
             etiology_toxic: data.hfEtiology?.cardiovascular?.includes('Toxic (Alcohol, Cocaine, Chemotherapeutic)') ? 'Yes' : 'No',
             etiology_idiopathic: data.hfEtiology?.cardiovascular?.includes('Idiopathic (Dilated)') ? 'Yes' : 'No',
@@ -180,10 +180,10 @@ async function saveHfAssessment(data) {
             stage_b: (data.stageOfHF === 'Stage B' || data.finalAssessment?.finalStage === 'Stage B') ? 'Yes' : 'No',
             stage_c: (data.stageOfHF === 'Stage C' || data.finalAssessment?.finalStage === 'Stage C') ? 'Yes' : 'No',
             stage_d: (data.stageOfHF === 'Stage D' || data.finalAssessment?.finalStage === 'Stage D') ? 'Yes' : 'No',
-            nyha_class_1: (data.nyhaClass === 'NYHA Class I' || data.nyhaClass === 'Class I' || data.finalAssessment?.finalNyhaClass === 'NYHA Class I' || data.finalAssessment?.finalNyhaClass === 'Class I') ? 'Yes' : 'No',
-            nyha_class_2: (data.nyhaClass === 'NYHA Class II' || data.nyhaClass === 'Class II' || data.finalAssessment?.finalNyhaClass === 'NYHA Class II' || data.finalAssessment?.finalNyhaClass === 'Class II') ? 'Yes' : 'No',
-            nyha_class_3: (data.nyhaClass === 'NYHA Class III' || data.nyhaClass === 'Class III' || data.finalAssessment?.finalNyhaClass === 'NYHA Class III' || data.finalAssessment?.finalNyhaClass === 'Class III') ? 'Yes' : 'No',
-            nyha_class_4: (data.nyhaClass === 'NYHA Class IV' || data.nyhaClass === 'Class IV' || data.finalAssessment?.finalNyhaClass === 'NYHA Class IV' || data.finalAssessment?.finalNyhaClass === 'Class IV') ? 'Yes' : 'No',
+            nyha_class_1: (data.nyhaClass === 'NYHA Class I' || data.finalAssessment?.finalNyhaClass === 'NYHA Class I') ? 'Yes' : 'No',
+            nyha_class_2: (data.nyhaClass === 'NYHA Class II' || data.finalAssessment?.finalNyhaClass === 'NYHA Class II') ? 'Yes' : 'No',
+            nyha_class_3: (data.nyhaClass === 'NYHA Class III' || data.finalAssessment?.finalNyhaClass === 'NYHA Class III') ? 'Yes' : 'No',
+            nyha_class_4: (data.nyhaClass === 'NYHA Class IV' || data.finalAssessment?.finalNyhaClass === 'NYHA Class IV') ? 'Yes' : 'No',
             af_permanent: data.afStatus === 'Permanent' ? 'Yes' : 'No',
             af_paroxysmal: data.afStatus === 'Paroxysmal' ? 'Yes' : 'No',
             af_persistent: data.afStatus === 'Persistent' ? 'Yes' : 'No',
@@ -199,7 +199,14 @@ async function saveHfAssessment(data) {
             death_date: data.finalAssessment?.maceDeathDate || null,
             death_home: data.finalAssessment?.maceDeathLocation === 'Home' ? 'Yes' : 'No',
             death_hospital: data.finalAssessment?.maceDeathLocation === 'Hospital' ? 'Yes' : 'No',
-            death_reason: data.finalAssessment?.maceDeathReason || null
+            death_reason: data.finalAssessment?.maceDeathReason || null,
+            hosp_note: data.finalAssessment?.hospNote || data.hosp_note || null,
+            stroke_note: data.finalAssessment?.strokeNote || data.stroke_note || null,
+            bleed_note: data.finalAssessment?.bleedNote || data.bleed_note || null,
+            arrhythmia_note: data.finalAssessment?.arrhythmiaNote || data.arrhythmia_note || null,
+            procedure_note: data.finalAssessment?.procedureNote || data.procedure_note || null,
+            other_note: data.finalAssessment?.otherNote || data.other_note || null,
+            death_note: data.finalAssessment?.deathNote || data.death_note || null
         };
         await hfModel.insertHfFinalClinicalAssessment(conn, withHfId(finalData));
 
@@ -291,9 +298,9 @@ async function saveHfAssessment(data) {
                 ecg_rbbb: data.investigations.ecgBlockages === 'RBBB' ? 'Yes' : 'No',
                 ecg_block_other: data.investigations.ecgBlockages === 'Other Block' ? 'Yes' : 'No',
                 ecg_block_other_details: data.investigations.ecgBlockagesOther || null,
-                ecg_apc: data.investigations.ecgExtraBeats === 'APCs' ? 'Yes' : 'No',
-                ecg_vpc: data.investigations.ecgExtraBeats === 'VPCs' ? 'Yes' : 'No',
-                ecg_extra_beats_none: data.investigations.ecgExtraBeats === 'None' ? 'Yes' : 'No',
+                ecg_apc: (data.investigations?.ecgExtraBeats === 'APC' || data.investigations?.ecgExtraBeats === 'APCs') ? 'Yes' : 'No',
+                ecg_vpc: (data.investigations?.ecgExtraBeats === 'VPC' || data.investigations?.ecgExtraBeats === 'VPCs') ? 'Yes' : 'No',
+                ecg_extra_beats_none: (data.investigations?.ecgExtraBeats === 'None') ? 'Yes' : 'No',
                 ecg_qt: data.investigations.ecgQt ? Number(data.investigations.ecgQt) : null,
                 ecg_qtc: data.investigations.ecgQtc ? Number(data.investigations.ecgQtc) : null,
                 chest_xray_test_date: data.investigations.cxrDate || null,
@@ -312,20 +319,20 @@ async function saveHfAssessment(data) {
                 echo_left_atrium_dimension: data.investigations.echoLaDimension ? 'Yes' : 'No',
                 echo_left_ventricle_systole: data.investigations.echoLvSystole ? 'Yes' : 'No',
                 echo_left_ventricle_diastole: data.investigations.echoLvDiastole ? 'Yes' : 'No',
-                mitral_regurgitation_none: data.investigations.echoMrMitralRegurg === 'None / Trace' ? 'Yes' : 'No',
-                mitral_regurgitation_1plus: data.investigations.echoMrMitralRegurg === 'Mild (1+)' ? 'Yes' : 'No',
-                mitral_regurgitation_2plus: data.investigations.echoMrMitralRegurg === 'Moderate (2+)' ? 'Yes' : 'No',
-                mitral_regurgitation_3plus: data.investigations.echoMrMitralRegurg === 'Moderate-Severe (3+)' ? 'Yes' : 'No',
-                mitral_regurgitation_4plus: data.investigations.echoMrMitralRegurg === 'Severe (4+)' ? 'Yes' : 'No',
+                mitral_regurgitation_none: (data.investigations?.echoMrMitralRegurg === 'None' || data.investigations?.echoMrMitralRegurg === 'None / Trace') ? 'Yes' : 'No',
+                mitral_regurgitation_1plus: (data.investigations?.echoMrMitralRegurg === '1plus' || data.investigations?.echoMrMitralRegurg === 'Mild (1+)') ? 'Yes' : 'No',
+                mitral_regurgitation_2plus: (data.investigations?.echoMrMitralRegurg === '2plus' || data.investigations?.echoMrMitralRegurg === 'Moderate (2+)') ? 'Yes' : 'No',
+                mitral_regurgitation_3plus: (data.investigations?.echoMrMitralRegurg === '3plus' || data.investigations?.echoMrMitralRegurg === 'Moderate-Severe (3+)') ? 'Yes' : 'No',
+                mitral_regurgitation_4plus: (data.investigations?.echoMrMitralRegurg === '4plus' || data.investigations?.echoMrMitralRegurg === 'Severe (4+)') ? 'Yes' : 'No',
                 other_valves: data.investigations.echoOtherValves || null,
                 rv_systolic_pressure: data.investigations.echoRvSystolicPressure || null,
                 rv_function_normal: data.investigations.echoRvFunction === 'Normal' ? 'Yes' : 'No',
                 rv_function_impaired: data.investigations.echoRvFunction === 'Impaired' ? 'Yes' : 'No',
-                rwmi_none: data.investigations.echoRwmi === 'No RWMI' ? 'Yes' : 'No',
-                rwmi_global: data.investigations.echoRwmi === 'Global Hypokinesia' ? 'Yes' : 'No',
-                rwmi_anterior: data.investigations.echoRwmi === 'Anterior Wall Hypokinesia' ? 'Yes' : 'No',
-                rwmi_lateral: data.investigations.echoRwmi === 'Lateral Wall Hypokinesia' ? 'Yes' : 'No',
-                rwmi_inferior: data.investigations.echoRwmi === 'Inferior Wall Hypokinesia' ? 'Yes' : 'No'
+                rwmi_none: (data.investigations?.echoRwmi === 'None' || data.investigations?.echoRwmi === 'No RWMI') ? 'Yes' : 'No',
+                rwmi_global: (data.investigations?.echoRwmi === 'Global' || data.investigations?.echoRwmi === 'Global Hypokinesia') ? 'Yes' : 'No',
+                rwmi_anterior: (data.investigations?.echoRwmi === 'Anterior' || data.investigations?.echoRwmi === 'Anterior Wall Hypokinesia') ? 'Yes' : 'No',
+                rwmi_lateral: (data.investigations?.echoRwmi === 'Lateral' || data.investigations?.echoRwmi === 'Lateral Wall Hypokinesia') ? 'Yes' : 'No',
+                rwmi_inferior: (data.investigations?.echoRwmi === 'Inferior' || data.investigations?.echoRwmi === 'Inferior Wall Hypokinesia') ? 'Yes' : 'No'
             };
             await hfModel.insertHfCardiacInvestigations(conn, withHfId(cardiacData));
 
@@ -526,28 +533,28 @@ async function getHfAssessment(hf_id) {
         else if (cardiac.ecg_block_other === 'Yes') ecgBlockages = 'Other Block';
 
         let ecgExtraBeats = '';
-        if (cardiac.ecg_apc === 'Yes') ecgExtraBeats = 'APCs';
-        else if (cardiac.ecg_vpc === 'Yes') ecgExtraBeats = 'VPCs';
+        if (cardiac.ecg_apc === 'Yes') ecgExtraBeats = 'APC';
+        else if (cardiac.ecg_vpc === 'Yes') ecgExtraBeats = 'VPC';
         else if (cardiac.ecg_extra_beats_none === 'Yes') ecgExtraBeats = 'None';
 
         // Parse Echo Mitral Regurg dimensions
         let echoMrMitralRegurg = '';
-        if (cardiac.mitral_regurgitation_none === 'Yes') echoMrMitralRegurg = 'None / Trace';
-        else if (cardiac.mitral_regurgitation_1plus === 'Yes') echoMrMitralRegurg = 'Mild (1+)';
-        else if (cardiac.mitral_regurgitation_2plus === 'Yes') echoMrMitralRegurg = 'Moderate (2+)';
-        else if (cardiac.mitral_regurgitation_3plus === 'Yes') echoMrMitralRegurg = 'Moderate-Severe (3+)';
-        else if (cardiac.mitral_regurgitation_4plus === 'Yes') echoMrMitralRegurg = 'Severe (4+)';
+        if (cardiac.mitral_regurgitation_none === 'Yes') echoMrMitralRegurg = 'None';
+        else if (cardiac.mitral_regurgitation_1plus === 'Yes') echoMrMitralRegurg = '1plus';
+        else if (cardiac.mitral_regurgitation_2plus === 'Yes') echoMrMitralRegurg = '2plus';
+        else if (cardiac.mitral_regurgitation_3plus === 'Yes') echoMrMitralRegurg = '3plus';
+        else if (cardiac.mitral_regurgitation_4plus === 'Yes') echoMrMitralRegurg = '4plus';
 
         let echoRvFunction = '';
         if (cardiac.rv_function_normal === 'Yes') echoRvFunction = 'Normal';
         else if (cardiac.rv_function_impaired === 'Yes') echoRvFunction = 'Impaired';
 
         let echoRwmi = '';
-        if (cardiac.rwmi_none === 'Yes') echoRwmi = 'No RWMI';
-        else if (cardiac.rwmi_global === 'Yes') echoRwmi = 'Global Hypokinesia';
-        else if (cardiac.rwmi_anterior === 'Yes') echoRwmi = 'Anterior Wall Hypokinesia';
-        else if (cardiac.rwmi_lateral === 'Yes') echoRwmi = 'Lateral Wall Hypokinesia';
-        else if (cardiac.rwmi_inferior === 'Yes') echoRwmi = 'Inferior Wall Hypokinesia';
+        if (cardiac.rwmi_none === 'Yes') echoRwmi = 'None';
+        else if (cardiac.rwmi_global === 'Yes') echoRwmi = 'Global';
+        else if (cardiac.rwmi_anterior === 'Yes') echoRwmi = 'Anterior';
+        else if (cardiac.rwmi_lateral === 'Yes') echoRwmi = 'Lateral';
+        else if (cardiac.rwmi_inferior === 'Yes') echoRwmi = 'Inferior';
 
         // Parse Advanced Investigations
         let holterVentricularArrhythmia = '';
@@ -695,7 +702,7 @@ async function getHfAssessment(hf_id) {
             clinical_sign_other: initial.clinical_sign_other,
             clinical_sign_other_details: initial.clinical_sign_other_details,
 
-            typeOfHF: final.hfref === 'Yes' ? 'HFrEF' : (final.hfpef === 'Yes' ? 'HFpEF' : 'Unknown'),
+            typeOfHF: final.hfref === 'Yes' ? 'HFrEF (HF with reduced EF)' : (final.hfpef === 'Yes' ? 'HFpEF (HF with preserved EF)' : 'HFrEF (HF with reduced EF)'),
             hfEtiology: {
                 cardiovascular: cvEtiology,
                 nonCardiac: ncEtiology,
@@ -707,7 +714,7 @@ async function getHfAssessment(hf_id) {
             finalAssessment: {
                 finalNyhaClass: final.nyha_class_1 === 'Yes' ? 'NYHA Class I' : (final.nyha_class_2 === 'Yes' ? 'NYHA Class II' : (final.nyha_class_3 === 'Yes' ? 'NYHA Class III' : (final.nyha_class_4 === 'Yes' ? 'NYHA Class IV' : ''))),
                 finalStage: final.stage_a === 'Yes' ? 'Stage A' : (final.stage_b === 'Yes' ? 'Stage B' : (final.stage_c === 'Yes' ? 'Stage C' : (final.stage_d === 'Yes' ? 'Stage D' : ''))),
-                finalTypeOfHF: final.hfref === 'Yes' ? 'HFrEF' : (final.hfpef === 'Yes' ? 'HFpEF' : 'Unknown'),
+                finalTypeOfHF: final.hfref === 'Yes' ? 'HFrEF (HF with reduced EF)' : (final.hfpef === 'Yes' ? 'HFpEF (HF with preserved EF)' : 'HFrEF (HF with reduced EF)'),
                 comorbidities,
                 otherComorbidity: final.comorbidity_other_details,
                 riskFactors,
@@ -725,6 +732,13 @@ async function getHfAssessment(hf_id) {
                 maceDeathDate: final.death_date,
                 maceDeathLocation: final.death_home === 'Yes' ? 'Home' : (final.death_hospital === 'Yes' ? 'Hospital' : null),
                 maceDeathReason: final.death_reason,
+                hospNote: final.hosp_note,
+                strokeNote: final.stroke_note,
+                bleedNote: final.bleed_note,
+                arrhythmiaNote: final.arrhythmia_note,
+                procedureNote: final.procedure_note,
+                otherNote: final.other_note,
+                deathNote: final.death_note,
                 clinicalNotes: final.death_reason
             },
             investigations: {

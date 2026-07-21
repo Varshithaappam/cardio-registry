@@ -35,6 +35,7 @@ const VALID_DIABETES_CONTROL = [
     "Unknown"
 ];
 const VALID_DIALYSIS_STATUS = ["Under Dialysis", "No Dialysis", "Unknown"];
+const VALID_HIGHER_EDUCATION = ["Primary", "Secondary", "Graduate", "Post Graduate", "None"];
 
 function normalizeInsuranceMode(value) {
     if (!value) return "Unknown";
@@ -81,6 +82,9 @@ function normalizePatientInput(body = {}) {
         body.active_dialysis_status,
         renal_failure
     );
+    const address = body.address ? String(body.address).trim().substring(0, 500) : null;
+    const higher_education = body.higher_education || "None";
+    const occupation = body.occupation ? String(body.occupation).trim().substring(0, 255) : null;
 
     if (!patient_name) {
         throw new Error("Patient name is required.");
@@ -99,6 +103,7 @@ function normalizePatientInput(body = {}) {
     validateEnum(renal_failure, VALID_YES_NO_UNKNOWN, "renal_failure");
     validateEnum(diabetes_control_type, VALID_DIABETES_CONTROL, "diabetes_control_type");
     validateEnum(active_dialysis_status, VALID_DIALYSIS_STATUS, "active_dialysis_status");
+    validateEnum(higher_education, VALID_HIGHER_EDUCATION, "higher_education");
 
     return {
         patient_name,
@@ -113,7 +118,10 @@ function normalizePatientInput(body = {}) {
         diabetes,
         diabetes_control_type,
         renal_failure,
-        active_dialysis_status
+        active_dialysis_status,
+        address,
+        higher_education,
+        occupation
     };
 }
 
@@ -159,5 +167,6 @@ function mapDatabaseError(error) {
 
 module.exports = {
     normalizePatientInput,
-    mapDatabaseError
+    mapDatabaseError,
+    VALID_HIGHER_EDUCATION
 };

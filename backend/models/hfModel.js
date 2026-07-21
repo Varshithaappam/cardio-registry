@@ -72,7 +72,7 @@ async function insertHfFinalClinicalAssessment(conn, data) {
         'nyha_class_3', 'nyha_class_4', 'af_permanent', 'af_paroxysmal', 'af_persistent',
         'af_nsr', 'mace_hospitalization', 'mace_stroke', 'mace_major_bleed', 'mace_severe_arrhythmia',
         'mace_major_procedure', 'mace_other', 'mace_other_details', 'mace_death', 'death_date',
-        'death_home', 'death_hospital', 'death_reason'
+        'death_home', 'death_hospital', 'death_reason', 'hosp_note', 'stroke_note', 'bleed_note', 'arrhythmia_note', 'procedure_note', 'other_note', 'death_note'
     ];
     const placeholders = keys.map(() => '?').join(', ');
     const query = `

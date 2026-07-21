@@ -24,6 +24,10 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
     e.preventDefault();
     if (!formRef.current) return;
 
+    if (formRef.current.validateForm && !formRef.current.validateForm(isDraft)) {
+      return;
+    }
+
     const submissionData = formRef.current.getSubmissionData();
     submissionData.isDraft = isDraft;
 
@@ -213,19 +217,7 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
           </div>
         </div>
 
-        {/* Completion Progress Badge */}
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Form Completeness</span>
-            <span className={`text-sm font-extrabold ${currentStyle.text}`}>{completionPercent}%</span>
-          </div>
-          <div className="w-12 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <div
-              className={`h-full ${currentStyle.barColor} transition-all duration-300`}
-              style={{ width: `${completionPercent}%` }}
-            ></div>
-          </div>
-        </div>
+        
       </div>
 
       {/* Primary Interactive Fields */}

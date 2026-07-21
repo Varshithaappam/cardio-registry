@@ -57,7 +57,10 @@ export function buildPatientPayload({
   diabetes,
   diabetesControl,
   renalFailure,
-  dialysisStatus
+  dialysisStatus,
+  address,
+  higherEducation,
+  occupation
 }) {
   return {
     patient_name: name,
@@ -72,7 +75,10 @@ export function buildPatientPayload({
     diabetes,
     diabetes_control_type: diabetes === "Yes" ? mapDiabetesControlToDb(diabetesControl) : "Unknown",
     renal_failure: renalFailure,
-    active_dialysis_status: renalFailure === "Yes" ? mapDialysisStatusToDb(dialysisStatus) : "Unknown"
+    active_dialysis_status: renalFailure === "Yes" ? mapDialysisStatusToDb(dialysisStatus) : "Unknown",
+    address: address ? String(address).trim() : null,
+    higher_education: higherEducation || "None",
+    occupation: occupation ? String(occupation).trim() : null
   };
 }
 
@@ -99,6 +105,9 @@ const normalizeRecord = (dbPatient) => {
   const dialysisStatus = mapDialysisStatusToUi(
     patient.active_dialysis_status || patient.dialysisStatus || patient.comorbidities?.dialysisStatus
   );
+  const address = patient.address || "";
+  const higherEducation = patient.higher_education || patient.higherEducation || "None";
+  const occupation = patient.occupation || "";
   const mrNo = patient.mr_no || patient.mrNo || "";
   const ipNo = patient.ip_no || patient.ipNo || "";
   const createdAt = patient.created_at || patient.createdAt || new Date().toISOString();
@@ -116,6 +125,9 @@ const normalizeRecord = (dbPatient) => {
       email,
       bloodGroup,
       insuranceMode,
+      address,
+      higherEducation,
+      occupation,
       primaryConsultant: patient.primaryConsultant || "Dr. K. Sridhar",
       createdAt,
       updatedAt,

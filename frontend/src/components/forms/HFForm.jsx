@@ -671,19 +671,19 @@ const HFForm = forwardRef(function HFForm(
         <CheckboxGroup label="MACE (Major Adverse Cardiovascular Events)" options={MACE_OPTIONS} values={maceEvents} onChange={setMaceEvents} columns={3} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-          <label className="flex items-center gap-2 p-2.5 bg-white rounded-lg border cursor-pointer">
+          <label className="flex items-center gap-2 p-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer">
             <input type="checkbox" checked={hfRiskVtvf} onChange={(e) => setHfRiskVtvf(e.target.checked)} />
             <span className="font-medium text-slate-700">Documented VT / VF</span>
           </label>
-          <label className="flex items-center gap-2 p-2.5 bg-white rounded-lg border cursor-pointer">
+          <label className="flex items-center gap-2 p-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer">
             <input type="checkbox" checked={hfRiskSyncope} onChange={(e) => setHfRiskSyncope(e.target.checked)} />
             <span className="font-medium text-slate-700">Recurrent Syncope</span>
           </label>
-          <label className="flex items-center gap-2 p-2.5 bg-white rounded-lg border cursor-pointer">
+          <label className="flex items-center gap-2 p-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer">
             <input type="checkbox" checked={hfRiskNsvt} onChange={(e) => setHfRiskNsvt(e.target.checked)} />
             <span className="font-medium text-slate-700">Documented NSVT</span>
           </label>
-          <div className="p-2.5 bg-white rounded-lg border space-y-1.5">
+          <div className="p-2.5 bg-white rounded-lg border border-slate-200 space-y-1.5">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={hfRiskPvcs} onChange={(e) => setHfRiskPvcs(e.target.checked)} />
               <span className="font-medium text-slate-700">Documented PVCs</span>
