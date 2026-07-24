@@ -15,7 +15,8 @@ export default function CheckboxGroup({
   onChange,
   columns = 2,
   className = '',
-  readOnly = false
+  readOnly = false,
+  error = null
 }) {
   const toggleValue = (optionValue) => {
     if (values.includes(optionValue)) {
@@ -26,7 +27,7 @@ export default function CheckboxGroup({
   };
 
   return (
-    <FormField label={label} className={className}>
+    <FormField label={label} error={error} className={className}>
       <div className={`grid ${columnClass[columns] || columnClass[2]} gap-2`}>
         {options.map((option) => {
           const optionValue = typeof option === 'string' ? option : option.value;
@@ -35,7 +36,7 @@ export default function CheckboxGroup({
           return (
             <label
               key={optionValue}
-              className={`flex items-center gap-2 p-2.5 bg-white border border-slate-200 rounded-lg ${readOnly ? 'pointer-events-none' : 'cursor-pointer hover:border-slate-300'} text-xs text-black font-medium transition-colors`}
+              className={`flex items-center gap-2 p-2.5 bg-white border ${error ? 'border-red-500' : 'border-slate-200'} rounded-lg ${readOnly ? 'pointer-events-none' : 'cursor-pointer hover:border-slate-300'} form-option-label transition-colors`}
             >
               <input
                 type="checkbox"

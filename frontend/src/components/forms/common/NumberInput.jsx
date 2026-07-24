@@ -13,10 +13,11 @@ export default function NumberInput({
   step,
   disabled = false,
   className = '',
-  readOnly = false
+  readOnly = false,
+  error = null
 }) {
   return (
-    <FormField label={label} required={required} className={className}>
+    <FormField label={label} required={required} error={error} className={className}>
       <input
         id={id}
         type="number"
@@ -31,7 +32,7 @@ export default function NumberInput({
           const val = e.target.value;
           onChange(val === '' ? '' : Number(val));
         }}
-        className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white text-black placeholder:text-black/60 focus:outline-none focus:ring-2 focus:ring-teal-500/20 disabled:bg-white disabled:opacity-90"
+        className={`w-full p-2 border ${error ? 'border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:ring-teal-500/20'} rounded-lg text-sm bg-white text-black placeholder:text-black/60 focus:outline-none focus:ring-2 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed`}
       />
     </FormField>
   );

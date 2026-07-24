@@ -25,6 +25,14 @@ async function saveHfAssessment(data) {
             [hf_registry_no, hf_id]
         );
 
+        // Update pre-uploaded documents to final hf_id
+        if (data.tempHfId) {
+            await conn.execute(
+                "UPDATE hf_patient_documents SET hf_id = ? WHERE hf_id = ?",
+                [hf_id, data.tempHfId]
+            );
+        }
+
         const withHfId = (obj) => ({ ...obj, hf_id });
 
         // 2. Insert hf_administrative
@@ -266,8 +274,8 @@ async function saveHfAssessment(data) {
                 t4_date: data.investigations.labTests?.t4?.date || null,
                 bnp_result: data.investigations.labTests?.bnp?.result || null,
                 bnp_date: data.investigations.labTests?.bnp?.date || null,
-                nt_pro_bnp_result: data.investigations.labTests?.nt_pro_bnp?.result || null,
-                nt_pro_bnp_date: data.investigations.labTests?.nt_pro_bnp?.date || null,
+                nt_pro_bnp_result: (data.investigations.labTests?.ntProBnp?.result || data.investigations.labTests?.nt_pro_bnp?.result) || null,
+                nt_pro_bnp_date: (data.investigations.labTests?.ntProBnp?.date || data.investigations.labTests?.nt_pro_bnp?.date) || null,
                 ldl_result: data.investigations.labTests?.ldl?.result || null,
                 ldl_date: data.investigations.labTests?.ldl?.date || null,
                 inr_result: data.investigations.labTests?.inr?.result || null,

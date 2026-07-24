@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 require("dotenv").config();
 
 // Initialize Express App
@@ -11,11 +12,16 @@ require("./config/db");
 // Import Routes
 const patientRoutes = require("./routes/patientRoutes");
 const hfRoutes = require("./routes/hfRoutes");
+const documentRoutes = require("./routes/documentRoutes");
 const hfController = require('./controllers/hfController');
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+    console.log(`[REQUEST] ${req.method} ${req.url}`);
+    next();
+});
 
 // Health Check Route
 app.get("/", (req, res) => {
@@ -28,6 +34,8 @@ app.get("/", (req, res) => {
 // Patient Routes
 app.use("/api/patients", patientRoutes);
 app.use("/api/hf-assessment", hfRoutes);
+app.use("/api/documents", documentRoutes);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.get('/api/hf/history/:patientId', hfController.getHfHistory);
 
 // Handle Unknown Routes

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, MapPin, Briefcase, GraduationCap, X, Check, Phone, Mail, Shield, CreditCard } from 'lucide-react';
 import { buildPatientPayload } from '../utils/patientMapper';
+import { validateField } from '../utils/validation';
 import { createPatient, updatePatient } from '../../api/patientApi';
 
 const HIGHER_EDUCATION_OPTIONS = [
@@ -50,6 +51,8 @@ export default function RegisterNewPatient({
 }) {
   // Core Demographic State
   const [name, setName] = useState('');
+  const [nameError, setNameError] = useState(null);
+  const [phoneError, setPhoneError] = useState(null);
   const [dob, setDob] = useState('1966-01-01');
   const [gender, setGender] = useState('Male');
   const [bloodGroup, setBloodGroup] = useState('Unknown');
@@ -101,6 +104,18 @@ export default function RegisterNewPatient({
     if (!name.trim()) {
       alert('Patient Full Name is required.');
       return;
+    }
+    const nameValRes = validateField('name', name);
+    if (!nameValRes.isValid) {
+      alert(nameValRes.error);
+      return;
+    }
+    if (phone) {
+      const phoneValRes = validateField('phone', phone);
+      if (!phoneValRes.isValid) {
+        alert(phoneValRes.error);
+        return;
+      }
     }
 
     if (!dob) {
@@ -179,9 +194,6 @@ export default function RegisterNewPatient({
           <h3 className="text-base font-bold text-slate-800">
             {isEditMode ? 'Edit Patient Master Record' : 'Master Registry: Patient Registration'}
           </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            {isEditMode ? 'Update demographic, contact, and baseline clinical parameters.' : 'Initialize the Patient Master Record and Clinical Profile.'}
-          </p>
         </div>
         {onCancel && (
           <button
@@ -213,9 +225,21 @@ export default function RegisterNewPatient({
               required
               className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                const res = validateField('name', val);
+                setNameError(res.isValid ? null : res.error);
+                setName(val);
+              }}
+              onBlur={(e) => {
+                const res = validateField('name', e.target.value);
+                setNameError(res.isValid ? null : res.error);
+              }}
               placeholder="E.g. Ramesh Chandra Malhotra"
             />
+            {nameError && (
+              <span className="text-red-500 text-[10px] block mt-1 font-bold">{nameError}</span>
+            )}
           </div>
 
           {/* 2. Date of Birth */}
@@ -327,8 +351,20 @@ export default function RegisterNewPatient({
                 placeholder="+91 98480 12345"
                 className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const res = validateField('phone', val);
+                  setPhoneError(res.isValid ? null : res.error);
+                  setPhone(val);
+                }}
+                onBlur={(e) => {
+                  const res = validateField('phone', e.target.value);
+                  setPhoneError(res.isValid ? null : res.error);
+                }}
               />
+              {phoneError && (
+                <span className="text-red-500 text-[10px] block mt-1 font-bold">{phoneError}</span>
+              )}
             </div>
 
             {/* Email Address */}

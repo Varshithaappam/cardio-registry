@@ -1,1 +1,94 @@
 @import "tailwindcss";
+
+/* Globally increase all font sizes by 2px */
+.text-\[8px\] { font-size: 10px !important; }
+.text-\[9px\] { font-size: 11px !important; }
+.text-\[10px\] { font-size: 12px !important; }
+.text-\[11px\] { font-size: 13px !important; }
+.text-xs { font-size: 14px !important; }
+.text-sm { font-size: 16px !important; }
+.text-base { font-size: 18px !important; }
+.text-lg { font-size: 20px !important; }
+.text-xl { font-size: 22px !important; }
+.text-2xl { font-size: 26px !important; }
+
+/* Keep input height and spacing consistent with larger font size */
+input, select, textarea {
+  font-size: inherit !important;
+}
+
+/* Consistent typography groups across the form */
+.form-section-heading {
+  font-size: 16px !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+  color: #1e293b !important; /* slate-800 */
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  display: block !important;
+}
+
+.form-subsection-heading,
+[id$="Block"] > div.bg-slate-100.font-bold,
+[id$="Block"] > div.px-3.bg-slate-100,
+[id^="drug"] span.uppercase,
+#technicalLogBlock span.uppercase,
+#icdTherapyBlock span.uppercase,
+#currentDeviceBlock span.uppercase,
+#eligibleDeviceBlock span.uppercase,
+#patientEducationBlock span.uppercase,
+#recommendationsBlock span.uppercase {
+  font-size: 13px !important;
+  font-style: normal !important;
+  font-weight: 700 !important;
+  color: #334155 !important; /* slate-700 */
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  display: block !important;
+}
+
+.form-field-label {
+  font-size: 13px !important;
+  font-style: normal !important;
+  font-weight: 600 !important;
+  color: #475569 !important; /* slate-600 */
+  display: block !important;
+}
+
+/* Style all form option labels consistently */
+.form-option-label,
+.form-option-label span,
+label.cursor-pointer,
+label.cursor-pointer span,
+label.flex.items-center,
+label.flex.items-center span,
+.flex-wrap label,
+.flex-wrap label span {
+  font-size: 12px !important;
+  font-style: normal !important;
+  font-weight: 500 !important;
+  color: #1e293b !important; /* slate-800 */
+}
+
+.form-supporting-text {
+  font-size: 11px !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+  color: #64748b !important; /* slate-500 */
+  line-height: 1.25 !important;
+  display: block !important;
+}
+
+/* Style all text inputs, select elements, number fields, and textareas consistently */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+  font-size: 13px !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+  color: #0f172a !important; /* slate-900 */
+  font-family: inherit !important;
+}
+
