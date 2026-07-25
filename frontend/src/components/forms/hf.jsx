@@ -183,6 +183,15 @@ const hf = forwardRef(function hf(
 ) {
   const patient = patientRecord?.patient || {};
 
+  const getDocumentUrl = (filePath) => {
+    try {
+      const url = new URL(api.defaults.baseURL);
+      return `${url.protocol}//${url.host}/uploads/${filePath}`;
+    } catch (e) {
+      return `http://localhost:5000/uploads/${filePath}`;
+    }
+  };
+
   const getClassification = (fieldName, valStr) => {
     if (valStr === undefined || valStr === null || String(valStr).trim() === '') {
       return { status: '', classNames: '', message: '' };
@@ -253,47 +262,47 @@ const hf = forwardRef(function hf(
     if (fieldName === 'tapse') {
       const outOfBounds = val < 1 || val > 50;
       if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1 and 50 mm' };
-      if (val < 15 || val > 40) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Abnormal (<15 mm)' };
+      if (val < 15 || val > 40) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Abnormal (<15 mm or >40 mm)' };
       if (val >= 15 && val <= 16) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (15-16 mm)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (>=17 mm)' };
     }
 
     if (fieldName === 'eePrime') {
-      const outOfBounds = val < 3 || val > 30;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 3 and 30' };
+      const outOfBounds = val < 1 || val > 50;
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1 and 50' };
       if (val > 14) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>14)' };
-      if (val >= 8 && val <= 14) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (8-14)' };
+      if (val >= 8 && val <= 14 ) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (8-14)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (<8)' };
     }
 
     if (fieldName === 'eDecel') {
-      const outOfBounds = val < 80 || val > 400;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 80 and 400 ms' };
+      const outOfBounds = val < 50 || val > 500;
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 50 and 500 ms' };
       if (val < 160 || val > 240) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (<160 or >240)' };
       if (val >= 201 && val <= 240) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (201-240 ms)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (160-200 ms)' };
     }
 
     if (fieldName === 'rvsp') {
-      const outOfBounds = val < 15 || val > 120;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 15 and 120 mmHg' };
-      if (val > 40) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>40)' };
+      const outOfBounds = val < 10 || val > 150;
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 10 and 150 mmHg' };
+      if (val > 40 || val < 15) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>40 or <15)' };
       if (val >= 36 && val <= 40) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (36-40 mmHg)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (<=35 mmHg)' };
     }
 
     if (fieldName === 'potassium') {
-      const outOfBounds = val < 3.5 || val > 5.0;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 3.5 and 5.0 mmol/L' };
+      const outOfBounds = val < 1 || val > 10.0;
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1 and 10.0 mmol/L' };
       if (val < 3.2 || val > 5.3) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
       if ((val >= 3.2 && val <= 3.4) || (val >= 5.1 && val <= 5.3)) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'creatinine') {
-      const outOfBounds = val < 0.6 || val > 1.2;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0.6 and 1.2 mg/dL' };
-      if (val > 1.4) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>1.4)' };
+      const outOfBounds = val < 0.1 || val > 15;
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0.1 and 15 mg/dL' };
+      if (val > 1.4 || val < 0.6) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>1.4 or <0.6)' };
       if (val >= 1.3 && val <= 1.4) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (1.3-1.4)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
@@ -313,48 +322,48 @@ const hf = forwardRef(function hf(
     }
 
     if (fieldName === 'calcium') {
-      const outOfBounds = val < 8.4 || val > 10.2;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 8.4 and 10.2 mg/dL' };
+      const outOfBounds = val < 3 || val > 20.0;
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 3 and 20.0 mg/dL' };
       if (val < 8.0 || val > 10.5) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
       if ((val >= 8.0 && val <= 8.3) || (val >= 10.3 && val <= 10.5)) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'bun') {
-      const outOfBounds = val < 7 || val > 18;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 7 and 18 mg/dL' };
-      if (val > 25) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>25)' };
+      const outOfBounds = val < 1 || val > 150;
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1 and 150 mg/dL' };
+      if (val > 25 || val < 3) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>25)' };
       if (val >= 19 && val <= 25) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (19-25)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'glucose') {
-      const outOfBounds = val < 70 || val > 100;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 70 and 100 mg/dL' };
+      const outOfBounds = val < 10 || val > 900;
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 10 and 900 mg/dL' };
       if (val < 70 || val >= 126) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
       if (val >= 101 && val <= 125) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (101-125)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'hba1c') {
-      const outOfBounds = val < 4.0 || val > 5.6;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 4.0% and 5.6%' };
-      if (val >= 6.5) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>=6.5%)' };
+      const outOfBounds = val < 2.0 || val > 20.0;
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 2.0% and 20.0%' };
+      if (val< 4.0 || val >= 6.5) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>=6.5%)' };
       if (val >= 5.7 && val <= 6.4) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (5.7-6.4%)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (<5.7%)' };
     }
 
     if (fieldName === 'magnesium') {
-      const outOfBounds = val < 1.5 || val > 2.0;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1.5 and 2.0 mg/dL' };
+      const outOfBounds = val < 0.5 || val > 10.0;
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0.5 and 10.0 mg/dL' };
       if (val < 1.3 || val > 2.1) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
       if (val >= 1.3 && val <= 1.4) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'sodium') {
-      const outOfBounds = val < 136 || val > 146;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 136 and 146 mmol/L' };
+      const outOfBounds = val < 100 || val > 180;
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 100 and 180 mmol/L' };
       if (val < 130 || val > 146) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
       if (val >= 130 && val <= 135) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
@@ -798,7 +807,7 @@ const hf = forwardRef(function hf(
   const renderDrugRow = (drug, errorKey) => {
     const cls = drug.clsKey ? getClassification(drug.clsKey, drug.dose) : { status: '', classNames: '', message: '' };
     const outErr = (cls.status === 'out') ? cls.message : null;
-    const displayErr = outErr || (errorKey ? formErrors[errorKey] : null) || doseErrors[drug.label];
+    const displayErr = outErr || (errorKey ? formErrors[errorKey] : null) || (errorKey ? doseErrors[errorKey] : doseErrors[drug.label]);
     const unit = drug.unit || 'mg/day';
 
     return (
@@ -829,7 +838,7 @@ const hf = forwardRef(function hf(
               <input disabled={readOnly}
                 type="text"
                 value={drug.dose}
-                onChange={(e) => handleDoseChange(e.target.value, drug.setDose, drug.label)}
+                onChange={(e) => handleDoseChange(e.target.value, drug.setDose, errorKey || drug.label)}
                 className={`border rounded p-1 text-xs w-24 focus:ring-0 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400 ${
                   cls.status === 'normal' ? 'border-emerald-300 bg-emerald-50 text-emerald-800' :
                   cls.status === 'borderline' ? 'border-amber-300 bg-amber-50 text-amber-800 font-semibold' :
@@ -1160,6 +1169,22 @@ const hf = forwardRef(function hf(
   });
 
   const handleFieldChange = (fieldName, value, setter, setErrorState) => {
+    const numericalFields = [
+      'weight', 'height', 'heartRate', 'respiratoryRate', 'o2Saturation',
+      'systolicBp', 'diastolicBp', 'echoEfPercent', 'echoEaRatio', 'echoRvTapsv',
+      'echoEePrimeRatio', 'echoEDecelTime', 'echoLaDimension', 'echoLvSystole',
+      'echoLvDiastole', 'echoRvSystolicPressure', 'ecgQrsDuration', 'ecgQt',
+      'ecgQtc', 'cxrCtRatio', 'pvcCount', 'nsvtEpisodes', 'svtEpisodes',
+      'bivPacingPercent', 'numberOfShocks', 'appropriateShocks', 'inappropriateShocks',
+      'atpTimes', 'sixMwtDistance', 'sixMwtHrRecovery', 'mriLvef', 'holterHrv',
+      'daysHospitalized', 'monthlyIncome'
+    ];
+    if (numericalFields.includes(fieldName)) {
+      if (value !== '' && !/^[0-9]*\.?[0-9]*$/.test(value)) {
+        alert("enter only numbers");
+        return;
+      }
+    }
     const res = validateField(fieldName, value);
     if (!res.isValid) {
       setErrorState(res.error);
@@ -1171,7 +1196,19 @@ const hf = forwardRef(function hf(
     setter(value);
   };
 
+  const handleNumericChange = (setter, val) => {
+    if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
+      setter(val);
+    } else {
+      alert("enter only numbers");
+    }
+  };
+
   const handleDoseChange = (val, setDose, label) => {
+    if (val !== '' && !/^[0-9]*\.?[0-9]*$/.test(val)) {
+      alert("enter only numbers");
+      return;
+    }
     const res = validateField('dose', val);
     setDose(val);
     setDoseErrors(prev => ({
@@ -1181,6 +1218,12 @@ const hf = forwardRef(function hf(
   };
 
   const handleLabChange = (key, field, value) => {
+    if (field === 'result') {
+      if (value !== '' && !/^[0-9]*\.?[0-9]*$/.test(value)) {
+        alert("enter only numbers");
+        return;
+      }
+    }
     setLabTests(prev => ({
       ...prev,
       [key]: { ...prev[key], [field]: value }
@@ -2658,6 +2701,7 @@ const hf = forwardRef(function hf(
     req(anaerobicDate, 'anaerobicDate');
     req(angioStatus, 'angioStatus');
     if (angioStatus === 'Done') {
+      req(angioDate, 'angioDate');
       req(angioFinding, 'angioFinding');
     }
 
@@ -2676,6 +2720,13 @@ const hf = forwardRef(function hf(
     });
     if (!hasAnyLabTest) {
       newErrors.labTests = 'Please enter result and date for at least one lab test';
+    }
+
+    // BNP is mandatory
+    const bnpRes = labTests.bnp?.result;
+    const bnpDt = labTests.bnp?.date;
+    if (!bnpRes || String(bnpRes).trim() === '' || !bnpDt || String(bnpDt).trim() === '') {
+      newErrors.bnp = 'BNP Result and Date are required';
     }
 
     ['potassium', 'creatinine', 'hb', 'calcium', 'bun', 'glucose', 'hba1c', 'magnesium', 'sodium', 'tsh', 't3', 't4', 'bnp', 'ntProBnp', 'ldl', 'inr', 'st2'].forEach(key => {
@@ -2811,13 +2862,15 @@ const hf = forwardRef(function hf(
     const hasEligibleDevice = eligibleNo === 'Yes' || [eligibleYes, eligibleCrtP, eligibleCrtD, eligibleIcdSc, eligibleIcdDc, eligibleDualChamberPacemaker, eligibleSingleChamberPacemaker, eligibleOther].some(c => c === 'Yes');
     if (!hasEligibleDevice) newErrors.eligibleDevice = 'Please select eligibility status';
 
-    req(eligibleDeviceBrand, 'eligibleDeviceBrand');
-    
-    const hasAcceptance = patientAcceptanceYes === 'Yes' || patientAcceptanceNo === 'Yes';
-    if (!hasAcceptance) {
-      newErrors.patientAcceptance = 'Please select patient acceptance';
-    } else if (patientAcceptanceNo === 'Yes') {
-      req(patientAcceptanceReason, 'patientAcceptanceReason');
+    if (eligibleYes === 'Yes') {
+      req(eligibleDeviceBrand, 'eligibleDeviceBrand');
+      
+      const hasAcceptance = patientAcceptanceYes === 'Yes' || patientAcceptanceNo === 'Yes';
+      if (!hasAcceptance) {
+        newErrors.patientAcceptance = 'Please select patient acceptance';
+      } else if (patientAcceptanceNo === 'Yes') {
+        req(patientAcceptanceReason, 'patientAcceptanceReason');
+      }
     }
 
     req(icdShock, 'icdShock');
@@ -2849,8 +2902,8 @@ const hf = forwardRef(function hf(
     if (svtEpisodes && String(svtEpisodes).trim() !== '') checkLimits(svtEpisodes, 'svtEpisodes', 'svtEpisodes');
 
     // --- Section 8 & 9: Education & Recommendations ---
-    const allCounseling = [eduDiet, eduExercise, eduWeight, eduDisease, eduSmoking, eduAlcohol, eduCompliance, eduWorsened, eduDevice].every(c => c === 'Yes');
-    if (!allCounseling) newErrors.patientEducation = 'All counseling topics must be documented';
+    const someCounseling = [eduDiet, eduExercise, eduWeight, eduDisease, eduSmoking, eduAlcohol, eduCompliance, eduWorsened, eduDevice, eduOther].some(c => c === 'Yes');
+    if (!someCounseling) newErrors.patientEducation = 'Please select at least one counseling topic';
 
     const hasAnyRecommendation = [
       recFluidDietDetails,
@@ -2872,7 +2925,143 @@ const hf = forwardRef(function hf(
 
     if (Object.keys(newErrors).length > 0) {
       console.log('Validation failed:', newErrors);
-      alert('Please fill out all mandatory fields highlighted in red.');
+      
+      const FIELD_LABELS = {
+        visitType: 'Visit Type (Inpatient / Outpatient)',
+        caregiverName: 'Caregiver Name',
+        caregiverRelationship: 'Caregiver Relationship',
+        caregiverPhone: 'Caregiver Phone Number',
+        insuranceMode: 'Insurance Mode',
+        assessmentDate: 'Date of Assessment',
+        presentDiagnosis: 'Present Diagnosis',
+        dischargeDate: 'Date of Discharge',
+        treatingCardiologist: 'Treating Cardiologist',
+        daysHospitalized: 'Days Hospitalized',
+        nonHfAdmissionReason: 'Non-HF Admission Reason',
+        precipitatingFactors: 'Precipitating Factors',
+        previousDiagnosis: 'Previous Diagnosis',
+        previousHfHospitalization: 'Previous HF Hospitalization',
+        recentHospitalizationDates: 'Recent Hospitalization Dates',
+        recentHospitalizationReasons: 'Recent Hospitalization Reasons',
+        medicalHistory: 'Medical History',
+        pastMiYearsAgo: 'Past MI Years Ago',
+        pastMiLocation: 'Past MI Location',
+        syncopeFrequency: 'Syncope Frequency',
+        pvcCount: 'PVC Count',
+        pvcFrequency: 'PVC Frequency',
+        nsvtFrequency: 'NSVT Frequency',
+        vUnableToWeigh: 'Unable to Weigh selection',
+        vUnableToWeighReason: 'Reason for Unable to Weigh',
+        vWeight: 'Weight',
+        vHeight: 'Height',
+        vHr: 'Heart Rate',
+        vHrRegular: 'Heart Rate Regularity',
+        vRr: 'Respiratory Rate',
+        vBpSittingSystolic: 'BP Sitting Systolic',
+        vBpSittingDiastolic: 'BP Sitting Diastolic',
+        vBpStandingSystolic: 'BP Standing Systolic',
+        vBpStandingDiastolic: 'BP Standing Diastolic',
+        vO2: 'Oxygen Saturation (O2 Sat)',
+        mentalStatus: 'Mental Status',
+        symptoms: 'Symptoms',
+        clinicalSigns: 'Clinical Signs of Volume Overload',
+        hfType: 'HF Type',
+        hfStage: 'HF Stage',
+        hfEtiologyCv: 'Cardiovascular Etiology',
+        hfEtiologyNonCv: 'Non-cardiac Etiology',
+        hfEtiologyPulm: 'Pulmonary Etiology',
+        comorbidities: 'Comorbidities',
+        mace: 'MACE Events selection',
+        hospNote: 'MACE Hospitalization Details',
+        strokeNote: 'MACE Stroke Details',
+        bleedNote: 'MACE Bleeding Details',
+        arrhythmiaNote: 'MACE Arrhythmia Details',
+        procedureNote: 'MACE Procedure Details',
+        maceDeathDate: 'MACE Death Date',
+        maceDeathLocation: 'MACE Death Location',
+        maceDeathReason: 'MACE Death Reason',
+        ecgDate: 'ECG Date',
+        ecgQrsDuration: 'ECG QRS Duration',
+        ecgQt: 'ECG QT Interval',
+        ecgQtc: 'ECG QTc Interval',
+        ecgRhythm: 'ECG Rhythm',
+        ecgRhythmOther: 'ECG Rhythm Other Details',
+        ecgBlockages: 'ECG Blocks',
+        cxrDate: 'Chest X-ray Date',
+        cxrCtRatio: 'Chest X-ray CT Ratio',
+        echoDate: 'Echocardiogram Date',
+        echoEfPercent: 'Echo EF %',
+        echoEaRatio: 'Echo E/A Ratio',
+        echoRvTapsv: 'Echo RV TAPSE',
+        echoEePrimeRatio: 'Echo E/e\' Ratio',
+        echoEDecelTime: 'Echo E Deceleration Time',
+        echoMrMitralRegurg: 'Echo Mitral Regurgitation',
+        echoOtherValves: 'Echo Other Valves',
+        echoRvSystolicPressure: 'Echo RV Systolic Pressure',
+        echoRvFunction: 'Echo RV Function',
+        echoRwmi: 'Echo RWMI',
+        holterDate: 'Holter Date',
+        holterVentricularArrhythmia: 'Holter Ventricular Arrhythmia',
+        holterAtrialArrhythmias: 'Holter Atrial Arrhythmia',
+        holterHrv: 'Holter HRV',
+        holterVpcChecked: 'Holter VPC check',
+        sixMwtStatus: '6MWT Status',
+        sixMwtDistance: '6MWT Distance',
+        sixMwtHrRecovery: '6MWT HR Recovery',
+        sixMwtNotDoneReason: '6MWT Reason Not Done',
+        anaerobicDate: 'Anaerobic Date',
+        angioStatus: 'Angiogram Status',
+        angioDate: 'Angiogram Date',
+        angioFinding: 'Angiogram Findings',
+        vacPneumococcalDate: 'Pneumococcal Vaccination Date',
+        vacInfluenzaDate: 'Influenza Vaccination Date',
+        labTests: 'Laboratory Tests (At least one required)',
+        drugIntoleranceContraindications: 'Drug Intolerance / Contraindications',
+        recommendedConsults: 'Recommended Consults',
+        betaBlocker: 'Beta-Blocker Dose or Contraindication',
+        aceInhibitor: 'ACE Inhibitor Dose or Contraindication',
+        arb: 'ARB Dose or Contraindication',
+        aldosterone: 'Aldosterone Antagonist Dose or Contraindication',
+        hydralazine: 'Hydralazine Dose or Details',
+        nitrate: 'Nitrate Dose or Details',
+        anticoagulation: 'Anticoagulation Dose or Details',
+        antiplatelet: 'Anti-Platelet Dose',
+        antiarrhythmic: 'Antiarrhythmic Dose',
+        diuretic: 'Diuretic Dose or Contraindication',
+        digoxin: 'Digoxin Dose',
+        ivabradine: 'Ivabradine Dose',
+        statins: 'Statin Dose',
+        antidiabetics: 'Antidiabetic Dose',
+        currentDevice: 'Current Implanted Device Status',
+        eligibleDevice: 'Device Eligibility Status',
+        eligibleDeviceBrand: 'Recommended Device Brand / Model',
+        patientAcceptance: 'Patient Device Acceptance Status',
+        patientAcceptanceReason: 'Reason for Rejection of Device',
+        icdShock: 'ICD Shock Status',
+        numberOfShocks: 'Number of ICD Shocks',
+        appropriateShocks: 'Number of Appropriate Shocks',
+        inappropriateShocks: 'Number of Inappropriate Shocks',
+        causeOfShocks: 'Cause of ICD Shocks',
+        atp: 'ATP Status',
+        atpTimes: 'ATP Times',
+        bivPacingPercent: 'Bi-V Pacing %',
+        afibBurden: 'AFib Burden',
+        nsvtEpisodes: 'NSVT Episodes',
+        svtEpisodes: 'SVT Episodes',
+        patientEducation: 'Patient Education topic selection',
+        recommendations: 'Recommendations detail',
+        bnp: 'BNP (Result and Date)'
+      };
+
+      const missingFields = Object.keys(newErrors)
+        .map(key => FIELD_LABELS[key] || key)
+        .filter((value, index, self) => self.indexOf(value) === index);
+
+      let msg = "Please fill out all mandatory fields:\n\n";
+      missingFields.forEach(field => {
+        msg += `- ${field}\n`;
+      });
+      alert(msg);
       
       const firstErrorKey = Object.keys(newErrors)[0];
       const elementCandidates = [
@@ -2907,10 +3096,307 @@ const hf = forwardRef(function hf(
     return true;
   };
 
+  const fillDummyData = () => {
+    // Section 1
+    setVisitType('Inpatient');
+    setPresentDiagnosis('Heart Failure');
+    setDaysHospitalized('5');
+    setNonHfAdmissionReason('');
+
+    // Section 2
+    setHighestEducation('Secondary');
+    setMonthlyIncome('15000');
+    setOccupation('Service');
+    setCaregiverName('John Doe');
+    setCaregiverRelationship('Spouse');
+    setCaregiverPhone('9876543210');
+    setAddress('123 Green Street');
+    setInsuranceMode('Government Reimbursement');
+    setReferredFrom('OPD');
+
+    // Section 3
+    setVUnableToWeigh('No');
+    setVWeight('70');
+    setVHeight('170');
+    setVHr('72');
+    setVHrRegular('Yes');
+    setVHrIrregular('No');
+    setVRr('18');
+    setVO2('98');
+    setVBpSittingSystolic('120');
+    setVBpSittingDiastolic('80');
+    setVBpStandingSystolic('115');
+    setVBpStandingDiastolic('76');
+    setVMentalAlert('Yes');
+    setVMentalConfused('No');
+    setVMentalDrowsy('No');
+    setSymptomDyspneaAtRest('No');
+    setSymptomDyspneaWithExertion('Yes');
+    setSymptomFatigue('Yes');
+    setSymptomOrthopnea('No');
+    setSymptomLossOfAppetite('No');
+    setSymptomDecreasedExercise('Yes');
+    setSymptomWeightGain('No');
+    setSymptomWeightLoss('No');
+    setSymptomSyncope('No');
+    setSymptomPnd('No');
+    setSymptomMuscleCramps('No');
+    setSymptomWheeze('No');
+    setSymptomGiddiness('No');
+    setHfNyha('NYHA Class II');
+
+    // Section 4
+    setPreviousHfHospitalization('Yes');
+    setRecentHospitalizationDates('2026-05-10');
+    setRecentHospitalizationReasons('Decompensated HF');
+    setDocumentedVtVf('No');
+    setComplaintsSyncope('No');
+    setDocumentedPvcs('Yes');
+    setPvcCount('250');
+    setPvcFrequency('Frequent');
+    setDocumentedNsvt('Yes');
+    setNsvtFrequency('Occasional');
+    
+    setComorbidities(['Diabetes Mellitus', 'Hypertension', 'Associated CAD']);
+    setOtherComorbidity('None');
+    
+    setRiskFactors(['Smoking', 'Alcohol']);
+    setOtherRiskFactor('None');
+    
+    setMaceHospitalization('Yes');
+    setHospNote('Routine checkup');
+    setMaceStroke('No');
+    setMaceMajorBleed('No');
+    setMaceSevereArrhythmia('No');
+    setMaceProcedures('No');
+    setMaceOther('No');
+    setMaceNone('No');
+    setMaceDeath('No');
+
+    // Section 5
+    setEcgDate('2026-07-01');
+    setEcgQrsDuration('100');
+    setEcgRhythm('Sinus');
+    setEcgAvConduction('Normal');
+    setEcgQWaves('No');
+    setEcgBlockages('None');
+    setEcgExtraBeats('None');
+    setEcgQt('400');
+    setEcgQtc('420');
+    
+    setCxrDate('2026-07-01');
+    setCxrCtRatio('0.45');
+    setCxrPvh(false);
+    setCxrPulmonaryEdema(false);
+    setCxrPleuralEffusion(false);
+    
+    setEchoDate('2026-07-02');
+    setChkEchoEfPercent(true);
+    setEchoEfPercent('45');
+    setChkEchoEaRatio(true);
+    setEchoEaRatio('1.2');
+    setChkEchoRvTapsv(true);
+    setEchoRvTapsv('18');
+    setChkEchoEePrimeRatio(true);
+    setEchoEePrimeRatio('12');
+    setChkEchoEDecelTime(true);
+    setEchoEDecelTime('200');
+    setEchoLaDimension(false);
+    setEchoLvSystole(false);
+    setEchoLvDiastole(false);
+    setEchoMrMitralRegurg('None');
+    setEchoOtherValves('Normal');
+    setEchoRvSystolicPressure('30');
+    setEchoRvFunction('Normal');
+    setEchoRwmi('None');
+    
+    setHolterDate('2026-07-03');
+    setHolterVpcChecked(true);
+    setHolterVentricularArrhythmia('Yes');
+    setHolterAtrialArrhythmias('None');
+    setHolterHrv('120');
+    
+    setChkMriLvef(true);
+    setMriLvef('45');
+    setMriScar('Absent');
+    setMriDate('2026-07-04');
+    
+    setPetDate('2026-07-04');
+    
+    setSixMwtStatus('Done');
+    setSixMwtDate('2026-07-04');
+    setSixMwtDistance('350');
+    setSixMwtHrRecovery('15');
+    
+    setAnaerobicDate('2026-07-04');
+    setAngioStatus('Not Done');
+    setBiopsyStatus('Not Done');
+    
+    setVacPneumococcal(true);
+    setVacPneumococcalDate('2026-07-05');
+    setVacInfluenza(true);
+    setVacInfluenzaDate('2026-07-05');
+    
+    setLabTests({
+      potassium: { checked: true, result: '4.2', date: '2026-07-05' },
+      creatinine: { checked: true, result: '0.9', date: '2026-07-05' },
+      hb: { checked: true, result: '14.0', date: '2026-07-05' },
+      calcium: { checked: false, result: '', date: '' },
+      bun: { checked: false, result: '', date: '' },
+      glucose: { checked: false, result: '', date: '' },
+      hba1c: { checked: false, result: '', date: '' },
+      magnesium: { checked: false, result: '', date: '' },
+      sodium: { checked: true, result: '138', date: '2026-07-05' },
+      tsh: { checked: false, result: '', date: '' },
+      t3: { checked: false, result: '', date: '' },
+      t4: { checked: false, result: '', date: '' },
+      bnp: { checked: true, result: '150', date: '2026-07-05' },
+      ntProBnp: { checked: true, result: '300', date: '2026-07-05' },
+      ldl: { checked: true, result: '90', date: '2026-07-05' },
+      inr: { checked: true, result: '1.1', date: '2026-07-05' },
+      st2: { checked: true, result: '25', date: '2026-07-05' },
+      other: { checked: false, name: '', result: '', date: '' }
+    });
+
+    // Section 6
+    setCarvedilol('Yes');
+    setCarvedilolDose('12.5');
+    setBisoprolol('No');
+    setMetoprololSuccinate('No');
+    setNebivolol('No');
+    setBetaBlockerOther('No');
+    
+    setEnalapril('Yes');
+    setEnalaprilDose('10');
+    setRamipril('No');
+    setLisinopril('No');
+    setPerindopril('No');
+    setAceOther('No');
+    
+    setValsartan('No');
+    setLosartan('No');
+    setTelmisartan('No');
+    setOlmesartan('No');
+    setArbOther('No');
+    
+    setSpironolactone('Yes');
+    setSpironolactoneDose('25');
+    setEplerenone('No');
+    
+    setWarfarin('No');
+    setVitaminKInhibitor('No');
+    setNoac('No');
+    setAcitrom('Yes');
+    setAcitromDose('4');
+    setUfh('No');
+    setLmwh('No');
+    
+    setNitrate1('Yes');
+    setNitrate1Name('Isosorbide Dinitrate');
+    setNitrate1Dose('30');
+    setNitrate2('No');
+    setNitrate2Name('');
+    setNitrate2Dose('');
+    
+    setAspirin('Yes');
+    setAspirinDose('75');
+    setClopidogrel('No');
+    setPrasugrel('No');
+    setTicagrelor('No');
+    
+    setAmiodarone('No');
+    setAntiarrhythmicOther('No');
+    
+    setFurosemide('Yes');
+    setFurosemideDose('40');
+    setTorsemide('No');
+    setMetolazone('No');
+    setDiureticOther('No');
+    
+    setDigoxin('No');
+    setIvabradine('No');
+    
+    setAtorvastatin('Yes');
+    setAtorvastatinDose('40');
+    setSimvastatin('No');
+    setRosuvastatin('No');
+    
+    setSulfonylureas('No');
+    setMetformin('No');
+    setGlitazone('No');
+    setGliptin('No');
+    setAcarboseDerivative('No');
+    setHumanInsulin('No');
+    setSyntheticInsulin('No');
+    
+    setOtherMedication1('No');
+    setOtherMedication2('No');
+    setOtherMedication3('No');
+    setOtherMedication4('No');
+    
+    setRecommendedConsults('Cardiology follow-up');
+
+    // Section 7
+    setCurrentDeviceNone('Yes');
+    setCurrentDeviceYes('No');
+    setCurrentCrtP('No');
+    setCurrentCrtD('No');
+    setCurrentIcdSc('No');
+    setCurrentIcdDc('No');
+    setCurrentDualChamberPacemaker('No');
+    setCurrentSingleChamberPacemaker('No');
+    setCurrentDeviceOther('No');
+    
+    setEligibleNo('Yes');
+    setEligibleYes('No');
+    setEligibleCrtP('No');
+    setEligibleCrtD('No');
+    setEligibleIcdSc('No');
+    setEligibleIcdDc('No');
+    setEligibleDualChamberPacemaker('No');
+    setEligibleSingleChamberPacemaker('No');
+    setEligibleOther('No');
+    
+    setIcdShock('No');
+    setAtp('No');
+
+    // Section 8
+    setEduDiet('Yes');
+    setEduExercise('Yes');
+    setEduWeight('Yes');
+    setEduDisease('Yes');
+    setEduSmoking('Yes');
+    setEduAlcohol('Yes');
+    setEduCompliance('Yes');
+    setEduWorsened('Yes');
+    setEduDevice('No');
+    setEduOther('No');
+
+    // Section 9
+    setRecFluidDiet('Yes');
+    setRecFluidDietDetails('Low salt, 1.5L fluid limit per day');
+    setRecExercise('Yes');
+    setRecExerciseDetails('30 mins walking daily');
+    setRecYoga('Yes');
+    setRecYogaDetails('Pranayama 15 mins daily');
+    setRecSmokingCessation('Yes');
+    setRecSmokingCessationDetails('Quit smoking counseling provided');
+    setRecStressManagement('Yes');
+    setRecStressManagementDetails('Mindfulness/meditation');
+    setRecDrugs('Yes');
+    setRecDrugsDetails('Take medications regularly as prescribed');
+    setRecInvestigations('Yes');
+    setRecInvestigationsDetails('Repeat Echo in 3 months');
+    setRecProcedures('No');
+    setRecProceduresDetails('');
+    setRecOther('No');
+    setRecOtherDetails('');
+  };
   useImperativeHandle(ref, () => ({
     getSubmissionData,
     handleSubmit,
-    validateForm
+    validateForm,
+    fillDummyData
   }));
 
   return (
@@ -3878,7 +4364,7 @@ const hf = forwardRef(function hf(
                         <input disabled={readOnly} 
                           type="text" 
                           value={ecgQrsDuration} 
-                          onChange={(e) => setEcgQrsDuration(e.target.value)} 
+                          onChange={(e) => handleNumericChange(setEcgQrsDuration, e.target.value)} 
                           className={`border-b p-0 focus:ring-0 text-xs w-24 rounded px-1 ${
                             qrsCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                             qrsCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
@@ -3974,7 +4460,7 @@ const hf = forwardRef(function hf(
                           <input disabled={readOnly} 
                             type="text" 
                             value={ecgQt} 
-                            onChange={(e) => setEcgQt(e.target.value)} 
+                            onChange={(e) => handleNumericChange(setEcgQt, e.target.value)} 
                             className={`border-b p-0 w-full text-xs focus:ring-0 rounded px-1 ${
                               qtCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               qtCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
@@ -4003,7 +4489,7 @@ const hf = forwardRef(function hf(
                           <input disabled={readOnly} 
                             type="text" 
                             value={ecgQtc} 
-                            onChange={(e) => setEcgQtc(e.target.value)} 
+                            onChange={(e) => handleNumericChange(setEcgQtc, e.target.value)} 
                             className={`border-b p-0 w-full text-xs focus:ring-0 rounded px-1 ${
                               qtcCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               qtcCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
@@ -4052,7 +4538,7 @@ const hf = forwardRef(function hf(
                         <input disabled={readOnly} 
                           type="text" 
                           value={cxrCtRatio} 
-                          onChange={(e) => setCxrCtRatio(e.target.value)} 
+                          onChange={(e) => handleNumericChange(setCxrCtRatio, e.target.value)} 
                           className={`border-b p-0 focus:ring-0 text-xs w-full rounded px-1 ${
                             ctRatioCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                             ctRatioCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
@@ -4147,7 +4633,7 @@ const hf = forwardRef(function hf(
                             disabled={readOnly}
                             type="text"
                             value={echoEaRatio}
-                            onChange={(e) => setEchoEaRatio(e.target.value)}
+                            onChange={(e) => handleNumericChange(setEchoEaRatio, e.target.value)}
                             className={`border-b p-0 w-full focus:ring-0 text-xs disabled:bg-slate-100 disabled:text-slate-400 rounded px-1 ${
                               eaCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               eaCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
@@ -4181,7 +4667,7 @@ const hf = forwardRef(function hf(
                             disabled={readOnly}
                             type="text"
                             value={echoRvTapsv}
-                            onChange={(e) => setEchoRvTapsv(e.target.value)}
+                            onChange={(e) => handleNumericChange(setEchoRvTapsv, e.target.value)}
                             className={`border-b p-0 w-full focus:ring-0 text-xs disabled:bg-slate-100 disabled:text-slate-400 rounded px-1 ${
                               tapseCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               tapseCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
@@ -4217,7 +4703,7 @@ const hf = forwardRef(function hf(
                             disabled={readOnly}
                             type="text"
                             value={echoEePrimeRatio}
-                            onChange={(e) => setEchoEePrimeRatio(e.target.value)}
+                            onChange={(e) => handleNumericChange(setEchoEePrimeRatio, e.target.value)}
                             className={`border-b p-0 w-full focus:ring-0 text-xs disabled:bg-slate-100 disabled:text-slate-400 rounded px-1 ${
                               eePrimeCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               eePrimeCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
@@ -4252,7 +4738,7 @@ const hf = forwardRef(function hf(
                             disabled={readOnly}
                             type="text"
                             value={echoEDecelTime}
-                            onChange={(e) => setEchoEDecelTime(e.target.value)}
+                            onChange={(e) => handleNumericChange(setEchoEDecelTime, e.target.value)}
                             className={`border-b p-0 w-full focus:ring-0 text-xs disabled:bg-slate-100 disabled:text-slate-400 rounded px-1 ${
                               eDecelCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               eDecelCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
@@ -4308,7 +4794,7 @@ const hf = forwardRef(function hf(
                             disabled={readOnly}
                             type="text"
                             value={echoRvSystolicPressure}
-                            onChange={(e) => setEchoRvSystolicPressure(e.target.value)}
+                            onChange={(e) => handleNumericChange(setEchoRvSystolicPressure, e.target.value)}
                             className={`border-b p-0 w-full focus:ring-0 text-xs disabled:bg-slate-100 disabled:text-slate-400 rounded px-1 ${
                               rvspCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               rvspCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
@@ -4387,7 +4873,7 @@ const hf = forwardRef(function hf(
 
                 <div className="flex items-center gap-1 pt-1" id="holterHrvBlock">
                   <span className="font-semibold text-slate-700">Heart rate variability <span className="text-red-500 font-bold ml-0.5">*</span>:</span>
-                  <input disabled={readOnly} type="text" value={holterHrv} onChange={(e) => setHolterHrv(e.target.value)} className={`border-b p-0 focus:ring-0 text-xs w-full ${formErrors.holterHrv ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-slate-300'}`} />
+                  <input disabled={readOnly} type="text" value={holterHrv} onChange={(e) => handleNumericChange(setHolterHrv, e.target.value)} className={`border-b p-0 focus:ring-0 text-xs w-full ${formErrors.holterHrv ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-slate-300'}`} />
                 </div>
               </div>
             </div>
@@ -4451,7 +4937,7 @@ const hf = forwardRef(function hf(
                   disabled={readOnly}
                   type="text"
                   value={mriLvef}
-                  onChange={(e) => setMriLvef(e.target.value)}
+                  onChange={(e) => handleNumericChange(setMriLvef, e.target.value)}
                   className="border-b border-slate-300 p-0 text-xs w-28 focus:ring-0 disabled:bg-slate-100 disabled:text-slate-400"
                 />
               </div>
@@ -4494,11 +4980,11 @@ const hf = forwardRef(function hf(
                     <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-4 pl-5 bg-slate-50 p-2 rounded border border-slate-200">
                       <div className="flex items-center gap-1">
                         <span>▪ Distance walked in m: <span className="text-red-500 font-bold">*</span></span>
-                        <input disabled={readOnly} type="text" value={sixMwtDistance} onChange={(e) => setSixMwtDistance(e.target.value)} className={`border-b p-0 text-xs w-full focus:ring-0 bg-transparent ${formErrors.sixMwtDistance ? 'border-red-500 text-red-700' : 'border-slate-300'}`} />
+                        <input disabled={readOnly} type="text" value={sixMwtDistance} onChange={(e) => handleNumericChange(setSixMwtDistance, e.target.value)} className={`border-b p-0 text-xs w-full focus:ring-0 bg-transparent ${formErrors.sixMwtDistance ? 'border-red-500 text-red-700' : 'border-slate-300'}`} />
                       </div>
                       <div className="flex items-center gap-1">
                         <span>▪ Heart rate recovery in first 1 minute: <span className="text-red-500 font-bold">*</span></span>
-                        <input disabled={readOnly} type="text" value={sixMwtHrRecovery} onChange={(e) => setSixMwtHrRecovery(e.target.value)} className={`border-b p-0 text-xs w-full focus:ring-0 bg-transparent ${formErrors.sixMwtHrRecovery ? 'border-red-500 text-red-700' : 'border-slate-300'}`} />
+                        <input disabled={readOnly} type="text" value={sixMwtHrRecovery} onChange={(e) => handleNumericChange(setSixMwtHrRecovery, e.target.value)} className={`border-b p-0 text-xs w-full focus:ring-0 bg-transparent ${formErrors.sixMwtHrRecovery ? 'border-red-500 text-red-700' : 'border-slate-300'}`} />
                       </div>
                     </div>
                   )}
@@ -4534,7 +5020,7 @@ const hf = forwardRef(function hf(
             </div>
             <div className="p-3 space-y-2">
               <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
-                <span className="font-semibold text-slate-600">Date of test: <span className="text-red-500 font-bold ml-0.5">*</span></span>
+                <span className="font-semibold text-slate-600">Date of test: {angioStatus === 'Done' && <span className="text-red-500 font-bold ml-0.5">*</span>}</span>
                 {renderInlineDate(angioDate, setAngioDate, "border-b border-slate-300 p-0 focus:ring-0 text-xs bg-transparent", formErrors.angioDate)}
               </div>
               <div className={`space-y-1.5 p-2 rounded ${formErrors.angioStatus ? 'border border-red-500 bg-red-50/30' : ''}`}>
@@ -4586,28 +5072,42 @@ const hf = forwardRef(function hf(
             <div className="p-3 flex flex-wrap gap-6 items-center">
               <div className="flex items-center gap-2" id="vacPneumococcalBlock">
                 <span className="font-medium text-slate-700">Pneumococcal (Date of test :</span>
-                {renderInlineDate(vacPneumococcalDate, (val) => {
-                  setVacPneumococcalDate(val);
-                  setVacPneumococcal(val !== '');
-                }, "border-b border-slate-400 p-0 text-xs w-28 focus:ring-0 outline-none", formErrors.vacPneumococcalDate)}
+                {renderInlineDate(
+                  vacPneumococcalDate,
+                  (val) => {
+                    setVacPneumococcalDate(val);
+                    setVacPneumococcal(val !== '');
+                  },
+                  "border-b border-slate-400 p-0 text-xs w-28 focus:ring-0 outline-none",
+                  formErrors.vacPneumococcalDate
+                )}
               </div>
               <div className="flex items-center gap-2" id="vacInfluenzaBlock">
                 <span className="font-medium text-slate-700">Influenza (Date of test :</span>
-                {renderInlineDate(vacInfluenzaDate, (val) => {
-                  setVacInfluenzaDate(val);
-                  setVacInfluenza(val !== '');
-                }, "border-b border-slate-400 p-0 text-xs w-28 focus:ring-0 outline-none", formErrors.vacInfluenzaDate)}
+                {renderInlineDate(
+                  vacInfluenzaDate,
+                  (val) => {
+                    setVacInfluenzaDate(val);
+                    setVacInfluenza(val !== '');
+                  },
+                  "border-b border-slate-400 p-0 text-xs w-28 focus:ring-0 outline-none",
+                  formErrors.vacInfluenzaDate
+                )}
               </div>
             </div>
           </div>
-
           {/* Lab Tests Composite Header */}
-          <div className="px-3 py-1.5 bg-slate-100 font-bold border-b border-slate-300 text-slate-700 text-xs uppercase tracking-wider flex items-center justify-between flex-wrap gap-2">
-            <div>Lab Tests <span className="text-red-500 font-bold ml-0.5">*</span></div>
+          <div className={`px-3 py-1.5 bg-slate-100 font-bold border-b border-slate-300 text-slate-700 text-xs uppercase tracking-wider flex items-center justify-between flex-wrap gap-2 ${formErrors.labTests ? 'border-red-500 bg-red-50/20 text-red-950' : ''}`}>
+            <div>
+              Lab Tests <span className="text-red-500 font-bold ml-0.5">*</span>
+              {formErrors.labTests && (
+                <span className="text-red-500 text-[10px] font-bold block normal-case mt-0.5">{formErrors.labTests}</span>
+              )}
+            </div>
             <div className="text-[10px] text-slate-500 font-normal italic">(*Potassium and Creatinine tests are required for all follow-up visits)</div>
           </div>
 
-          <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5 border-b border-slate-300" id="labTestsBlock">
+          <div className={`p-3 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2.5 border-b border-slate-300 ${formErrors.labTests ? 'border-red-500 bg-red-50/20' : ''}`} id="labTestsBlock">
             
             {/* Left Column Labs */}
             <div className="space-y-1">
@@ -4693,7 +5193,7 @@ const hf = forwardRef(function hf(
                 <span className="text-right italic">Date</span>
               </div>
               {[
-                { key: 'bnp', label: 'BNP', unit: 'pg/mL', clsKey: 'bnp' },
+                { key: 'bnp', label: 'BNP', unit: 'pg/mL', clsKey: 'bnp', isRequired: true },
                 { key: 'ntProBnp', label: 'NT-pro BNP', unit: 'pg/mL', clsKey: 'ntProBnp' },
                 { key: 'ldl', label: 'LDL', unit: 'mg/dL', clsKey: 'ldl' },
                 { key: 'inr', label: 'INR', unit: 'ratio', clsKey: 'inr' },
@@ -4762,9 +5262,7 @@ const hf = forwardRef(function hf(
                 {readOnly ? <span className="text-slate-900 font-bold text-xs text-right w-full block">{formatDateToView(labTests.other.date) || '—'}</span> : <input type="date" value={labTests.other.date ? labTests.other.date.split('T')[0] : ''} onChange={(e) => handleLabChange('other', 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />}
               </div>
             </div>
-
           </div>
-
         </div>
       </SectionCard>
 
@@ -5069,6 +5567,22 @@ const hf = forwardRef(function hf(
                 { val: nitrate2, set: setNitrate2, name: nitrate2Name, setName: setNitrate2Name, dose: nitrate2Dose, setDose: setNitrate2Dose, label: 'Nitrate 2' }
               ].map((nitrate, idx) => (
                 <div key={idx} className="flex items-center gap-3">
+                  <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap min-w-[80px]">
+                    <input disabled={readOnly}
+                      type="checkbox"
+                      checked={nitrate.val === 'Yes'}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        nitrate.set(checked ? 'Yes' : 'No');
+                        if (!checked) {
+                          nitrate.setName('');
+                          nitrate.setDose('');
+                        }
+                      }}
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
+                    />
+                    <span className="font-medium text-slate-700">{nitrate.label}</span>
+                  </label>
 
                   <div className="flex items-center gap-1.5 flex-1">
                     <input disabled={readOnly || nitrate.val !== 'Yes'}
@@ -5081,7 +5595,7 @@ const hf = forwardRef(function hf(
                     <input disabled={readOnly || nitrate.val !== 'Yes'}
                       type="text"
                       value={nitrate.dose}
-                      onChange={(e) => nitrate.setDose(e.target.value)}
+                      onChange={(e) => handleDoseChange(e.target.value, nitrate.setDose, `${nitrate.label.replace(' ', '')}Dose`)}
                       className="border border-slate-300 rounded p-1.5 text-xs w-28 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
                       placeholder="Dose"
                     />
@@ -5408,7 +5922,7 @@ const hf = forwardRef(function hf(
                       <input disabled={readOnly}
                         type="text"
                         value={drug.dose}
-                        onChange={(e) => drug.setDose(e.target.value)}
+                        onChange={(e) => handleDoseChange(e.target.value, drug.setDose, drug.label)}
                         className="border border-slate-300 rounded p-1.5 text-xs w-28 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right"
                         placeholder="Dose"
                       />
@@ -5477,7 +5991,7 @@ const hf = forwardRef(function hf(
               </div>
 
               <div className="space-y-3">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {[
                       { val: currentCrtP, set: setCurrentCrtP, label: 'CRT-P' },
                       { val: currentCrtD, set: setCurrentCrtD, label: 'CRT-D' },
@@ -5487,22 +6001,28 @@ const hf = forwardRef(function hf(
                       { val: currentSingleChamberPacemaker, set: setCurrentSingleChamberPacemaker, label: 'Single Chamber Pacer Mode' },
                       { val: currentDeviceOther, set: setCurrentDeviceOther, label: 'Other', isOther: true }
                     ].map((device) => (
-                      <div key={device.label} className="flex flex-col gap-1">
-                        <label className="flex items-center gap-1.5 cursor-pointer">
+                      <div key={device.label} className="flex items-center gap-2 py-0.5 col-span-1 sm:col-span-2">
+                        <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
                           <input disabled={readOnly || currentDeviceYes !== 'Yes'}
                             type="checkbox"
                             checked={device.val === 'Yes'}
-                            onChange={(e) => device.set(e.target.checked ? 'Yes' : 'No')}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              device.set(checked ? 'Yes' : 'No');
+                              if (!checked && device.isOther) {
+                                setCurrentDeviceOtherName('');
+                              }
+                            }}
                             className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
                           />
                           <span className="text-slate-700">{device.label}</span>
                         </label>
-                        {device.isOther && device.val === 'Yes' && (
-                          <input disabled={readOnly}
+                        {device.isOther && (
+                          <input disabled={readOnly || device.val !== 'Yes'}
                             type="text"
                             value={currentDeviceOtherName}
                             onChange={(e) => setCurrentDeviceOtherName(e.target.value)}
-                            className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                            className="border border-slate-300 rounded p-1 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
                             placeholder="Specify device..."
                           />
                         )}
@@ -5588,22 +6108,28 @@ const hf = forwardRef(function hf(
                       { val: eligibleSingleChamberPacemaker, set: setEligibleSingleChamberPacemaker, label: 'Single Chamber Pacer Mode' },
                       { val: eligibleOther, set: setEligibleOther, label: 'Other', isOther: true }
                     ].map((device) => (
-                      <div key={device.label} className="flex flex-col gap-1">
-                        <label className="flex items-center gap-1.5 cursor-pointer">
+                      <div key={device.label} className="flex items-center gap-2 py-0.5 col-span-1 sm:col-span-2">
+                        <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
                           <input disabled={readOnly || eligibleYes !== 'Yes'}
                             type="checkbox"
                             checked={device.val === 'Yes'}
-                            onChange={(e) => device.set(e.target.checked ? 'Yes' : 'No')}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              device.set(checked ? 'Yes' : 'No');
+                              if (!checked && device.isOther) {
+                                setEligibleOtherName('');
+                              }
+                            }}
                             className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
                           />
                           <span className="text-slate-700">{device.label}</span>
                         </label>
-                        {device.isOther && device.val === 'Yes' && (
-                          <input disabled={readOnly}
+                        {device.isOther && (
+                          <input disabled={readOnly || device.val !== 'Yes'}
                             type="text"
                             value={eligibleOtherName}
                             onChange={(e) => setEligibleOtherName(e.target.value)}
-                            className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                            className="border border-slate-300 rounded p-1 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
                             placeholder="Specify device..."
                           />
                         )}
@@ -5613,7 +6139,7 @@ const hf = forwardRef(function hf(
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1">Recommended Brand / Model <span className="text-red-500 font-bold ml-0.5">*</span></label>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Recommended Brand / Model {eligibleYes === 'Yes' && <span className="text-red-500 font-bold ml-0.5">*</span>}</label>
                       <input type="text"
                         disabled={readOnly || eligibleYes !== 'Yes'}
                         value={eligibleDeviceBrand}
@@ -5623,7 +6149,7 @@ const hf = forwardRef(function hf(
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1">Patient Acceptance <span className="text-red-500 font-bold ml-0.5">*</span></label>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">Patient Acceptance {eligibleYes === 'Yes' && <span className="text-red-500 font-bold ml-0.5">*</span>}</label>
                       <div className={`flex items-center gap-4 mt-2 p-1 rounded ${formErrors.patientAcceptance ? 'border border-red-500 bg-red-50/20' : ''}`}>
                         <label className="flex items-center gap-1.5 cursor-pointer">
                           <input disabled={readOnly}
@@ -5747,7 +6273,7 @@ const hf = forwardRef(function hf(
                       <input disabled={readOnly}
                         type="number"
                         value={atpTimes}
-                        onChange={(e) => setAtpTimes(e.target.value)}
+                        onChange={(e) => handleNumericChange(setAtpTimes, e.target.value)}
                         className={`border rounded p-1 text-xs w-28 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right ${formErrors.atpTimes ? 'border-red-500 bg-red-50 text-red-700' : 'border-slate-300'}`}
                       />
                     </div>
@@ -5856,12 +6382,18 @@ const hf = forwardRef(function hf(
                   { val: eduDevice, set: setEduDevice, label: 'Device therapy education' },
                   { val: eduOther, set: setEduOther, label: 'Other', isOther: true }
                 ].map((item) => (
-                  <div key={item.label} className="flex flex-col gap-1.5 py-0.5">
-                    <label className="flex items-center gap-1.5 cursor-pointer">
+                  <div key={item.label} className="flex items-center gap-2 py-0.5">
+                    <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
                       <input disabled={readOnly}
                         type="checkbox"
                         checked={item.val === 'Yes'}
-                        onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          item.set(checked ? 'Yes' : 'No');
+                          if (!checked && item.isOther) {
+                            setEduOtherDetails('');
+                          }
+                        }}
                         className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
                       />
                       <span className="text-slate-700">{item.label}</span>
@@ -5871,7 +6403,7 @@ const hf = forwardRef(function hf(
                         type="text"
                         value={eduOtherDetails}
                         onChange={(e) => setEduOtherDetails(e.target.value)}
-                        className="border border-slate-300 rounded p-1.5 text-xs w-full max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                        className="border border-slate-300 rounded p-1.5 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
                         placeholder="Specify other counseling topic..."
                       />
                     )}
@@ -5934,11 +6466,21 @@ const hf = forwardRef(function hf(
                   <div key={doc.id} className="p-3 flex items-center justify-between flex-wrap gap-2 hover:bg-slate-50 transition-colors">
                     <div className="flex-1 min-w-[200px]">
                       <span className="font-bold text-slate-800 uppercase text-[10px] bg-slate-100 px-1.5 py-0.5 rounded mr-2">{doc.document_type}</span>
-                      <a href={`http://localhost:5000/uploads/${doc.file_path}`} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:text-teal-700 hover:underline font-semibold break-all">
+                      <a href={getDocumentUrl(doc.file_path)} target="_blank" rel="noopener noreferrer" className="text-teal-600 hover:text-teal-700 hover:underline font-semibold break-all">
                         {doc.original_file_name}
                       </a>
                       <span className="text-slate-400 text-[10px] ml-2">({doc.file_size_kb} KB)</span>
                       {doc.notes && <p className="text-slate-500 text-[10px] mt-1 font-medium italic">Notes: {doc.notes}</p>}
+                      {doc.mime_type && doc.mime_type.startsWith('image/') && (
+                        <div className="mt-2">
+                          <img 
+                            src={getDocumentUrl(doc.file_path)} 
+                            alt={doc.original_file_name} 
+                            className="max-h-24 rounded border border-slate-200 object-contain hover:scale-105 transition-transform duration-200 cursor-pointer"
+                            onClick={() => window.open(getDocumentUrl(doc.file_path), '_blank')}
+                          />
+                        </div>
+                      )}
                     </div>
                     {!readOnly && (
                       <button type="button" onClick={() => handleDeleteDocument(doc.id)} className="px-2.5 py-1 text-[11px] font-bold text-red-600 hover:bg-red-50 rounded border border-red-200 transition-colors">

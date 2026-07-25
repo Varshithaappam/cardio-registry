@@ -256,16 +256,6 @@ export const validateField = (fieldName, value) => {
         color: 'text-red-500 font-bold'
       };
     }
-    const num = parseFloat(strVal);
-    if (num < 10.0 || num > 200.0) {
-      return {
-        isValid: true,
-        error: null,
-        warning: 'Dose is outside standard expected range. Please verify.',
-        status: 'Abnormal',
-        color: 'text-yellow-600 font-bold'
-      };
-    }
     return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
   }
 
