@@ -19,7 +19,7 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
   const formRef = useRef(null);
   const [isDraft, setIsDraft] = useState(editingRecord?.isDraft ?? false);
   const [completionPercent, setCompletionPercent] = useState(15);
-  const [viewMode, setViewMode] = useState('tabular');
+  const [viewMode, setViewMode] = useState('detailed');
 
   const handleSubmit = (e) => {
     e.preventDefault();

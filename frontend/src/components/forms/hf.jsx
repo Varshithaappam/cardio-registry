@@ -279,7 +279,7 @@ function normalizeInsuranceModeForForm(val) {
 }
 
 const hf = forwardRef(function hf(
-  { patientRecord, editingRecord, onCompletionChange, readOnly = false, viewMode = 'tabular' },
+  { patientRecord, editingRecord, onCompletionChange, readOnly = false, viewMode = 'detailed' },
   ref
 ) {
   const patient = patientRecord?.patient || {};
