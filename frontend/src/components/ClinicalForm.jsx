@@ -19,6 +19,7 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
   const formRef = useRef(null);
   const [isDraft, setIsDraft] = useState(editingRecord?.isDraft ?? false);
   const [completionPercent, setCompletionPercent] = useState(15);
+  const [viewMode, setViewMode] = useState('tabular');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -138,6 +139,8 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
             patientRecord={patientRecord}
             editingRecord={editingRecord}
             onCompletionChange={setCompletionPercent}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
           />
         );
       case 'STEMI':
@@ -216,8 +219,34 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
             </p>
           </div>
         </div>
-
-        
+        {formType === 'HF' && (
+          <div className="flex rounded-xl border border-teal-800 bg-slate-950/30 p-1 shadow-inner" role="group" aria-label="Heart Failure form view">
+            <button
+              type="button"
+              onClick={() => setViewMode('detailed')}
+              aria-pressed={viewMode === 'detailed'}
+              className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                viewMode === 'detailed'
+                  ? 'bg-teal-500 text-white shadow-sm'
+                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              Detailed Form
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('tabular')}
+              aria-pressed={viewMode === 'tabular'}
+              className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                viewMode === 'tabular'
+                  ? 'bg-teal-500 text-white shadow-sm'
+                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              Tabular View
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Primary Interactive Fields */}

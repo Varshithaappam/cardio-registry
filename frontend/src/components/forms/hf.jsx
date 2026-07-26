@@ -12,6 +12,107 @@ import CheckboxGroup from './common/CheckboxGroup';
 import DrugTable from './common/DrugTable';
 import { validateField } from '../../utils/validation';
 
+function HFFormWizard({ activeSection, onSectionChange, sectionErrors, viewMode, children }) {
+  const sections = React.Children.toArray(children).filter(React.isValidElement);
+  const totalSteps = sections.length;
+  const activeStep = Math.min(Math.max(activeSection, 0), Math.max(totalSteps - 1, 0));
+  const isTabularView = viewMode === 'tabular';
+
+  const goToSection = (sectionIndex) => {
+    onSectionChange(sectionIndex);
+    requestAnimationFrame(() => {
+      document.getElementById('hf-wizard-top')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      {isTabularView && (
+      <div id="hf-wizard-top" className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-700">Heart Failure assessment</p>
+            <p className="mt-0.5 text-[11px] text-slate-500">Step {activeStep + 1} of {totalSteps}</p>
+          </div>
+          <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-bold text-teal-700 ring-1 ring-inset ring-teal-100">
+            {Math.round(((activeStep + 1) / totalSteps) * 100)}% through form
+          </span>
+        </div>
+
+        <div className="overflow-x-auto pb-1">
+          <div className="flex min-w-max items-start">
+            {sections.map((section, index) => {
+              const hasError = sectionErrors.includes(index);
+              const isActive = index === activeStep;
+              const isCompleted = index < activeStep && !hasError;
+              const title = String(section.props.title || '').replace(/^\d+\.\s*/, '');
+
+              return (
+                <div className="flex min-w-[9.5rem] flex-1 items-start last:min-w-0" key={section.key ?? title}>
+                  <button
+                    type="button"
+                    onClick={() => goToSection(index)}
+                    aria-current={isActive ? 'step' : undefined}
+                    className="group flex min-w-0 flex-col items-center text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 rounded-lg"
+                  >
+                    <span className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-[11px] font-black transition-colors ${
+                      hasError ? 'border-red-500 bg-red-50 text-red-600' :
+                      isCompleted ? 'border-teal-600 bg-teal-600 text-white' :
+                      isActive ? 'border-teal-600 bg-white text-teal-700 shadow-sm' :
+                      'border-slate-300 bg-white text-slate-500 group-hover:border-slate-400'
+                    }`}>
+                      {isCompleted ? '✓' : index + 1}
+                    </span>
+                    <span className={`mt-2 max-w-[9rem] text-[10px] font-bold leading-tight ${
+                      hasError ? 'text-red-600' : isActive ? 'text-teal-800' : 'text-slate-500'
+                    }`}>
+                      {title}
+                    </span>
+                  </button>
+                  {index < totalSteps - 1 && (
+                    <span className={`mt-3 h-0.5 flex-1 ${isCompleted ? 'bg-teal-600' : hasError ? 'bg-red-200' : 'bg-slate-200'}`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+      )}
+
+      {sections.map((section, index) => (
+        <div key={section.key ?? index} data-hf-step-index={index} hidden={isTabularView && index !== activeStep}>
+          {section}
+        </div>
+      ))}
+
+      {isTabularView && (
+      <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-5">
+        <button
+          type="button"
+          onClick={() => goToSection(activeStep - 1)}
+          disabled={activeStep === 0}
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+        >
+          Previous
+        </button>
+        {activeStep < totalSteps - 1 ? (
+          <button
+            type="button"
+            onClick={() => goToSection(activeStep + 1)}
+            className="rounded-lg bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-colors hover:bg-teal-700"
+          >
+            Next
+          </button>
+        ) : (
+          <span className="text-[11px] font-semibold text-teal-700">Final step — use Verify &amp; Submit Registry below.</span>
+        )}
+      </div>
+      )}
+    </div>
+  );
+}
+
 const CARDIOLOGISTS = [
   'Dr. K. Sridhar (Cardiologist)',
   'Dr. G. Sundararaman',
@@ -178,7 +279,7 @@ function normalizeInsuranceModeForForm(val) {
 }
 
 const hf = forwardRef(function hf(
-  { patientRecord, editingRecord, onCompletionChange, readOnly = false },
+  { patientRecord, editingRecord, onCompletionChange, readOnly = false, viewMode = 'tabular' },
   ref
 ) {
   const patient = patientRecord?.patient || {};
@@ -1790,6 +1891,40 @@ const hf = forwardRef(function hf(
 
   // Central validation errors dictionary state
   const [formErrors, setFormErrors] = useState({});
+  const [activeSection, setActiveSection] = useState(0);
+  const [sectionErrors, setSectionErrors] = useState([]);
+
+  const findValidationElement = (errorKey) => {
+    if (typeof document === 'undefined') return null;
+
+    return [
+      document.getElementById(`hf-${errorKey}`),
+      document.getElementById(errorKey),
+      document.getElementById(`${errorKey}Block`),
+      document.getElementsByName(errorKey)[0],
+      document.getElementById(errorKey === 'labTests' ? 'labTestsBlock' : ''),
+      document.getElementById(errorKey === 'symptoms' ? 'symptomsBlock' : ''),
+      document.getElementById(errorKey === 'clinicalSigns' ? 'clinicalSignsBlock' : ''),
+      document.getElementById(errorKey === 'medicalHistory' ? 'medicalHistoryBlock' : ''),
+      document.getElementById(errorKey === 'mentalStatus' ? 'mentalStatusBlock' : ''),
+      document.getElementById(errorKey === 'mace' ? 'maceBlock' : ''),
+      document.getElementById(errorKey === 'recommendations' ? 'recommendationsBlock' : '')
+    ].find(Boolean) || null;
+  };
+
+  const getErrorSectionIndex = (errorKey) => {
+    const section = findValidationElement(errorKey)?.closest('[data-hf-step-index]');
+    return section ? Number(section.dataset.hfStepIndex) : null;
+  };
+
+  useEffect(() => {
+    const indexes = [...new Set(
+      Object.keys(formErrors)
+        .map(getErrorSectionIndex)
+        .filter((index) => Number.isInteger(index))
+    )];
+    setSectionErrors(indexes);
+  }, [formErrors]);
 
   // Calculators
   const vBmi = useMemo(() => {
@@ -3084,30 +3219,21 @@ const hf = forwardRef(function hf(
       alert(msg);
       
       const firstErrorKey = Object.keys(newErrors)[0];
-      const elementCandidates = [
-        document.getElementById(`hf-${firstErrorKey}`),
-        document.getElementById(firstErrorKey),
-        document.getElementById(`${firstErrorKey}Block`),
-        document.getElementsByName(firstErrorKey)[0],
-        document.getElementById(firstErrorKey === 'labTests' ? 'labTestsBlock' : ''),
-        document.getElementById(firstErrorKey === 'symptoms' ? 'symptomsBlock' : ''),
-        document.getElementById(firstErrorKey === 'clinicalSigns' ? 'clinicalSignsBlock' : ''),
-        document.getElementById(firstErrorKey === 'medicalHistory' ? 'medicalHistoryBlock' : ''),
-        document.getElementById(firstErrorKey === 'mentalStatus' ? 'mentalStatusBlock' : ''),
-        document.getElementById(firstErrorKey === 'mace' ? 'maceBlock' : ''),
-        document.getElementById(firstErrorKey === 'recommendations' ? 'recommendationsBlock' : '')
-      ];
-      
-      const errorElement = elementCandidates.find(el => el !== null && el !== undefined);
+      const errorElement = findValidationElement(firstErrorKey);
+      const errorSectionIndex = getErrorSectionIndex(firstErrorKey);
+      if (Number.isInteger(errorSectionIndex)) {
+        setActiveSection(errorSectionIndex);
+      }
+
       if (errorElement) {
-        errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         const input = errorElement.tagName === 'INPUT' || errorElement.tagName === 'SELECT' || errorElement.tagName === 'TEXTAREA'
           ? errorElement
           : errorElement.querySelector('input:not([disabled]), select:not([disabled]), textarea:not([disabled])');
         if (input) {
           setTimeout(() => {
+            document.getElementById('hf-wizard-top')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             try { input.focus(); } catch(e) {}
-          }, 500);
+          }, 0);
         }
       }
       return false;
@@ -3423,7 +3549,12 @@ const hf = forwardRef(function hf(
 
   return (
     <fieldset disabled={readOnly} className="contents border-none p-0 m-0">
-      <div className="space-y-6">
+      <HFFormWizard
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+        sectionErrors={sectionErrors}
+        viewMode={viewMode}
+      >
       {/* 1. Patient Profile */}
       <SectionCard title="1. Patient Profile" subtitle="Master registry demographics and baseline comorbidities">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -6719,7 +6850,7 @@ const hf = forwardRef(function hf(
         </div>
       </SectionCard>
 
-    </div>
+      </HFFormWizard>
     </fieldset>
   );
 });
