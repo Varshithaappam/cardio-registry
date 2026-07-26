@@ -803,7 +803,6 @@ const hf = forwardRef(function hf(
 
     return { status: '', classNames: '', message: '' };
   };
-
   const renderDrugRow = (drug, errorKey) => {
     const cls = drug.clsKey ? getClassification(drug.clsKey, drug.dose) : { status: '', classNames: '', message: '' };
     const outErr = (cls.status === 'out') ? cls.message : null;
@@ -811,31 +810,31 @@ const hf = forwardRef(function hf(
     const unit = drug.unit || 'mg/day';
 
     return (
-      <div key={drug.label} className="flex items-center justify-between gap-2 py-0.5" id={errorKey || undefined}>
-        <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+      <div key={drug.label} className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 py-1 border-b border-slate-100/50 last:border-0 pl-2 pr-6" id={errorKey || undefined}>
+        <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap min-w-fit flex-shrink-0">
           {drug.isOther && (
             <input disabled={readOnly}
               type="checkbox"
               checked={drug.val === 'Yes'}
               onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
-              className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
+              className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
             />
           )}
-          <span className="font-medium text-slate-700">{drug.label}</span>
+          <span className="font-semibold text-slate-700">{drug.label}</span>
         </label>
-        <div className="flex items-center gap-1.5">
-          {drug.name !== undefined && (
-            <input disabled={readOnly}
-              type="text"
-              value={drug.name}
-              onChange={(e) => drug.setName(e.target.value)}
-              className="border border-slate-300 rounded p-1 text-xs w-36 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
-              placeholder="Details"
-            />
-          )}
-          <div className="flex flex-col items-end">
-            <div className="flex items-center gap-1">
-              <input disabled={readOnly}
+        <div className="flex flex-col items-end justify-center flex-1 ml-auto">
+          <div className="flex items-center gap-2 w-full justify-end">
+            {drug.name !== undefined && (
+              <input disabled={readOnly || (drug.isOther && drug.val !== 'Yes')}
+                type="text"
+                value={drug.name}
+                onChange={(e) => drug.setName(e.target.value)}
+                className="border border-slate-300 rounded p-1 text-xs flex-1 min-w-[120px] focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                placeholder="Details"
+              />
+            )}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <input disabled={readOnly || (drug.isOther && drug.val !== 'Yes')}
                 type="text"
                 value={drug.dose}
                 onChange={(e) => handleDoseChange(e.target.value, drug.setDose, errorKey || drug.label)}
@@ -848,23 +847,24 @@ const hf = forwardRef(function hf(
                 }`}
                 placeholder="Dose"
               />
-              <span className="text-[10px] text-slate-400 whitespace-nowrap">{unit}</span>
+              <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 w-12 text-left">{unit}</span>
             </div>
-            {drug.clsKey && cls.status && cls.status !== 'out' && (
-              <span className={`text-[8px] px-1 py-0.2 rounded font-bold mt-0.5 whitespace-nowrap leading-none ${
-                cls.status === 'normal' ? 'bg-emerald-100 text-emerald-800' :
-                cls.status === 'borderline' ? 'bg-amber-100 text-amber-800' :
-                'bg-rose-100 text-rose-800'
-              }`}>{cls.message}</span>
-            )}
-            {displayErr && (
-              <span className="text-red-500 text-[9px] block font-bold text-right w-full mt-0.5">{displayErr}</span>
-            )}
           </div>
+          {drug.clsKey && cls.status && cls.status !== 'out' && (
+            <span className={`text-[8px] px-1 py-0.2 rounded font-bold mt-0.5 whitespace-nowrap leading-none ${
+              cls.status === 'normal' ? 'bg-emerald-100 text-emerald-800' :
+              cls.status === 'borderline' ? 'bg-amber-100 text-amber-800' :
+              'bg-rose-100 text-rose-800'
+            }`}>{cls.message}</span>
+          )}
+          {displayErr && (
+            <span className="text-red-500 text-[9px] block font-bold text-right w-full mt-0.5">{displayErr}</span>
+          )}
         </div>
       </div>
     );
   };
+
   const renderDeviceMetric = (label, value, setValue, fieldName, unit, errorKey, required = false, disabled = false, type = 'text') => {
     const cls = getClassification(fieldName, value);
     const outErr = (cls.status === 'out') ? cls.message : null;
@@ -1083,8 +1083,16 @@ const hf = forwardRef(function hf(
   const [etiologyOtherDetails, setEtiologyOtherDetails] = useState(editingRecord?.finalAssessment?.etiologyOtherDetails ?? '');
   const [comorbidities, setComorbidities] = useState(editingRecord?.finalAssessment?.comorbidities ?? []);
   const [otherComorbidity, setOtherComorbidity] = useState(editingRecord?.finalAssessment?.otherComorbidity ?? '');
+  const [hasOtherComorbidity, setHasOtherComorbidity] = useState(() => {
+    const val = editingRecord?.finalAssessment?.otherComorbidity ?? '';
+    return val !== '' && val !== 'None';
+  });
   const [riskFactors, setRiskFactors] = useState(editingRecord?.finalAssessment?.riskFactors ?? []);
   const [otherRiskFactor, setOtherRiskFactor] = useState(editingRecord?.finalAssessment?.otherRiskFactor ?? '');
+  const [hasOtherRiskFactor, setHasOtherRiskFactor] = useState(() => {
+    const val = editingRecord?.finalAssessment?.otherRiskFactor ?? '';
+    return val !== '' && val !== 'None';
+  });
 
   // Expanded MACE States matching the image fields exactly
   const [maceHospitalization, setMaceHospitalization] = useState(editingRecord?.finalAssessment?.maceHospitalization ?? 'No');
@@ -1264,6 +1272,10 @@ const hf = forwardRef(function hf(
   const [cxrPulmonaryEdema, setCxrPulmonaryEdema] = useState(editingRecord?.investigations?.cxrPulmonaryEdema ?? false);
   const [cxrPleuralEffusion, setCxrPleuralEffusion] = useState(editingRecord?.investigations?.cxrPleuralEffusion ?? false);
   const [cxrOthers, setCxrOthers] = useState(editingRecord?.investigations?.cxrOthers ?? '');
+  const [hasCxrOthers, setHasCxrOthers] = useState(() => {
+    const val = editingRecord?.investigations?.cxrOthers ?? '';
+    return val !== '';
+  });
 
   // ECHO
   const [echoDate, setEchoDate] = useState(editingRecord?.investigations?.echoDate ?? '');
@@ -2602,21 +2614,29 @@ const hf = forwardRef(function hf(
     }
 
     // Clinical Signs of Volume Overload
-    const hasSign = [signPeripheralEdema, signRales, signHepatomegaly, signAscites, signJvp, signClinicalOther].some(s => s === 'Yes');
+    const hasSign = [signPeripheralEdema, signRales, signHepatomegaly, signAscites, signJvp, signClinicalOther].some(s => s === 'Yes' || s === 'No');
     if (!hasSign) {
       newErrors.clinicalSigns = 'Please select at least one clinical sign';
+    }
+    if (signClinicalOther === 'Yes' && (!signClinicalOtherDetails || signClinicalOtherDetails.trim() === '')) {
+      newErrors.signClinicalOther = 'Please specify details for other clinical sign';
     }
 
     // --- Section 4: Final Clinical Assessment ---
     req(hfType, 'hfType');
     req(hfStage, 'hfStage');
     
-    // Checkboxes / arrays for Etiology: Cardiovascular, Non-cardiac, Pulmonary, Comorbidities
-    reqOneOf(hfEtiologyCv, 'hfEtiologyCv', 'Select at least one cardiovascular etiology');
-    reqOneOf(hfEtiologyNonCv, 'hfEtiologyNonCv', 'Select at least one non-cardiac etiology');
-    reqOneOf(hfEtiologyPulm, 'hfEtiologyPulm', 'Select at least one pulmonary etiology');
+    // HF Etiology validation (at least one option must be selected across CV, Non-CV, Pulm, or Other)
+    const hasEtiology = hfEtiologyCv.length > 0 || hfEtiologyNonCv.length > 0 || hfEtiologyPulm.length > 0 || (etiologyOther === 'Yes' && etiologyOtherDetails.trim() !== '');
+    if (!hasEtiology) {
+      newErrors.hfEtiology = 'Please select at least one etiology option';
+    }
+    if (etiologyOther === 'Yes' && (!etiologyOtherDetails || etiologyOtherDetails.trim() === '')) {
+      newErrors.etiologyOther = 'Please specify details for other etiology';
+    }
+
     reqOneOf(comorbidities, 'comorbidities', 'Select at least one comorbidity');
-    
+
     // MACE Checkbox selection
     const hasMace = [maceHospitalization, maceStroke, maceProcedures, maceMajorBleed, maceSevereArrhythmia, maceOther, maceDeath, maceNone].some(m => m === 'Yes');
     if (!hasMace) {
@@ -3158,10 +3178,12 @@ const hf = forwardRef(function hf(
     setNsvtFrequency('Occasional');
     
     setComorbidities(['Diabetes Mellitus', 'Hypertension', 'Associated CAD']);
-    setOtherComorbidity('None');
+    setOtherComorbidity('');
+    setHasOtherComorbidity(false);
     
     setRiskFactors(['Smoking', 'Alcohol']);
-    setOtherRiskFactor('None');
+    setOtherRiskFactor('');
+    setHasOtherRiskFactor(false);
     
     setMaceHospitalization('Yes');
     setHospNote('Routine checkup');
@@ -4006,7 +4028,7 @@ const hf = forwardRef(function hf(
                   <RadioGroup readOnly={readOnly} name="sg-oth" value={signClinicalOther} onChange={setSignClinicalOther} options={['Yes', 'No']} columns={2} hideLabel />
                 </div>
                 <div className={`mt-1 ${signClinicalOther === 'Yes' ? '' : 'opacity-60'}`}>
-                  <TextInput readOnly={readOnly} disabled={signClinicalOther !== 'Yes'} id="hf-sign-oth-det" value={signClinicalOtherDetails} onChange={setSignClinicalOtherDetails} placeholder="Specify other signs" />
+                  <TextInput readOnly={readOnly} disabled={signClinicalOther !== 'Yes'} id="hf-sign-oth-det" value={signClinicalOtherDetails} onChange={setSignClinicalOtherDetails} placeholder="Specify other signs" error={formErrors.signClinicalOther} />
                 </div>
               </div>
 
@@ -4035,19 +4057,22 @@ const hf = forwardRef(function hf(
           </div>
 
           {/* HF Etiology Full Width Section */}
-          <div className="border-b border-slate-200 bg-white">
-            <div className="px-3 py-1.5 bg-slate-100 font-bold text-slate-700 text-xs border-b border-slate-200 uppercase tracking-wider">
-              HF Etiology
+          <div className={`border-b border-slate-200 bg-white ${formErrors.hfEtiology ? 'border border-red-500 bg-red-50/20' : ''}`} id="hfEtiologyBlock">
+            <div className="px-3 py-1.5 bg-slate-100 font-bold text-slate-700 text-xs border-b border-slate-200 uppercase tracking-wider flex justify-between items-center">
+              <span>HF Etiology <span className="text-red-500 font-bold ml-0.5">*</span></span>
+              {formErrors.hfEtiology && (
+                <span className="text-red-500 text-[10px] font-bold normal-case">{formErrors.hfEtiology}</span>
+              )}
             </div>
             <div className="p-3 space-y-3">
               <div>
-                <CheckboxGroup readOnly={readOnly} id="hfEtiologyCv" label="Cardiovascular" options={HF_ETIOLOGY_CV} values={hfEtiologyCv} onChange={setHfEtiologyCv} columns={3} required={true} error={formErrors.hfEtiologyCv} />
+                <CheckboxGroup readOnly={readOnly} id="hfEtiologyCv" label="Cardiovascular" options={HF_ETIOLOGY_CV} values={hfEtiologyCv} onChange={setHfEtiologyCv} columns={3} required={false} />
               </div>
               <div className="space-y-3 pt-3">
                 {/* Non-cardiac Row */}
-                <div className={`grid grid-cols-1 lg:grid-cols-12 gap-3 items-center py-2.5 border-t border-slate-100 ${formErrors.hfEtiologyNonCv ? 'bg-red-50/30 border border-red-200 rounded p-2' : ''}`}>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center py-2.5 border-t border-slate-100">
                   <div className="lg:col-span-3 font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                    Non-cardiac <span className="text-red-500 font-bold ml-0.5">*</span>
+                    Non-cardiac
                   </div>
                   <div className="lg:col-span-9 flex flex-wrap gap-x-6 gap-y-2">
                     {HF_ETIOLOGY_NON_CV.map((opt) => (
@@ -4068,19 +4093,14 @@ const hf = forwardRef(function hf(
                       </label>
                     ))}
                   </div>
-                  {formErrors.hfEtiologyNonCv && (
-                    <div className="lg:col-span-12">
-                      <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.hfEtiologyNonCv}</span>
-                    </div>
-                  )}
                 </div>
                 
                 <hr className="border-slate-100" />
                 
                 {/* Pulmonary Row */}
-                <div className={`grid grid-cols-1 lg:grid-cols-12 gap-3 items-center py-2.5 ${formErrors.hfEtiologyPulm ? 'bg-red-50/30 border border-red-200 rounded p-2' : ''}`}>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center py-2.5">
                   <div className="lg:col-span-3 font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                    Pulmonary <span className="text-red-500 font-bold ml-0.5">*</span>
+                    Pulmonary
                   </div>
                   <div className="lg:col-span-9 flex flex-wrap gap-x-6 gap-y-2">
                     {HF_ETIOLOGY_PULM.map((opt) => (
@@ -4101,32 +4121,46 @@ const hf = forwardRef(function hf(
                       </label>
                     ))}
                   </div>
-                  {formErrors.hfEtiologyPulm && (
-                    <div className="lg:col-span-12">
-                      <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.hfEtiologyPulm}</span>
-                    </div>
-                  )}
                 </div>
-                </div>
+              </div>
                 
-                <hr className="border-slate-100" />
+              <hr className="border-slate-100" />
                 
                 {/* Others Row */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center py-2.5">
-                  <div className="lg:col-span-3 font-bold text-slate-700 uppercase tracking-wider text-[11px]">Others (please specify)</div>
-                  <div className="lg:col-span-9">
-                    <input
-                      disabled={readOnly}
-                      type="text"
-                      value={etiologyOtherDetails}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setEtiologyOtherDetails(val);
-                        setEtiologyOther(val ? 'Yes' : 'No');
-                      }}
-                      className="w-full border border-slate-300 rounded p-1.5 text-xs bg-white text-slate-800 font-medium focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                      placeholder="Specify other etiology..."
-                    />
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start py-2.5">
+                  <div className="lg:col-span-3 font-bold text-slate-700 uppercase tracking-wider text-[11px]">Others</div>
+                  <div className="lg:col-span-9 space-y-1.5">
+                    <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
+                      <input 
+                        disabled={readOnly}
+                        type="checkbox"
+                        checked={etiologyOther === 'Yes'}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setEtiologyOther(checked ? 'Yes' : 'No');
+                          if (!checked) setEtiologyOtherDetails('');
+                        }}
+                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
+                      />
+                      <span>Others</span>
+                    </label>
+                    {etiologyOther === 'Yes' && (
+                      <>
+                        <input
+                          disabled={readOnly}
+                          type="text"
+                          value={etiologyOtherDetails}
+                          onChange={(e) => setEtiologyOtherDetails(e.target.value)}
+                          className={`w-full border rounded p-1.5 text-xs bg-white text-slate-800 font-medium focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none max-w-md block ${
+                            formErrors.etiologyOther ? 'border-red-500 bg-red-50' : 'border-slate-300'
+                          }`}
+                          placeholder="Specify other etiology..."
+                        />
+                        {formErrors.etiologyOther && (
+                          <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.etiologyOther}</span>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -4141,16 +4175,60 @@ const hf = forwardRef(function hf(
             <div className="p-3 space-y-3">
               <div>
                 <CheckboxGroup readOnly={readOnly} id="comorbidities" label="Comorbidities" options={COMORBIDITIES_OPTIONS} values={comorbidities} onChange={setComorbidities} columns={3} required={true} error={formErrors.comorbidities} />
-                <div className="mt-2 pl-1 max-w-md">
-                  <span className="text-[11px] font-medium text-slate-600">Others:</span>
-                  <input disabled={readOnly} type="text" value={otherComorbidity} onChange={(e) => setOtherComorbidity(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-xs mt-0.5" />
+                <div className="mt-2 pl-1 max-w-md space-y-1.5">
+                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
+                    <input 
+                      disabled={readOnly}
+                      type="checkbox"
+                      checked={hasOtherComorbidity}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setHasOtherComorbidity(checked);
+                        if (!checked) setOtherComorbidity('');
+                      }}
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
+                    />
+                    <span>Others</span>
+                  </label>
+                  {hasOtherComorbidity && (
+                    <input 
+                      disabled={readOnly} 
+                      type="text" 
+                      placeholder="Specify other details..." 
+                      value={otherComorbidity} 
+                      onChange={(e) => setOtherComorbidity(e.target.value)} 
+                      className="w-full border border-slate-300 rounded p-1.5 text-xs bg-white text-slate-800 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none" 
+                    />
+                  )}
                 </div>
               </div>
               <div className="pt-2 border-t border-slate-100">
                 <CheckboxGroup readOnly={readOnly} label="Risk Factors" options={RISK_FACTOR_OPTIONS} values={riskFactors} onChange={setRiskFactors} columns={2} />
-                <div className="mt-2 pl-1 max-w-md">
-                  <span className="text-[11px] font-medium text-slate-600">Others:</span>
-                  <input disabled={readOnly} type="text" value={otherRiskFactor} onChange={(e) => setOtherRiskFactor(e.target.value)} className="w-full border border-slate-300 rounded p-1 text-xs mt-0.5" />
+                <div className="mt-2 pl-1 max-w-md space-y-1.5">
+                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
+                    <input 
+                      disabled={readOnly}
+                      type="checkbox"
+                      checked={hasOtherRiskFactor}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setHasOtherRiskFactor(checked);
+                        if (!checked) setOtherRiskFactor('');
+                      }}
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
+                    />
+                    <span>Others</span>
+                  </label>
+                  {hasOtherRiskFactor && (
+                    <input 
+                      disabled={readOnly} 
+                      type="text" 
+                      placeholder="Specify other details..." 
+                      value={otherRiskFactor} 
+                      onChange={(e) => setOtherRiskFactor(e.target.value)} 
+                      className="w-full border border-slate-300 rounded p-1.5 text-xs bg-white text-slate-800 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none" 
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -4394,13 +4472,34 @@ const hf = forwardRef(function hf(
                 <div className={`border rounded p-2 bg-slate-50/50 ${formErrors.ecgRhythm ? 'border-red-500' : 'border-slate-200'}`} id="ecgRhythm">
                   <span className="block font-bold mb-1 text-slate-700">Rhythm <span className="text-red-500 font-bold ml-0.5">*</span></span>
                   {['Sinus', 'AF'].map(r => (
-                    <label key={r} className="flex items-center gap-1.5 mt-0.5"><input disabled={readOnly} type="radio" name="ecg_rhy" checked={ecgRhythm === r} onChange={() => setEcgRhythm(r)} /> {r}</label>
+                    <label key={r} className="flex items-center gap-1.5 mt-0.5">
+                      <input 
+                        disabled={readOnly} 
+                        type="radio" 
+                        name="ecg_rhy" 
+                        checked={ecgRhythm === r} 
+                        onChange={() => {
+                          setEcgRhythm(r);
+                          setEcgRhythmOther('');
+                        }} 
+                      /> 
+                      {r}
+                    </label>
                   ))}
-                  <label className="mt-1 flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input disabled={readOnly} type="radio" name="ecg_rhy" checked={ecgRhythm === 'Other'} onChange={() => setEcgRhythm('Other')} className="rounded-full border-slate-300 text-teal-600 focus:ring-teal-500" />
-                    <span className="text-slate-700">Other:</span>
-                    <input disabled={readOnly || ecgRhythm !== 'Other'} type="text" value={ecgRhythmOther} onChange={(e) => { setEcgRhythm('Other'); setEcgRhythmOther(e.target.value); }} className={`border-b p-0 text-xs flex-1 bg-transparent focus:ring-0 ${formErrors.ecgRhythmOther ? 'border-red-500 text-red-700 bg-red-50' : 'border-slate-300'}`} />
+                  <label className="mt-1 flex items-center gap-1.5 cursor-pointer">
+                    <input disabled={readOnly} type="radio" name="ecg_rhy" checked={ecgRhythm === 'Other'} onChange={() => { setEcgRhythm('Other'); }} className="rounded-full border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer" />
+                    <span className="text-slate-700">Other</span>
                   </label>
+                  {ecgRhythm === 'Other' && (
+                    <input 
+                      disabled={readOnly} 
+                      type="text" 
+                      value={ecgRhythmOther} 
+                      onChange={(e) => setEcgRhythmOther(e.target.value)} 
+                      placeholder="Specify other rhythm..." 
+                      className={`border rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none mt-1 ${formErrors.ecgRhythmOther ? 'border-red-500 text-red-700 bg-red-50' : 'border-slate-300'}`} 
+                    />
+                  )}
                   {formErrors.ecgRhythm && (
                     <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.ecgRhythm}</span>
                   )}
@@ -4428,13 +4527,34 @@ const hf = forwardRef(function hf(
                 <div className={`border rounded p-2 bg-slate-50/50 ${formErrors.ecgBlockages ? 'border-red-500' : 'border-slate-200'}`} id="ecgBlockages">
                   <span className="block font-bold mb-1 text-slate-700">Blockages <span className="text-red-500 font-bold ml-0.5">*</span></span>
                   {['LBBB', 'RBB'].map(bl => (
-                    <label key={bl} className="flex items-center gap-1.5 mt-0.5"><input disabled={readOnly} type="radio" name="ecg_bl" checked={ecgBlockages === bl} onChange={() => setEcgBlockages(bl)} /> {bl}</label>
+                    <label key={bl} className="flex items-center gap-1.5 mt-0.5">
+                      <input 
+                        disabled={readOnly} 
+                        type="radio" 
+                        name="ecg_bl" 
+                        checked={ecgBlockages === bl} 
+                        onChange={() => {
+                          setEcgBlockages(bl);
+                          setEcgBlockagesOther('');
+                        }} 
+                      /> 
+                      {bl}
+                    </label>
                   ))}
-                  <label className="mt-1 flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                    <input disabled={readOnly} type="radio" name="ecg_bl" checked={ecgBlockages === 'Other'} onChange={() => setEcgBlockages('Other')} className="rounded-full border-slate-300 text-teal-600 focus:ring-teal-500" />
-                    <span className="text-slate-700">Other:</span>
-                    <input disabled={readOnly || ecgBlockages !== 'Other'} type="text" value={ecgBlockagesOther} onChange={(e) => { setEcgBlockages('Other'); setEcgBlockagesOther(e.target.value); }} className={`border-b p-0 text-xs flex-1 bg-transparent focus:ring-0 ${formErrors.ecgBlockagesOther ? 'border-red-500 text-red-700 bg-red-50' : 'border-slate-300'}`} />
+                  <label className="mt-1 flex items-center gap-1.5 cursor-pointer">
+                    <input disabled={readOnly} type="radio" name="ecg_bl" checked={ecgBlockages === 'Other'} onChange={() => { setEcgBlockages('Other'); }} className="rounded-full border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer" />
+                    <span className="text-slate-700">Other</span>
                   </label>
+                  {ecgBlockages === 'Other' && (
+                    <input 
+                      disabled={readOnly} 
+                      type="text" 
+                      value={ecgBlockagesOther} 
+                      onChange={(e) => setEcgBlockagesOther(e.target.value)} 
+                      placeholder="Specify other blockage..." 
+                      className={`border rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none mt-1 ${formErrors.ecgBlockagesOther ? 'border-red-500 text-red-700 bg-red-50' : 'border-slate-300'}`} 
+                    />
+                  )}
                   {formErrors.ecgBlockages && (
                     <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.ecgBlockages}</span>
                   )}
@@ -4563,9 +4683,31 @@ const hf = forwardRef(function hf(
                 })()}
                 <label className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={cxrPleuralEffusion} onChange={(e) => setCxrPleuralEffusion(e.target.checked)} /> Pleural effusion</label>
                 <label className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={cxrPvh} onChange={(e) => setCxrPvh(e.target.checked)} /> PVH</label>
-                <div className="flex items-center gap-1">
-                  <span className="text-slate-500">Others:</span>
-                  <input disabled={readOnly} type="text" value={cxrOthers} onChange={(e) => setCxrOthers(e.target.value)} className="border-b border-slate-300 p-0 focus:ring-0 text-xs w-full" />
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
+                    <input 
+                      disabled={readOnly} 
+                      type="checkbox" 
+                      checked={hasCxrOthers} 
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setHasCxrOthers(checked);
+                        if (!checked) setCxrOthers('');
+                      }}
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
+                    /> 
+                    <span>Others</span>
+                  </label>
+                  {hasCxrOthers && (
+                    <input 
+                      disabled={readOnly} 
+                      type="text" 
+                      placeholder="Specify other details..." 
+                      value={cxrOthers} 
+                      onChange={(e) => setCxrOthers(e.target.value)} 
+                      className="w-full border border-slate-300 rounded p-1 text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none max-w-xs block" 
+                    />
+                  )}
                 </div>
                 <label className="flex items-center gap-1.5"><input disabled={readOnly} type="checkbox" checked={cxrPulmonaryEdema} onChange={(e) => setCxrPulmonaryEdema(e.target.checked)} /> Pulmonary edema</label>
               </div>
@@ -5071,7 +5213,7 @@ const hf = forwardRef(function hf(
             </div>
             <div className="p-3 flex flex-wrap gap-6 items-center">
               <div className="flex items-center gap-2" id="vacPneumococcalBlock">
-                <span className="font-medium text-slate-700">Pneumococcal (Date of test :</span>
+                <span className="font-medium text-slate-700">Pneumococcal - Date of test :</span>
                 {renderInlineDate(
                   vacPneumococcalDate,
                   (val) => {
@@ -5083,7 +5225,7 @@ const hf = forwardRef(function hf(
                 )}
               </div>
               <div className="flex items-center gap-2" id="vacInfluenzaBlock">
-                <span className="font-medium text-slate-700">Influenza (Date of test :</span>
+                <span className="font-medium text-slate-700">Influenza - Date of test :</span>
                 {renderInlineDate(
                   vacInfluenzaDate,
                   (val) => {
@@ -5268,306 +5410,307 @@ const hf = forwardRef(function hf(
 
       {/* 6. Medical Therapy (Dose & Frequency) */}
       <SectionCard title="6. Medical Therapy (Dose & Frequency)" subtitle="Guideline-directed medical therapy with dosing details">
-        <div className="border border-slate-300 rounded-lg overflow-hidden text-xs bg-white divide-y divide-slate-300">
+        <div className="w-full overflow-x-auto">
+          <div className="border border-slate-300 rounded-lg overflow-hidden text-xs bg-white divide-y divide-slate-300 min-w-[750px] lg:min-w-0">
           
-          {/* Header row */}
-          <div className="hidden lg:grid lg:grid-cols-12 bg-slate-100 font-bold text-slate-700 border-b border-slate-300 uppercase tracking-wider text-[10px]">
-            <div className="lg:col-span-3 p-2.5 border-r border-slate-300">Drug Category</div>
-            <div className="lg:col-span-5 p-2.5 border-r border-slate-300">Medications & Doses (per day)</div>
-            <div className="lg:col-span-4 p-2.5">Contraindications / Reason Not Used</div>
-          </div>
-
-          {/* Recommended Consults */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
-              <span className="font-bold text-slate-800 text-[11px] uppercase">Recommended Consults</span>
-            </div>
-            <div className="lg:col-span-9 p-3">
-              <input disabled={readOnly}
-                type="text"
-                value={recommendedConsults}
-                onChange={(e) => setRecommendedConsults(e.target.value)}
-                className="w-full border border-slate-300 rounded p-1.5 text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                placeholder="Please specify..."
-              />
-            </div>
-          </div>
-
-          {/* Drug Intolerance(s)/Contraindications */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
-              <span className="font-bold text-slate-800 text-[11px] uppercase">Drug Intolerance(s) / Contraindications</span>
-            </div>
-            <div className="lg:col-span-9 p-3">
-              <input disabled={readOnly}
-                type="text"
-                value={drugIntoleranceContraindications}
-                onChange={(e) => setDrugIntoleranceContraindications(e.target.value)}
-                className="w-full border border-slate-300 rounded p-1.5 text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                placeholder="Please specify..."
-              />
-            </div>
-          </div>
-
-          {/* Beta Blockers Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.betaBlocker ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugBetaBlocker">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
-              <span className="font-bold text-slate-800 text-[11px] uppercase">Beta-Blocker <span className="text-red-500 font-bold ml-0.5">*</span></span>
-              {formErrors.betaBlocker && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.betaBlocker}</span>
-              )}
-            </div>
-            <div className="lg:col-span-5 p-3 space-y-2">
-              {[
-                { val: carvedilol, set: setCarvedilol, dose: carvedilolDose, setDose: setCarvedilolDose, label: 'Carvedilol', clsKey: 'carvedilol' },
-                { val: bisoprolol, set: setBisoprolol, dose: bisoprololDose, setDose: setBisoprololDose, label: 'Bisoprolol', clsKey: 'bisoprolol' },
-                { val: metoprololSuccinate, set: setMetoprololSuccinate, dose: metoprololSuccinateDose, setDose: setMetoprololSuccinateDose, label: 'Metoprolol Succinate', clsKey: 'metoprolol' },
-                { val: nebivolol, set: setNebivolol, dose: nebivololDose, setDose: setNebivololDose, label: 'Nebivolol', clsKey: 'nebivolol' },
-                { val: betaBlockerOther, set: setBetaBlockerOther, dose: betaBlockerOtherDose, setDose: setBetaBlockerOtherDose, label: 'Other:', name: betaBlockerOtherName, setName: setBetaBlockerOtherName, isOther: true }
-              ].map((drug) => {
-                const errorKey = drug.label === 'Metoprolol Succinate' ? 'metoprololSuccinateDose' : (drug.label === 'Carvedilol' ? 'carvedilolDose' : (drug.label === 'Bisoprolol' ? 'bisoprololDose' : (drug.label === 'Nebivolol' ? 'nebivololDose' : '')));
-                return renderDrugRow(drug, errorKey);
-              })}
-            </div>
-            <div className="lg:col-span-4 p-3 bg-slate-50/30 space-y-2">
-              <span className="block font-semibold text-slate-500 uppercase text-[9px] mb-1">Contraindication/reason not used:</span>
-              <div className="grid grid-cols-2 gap-1.5">
-                {[
-                  { val: betaNotUsedBradycardia, set: setBetaNotUsedBradycardia, label: 'Bradycardia' },
-                  { val: betaNotUsedHeartBlocks, set: setBetaNotUsedHeartBlocks, label: 'Heart blocks' },
-                  { val: betaNotUsedCopdAsthma, set: setBetaNotUsedCopdAsthma, label: 'COPD/ Asthma' },
-                  { val: betaNotUsedHypotension, set: setBetaNotUsedHypotension, label: 'Hypotension' },
-                  { val: betaNotUsedOther, set: setBetaNotUsedOther, label: 'Other' }
-                ].map((item) => (
-                  <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                    <input disabled={readOnly}
-                      type="checkbox"
-                      checked={item.val === 'Yes'}
-                      onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
-                    />
-                    <span>{item.label}</span>
-                  </label>
-                ))}
+            {/* Recommended Consults */}
+            <div>
+              <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
+                <span className="font-bold text-slate-800 text-[11px] uppercase">Recommended Consults<span className="text-red-500"> *</span></span>
               </div>
-              <div className="mt-1.5">
-                <input disabled={readOnly || betaNotUsedOther !== 'Yes'}
+              <div className="p-3">
+                <input disabled={readOnly}
                   type="text"
-                  value={betaNotUsedOtherReason}
-                  onChange={(e) => setBetaNotUsedOtherReason(e.target.value)}
-                  className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
-                  placeholder="Specify other reason..."
+                  value={recommendedConsults}
+                  onChange={(e) => setRecommendedConsults(e.target.value)}
+                  className="w-full border border-slate-300 rounded p-1.5 text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                  placeholder="Please specify..."
                 />
               </div>
             </div>
-          </div>
+
+            {/* Drug Intolerance(s)/Contraindications */}
+            <div>
+              <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
+                <span className="font-bold text-slate-800 text-[11px] uppercase">Drug Intolerance(s) / Contraindications<span className="text-red-500"> *</span></span>
+              </div>
+              <div className="p-3">
+                <input disabled={readOnly}
+                  type="text"
+                  value={drugIntoleranceContraindications}
+                  onChange={(e) => setDrugIntoleranceContraindications(e.target.value)}
+                  className="w-full border border-slate-300 rounded p-1.5 text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                  placeholder="Please specify..."
+                />
+              </div>
+            </div>
+
+            {/* Beta Blockers Row */}
+            <div className="bg-white" id="drugBetaBlocker">
+              <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
+                <span className="font-bold text-slate-800 text-[11px] uppercase">Beta-Blocker <span className="text-red-500 font-bold ml-0.5">*</span></span>
+                {formErrors.betaBlocker && (
+                  <span className="text-red-500 text-[10px] font-bold block">{formErrors.betaBlocker}</span>
+                )}
+              </div>
+              <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.betaBlocker ? 'bg-red-50/20' : ''}`}>
+                <div className="lg:col-span-8 p-3 space-y-2 overflow-x-auto">
+                  {[
+                    { val: carvedilol, set: setCarvedilol, dose: carvedilolDose, setDose: setCarvedilolDose, label: 'Carvedilol', clsKey: 'carvedilol' },
+                    { val: bisoprolol, set: setBisoprolol, dose: bisoprololDose, setDose: setBisoprololDose, label: 'Bisoprolol', clsKey: 'bisoprolol' },
+                    { val: metoprololSuccinate, set: setMetoprololSuccinate, dose: metoprololSuccinateDose, setDose: setMetoprololSuccinateDose, label: 'Metoprolol Succinate', clsKey: 'metoprolol' },
+                    { val: nebivolol, set: setNebivolol, dose: nebivololDose, setDose: setNebivololDose, label: 'Nebivolol', clsKey: 'nebivolol' },
+                    { val: betaBlockerOther, set: setBetaBlockerOther, dose: betaBlockerOtherDose, setDose: setBetaBlockerOtherDose, label: 'Other:', name: betaBlockerOtherName, setName: setBetaBlockerOtherName, isOther: true }
+                  ].map((drug) => {
+                    const errorKey = drug.label === 'Metoprolol Succinate' ? 'metoprololSuccinateDose' : (drug.label === 'Carvedilol' ? 'carvedilolDose' : (drug.label === 'Bisoprolol' ? 'bisoprololDose' : (drug.label === 'Nebivolol' ? 'nebivololDose' : '')));
+                    return renderDrugRow(drug, errorKey);
+                  })}
+                </div>
+                <div className="lg:col-span-4 p-3 bg-slate-50/30 space-y-2">
+                  <span className="block font-semibold text-slate-500 uppercase text-[9px] mb-1">Contraindication/reason not used:</span>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {[
+                      { val: betaNotUsedBradycardia, set: setBetaNotUsedBradycardia, label: 'Bradycardia' },
+                      { val: betaNotUsedHeartBlocks, set: setBetaNotUsedHeartBlocks, label: 'Heart blocks' },
+                      { val: betaNotUsedCopdAsthma, set: setBetaNotUsedCopdAsthma, label: 'COPD/ Asthma' },
+                      { val: betaNotUsedHypotension, set: setBetaNotUsedHypotension, label: 'Hypotension' },
+                      { val: betaNotUsedOther, set: setBetaNotUsedOther, label: 'Other' }
+                    ].map((item) => (
+                      <label key={item.label} className="flex items-start gap-1.5 cursor-pointer text-slate-700">
+                        <input disabled={readOnly}
+                          type="checkbox"
+                          checked={item.val === 'Yes'}
+                          onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
+                          className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 mt-0.5"
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="mt-1.5">
+                    <input disabled={readOnly || betaNotUsedOther !== 'Yes'}
+                      type="text"
+                      value={betaNotUsedOtherReason}
+                      onChange={(e) => setBetaNotUsedOtherReason(e.target.value)}
+                      className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      placeholder="Specify other reason..."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
 
           {/* ACE Inhibitors Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.aceInhibitor ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugAceInhibitor">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
+          <div className="bg-white" id="drugAceInhibitor">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
               <span className="font-bold text-slate-800 text-[11px] uppercase">ACE Inhibitor <span className="text-red-500 font-bold ml-0.5">*</span></span>
               {formErrors.aceInhibitor && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.aceInhibitor}</span>
+                <span className="text-red-500 text-[10px] font-bold block">{formErrors.aceInhibitor}</span>
               )}
             </div>
-            <div className="lg:col-span-5 p-3 space-y-2">
-              {[
-                { val: enalapril, set: setEnalapril, dose: enalaprilDose, setDose: setEnalaprilDose, label: 'Enalapril', clsKey: 'enalapril' },
-                { val: ramipril, set: setRamipril, dose: ramiprilDose, setDose: setRamiprilDose, label: 'Ramipril', clsKey: 'ramipril' },
-                { val: lisinopril, set: setLisinopril, dose: lisinoprilDose, setDose: setLisinoprilDose, label: 'Lisinopril', clsKey: 'lisinopril' },
-                { val: perindopril, set: setPerindopril, dose: perindoprilDose, setDose: setPerindoprilDose, label: 'Perindopril', clsKey: 'perindopril' },
-                { val: aceOther, set: setAceOther, dose: aceOtherDose, setDose: setAceOtherDose, label: 'Other:', name: aceOtherName, setName: setAceOtherName, isOther: true }
-              ].map((drug) => {
-                const errorKey = drug.label === 'Enalapril' ? 'enalaprilDose' : (drug.label === 'Ramipril' ? 'ramiprilDose' : (drug.label === 'Lisinopril' ? 'lisinoprilDose' : (drug.label === 'Perindopril' ? 'perindoprilDose' : (drug.isOther ? 'aceOtherDose' : ''))));
-                return renderDrugRow(drug, errorKey);
-              })}
-            </div>
-            <div className="lg:col-span-4 p-3 bg-slate-50/30 space-y-2">
-              <span className="block font-semibold text-slate-500 uppercase text-[9px] mb-1">Contraindication/reason not used:</span>
-              <div className="grid grid-cols-2 gap-1.5">
+            <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.aceInhibitor ? 'bg-red-50/20' : ''}`}>
+              <div className="lg:col-span-8 p-3 space-y-2 overflow-x-auto">
                 {[
-                  { val: aceNotUsedElevatedCreatinine, set: setAceNotUsedElevatedCreatinine, label: 'Elevated creatinine (Renal failure)' },
-                  { val: aceNotUsedHyperkalemia, set: setAceNotUsedHyperkalemia, label: 'Hyperkalemia' },
-                  { val: aceNotUsedCough, set: setAceNotUsedCough, label: 'Cough' },
-                  { val: aceNotUsedHypotension, set: setAceNotUsedHypotension, label: 'Hypotension' },
-                  { val: aceNotUsedOther, set: setAceNotUsedOther, label: 'Other' }
-                ].map((item) => (
-                  <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                    <input disabled={readOnly}
-                      type="checkbox"
-                      checked={item.val === 'Yes'}
-                      onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
-                    />
-                    <span>{item.label}</span>
-                  </label>
-                ))}
+                  { val: enalapril, set: setEnalapril, dose: enalaprilDose, setDose: setEnalaprilDose, label: 'Enalapril', clsKey: 'enalapril' },
+                  { val: ramipril, set: setRamipril, dose: ramiprilDose, setDose: setRamiprilDose, label: 'Ramipril', clsKey: 'ramipril' },
+                  { val: lisinopril, set: setLisinopril, dose: lisinoprilDose, setDose: setLisinoprilDose, label: 'Lisinopril', clsKey: 'lisinopril' },
+                  { val: perindopril, set: setPerindopril, dose: perindoprilDose, setDose: setPerindoprilDose, label: 'Perindopril', clsKey: 'perindopril' },
+                  { val: aceOther, set: setAceOther, dose: aceOtherDose, setDose: setAceOtherDose, label: 'Other:', name: aceOtherName, setName: setAceOtherName, isOther: true }
+                ].map((drug) => {
+                  const errorKey = drug.label === 'Enalapril' ? 'enalaprilDose' : (drug.label === 'Ramipril' ? 'ramiprilDose' : (drug.label === 'Lisinopril' ? 'lisinoprilDose' : (drug.label === 'Perindopril' ? 'perindoprilDose' : (drug.isOther ? 'aceOtherDose' : ''))));
+                  return renderDrugRow(drug, errorKey);
+                })}
               </div>
-              <div className="mt-1.5">
-                <input disabled={readOnly || aceNotUsedOther !== 'Yes'}
-                  type="text"
-                  value={aceNotUsedOtherReason}
-                  onChange={(e) => setAceNotUsedOtherReason(e.target.value)}
-                  className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
-                  placeholder="Specify other reason..."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* ARBs Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.arb ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugArb">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
-              <span className="font-bold text-slate-800 text-[11px] uppercase">Angiotensin Receptor Blocker <span className="text-red-500 font-bold ml-0.5">*</span></span>
-              {formErrors.arb && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.arb}</span>
-              )}
-            </div>
-            <div className="lg:col-span-5 p-3 space-y-2">
-              {[
-                { val: valsartan, set: setValsartan, dose: valsartanDose, setDose: setValsartanDose, label: 'Valsartan', clsKey: 'valsartan' },
-                { val: losartan, set: setLosartan, dose: losartanDose, setDose: setLosartanDose, label: 'Losartan', clsKey: 'losartan' },
-                { val: telmisartan, set: setTelmisartan, dose: telmisartanDose, setDose: setTelmisartanDose, label: 'Telmisartan', clsKey: 'telmisartan' },
-                { val: olmesartan, set: setOlmesartan, dose: olmesartanDose, setDose: setOlmesartanDose, label: 'Olmesartan', clsKey: 'olmesartan' },
-                { val: arbOther, set: setArbOther, dose: arbOtherDose, setDose: setArbOtherDose, label: 'Other:', name: arbOtherName, setName: setArbOtherName, isOther: true }
-              ].map((drug) => {
-                const errorKey = drug.label === 'Valsartan' ? 'valsartanDose' : (drug.label === 'Losartan' ? 'losartanDose' : (drug.label === 'Telmisartan' ? 'telmisartanDose' : (drug.label === 'Olmesartan' ? 'olmesartanDose' : (drug.isOther ? 'arbOtherDose' : ''))));
-                return renderDrugRow(drug, errorKey);
-              })}
-            </div>
-            <div className="lg:col-span-4 p-3 bg-slate-50/30 space-y-2">
-              <span className="block font-semibold text-slate-500 uppercase text-[9px] mb-1">Contraindication/reason not used:</span>
-              <div className="grid grid-cols-2 gap-1.5">
-                {[
-                  { val: arbNotUsedElevatedCreatinine, set: setArbNotUsedElevatedCreatinine, label: 'Elevated creatinine (Renal failure)' },
-                  { val: arbNotUsedHyperkalemia, set: setArbNotUsedHyperkalemia, label: 'Hyperkalemia' },
-                  { val: arbNotUsedHypotension, set: setArbNotUsedHypotension, label: 'Hypotension' },
-                  { val: arbNotUsedOther, set: setArbNotUsedOther, label: 'Others' }
-                ].map((item) => (
-                  <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                    <input disabled={readOnly}
-                      type="checkbox"
-                      checked={item.val === 'Yes'}
-                      onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
-                    />
-                    <span>{item.label}</span>
-                  </label>
-                ))}
-              </div>
-              <div className="mt-1.5">
-                <input disabled={readOnly || arbNotUsedOther !== 'Yes'}
-                  type="text"
-                  value={arbNotUsedOtherReason}
-                  onChange={(e) => setArbNotUsedOtherReason(e.target.value)}
-                  className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
-                  placeholder="Specify other reason..."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Aldosterone Antagonists Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.aldosterone ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugAldosterone">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
-              <span className="font-bold text-slate-800 text-[11px] uppercase">Aldosterone Antagonist <span className="text-red-500 font-bold ml-0.5">*</span></span>
-              {formErrors.aldosterone && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.aldosterone}</span>
-              )}
-            </div>
-            <div className="lg:col-span-5 p-3 space-y-2">
-              {[
-                { val: spironolactone, set: setSpironolactone, dose: spironolactoneDose, setDose: setSpironolactoneDose, label: 'Spironolactone', clsKey: 'spironolactone' },
-                { val: eplerenone, set: setEplerenone, dose: eplerenoneDose, setDose: setEplerenoneDose, label: 'Eplerenone', clsKey: 'eplerenone' }
-              ].map((drug) => {
-                const errorKey = drug.label === 'Spironolactone' ? 'spironolactoneDose' : (drug.label === 'Eplerenone' ? 'eplerenoneDose' : '');
-                return renderDrugRow(drug, errorKey);
-              })}
-            </div>
-            <div className="lg:col-span-4 p-3 bg-slate-50/30 space-y-2">
-              <span className="block font-semibold text-slate-500 uppercase text-[9px] mb-1">Contraindication/reason not used:</span>
-              <div className="grid grid-cols-2 gap-1.5">
-                {[
-                  { val: aldosteroneNotUsedHyperkalemia, set: setAldosteroneNotUsedHyperkalemia, label: 'Hyperkalemia' },
-                  { val: aldosteroneNotUsedHyponatremia, set: setAldosteroneNotUsedHyponatremia, label: 'Hyponatremia' },
-                  { val: aldosteroneNotUsedElevatedCreatinine, set: setAldosteroneNotUsedElevatedCreatinine, label: 'Elevated creatinine (Renal failure)' },
-                  { val: aldosteroneNotUsedOther, set: setAldosteroneNotUsedOther, label: 'Other' }
-                ].map((item) => (
-                  <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                    <input disabled={readOnly}
-                      type="checkbox"
-                      checked={item.val === 'Yes'}
-                      onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
-                    />
-                    <span>{item.label}</span>
-                  </label>
-                ))}
-              </div>
-              <div className="mt-1.5">
-                <input disabled={readOnly || aldosteroneNotUsedOther !== 'Yes'}
-                  type="text"
-                  value={aldosteroneNotUsedOtherReason}
-                  onChange={(e) => setAldosteroneNotUsedOtherReason(e.target.value)}
-                  className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
-                  placeholder="Specify other reason..."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Hydralazine Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.hydralazine ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugHydralazine">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
-              <span className="font-bold text-slate-800 text-[11px] uppercase">Hydralazine <span className="text-red-500 font-bold ml-0.5">*</span></span>
-              {formErrors.hydralazine && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.hydralazine}</span>
-              )}
-            </div>
-            <div className="lg:col-span-9 p-3">
-              <div className="flex items-center gap-3">
-
-                <div className="flex items-center gap-1.5 flex-1">
-                  <input disabled={readOnly}
+              <div className="lg:col-span-4 p-3 bg-slate-50/30 space-y-2">
+                <span className="block font-semibold text-slate-500 uppercase text-[9px] mb-1">Contraindication/reason not used:</span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { val: aceNotUsedElevatedCreatinine, set: setAceNotUsedElevatedCreatinine, label: 'Elevated creatinine (Renal failure)' },
+                    { val: aceNotUsedHyperkalemia, set: setAceNotUsedHyperkalemia, label: 'Hyperkalemia' },
+                    { val: aceNotUsedCough, set: setAceNotUsedCough, label: 'Cough' },
+                    { val: aceNotUsedHypotension, set: setAceNotUsedHypotension, label: 'Hypotension' },
+                    { val: aceNotUsedOther, set: setAceNotUsedOther, label: 'Other' }
+                  ].map((item) => (
+                    <label key={item.label} className="flex items-start gap-1.5 cursor-pointer text-slate-700">
+                      <input disabled={readOnly}
+                        type="checkbox"
+                        checked={item.val === 'Yes'}
+                        onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
+                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 mt-0.5"
+                      />
+                      <span>{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-1.5">
+                  <input disabled={readOnly || aceNotUsedOther !== 'Yes'}
                     type="text"
-                    value={hydralazineName}
-                    onChange={(e) => setHydralazineName(e.target.value)}
-                    className="border border-slate-300 rounded p-1.5 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
-                    placeholder="Details"
+                    value={aceNotUsedOtherReason}
+                    onChange={(e) => setAceNotUsedOtherReason(e.target.value)}
+                    className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                    placeholder="Specify other reason..."
                   />
-                  <div className="flex flex-col items-end w-28">
-                    <input disabled={readOnly}
-                      type="text"
-                      value={hydralazineDose}
-                      onChange={(e) => handleDoseChange(e.target.value, setHydralazineDose, 'Hydralazine')}
-                      className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
-                      placeholder="Dose"
-                    />
-                    {doseErrors['Hydralazine'] && (
-                      <span className="text-red-500 text-[9px] block font-bold text-right w-full mt-0.5">{doseErrors['Hydralazine']}</span>
-                    )}
-                  </div>
-                  <span className="text-[10px] text-slate-400">/per day</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Nitrate Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.nitrate ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugNitrate">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
-              <span className="font-bold text-slate-800 text-[11px] uppercase">Nitrate <span className="text-red-500 font-bold ml-0.5">*</span></span>
-              {formErrors.nitrate && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.nitrate}</span>
+          {/* ARBs Row */}
+          <div className="bg-white" id="drugArb">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
+              <span className="font-bold text-slate-800 text-[11px] uppercase">Angiotensin Receptor Blocker <span className="text-red-500 font-bold ml-0.5">*</span></span>
+              {formErrors.arb && (
+                <span className="text-red-500 text-[10px] font-bold block">{formErrors.arb}</span>
               )}
             </div>
-            <div className="lg:col-span-9 p-3 space-y-3">
+            <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.arb ? 'bg-red-50/20' : ''}`}>
+              <div className="lg:col-span-8 p-3 space-y-2 overflow-x-auto">
+                {[
+                  { val: valsartan, set: setValsartan, dose: valsartanDose, setDose: setValsartanDose, label: 'Valsartan', clsKey: 'valsartan' },
+                  { val: losartan, set: setLosartan, dose: losartanDose, setDose: setLosartanDose, label: 'Losartan', clsKey: 'losartan' },
+                  { val: telmisartan, set: setTelmisartan, dose: telmisartanDose, setDose: setTelmisartanDose, label: 'Telmisartan', clsKey: 'telmisartan' },
+                  { val: olmesartan, set: setOlmesartan, dose: olmesartanDose, setDose: setOlmesartanDose, label: 'Olmesartan', clsKey: 'olmesartan' },
+                  { val: arbOther, set: setArbOther, dose: arbOtherDose, setDose: setArbOtherDose, label: 'Other:', name: arbOtherName, setName: setArbOtherName, isOther: true }
+                ].map((drug) => {
+                  const errorKey = drug.label === 'Valsartan' ? 'valsartanDose' : (drug.label === 'Losartan' ? 'losartanDose' : (drug.label === 'Telmisartan' ? 'telmisartanDose' : (drug.label === 'Olmesartan' ? 'olmesartanDose' : (drug.isOther ? 'arbOtherDose' : ''))));
+                  return renderDrugRow(drug, errorKey);
+                })}
+              </div>
+              <div className="lg:col-span-4 p-3 bg-slate-50/30 space-y-2">
+                <span className="block font-semibold text-slate-500 uppercase text-[9px] mb-1">Contraindication/reason not used:</span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { val: arbNotUsedElevatedCreatinine, set: setArbNotUsedElevatedCreatinine, label: 'Elevated creatinine (Renal failure)' },
+                    { val: arbNotUsedHyperkalemia, set: setArbNotUsedHyperkalemia, label: 'Hyperkalemia' },
+                    { val: arbNotUsedHypotension, set: setArbNotUsedHypotension, label: 'Hypotension' },
+                    { val: arbNotUsedOther, set: setArbNotUsedOther, label: 'Others' }
+                  ].map((item) => (
+                    <label key={item.label} className="flex items-start gap-1.5 cursor-pointer text-slate-700">
+                      <input disabled={readOnly}
+                        type="checkbox"
+                        checked={item.val === 'Yes'}
+                        onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
+                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 mt-0.5"
+                      />
+                      <span>{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-1.5">
+                  <input disabled={readOnly || arbNotUsedOther !== 'Yes'}
+                    type="text"
+                    value={arbNotUsedOtherReason}
+                    onChange={(e) => setArbNotUsedOtherReason(e.target.value)}
+                    className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                    placeholder="Specify other reason..."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Aldosterone Antagonists Row */}
+          <div className="bg-white" id="drugAldosterone">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
+              <span className="font-bold text-slate-800 text-[11px] uppercase">Aldosterone Antagonist <span className="text-red-500 font-bold ml-0.5">*</span></span>
+              {formErrors.aldosterone && (
+                <span className="text-red-500 text-[10px] font-bold block">{formErrors.aldosterone}</span>
+              )}
+            </div>
+            <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.aldosterone ? 'bg-red-50/20' : ''}`}>
+              <div className="lg:col-span-8 p-3 space-y-2 overflow-x-auto">
+                {[
+                  { val: spironolactone, set: setSpironolactone, dose: spironolactoneDose, setDose: setSpironolactoneDose, label: 'Spironolactone', clsKey: 'spironolactone' },
+                  { val: eplerenone, set: setEplerenone, dose: eplerenoneDose, setDose: setEplerenoneDose, label: 'Eplerenone', clsKey: 'eplerenone' }
+                ].map((drug) => {
+                  const errorKey = drug.label === 'Spironolactone' ? 'spironolactoneDose' : (drug.label === 'Eplerenone' ? 'eplerenoneDose' : '');
+                  return renderDrugRow(drug, errorKey);
+                })}
+              </div>
+              <div className="lg:col-span-4 p-3 bg-slate-50/30 space-y-2">
+                <span className="block font-semibold text-slate-500 uppercase text-[9px] mb-1">Contraindication/reason not used:</span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { val: aldosteroneNotUsedHyperkalemia, set: setAldosteroneNotUsedHyperkalemia, label: 'Hyperkalemia' },
+                    { val: aldosteroneNotUsedHyponatremia, set: setAldosteroneNotUsedHyponatremia, label: 'Hyponatremia' },
+                    { val: aldosteroneNotUsedElevatedCreatinine, set: setAldosteroneNotUsedElevatedCreatinine, label: 'Elevated creatinine (Renal failure)' },
+                    { val: aldosteroneNotUsedOther, set: setAldosteroneNotUsedOther, label: 'Other' }
+                  ].map((item) => (
+                    <label key={item.label} className="flex items-start gap-1.5 cursor-pointer text-slate-700">
+                      <input disabled={readOnly}
+                        type="checkbox"
+                        checked={item.val === 'Yes'}
+                        onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
+                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 mt-0.5"
+                      />
+                      <span>{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-1.5">
+                  <input disabled={readOnly || aldosteroneNotUsedOther !== 'Yes'}
+                    type="text"
+                    value={aldosteroneNotUsedOtherReason}
+                    onChange={(e) => setAldosteroneNotUsedOtherReason(e.target.value)}
+                    className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                    placeholder="Specify other reason..."
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Hydralazine Row */}
+          <div className="bg-white" id="drugHydralazine">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
+              <span className="font-bold text-slate-800 text-[11px] uppercase">Hydralazine <span className="text-red-500 font-bold ml-0.5">*</span></span>
+              {formErrors.hydralazine && (
+                <span className="text-red-500 text-[10px] font-bold block">{formErrors.hydralazine}</span>
+              )}
+            </div>
+            <div className={`p-3 flex flex-col items-end justify-center ${formErrors.hydralazine ? 'bg-red-50/20' : ''}`}>
+              <div className="flex items-center gap-2 w-full justify-end">
+                <input disabled={readOnly}
+                  type="text"
+                  value={hydralazineName}
+                  onChange={(e) => setHydralazineName(e.target.value)}
+                  className="border border-slate-300 rounded p-1 text-xs flex-1 min-w-[120px] focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                  placeholder="Details"
+                />
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <input disabled={readOnly}
+                    type="text"
+                    value={hydralazineDose}
+                    onChange={(e) => handleDoseChange(e.target.value, setHydralazineDose, 'Hydralazine')}
+                    className={`border border-slate-300 rounded p-1 text-xs w-24 focus:ring-0 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400 ${
+                      doseErrors['Hydralazine'] ? 'border-red-500 bg-red-50 text-red-800 font-bold' : ''
+                    }`}
+                    placeholder="Dose"
+                  />
+                  <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 w-12 text-left">/per day</span>
+                </div>
+              </div>
+              {doseErrors['Hydralazine'] && (
+                <span className="text-red-500 text-[9px] block font-bold text-right w-full mt-0.5">{doseErrors['Hydralazine']}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Nitrate Row */}
+          <div className="bg-white" id="drugNitrate">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
+              <span className="font-bold text-slate-800 text-[11px] uppercase">Nitrate <span className="text-red-500 font-bold ml-0.5">*</span></span>
+              {formErrors.nitrate && (
+                <span className="text-red-500 text-[10px] font-bold block">{formErrors.nitrate}</span>
+              )}
+            </div>
+            <div className={`p-3 space-y-3 ${formErrors.nitrate ? 'bg-red-50/20' : ''}`}>
               {[
                 { val: nitrate1, set: setNitrate1, name: nitrate1Name, setName: setNitrate1Name, dose: nitrate1Dose, setDose: setNitrate1Dose, label: 'Nitrate 1' },
                 { val: nitrate2, set: setNitrate2, name: nitrate2Name, setName: setNitrate2Name, dose: nitrate2Dose, setDose: setNitrate2Dose, label: 'Nitrate 2' }
               ].map((nitrate, idx) => (
-                <div key={idx} className="flex items-center gap-3">
-                  <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap min-w-[80px]">
+                <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center gap-3 border-b border-slate-100 last:border-0 pb-2 last:pb-0 pl-2 pr-6">
+                  <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap min-w-[80px] flex-shrink-0">
                     <input disabled={readOnly}
                       type="checkbox"
                       checked={nitrate.val === 'Yes'}
@@ -5579,27 +5722,29 @@ const hf = forwardRef(function hf(
                           nitrate.setDose('');
                         }
                       }}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
                     />
-                    <span className="font-medium text-slate-700">{nitrate.label}</span>
+                    <span className="font-semibold text-slate-700">{nitrate.label}</span>
                   </label>
 
-                  <div className="flex items-center gap-1.5 flex-1">
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:flex-1 justify-end">
                     <input disabled={readOnly || nitrate.val !== 'Yes'}
                       type="text"
                       value={nitrate.name}
                       onChange={(e) => nitrate.setName(e.target.value)}
-                      className="border border-slate-300 rounded p-1.5 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      className="border border-slate-300 rounded p-1.5 text-xs w-full sm:flex-1 sm:max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
                       placeholder={`${nitrate.label} Details`}
                     />
-                    <input disabled={readOnly || nitrate.val !== 'Yes'}
-                      type="text"
-                      value={nitrate.dose}
-                      onChange={(e) => handleDoseChange(e.target.value, nitrate.setDose, `${nitrate.label.replace(' ', '')}Dose`)}
-                      className="border border-slate-300 rounded p-1.5 text-xs w-28 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
-                      placeholder="Dose"
-                    />
-                    <span className="text-[10px] text-slate-400">/per day</span>
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end flex-shrink-0">
+                      <input disabled={readOnly || nitrate.val !== 'Yes'}
+                        type="text"
+                        value={nitrate.dose}
+                        onChange={(e) => handleDoseChange(e.target.value, nitrate.setDose, `${nitrate.label.replace(' ', '')}Dose`)}
+                        className="border border-slate-300 rounded p-1 text-xs w-full sm:w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
+                        placeholder="Dose"
+                      />
+                      <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 w-12 text-left">/per day</span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -5607,14 +5752,14 @@ const hf = forwardRef(function hf(
           </div>
 
           {/* Anticoagulation Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.anticoagulation ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugAnticoagulation">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
+          <div className="bg-white" id="drugAnticoagulation">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
               <span className="font-bold text-slate-800 text-[11px] uppercase">Anticoagulation <span className="text-red-500 font-bold ml-0.5">*</span></span>
               {formErrors.anticoagulation && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.anticoagulation}</span>
+                <span className="text-red-500 text-[10px] font-bold block">{formErrors.anticoagulation}</span>
               )}
             </div>
-            <div className="lg:col-span-9 p-3 space-y-3">
+            <div className={`p-3 space-y-3 ${formErrors.anticoagulation ? 'bg-red-50/20' : ''}`}>
               {/* Warfarin */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-2 border-b border-slate-100">
                 <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
@@ -5707,14 +5852,14 @@ const hf = forwardRef(function hf(
           </div>
 
           {/* Antiplatelets Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.antiplatelet ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugAntiplatelet">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
+          <div className="bg-white" id="drugAntiplatelet">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
               <span className="font-bold text-slate-800 text-[11px] uppercase">Anti-platelet <span className="text-red-500 font-bold ml-0.5">*</span></span>
               {formErrors.antiplatelet && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.antiplatelet}</span>
+                <span className="text-red-500 text-[10px] font-bold block">{formErrors.antiplatelet}</span>
               )}
             </div>
-            <div className="lg:col-span-9 p-3 space-y-2">
+            <div className={`p-3 space-y-2 ${formErrors.antiplatelet ? 'bg-red-50/20' : ''}`}>
               {[
                 { val: aspirin, set: setAspirin, dose: aspirinDose, setDose: setAspirinDose, label: 'Aspirin', clsKey: 'aspirin' },
                 { val: clopidogrel, set: setClopidogrel, dose: clopidogrelDose, setDose: setClopidogrelDose, label: 'Clopidogrel', clsKey: 'clopidogrel' },
@@ -5728,14 +5873,14 @@ const hf = forwardRef(function hf(
           </div>
 
           {/* Antiarrhythmics Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.antiarrhythmic ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugAntiarrhythmic">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
+          <div className="bg-white" id="drugAntiarrhythmic">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
               <span className="font-bold text-slate-800 text-[11px] uppercase">Antiarrhythmic <span className="text-red-500 font-bold ml-0.5">*</span></span>
               {formErrors.antiarrhythmic && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.antiarrhythmic}</span>
+                <span className="text-red-500 text-[10px] font-bold block">{formErrors.antiarrhythmic}</span>
               )}
             </div>
-            <div className="lg:col-span-9 p-3 space-y-2">
+            <div className={`p-3 space-y-2 ${formErrors.antiarrhythmic ? 'bg-red-50/20' : ''}`}>
               {[
                 { val: amiodarone, set: setAmiodarone, dose: amiodaroneDose, setDose: setAmiodaroneDose, label: 'Amiodarone', clsKey: 'amiodarone' },
                 { val: antiarrhythmicOther, set: setAntiarrhythmicOther, dose: antiarrhythmicOtherDose, setDose: setAntiarrhythmicOtherDose, label: 'Other:', name: antiarrhythmicOtherName, setName: setAntiarrhythmicOtherName, isOther: true }
@@ -5747,92 +5892,94 @@ const hf = forwardRef(function hf(
           </div>
 
           {/* Diuretics Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.diuretic ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugDiuretic">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
+          <div className="bg-white" id="drugDiuretic">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
               <span className="font-bold text-slate-800 text-[11px] uppercase">Diuretic <span className="text-red-500 font-bold ml-0.5">*</span></span>
               {formErrors.diuretic && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.diuretic}</span>
+                <span className="text-red-500 text-[10px] font-bold block">{formErrors.diuretic}</span>
               )}
             </div>
-            <div className="lg:col-span-5 p-3 space-y-2">
-              {[
-                { val: furosemide, set: setFurosemide, dose: furosemideDose, setDose: setFurosemideDose, label: 'Furosemide', clsKey: 'furosemide' },
-                { val: torsemide, set: setTorsemide, dose: torsemideDose, setDose: setTorsemideDose, label: 'Torsemide', clsKey: 'torsemide' },
-                { val: metolazone, set: setMetolazone, dose: metolazoneDose, setDose: setMetolazoneDose, label: 'Metolazone', clsKey: 'metolazone' },
-                { val: diureticOther, set: setDiureticOther, dose: diureticOtherDose, setDose: setDiureticOtherDose, label: 'Other:', name: diureticOtherName, setName: setDiureticOtherName, isOther: true }
-              ].map((drug) => {
-                const errorKey = drug.label === 'Furosemide' ? 'furosemideDose' : (drug.label === 'Torsemide' ? 'torsemideDose' : (drug.label === 'Metolazone' ? 'metolazoneDose' : (drug.isOther ? 'diureticOtherDose' : '')));
-                return renderDrugRow(drug, errorKey);
-              })}
-            </div>
-            <div className="lg:col-span-4 p-3 bg-slate-50/30 space-y-2">
-              <span className="block font-semibold text-slate-500 uppercase text-[9px] mb-1">Contraindication/reason not used:</span>
-              <div className="grid grid-cols-2 gap-1.5">
+            <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.diuretic ? 'bg-red-50/20' : ''}`}>
+              <div className="lg:col-span-8 p-3 space-y-2 overflow-x-auto">
                 {[
-                  { val: diureticNotUsedHyponatremia, set: setDiureticNotUsedHyponatremia, label: 'Hyponatremia' },
-                  { val: diureticNotUsedHypokalemia, set: setDiureticNotUsedHypokalemia, label: 'Hypokalemia' },
-                  { val: diureticNotUsedWorseningRenalFailure, set: setDiureticNotUsedWorseningRenalFailure, label: 'Worsening renal failure' },
-                  { val: diureticNotUsedHypotension, set: setDiureticNotUsedHypotension, label: 'Hypotension' },
-                  { val: diureticNotUsedOther, set: setDiureticNotUsedOther, label: 'Other' }
-                ].map((item) => (
-                  <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                    <input disabled={readOnly}
-                      type="checkbox"
-                      checked={item.val === 'Yes'}
-                      onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
-                    />
-                    <span>{item.label}</span>
-                  </label>
-                ))}
+                  { val: furosemide, set: setFurosemide, dose: furosemideDose, setDose: setFurosemideDose, label: 'Furosemide', clsKey: 'furosemide' },
+                  { val: torsemide, set: setTorsemide, dose: torsemideDose, setDose: setTorsemideDose, label: 'Torsemide', clsKey: 'torsemide' },
+                  { val: metolazone, set: setMetolazone, dose: metolazoneDose, setDose: setMetolazoneDose, label: 'Metolazone', clsKey: 'metolazone' },
+                  { val: diureticOther, set: setDiureticOther, dose: diureticOtherDose, setDose: setDiureticOtherDose, label: 'Other:', name: diureticOtherName, setName: setDiureticOtherName, isOther: true }
+                ].map((drug) => {
+                  const errorKey = drug.label === 'Furosemide' ? 'furosemideDose' : (drug.label === 'Torsemide' ? 'torsemideDose' : (drug.label === 'Metolazone' ? 'metolazoneDose' : (drug.isOther ? 'diureticOtherDose' : '')));
+                  return renderDrugRow(drug, errorKey);
+                })}
               </div>
-              <div className="mt-1.5">
-                <input disabled={readOnly || diureticNotUsedOther !== 'Yes'}
-                  type="text"
-                  value={diureticNotUsedOtherReason}
-                  onChange={(e) => setDiureticNotUsedOtherReason(e.target.value)}
-                  className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
-                  placeholder="Specify other reason..."
-                />
+              <div className="lg:col-span-4 p-3 bg-slate-50/30 space-y-2">
+                <span className="block font-semibold text-slate-500 uppercase text-[9px] mb-1">Contraindication/reason not used:</span>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { val: diureticNotUsedHyponatremia, set: setDiureticNotUsedHyponatremia, label: 'Hyponatremia' },
+                    { val: diureticNotUsedHypokalemia, set: setDiureticNotUsedHypokalemia, label: 'Hypokalemia' },
+                    { val: diureticNotUsedWorseningRenalFailure, set: setDiureticNotUsedWorseningRenalFailure, label: 'Worsening renal failure' },
+                    { val: diureticNotUsedHypotension, set: setDiureticNotUsedHypotension, label: 'Hypotension' },
+                    { val: diureticNotUsedOther, set: setDiureticNotUsedOther, label: 'Other' }
+                  ].map((item) => (
+                    <label key={item.label} className="flex items-start gap-1.5 cursor-pointer text-slate-700">
+                      <input disabled={readOnly}
+                        type="checkbox"
+                        checked={item.val === 'Yes'}
+                        onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
+                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 mt-0.5"
+                      />
+                      <span>{item.label}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-1.5">
+                  <input disabled={readOnly || diureticNotUsedOther !== 'Yes'}
+                    type="text"
+                    value={diureticNotUsedOtherReason}
+                    onChange={(e) => setDiureticNotUsedOtherReason(e.target.value)}
+                    className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                    placeholder="Specify other reason..."
+                  />
+                </div>
               </div>
             </div>
           </div>
 
           {/* Digoxin Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.digoxin ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugDigoxin">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
+          <div className="bg-white" id="drugDigoxin">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
               <span className="font-bold text-slate-800 text-[11px] uppercase">Digoxin <span className="text-red-500 font-bold ml-0.5">*</span></span>
               {formErrors.digoxin && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.digoxin}</span>
+                <span className="text-red-500 text-[10px] font-bold block">{formErrors.digoxin}</span>
               )}
             </div>
-            <div className="lg:col-span-9 p-3">
+            <div className={`p-3 ${formErrors.digoxin ? 'bg-red-50/20' : ''}`}>
               {renderDrugRow({ val: digoxin, set: setDigoxin, dose: digoxinDose, setDose: setDigoxinDose, label: 'Digoxin', name: digoxinName, setName: setDigoxinName, clsKey: 'digoxin' }, 'digoxinDose')}
             </div>
            </div>
  
            {/* Ivabradine Row */}
-           <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.ivabradine ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugIvabradine">
-             <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
+           <div className="bg-white" id="drugIvabradine">
+             <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
                <span className="font-bold text-slate-800 text-[11px] uppercase">Ivabradine <span className="text-red-500 font-bold ml-0.5">*</span></span>
                {formErrors.ivabradine && (
-                 <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.ivabradine}</span>
+                 <span className="text-red-500 text-[10px] font-bold block">{formErrors.ivabradine}</span>
                )}
              </div>
-             <div className="lg:col-span-9 p-3">
+             <div className={`p-3 ${formErrors.ivabradine ? 'bg-red-50/20' : ''}`}>
                {renderDrugRow({ val: ivabradine, set: setIvabradine, dose: ivabradineDose, setDose: setIvabradineDose, label: 'Ivabradine', isOther: true, clsKey: 'ivabradine' }, 'ivabradineDose')}
              </div>
           </div>
 
           {/* Statins Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.statins ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugStatins">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
+          <div className="bg-white" id="drugStatins">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
               <span className="font-bold text-slate-800 text-[11px] uppercase">Statins <span className="text-red-500 font-bold ml-0.5">*</span></span>
               {formErrors.statins && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.statins}</span>
+                <span className="text-red-500 text-[10px] font-bold block">{formErrors.statins}</span>
               )}
             </div>
-            <div className="lg:col-span-9 p-3 space-y-2">
+            <div className={`p-3 space-y-2 ${formErrors.statins ? 'bg-red-50/20' : ''}`}>
               {[
                 { val: atorvastatin, set: setAtorvastatin, dose: atorvastatinDose, setDose: setAtorvastatinDose, label: 'Atorvastatin', clsKey: 'atorvastatin' },
                 { val: simvastatin, set: setSimvastatin, dose: simvastatinDose, setDose: setSimvastatinDose, label: 'Simvastatin', clsKey: 'simvastatin' },
@@ -5845,14 +5992,14 @@ const hf = forwardRef(function hf(
           </div>
 
           {/* Antidiabetics Row */}
-          <div className={`grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200 ${formErrors.antidiabetics ? 'border border-red-500 bg-red-50/20' : ''}`} id="drugAntidiabetics">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
+          <div className="bg-white" id="drugAntidiabetics">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
               <span className="font-bold text-slate-800 text-[11px] uppercase">Antidiabetics <span className="text-red-500 font-bold ml-0.5">*</span></span>
               {formErrors.antidiabetics && (
-                <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.antidiabetics}</span>
+                <span className="text-red-500 text-[10px] font-bold block">{formErrors.antidiabetics}</span>
               )}
             </div>
-            <div className="lg:col-span-9 p-3 space-y-2">
+            <div className={`p-3 space-y-2 ${formErrors.antidiabetics ? 'bg-red-50/20' : ''}`}>
               {[
                 { val: sulfonylureas, set: setSulfonylureas, dose: sulfonylureasDose, setDose: setSulfonylureasDose, label: 'Sulfonylureas', clsKey: 'sulfonylureas' },
                 { val: metformin, set: setMetformin, dose: metforminDose, setDose: setMetforminDose, label: 'Metformin', clsKey: 'metformin' },
@@ -5869,11 +6016,11 @@ const hf = forwardRef(function hf(
           </div>
 
           {/* Other Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
-            <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
+          <div className="bg-white" id="drugOther">
+            <div className="bg-slate-100 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
               <span className="font-bold text-slate-800 text-[11px] uppercase">Other</span>
             </div>
-            <div className="lg:col-span-9 p-3 space-y-3">
+            <div className="p-3 space-y-3">
               {renderDrugRow({
                 val: antihypertensiveName || antihypertensiveDose ? 'Yes' : 'No',
                 set: () => {},
@@ -5903,30 +6050,40 @@ const hf = forwardRef(function hf(
                 { val: otherMedication3, set: setOtherMedication3, name: otherMedication3Name, setName: setOtherMedication3Name, dose: otherMedication3Dose, setDose: setOtherMedication3Dose, label: 'Other Medication 3', isOther: true },
                 { val: otherMedication4, set: setOtherMedication4, name: otherMedication4Name, setName: setOtherMedication4Name, dose: otherMedication4Dose, setDose: setOtherMedication4Dose, label: 'Other Medication 4', isOther: true }
               ].map((drug, idx) => (
-                <div key={idx} className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100 last:border-0">
-                  <div className="flex items-center gap-3 flex-1">
+                <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center gap-3 pt-2 border-t border-slate-100 last:border-0 pl-2 pr-6">
+                  <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap flex-shrink-0">
                     <input disabled={readOnly}
                       type="checkbox"
                       checked={drug.val === 'Yes'}
-                      onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        drug.set(checked ? 'Yes' : 'No');
+                        if (!checked) {
+                          drug.setName('');
+                          drug.setDose('');
+                        }
+                      }}
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
                     />
-                    <div className="flex items-center gap-1.5 flex-1">
-                      <input disabled={readOnly}
-                        type="text"
-                        value={drug.name}
-                        onChange={(e) => drug.setName(e.target.value)}
-                        className="border border-slate-300 rounded p-1 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                        placeholder={`Other Medication ${idx + 1} Name`}
-                      />
-                      <input disabled={readOnly}
+                    <span className="font-semibold text-slate-700">{drug.label}</span>
+                  </label>
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:flex-1 justify-end">
+                    <input disabled={readOnly || drug.val !== 'Yes'}
+                      type="text"
+                      value={drug.name}
+                      onChange={(e) => drug.setName(e.target.value)}
+                      className="border border-slate-300 rounded p-1 text-xs w-full sm:flex-1 sm:max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      placeholder={`Other Medication ${idx + 1} Name`}
+                    />
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end flex-shrink-0">
+                      <input disabled={readOnly || drug.val !== 'Yes'}
                         type="text"
                         value={drug.dose}
                         onChange={(e) => handleDoseChange(e.target.value, drug.setDose, drug.label)}
-                        className="border border-slate-300 rounded p-1.5 text-xs w-28 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right"
+                        className="border border-slate-300 rounded p-1 text-xs w-full sm:w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
                         placeholder="Dose"
                       />
-                      <span className="text-[10px] text-slate-400">/per day</span>
+                      <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 w-12 text-left">/per day</span>
                     </div>
                   </div>
                 </div>
@@ -5934,6 +6091,7 @@ const hf = forwardRef(function hf(
             </div>
           </div>
 
+        </div>
         </div>
       </SectionCard>   {/* 7. Device Therapy */}
       <SectionCard title="7. Device Therapy" subtitle="Current implanted devices and eligibility assessment">
