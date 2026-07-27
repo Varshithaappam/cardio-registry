@@ -306,16 +306,16 @@ const hf = forwardRef(function hf(
     
     if (fieldName === 'qrs') {
       const outOfBounds = val < 50 || val > 300;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 50 and 300 ms' };
-      if (val >= 120 || val<80) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val >= 120 || val<80) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 110 && val < 120) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'qt') {
       const outOfBounds = val < 200 || val > 750;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 200 and 750 ms' };
-      if (val<350 || val > 460 ) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val<350 || val > 460 ) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 441 && val <= 460) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
@@ -323,14 +323,14 @@ const hf = forwardRef(function hf(
     if (fieldName === 'qtc') {
       if (isMale) {
         const outOfBounds = val < 200 || val > 750;
-        if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 200 and 750 ms (Men)' };
-        if (val<350 || val >= 451) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (Men)' };
+        if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+        if (val<350 || val >= 451) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (Men)' };
         if (val >= 431 && val <= 450) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (Men)' };
         return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (Men)' };
       } else {
         const outOfBounds = val < 200 || val > 750;
-        if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 200 and 750 ms (Women)' };
-        if (val<350 || val >= 471) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (Women)' };
+        if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+        if (val<350 || val >= 471) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (Women)' };
         if (val >= 451 && val <= 470) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (Women)' };
         return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (Women)' };
       }
@@ -338,80 +338,80 @@ const hf = forwardRef(function hf(
 
     if (fieldName === 'ctRatio') {
       const outOfBounds = val < 0.20 || val > 0.90;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0.20 and 0.90' };
-      if (val<0.35 || val > 0.55) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>0.55)' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val<0.35 || val > 0.55) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (>0.55)' };
       if (val >= 0.51 && val <= 0.55) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (0.51-0.55)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (<=0.50)' };
     }
 
     if (fieldName === 'ef') {
       const outOfBounds = val < 1 || val > 100;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1% and 100%' };
-      if (val<10 || val <= 40) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (<=40%)' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val<10 || val <= 40) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (<=40%)' };
       if (val >= 41 && val <= 49) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (41-49%)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (>=50%)' };
     }
 
     if (fieldName === 'eaRatio') {
       const outOfBounds = val < 0.1 || val > 5.0;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0.1 and 5.0' };
-      if (val < 0.7 || val > 2.0) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 0.7 || val > 2.0) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
       if (val >= 0.7 && val < 0.8) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (0.7-0.8)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (0.8-2.0)' };
     }
 
     if (fieldName === 'tapse') {
       const outOfBounds = val < 1 || val > 50;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1 and 50 mm' };
-      if (val < 15 || val > 40) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Abnormal (<15 mm or >40 mm)' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 15 || val > 40) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal (<15 mm or >40 mm)' };
       if (val >= 15 && val <= 16) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (15-16 mm)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (>=17 mm)' };
     }
 
     if (fieldName === 'eePrime') {
       const outOfBounds = val < 1 || val > 50;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1 and 50' };
-      if (val > 14) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>14)' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 14) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (>14)' };
       if (val >= 8 && val <= 14 ) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (8-14)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (<8)' };
     }
 
     if (fieldName === 'eDecel') {
       const outOfBounds = val < 50 || val > 500;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 50 and 500 ms' };
-      if (val < 160 || val > 240) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (<160 or >240)' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 160 || val > 240) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (<160 or >240)' };
       if (val >= 201 && val <= 240) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (201-240 ms)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (160-200 ms)' };
     }
 
     if (fieldName === 'rvsp') {
       const outOfBounds = val < 10 || val > 150;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 10 and 150 mmHg' };
-      if (val > 40 || val < 15) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>40 or <15)' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 40 || val < 15) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (>40 or <15)' };
       if (val >= 36 && val <= 40) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (36-40 mmHg)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (<=35 mmHg)' };
     }
 
     if (fieldName === 'potassium') {
       const outOfBounds = val < 1 || val > 10.0;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1 and 10.0 mmol/L' };
-      if (val < 3.2 || val > 5.3) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 3.2 || val > 5.3) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if ((val >= 3.2 && val <= 3.4) || (val >= 5.1 && val <= 5.3)) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'creatinine') {
       const outOfBounds = val < 0.1 || val > 15;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0.1 and 15 mg/dL' };
-      if (val > 1.4 || val < 0.6) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>1.4 or <0.6)' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 1.4 || val < 0.6) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (>1.4 or <0.6)' };
       if (val >= 1.3 && val <= 1.4) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (1.3-1.4)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'hb') {
       const outOfBounds = val < 12.0 || val > 17.5;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 12.0 and 17.5 g/dL' };
-      if (val < 10.0) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (<10.0)' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 10.0) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (<10.0)' };
       if (val >= 10.0 && val <= 11.9) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (10.0-11.9)' };
       
       if (isMale) {
@@ -424,480 +424,480 @@ const hf = forwardRef(function hf(
 
     if (fieldName === 'calcium') {
       const outOfBounds = val < 3 || val > 20.0;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 3 and 20.0 mg/dL' };
-      if (val < 8.0 || val > 10.5) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 8.0 || val > 10.5) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if ((val >= 8.0 && val <= 8.3) || (val >= 10.3 && val <= 10.5)) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'bun') {
       const outOfBounds = val < 1 || val > 150;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1 and 150 mg/dL' };
-      if (val > 25 || val < 3) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>25)' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 25 || val < 3) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (>25)' };
       if (val >= 19 && val <= 25) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (19-25)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'glucose') {
       const outOfBounds = val < 10 || val > 900;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 10 and 900 mg/dL' };
-      if (val < 70 || val >= 126) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 70 || val >= 126) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 101 && val <= 125) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (101-125)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'hba1c') {
       const outOfBounds = val < 2.0 || val > 20.0;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 2.0% and 20.0%' };
-      if (val< 4.0 || val >= 6.5) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>=6.5%)' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val< 4.0 || val >= 6.5) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (>=6.5%)' };
       if (val >= 5.7 && val <= 6.4) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (5.7-6.4%)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (<5.7%)' };
     }
 
     if (fieldName === 'magnesium') {
       const outOfBounds = val < 0.5 || val > 10.0;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0.5 and 10.0 mg/dL' };
-      if (val < 1.3 || val > 2.1) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 1.3 || val > 2.1) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 1.3 && val <= 1.4) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'sodium') {
       const outOfBounds = val < 100 || val > 180;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 100 and 180 mmol/L' };
-      if (val < 130 || val > 146) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 130 || val > 146) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 130 && val <= 135) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'tsh') {
       const outOfBounds = val < 0.4 || val > 4.0;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0.4 and 4.0 µIU/mL' };
-      if (val < 0.4 || val > 5.5) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 0.4 || val > 5.5) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 4.1 && val <= 5.5) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 't3') {
       const outOfBounds = val < 100 || val > 200;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 100 and 200 ng/dL' };
-      if (val < 80 || val > 200) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 80 || val > 200) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 80 && val <= 99) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 't4') {
       const outOfBounds = val < 4.5 || val > 12.0;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 4.5 and 12.0 µg/dL' };
-      if (val < 3.8 || val > 12.0) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 3.8 || val > 12.0) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 3.8 && val <= 4.4) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'bnp') {
       const outOfBounds = val < 0 || val > 100;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0 and 100 pg/mL' };
-      if (val > 400) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 400) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 100 && val <= 400) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'ntProBnp') {
       const outOfBounds = val < 0 || val > 300;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0 and 300 pg/mL' };
-      if (val > 900) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 900) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 300 && val <= 900) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'ldl') {
       const outOfBounds = val < 0 || val > 100;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0 and 100 mg/dL' };
-      if (val >= 130) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val >= 130) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 100 && val <= 129) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'inr') {
       const outOfBounds = val < 0.8 || val > 1.2;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0.8 and 1.2' };
-      if (val >= 2.0 && val <= 3.0) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Abnormal (2.0-3.0)' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val >= 2.0 && val <= 3.0) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 1.5 && val <= 1.9) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (1.5-1.9)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'st2') {
       const outOfBounds = val < 0 || val > 35;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0 and 35 ng/mL' };
-      if (val > 50) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal (>50)' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 50) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (>50)' };
       if (val >= 35 && val <= 50) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (35-50)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'carvedilol') {
       const outOfBounds = val < 3.125 || val > 50;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 3.125 and 50 mg/day' };
-      if (val > 50) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 50) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 6.25 && val <= 12.5) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'bisoprolol') {
       const outOfBounds = val < 1.25 || val > 10;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1.25 and 10 mg/day' };
-      if (val > 10) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 10) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 2.5 && val <= 5) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'metoprolol') {
       const outOfBounds = val < 12.5 || val > 200;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 12.5 and 200 mg/day' };
-      if (val > 200) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 200) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 25 && val <= 100) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'nebivolol') {
       const outOfBounds = val < 1.25 || val > 10;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1.25 and 10 mg/day' };
-      if (val > 10) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 10) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 2.5 && val <= 5) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'enalapril') {
       const outOfBounds = val < 2.5 || val > 40;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 2.5 and 40 mg/day' };
-      if (val > 40) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 40) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 5 && val <= 10) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'ramipril') {
       const outOfBounds = val < 1.25 || val > 20;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1.25 and 20 mg/day' };
-      if (val > 20) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 20) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 2.5 && val <= 5) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'lisinopril') {
       const outOfBounds = val < 2.5 || val > 40;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 2.5 and 40 mg/day' };
-      if (val > 40) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 40) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 5 && val <= 10) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'perindopril') {
       const outOfBounds = val < 2 || val > 16;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 2 and 16 mg/day' };
-      if (val > 16) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 16) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 2 && val <= 4) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'valsartan') {
       const outOfBounds = val < 40 || val > 320;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 40 and 320 mg/day' };
-      if (val > 320) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 320) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 80 && val <= 160) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'losartan') {
       const outOfBounds = val < 25 || val > 150;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 25 and 150 mg/day' };
-      if (val > 150) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 150) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 50 && val <= 100) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'telmisartan') {
       const outOfBounds = val < 20 || val > 80;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 20 and 80 mg/day' };
-      if (val > 80) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 80) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 20 && val <= 40) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'olmesartan') {
       const outOfBounds = val < 10 || val > 40;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 10 and 40 mg/day' };
-      if (val > 40) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 40) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 10 && val <= 20) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'spironolactone') {
       const outOfBounds = val < 12.5 || val > 50;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 12.5 and 50 mg/day' };
-      if (val > 50) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 50) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 12.5) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'eplerenone') {
       const outOfBounds = val < 25 || val > 50;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 25 and 50 mg/day' };
-      if (val > 50) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 50) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 25) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'warfarin') {
       const outOfBounds = val < 1 || val > 15;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1 and 15 mg/day' };
-      if (val > 15) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 15) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 1 && val <= 2) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'acitrom') {
       const outOfBounds = val < 1 || val > 8;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1 and 8 mg/day' };
-      if (val > 8) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 8) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 1) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'ufh') {
       const outOfBounds = val < 200 || val > 40000;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 200 and 40000 units/day' };
-      if (val > 25000) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 25000) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val < 15000) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'lmwh') {
       const outOfBounds = val < 20 || val > 180;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 20 and 180 mg/day' };
-      if (val > 180) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 180) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 20 && val < 40) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'aspirin') {
       const outOfBounds = val < 75 || val > 325;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 75 and 325 mg/day' };
-      if (val > 325) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 325) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 150 && val <= 162) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'clopidogrel') {
       const outOfBounds = val < 75 || val > 150;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 75 and 150 mg/day' };
-      if (val > 150) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 150) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 300 && val <= 600) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'prasugrel') {
       const outOfBounds = val < 5 || val > 10;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 5 and 10 mg/day' };
-      if (val > 10) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 10) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 5) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'ticagrelor') {
       const outOfBounds = val < 90 || val > 180;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 90 and 180 mg/day' };
-      if (val > 180) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 180) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 120 || val === 60) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'amiodarone') {
       const outOfBounds = val < 100 || val > 400;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 100 and 400 mg/day' };
-      if (val > 400) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 400) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 400) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'furosemide') {
       const outOfBounds = val < 20 || val > 600;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 20 and 600 mg/day' };
-      if (val > 600) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 600) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 120 && val <= 240) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'torsemide') {
       const outOfBounds = val < 5 || val > 200;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 5 and 200 mg/day' };
-      if (val > 200) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 200) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 40 && val <= 100) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'metolazone') {
       const outOfBounds = val < 2.5 || val > 20;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 2.5 and 20 mg/day' };
-      if (val > 20) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 20) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 10) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'digoxin') {
       const outOfBounds = val < 0.0625 || val > 0.25;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0.0625 and 0.25 mg/day' };
-      if (val > 0.25) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 0.25) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 0.0625) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'ivabradine') {
       const outOfBounds = val < 5 || val > 15;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 5 and 15 mg/day' };
-      if (val > 15) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 15) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 5) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'atorvastatin') {
       const outOfBounds = val < 10 || val > 80;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 10 and 80 mg/day' };
-      if (val > 80) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 80) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 10 && val <= 20) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'simvastatin') {
       const outOfBounds = val < 10 || val > 40;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 10 and 40 mg/day' };
-      if (val > 40) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 40) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 10) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'rosuvastatin') {
       const outOfBounds = val < 5 || val > 40;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 5 and 40 mg/day' };
-      if (val > 40) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 40) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 5) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'sulfonylureas') {
       const outOfBounds = val < 1 || val > 500;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1 and 500 mg/day' };
-      if (val > 500) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 500) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val < 30) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'metformin') {
       const outOfBounds = val < 500 || val > 2550;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 500 and 2550 mg/day' };
-      if (val > 2550) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 2550) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 500) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'glitazone') {
       const outOfBounds = val < 15 || val > 45;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 15 and 45 mg/day' };
-      if (val > 45) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 45) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 15) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
-      return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-teal-700', message: 'Normal' };
+      return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'gliptin') {
       const outOfBounds = val < 5 || val > 100;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 5 and 100 mg/day' };
-      if (val > 100) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 100) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val < 25) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'acarbose') {
       const outOfBounds = val < 50 || val > 300;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 50 and 300 mg/day' };
-      if (val > 300) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 300) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 25 && val < 150) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'insulin') {
       const outOfBounds = val < 5 || val > 150;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 5 and 150 units/day' };
-      if (val >= 101 && val <= 150) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val >= 101 && val <= 150) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 5 && val <= 9) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'antihypertensive') {
       const outOfBounds = val < 1 || val > 300;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 1 and 300 mg/day' };
-      if (val >= 201 && val <= 300) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val >= 201 && val <= 300) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 1 && val <= 9) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'thyroxine') {
       const outOfBounds = val < 25 || val > 300;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 25 and 300 mcg/day' };
-      if (val >= 151 && val <= 300) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val >= 151 && val <= 300) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 25 && val <= 49) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'numberOfShocks') {
       const outOfBounds = val < 0 || val > 50;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0 and 50' };
-      if (val >= 3) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val >= 3) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 1 && val <= 2) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'appropriateShocks') {
       const outOfBounds = val < 0 || val > 50;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0 and 50' };
-      if (val >= 2) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val >= 2) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 1) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'inappropriateShocks') {
       const outOfBounds = val < 0 || val > 50;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0 and 50' };
-      if (val >= 2) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val >= 2) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val === 1) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'bivPacingPercent') {
       const outOfBounds = val < 0 || val > 100;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0 and 100 %' };
-      if (val < 85) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val < 85) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 85 && val <= 91) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'afibBurden') {
       const outOfBounds = val < 0 || val > 100;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0 and 100 %' };
-      if (val > 10) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 10) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val > 0 && val <= 10) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'nsvtEpisodes') {
       const outOfBounds = val < 0 || val > 100;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0 and 100' };
-      if (val > 5) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 5) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 1 && val <= 5) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'svtEpisodes') {
       const outOfBounds = val < 0 || val > 100;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Alert: Must be between 0 and 100' };
-      if (val > 3) return { status: 'abnormal', classNames: 'border-rose-500 bg-rose-50 text-rose-700 font-semibold', message: 'Prolonged/Abnormal' };
+      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
+      if (val > 3) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
       if (val >= 1 && val <= 3) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
