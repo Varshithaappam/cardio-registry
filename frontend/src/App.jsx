@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useParams, useLocation } from "react-router-dom";
 import HFFormView from "./components/forms/HFFormView";
 import { getAllPatients } from "../api/patientApi";
 import api from "../api/axios";
@@ -28,16 +28,35 @@ import {
 } from "lucide-react";
 
 function MainApp() {
+  const { patientId } = useParams();
+  const location = useLocation();
+
   // Nurse login status
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [nurse, setNurse] = useState(null);
 
   // 1. Central Registry State (Prefilled with high-fidelity, representative clinical portfolios)
-const [records, setRecords] = useState([]);
+  const [records, setRecords] = useState([]);
 
   // 2. Navigation & Router States
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedPatientId, setSelectedPatientId] = useState(null);
+
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.startsWith('/patient/') || path.startsWith('/portfolio/')) {
+      if (patientId) {
+        setSelectedPatientId(patientId);
+        setCurrentView('timeline');
+      }
+    } else if (path === '/patients' || path === '/master-registry') {
+      setCurrentView('patients');
+      setSelectedPatientId(null);
+    } else if (path === '/dashboard' || path === '/clinical-dashboard') {
+      setCurrentView('dashboard');
+      setSelectedPatientId(null);
+    }
+  }, [location.pathname, patientId]);
 
   // 3. Form & Viewer Active States
   const [activeFormType, setActiveFormType] = useState('HF');
@@ -373,8 +392,8 @@ useEffect(() => {
             onAddEventClick={(patientId, formType) => {
               setSelectedPatientId(patientId);
               handleOpenAddForm(formType);
-            }} />
-
+            }}
+            onBack={() => setCurrentView('dashboard')} />
           }
 
           {/* Source Form Mapping Matrix View */}
@@ -403,7 +422,8 @@ useEffect(() => {
             formType={activeFormType}
             editingRecord={editingRecord}
             onCancel={() => setCurrentView('timeline')}
-            onSave={handleSaveClinicalEvent} />
+            onSave={handleSaveClinicalEvent}
+            onBackPatients={() => setCurrentView('patients')} />
 
           }
 
@@ -439,6 +459,12 @@ export default function App() {
     <Router>
       <Routes>
         <Route path="/hf-form/view/:recordId" element={<HFFormView />} />
+        <Route path="/patient/:patientId" element={<MainApp />} />
+        <Route path="/portfolio/:patientId" element={<MainApp />} />
+        <Route path="/patients" element={<MainApp />} />
+        <Route path="/master-registry" element={<MainApp />} />
+        <Route path="/dashboard" element={<MainApp />} />
+        <Route path="/clinical-dashboard" element={<MainApp />} />
         <Route path="*" element={<MainApp />} />
       </Routes>
     </Router>

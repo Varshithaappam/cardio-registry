@@ -148,7 +148,14 @@ export default function HFFormView() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                const patientId = patientRecord?.patient?.id || assessmentData?.patientId || assessmentData?.patient_id;
+                if (patientId) {
+                  navigate(`/patient/${patientId}`);
+                } else {
+                  navigate(-1);
+                }
+              }}
               className="p-2 bg-black hover:bg-gray-900 rounded-xl border border-white/20 transition-colors text-white cursor-pointer"
               title="Go Back"
             >

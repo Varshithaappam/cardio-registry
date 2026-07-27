@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { FileText, Bookmark } from 'lucide-react';
+import { FileText, Bookmark, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 import HospitalizationForm from './forms/HospitalizationForm';
 import hf from './forms/hf';
@@ -15,7 +16,8 @@ import FollowUpForm from './forms/FollowUpForm';
 import LaboratoryForm from './forms/LaboratoryForm';
 import InvestigationForm from './forms/InvestigationForm';
 
-export default function ClinicalForm({ patientRecord, formType, editingRecord, onCancel, onSave }) {
+export default function ClinicalForm({ patientRecord, formType, editingRecord, onCancel, onSave, onBackPatients }) {
+  const navigate = useNavigate();
   const formRef = useRef(null);
   const [isDraft, setIsDraft] = useState(editingRecord?.isDraft ?? false);
   const [completionPercent, setCompletionPercent] = useState(15);
@@ -204,9 +206,26 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-fadeIn">
-      {/* Form Title Banner */}
       <div className={`p-6 ${currentStyle.bg} text-white border-b ${currentStyle.border} flex justify-between items-center flex-wrap gap-4`}>
         <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (formType === 'HF') {
+                if (onBackPatients) {
+                  onBackPatients();
+                } else {
+                  navigate('/patients');
+                }
+              } else {
+                onCancel();
+              }
+            }}
+            className="p-1.5 bg-slate-900/40 hover:bg-slate-900/60 text-white rounded-lg transition-colors cursor-pointer flex items-center justify-center mr-1"
+            title="Go Back"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
           <div className={`p-2 ${currentStyle.iconBg} rounded-lg`}>
             <FileText className="w-5 h-5" />
           </div>

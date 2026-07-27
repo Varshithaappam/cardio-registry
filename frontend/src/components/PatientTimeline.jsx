@@ -155,7 +155,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onVie
       {/* Edit Patient Modal Overlay */}
       {isEditingPatient && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-5xl max-h-[85vh] my-auto flex flex-col">
+          <div className="w-full max-w-7xl max-h-[90vh] my-auto flex flex-col">
             <RegisterNewPatient
               initialData={record}
               isEditMode={true}

@@ -67,7 +67,7 @@ export function buildPatientPayload({
     date_of_birth: dob,
     gender,
     blood_group: bloodGroup,
-    insurance_mode: insuranceMode,
+    insurance_mode: insuranceMode || "Unknown",
     phone_no: phone,
     email,
     hypertension,

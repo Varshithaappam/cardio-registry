@@ -11,7 +11,8 @@ import { calculateDataQualityScore } from '../data/mockPatients';
 import { calculateAge } from '../utils/calculateAge';
 import { buildPatientPayload, mapPatientRecord } from '../utils/patientMapper';
 import RegisterNewPatient from './RegisterNewPatient';
-import { Edit } from 'lucide-react';
+import { Edit, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -91,7 +92,8 @@ function EncounterCounter({ patientId }) {
   );
 }
 
-export default function PatientList({ patients, onSelectPatient, onRegisterPatient, onAddEventClick }) {
+export default function PatientList({ patients, onSelectPatient, onRegisterPatient, onAddEventClick, onBack }) {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [editingPatientRecord, setEditingPatientRecord] = useState(null);
@@ -184,16 +186,31 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
       
       {/* Search & Top Action Bar */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-2.5 h-4.5 w-4.5 text-slate-400" />
-          <input
-            id="patient-search"
-            type="text"
-            placeholder="Search master list by name, MR No or IP No..."
-            className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)} />
-          
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <button
+            type="button"
+            onClick={() => {
+              if (onBack) {
+                onBack();
+              } else {
+                navigate('/dashboard');
+              }
+            }}
+            className="p-2 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors text-slate-600 cursor-pointer flex items-center justify-center shrink-0"
+            title="Back to Dashboard"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-2.5 h-4.5 w-4.5 text-slate-400" />
+            <input
+              id="patient-search"
+              type="text"
+              placeholder="Search master list by name, MR No or IP No..."
+              className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)} />
+          </div>
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto justify-end flex-wrap sm:flex-nowrap">
@@ -226,7 +243,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
       {/* Edit Patient Modal Overlay */}
       {editingPatientRecord && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-5xl max-h-[85vh] my-auto flex flex-col">
+          <div className="w-full max-w-7xl max-h-[90vh] my-auto flex flex-col">
             <RegisterNewPatient
               initialData={editingPatientRecord}
               isEditMode={true}

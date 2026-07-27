@@ -55,8 +55,7 @@ export default function RegisterNewPatient({
   const [phoneError, setPhoneError] = useState(null);
   const [dob, setDob] = useState('1966-01-01');
   const [gender, setGender] = useState('Male');
-  const [bloodGroup, setBloodGroup] = useState('Unknown');
-  const [insuranceMode, setInsuranceMode] = useState('Direct Cash / Self-Pay');
+  const [bloodGroup, setBloodGroup] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
 
@@ -82,8 +81,7 @@ export default function RegisterNewPatient({
       setName(p.name || p.patient_name || '');
       setDob(formatDateForInput(p.dob || p.date_of_birth));
       setGender(p.gender || 'Male');
-      setBloodGroup(p.bloodGroup || p.blood_group || 'Unknown');
-      setInsuranceMode(p.insuranceMode || p.insurance_mode || 'Direct Cash / Self-Pay');
+      setBloodGroup(p.bloodGroup || p.blood_group || '');
       setPhone(p.phone || p.phone_no || '');
       setEmail(p.email || '');
       setAddress(p.address || '');
@@ -110,21 +108,43 @@ export default function RegisterNewPatient({
       alert(nameValRes.error);
       return;
     }
-    if (phone) {
-      const phoneValRes = validateField('phone', phone);
-      if (!phoneValRes.isValid) {
-        alert(phoneValRes.error);
-        return;
-      }
-    }
 
     if (!dob) {
       alert('Date of Birth is required.');
       return;
     }
 
+    if (!address.trim()) {
+      alert('Address is required.');
+      return;
+    }
     if (address.length > 500) {
       alert('Address cannot exceed 500 characters.');
+      return;
+    }
+
+    if (!phone.trim()) {
+      alert('Contact Phone is required.');
+      return;
+    }
+    const phoneValRes = validateField('phone', phone);
+    if (!phoneValRes.isValid) {
+      alert(phoneValRes.error);
+      return;
+    }
+
+    if (!email.trim()) {
+      alert('Email Address is required.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      alert('Please enter a valid email address.');
+      return;
+    }
+
+    if (!bloodGroup) {
+      alert('Blood Group is required.');
       return;
     }
 
@@ -143,7 +163,6 @@ export default function RegisterNewPatient({
       dob,
       gender,
       bloodGroup,
-      insuranceMode,
       phone,
       email,
       address,
@@ -185,7 +204,7 @@ export default function RegisterNewPatient({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md border border-blue-200 flex flex-col max-h-[85vh] h-full w-full relative overflow-hidden">
+    <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md border border-blue-200 flex flex-col max-h-[90vh] h-auto w-full relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-1.5 bg-blue-600 z-10"></div>
 
       {/* Fixed Header */}
@@ -207,11 +226,11 @@ export default function RegisterNewPatient({
       </div>
 
       {/* Main 3-Column Content Body (Tight vertical padding, no scroll) */}
-      <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+      <div className="flex-1 overflow-y-auto py-2 px-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
         
         {/* COLUMN 1: Demographics & Profile */}
-        <div className="space-y-2.5 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80">
-          <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1.5">
+        <div className="space-y-2 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
+          <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1">
             <User className="w-4 h-4 text-blue-600" />
             <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Demographics & Profile</h4>
           </div>
@@ -318,22 +337,23 @@ export default function RegisterNewPatient({
           </div>
         </div>
 
-        {/* COLUMN 2: Contact & Address + Distinct Bordered Insurance Section */}
-        <div className="space-y-2.5 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80">
-          {/* Top Section: Contact & Address */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1.5">
+        {/* COLUMN 2: Contact & Address + Distinct Medical Information */}
+        <div className="space-y-3">
+          {/* Card A: PATIENT CONTACT & ADMINISTRATIVE */}
+          <div className="space-y-2 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
+            <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1">
               <MapPin className="w-4 h-4 text-blue-600" />
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Patient Contact & Administrative</h4>
             </div>
 
             {/* Address Textarea */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Address</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Address <span className="text-red-500 font-bold ml-0.5">*</span></label>
               <textarea
                 id="reg-address"
                 maxLength={500}
                 rows={2}
+                required
                 className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
@@ -344,10 +364,11 @@ export default function RegisterNewPatient({
 
             {/* Contact Phone */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Contact Phone</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Contact Phone <span className="text-red-500 font-bold ml-0.5">*</span></label>
               <input
                 id="reg-phone"
                 type="text"
+                required
                 placeholder="+91 98480 12345"
                 className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 value={phone}
@@ -369,10 +390,11 @@ export default function RegisterNewPatient({
 
             {/* Email Address */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Email Address</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Email Address <span className="text-red-500 font-bold ml-0.5">*</span></label>
               <input
                 id="reg-email"
                 type="email"
+                required
                 placeholder="patient@example.com"
                 className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 value={email}
@@ -381,22 +403,23 @@ export default function RegisterNewPatient({
             </div>
           </div>
 
-          {/* Bottom Section: Distinct Bordered Card for Blood Group & Insurance Mode */}
-          <div className="border border-slate-300 bg-white p-3 rounded-lg space-y-2 shadow-2xs">
-            <div className="flex items-center gap-1.5 text-slate-700 pb-1 border-b border-slate-100">
-              <CreditCard className="w-3.5 h-3.5 text-blue-600" />
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Medical Coverage & Blood Group</span>
+          {/* Card B: MEDICAL INFORMATION */}
+          <div className="space-y-2 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
+            <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1">
+              <User className="w-4 h-4 text-blue-600" />
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Medical Information</h4>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Blood Group</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Blood Group <span className="text-red-500 font-bold ml-0.5">*</span></label>
               <select
                 id="reg-bloodgroup"
-                className="w-full p-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                required
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 value={bloodGroup}
                 onChange={(e) => setBloodGroup(e.target.value)}
               >
-                <option value="Unknown">Unknown</option>
+                <option value="">Select Blood Group</option>
                 <option value="A+">A+</option>
                 <option value="A-">A-</option>
                 <option value="B+">B+</option>
@@ -405,21 +428,6 @@ export default function RegisterNewPatient({
                 <option value="AB-">AB-</option>
                 <option value="O+">O+</option>
                 <option value="O-">O-</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Insurance Mode</label>
-              <select
-                id="reg-insurance"
-                className="w-full p-1.5 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                value={insuranceMode}
-                onChange={(e) => setInsuranceMode(e.target.value)}
-              >
-                <option value="Direct Cash / Self-Pay">Direct Cash / Self-Pay</option>
-                <option value="Private Insurance">Private Insurance</option>
-                <option value="Government Reimbursement">Government Reimbursement</option>
-                <option value="Arogyasree Scheme">Arogyasree Scheme</option>
                 <option value="Unknown">Unknown</option>
               </select>
             </div>
@@ -427,7 +435,7 @@ export default function RegisterNewPatient({
         </div>
 
         {/* COLUMN 3: Baseline Comorbidities */}
-        <div className="space-y-2.5 bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80">
+        <div className="space-y-2 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
           <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1.5">
             <Shield className="w-4 h-4 text-blue-600" />
             <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Baseline Comorbidities</h4>
