@@ -4661,7 +4661,7 @@ const hf = forwardRef(function hf(
 
                 <div className={`border rounded p-2 bg-slate-50/50 ${formErrors.ecgBlockages ? 'border-red-500' : 'border-slate-200'}`} id="ecgBlockages">
                   <span className="block font-bold mb-1 text-slate-700">Blockages <span className="text-red-500 font-bold ml-0.5">*</span></span>
-                  {['LBBB', 'RBB'].map(bl => (
+                  {['LBBB', 'RBBB'].map(bl => (
                     <label key={bl} className="flex items-center gap-1.5 mt-0.5">
                       <input 
                         disabled={readOnly} 

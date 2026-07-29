@@ -9,28 +9,75 @@ function formatRegistryNumber(id) {
     return `HF${String(id).padStart(5, '0')}`;
 }
 
+const toSqlDate = (dateVal) => {
+  if (!dateVal) return null;
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().split('T')[0];
+  } catch (err) {
+    console.error("Error parsing date:", dateVal, err);
+    return null;
+  }
+};
+
 async function saveHfAssessment(data) {
     const conn = await db.getConnection();
     try {
         await conn.beginTransaction();
 
-        // 1. Insert hf_registry with a placeholder and then update it with the final number
-        const hf_id = await hfModel.insertHfRegistry(conn, {
-            patient_id: data.patientId,
-            hf_registry_no: 'HF00000'
-        });
-        const hf_registry_no = formatRegistryNumber(hf_id);
-        await conn.execute(
-            "UPDATE hf_registry SET hf_registry_no = ? WHERE hf_id = ?",
-            [hf_registry_no, hf_id]
-        );
-
-        // Update pre-uploaded documents to final hf_id
-        if (data.tempHfId) {
-            await conn.execute(
-                "UPDATE hf_patient_documents SET hf_id = ? WHERE hf_id = ?",
-                [hf_id, data.tempHfId]
+        let hf_id = null;
+        let hf_registry_no = null;
+        // If data.id is a valid database record ID (number or non-hfa string number)
+        if (data.id && !String(data.id).startsWith("hfa-") && !isNaN(Number(data.id))) {
+            hf_id = Number(data.id);
+            
+            // Retrieve the existing hf_registry_no from the database
+            const [regRows] = await conn.execute(
+                "SELECT hf_registry_no FROM hf_registry WHERE hf_id = ?",
+                [hf_id]
             );
+            if (regRows.length > 0) {
+                hf_registry_no = regRows[0].hf_registry_no;
+            }
+            
+            // Delete existing child table rows before re-inserting them
+            const childTables = [
+                'hf_administrative',
+                'hf_initial_assessment',
+                'hf_final_clinical_assessment',
+                'hf_medical_therapy_part1',
+                'hf_medical_therapy_part2',
+                'hf_medical_therapy_part3',
+                'hf_device_therapy',
+                'hf_patient_education',
+                'hf_recommendations',
+                'hf_lab_tests',
+                'hf_cardiac_investigations',
+                'hf_advanced_investigations'
+            ];
+            for (const table of childTables) {
+                await conn.execute(`DELETE FROM ${table} WHERE hf_id = ?`, [hf_id]);
+            }
+        } else {
+            // 1. Insert hf_registry with a placeholder and then update it with the final number
+            hf_id = await hfModel.insertHfRegistry(conn, {
+                patient_id: data.patientId,
+                hf_registry_no: 'HF00000'
+            });
+            hf_registry_no = formatRegistryNumber(hf_id);
+            await conn.execute(
+                "UPDATE hf_registry SET hf_registry_no = ? WHERE hf_id = ?",
+                [hf_registry_no, hf_id]
+            );
+
+            // Update pre-uploaded documents to final hf_id
+            if (data.tempHfId) {
+                await conn.execute(
+                    "UPDATE hf_patient_documents SET hf_id = ? WHERE hf_id = ?",
+                    [hf_id, data.tempHfId]
+                );
+            }
         }
 
         const withHfId = (obj) => ({ ...obj, hf_id });
@@ -38,7 +85,7 @@ async function saveHfAssessment(data) {
         // 2. Insert hf_administrative
         const adminData = {
             assessed_by: data.assessed_by,
-            assessment_date: data.assessmentDate,
+            assessment_date: toSqlDate(data.assessmentDate),
             care_mr_no: data.patient?.mrNo || 'Unknown',
             visit_type: data.visitType || 'Outpatient',
             address: data.patient?.address,
@@ -49,8 +96,8 @@ async function saveHfAssessment(data) {
             caregiver_relationship: data.patient?.caregiverRelationship,
             caregiver_phone: data.patient?.caregiverPhone,
             insurance_mode: data.patient?.insuranceMode,
-            visit_date: data.assessmentDate,
-            discharge_date: data.inpatientDetails?.dischargeDate,
+            visit_date: toSqlDate(data.assessmentDate),
+            discharge_date: toSqlDate(data.inpatientDetails?.dischargeDate),
             treating_cardiologist: data.inpatientDetails?.treatingCardiologist,
             referring_doctor: data.inpatientDetails?.referringDoctor,
             referred_from: data.patient?.referredFrom || data.inpatientDetails?.referredFrom || null,
@@ -76,7 +123,7 @@ async function saveHfAssessment(data) {
         // 3. Insert hf_initial_assessment
         const initialData = {
             assessed_by: data.assessed_by,
-            assessment_date: data.assessmentDate,
+            assessment_date: toSqlDate(data.assessmentDate),
             previous_diagnosis: data.previous_diagnosis,
             history_cabg: data.history_cabg,
             history_ptca: data.history_ptca,
@@ -204,7 +251,7 @@ async function saveHfAssessment(data) {
             mace_other: data.finalAssessment?.maceOther || 'No',
             mace_other_details: data.finalAssessment?.maceOtherDetails || null,
             mace_death: data.finalAssessment?.maceDeath || 'No',
-            death_date: data.finalAssessment?.maceDeathDate || null,
+            death_date: toSqlDate(data.finalAssessment?.maceDeathDate),
             death_home: data.finalAssessment?.maceDeathLocation === 'Home' ? 'Yes' : 'No',
             death_hospital: data.finalAssessment?.maceDeathLocation === 'Hospital' ? 'Yes' : 'No',
             death_reason: data.finalAssessment?.maceDeathReason || null,
@@ -244,52 +291,52 @@ async function saveHfAssessment(data) {
         if (data.investigations) {
             const labData = {
                 pneumococcal_vaccination: data.investigations.vacPneumococcal || 'No',
-                pneumococcal_vaccination_date: data.investigations.vacPneumococcalDate || null,
+                pneumococcal_vaccination_date: toSqlDate(data.investigations.vacPneumococcalDate),
                 influenza_vaccination: data.investigations.vacInfluenza || 'No',
-                influenza_vaccination_date: data.investigations.vacInfluenzaDate || null,
+                influenza_vaccination_date: toSqlDate(data.investigations.vacInfluenzaDate),
                 blood_group: data.investigations.bloodGroup || null,
                 potassium_result: data.investigations.labTests?.potassium?.result || null,
-                potassium_date: data.investigations.labTests?.potassium?.date || null,
+                potassium_date: toSqlDate(data.investigations.labTests?.potassium?.date),
                 creatinine_result: data.investigations.labTests?.creatinine?.result || null,
-                creatinine_date: data.investigations.labTests?.creatinine?.date || null,
+                creatinine_date: toSqlDate(data.investigations.labTests?.creatinine?.date),
                 hb_result: data.investigations.labTests?.hb?.result || null,
-                hb_date: data.investigations.labTests?.hb?.date || null,
+                hb_date: toSqlDate(data.investigations.labTests?.hb?.date),
                 calcium_result: data.investigations.labTests?.calcium?.result || null,
-                calcium_date: data.investigations.labTests?.calcium?.date || null,
+                calcium_date: toSqlDate(data.investigations.labTests?.calcium?.date),
                 bun_result: data.investigations.labTests?.bun?.result || null,
-                bun_date: data.investigations.labTests?.bun?.date || null,
+                bun_date: toSqlDate(data.investigations.labTests?.bun?.date),
                 glucose_result: data.investigations.labTests?.glucose?.result || null,
-                glucose_date: data.investigations.labTests?.glucose?.date || null,
+                glucose_date: toSqlDate(data.investigations.labTests?.glucose?.date),
                 hba1c_result: data.investigations.labTests?.hba1c?.result || null,
-                hba1c_date: data.investigations.labTests?.hba1c?.date || null,
+                hba1c_date: toSqlDate(data.investigations.labTests?.hba1c?.date),
                 magnesium_result: data.investigations.labTests?.magnesium?.result || null,
-                magnesium_date: data.investigations.labTests?.magnesium?.date || null,
+                magnesium_date: toSqlDate(data.investigations.labTests?.magnesium?.date),
                 sodium_result: data.investigations.labTests?.sodium?.result || null,
-                sodium_date: data.investigations.labTests?.sodium?.date || null,
+                sodium_date: toSqlDate(data.investigations.labTests?.sodium?.date),
                 tsh_result: data.investigations.labTests?.tsh?.result || null,
-                tsh_date: data.investigations.labTests?.tsh?.date || null,
+                tsh_date: toSqlDate(data.investigations.labTests?.tsh?.date),
                 t3_result: data.investigations.labTests?.t3?.result || null,
-                t3_date: data.investigations.labTests?.t3?.date || null,
+                t3_date: toSqlDate(data.investigations.labTests?.t3?.date),
                 t4_result: data.investigations.labTests?.t4?.result || null,
-                t4_date: data.investigations.labTests?.t4?.date || null,
+                t4_date: toSqlDate(data.investigations.labTests?.t4?.date),
                 bnp_result: data.investigations.labTests?.bnp?.result || null,
-                bnp_date: data.investigations.labTests?.bnp?.date || null,
+                bnp_date: toSqlDate(data.investigations.labTests?.bnp?.date),
                 nt_pro_bnp_result: (data.investigations.labTests?.ntProBnp?.result || data.investigations.labTests?.nt_pro_bnp?.result) || null,
-                nt_pro_bnp_date: (data.investigations.labTests?.ntProBnp?.date || data.investigations.labTests?.nt_pro_bnp?.date) || null,
+                nt_pro_bnp_date: toSqlDate(data.investigations.labTests?.ntProBnp?.date || data.investigations.labTests?.nt_pro_bnp?.date),
                 ldl_result: data.investigations.labTests?.ldl?.result || null,
-                ldl_date: data.investigations.labTests?.ldl?.date || null,
+                ldl_date: toSqlDate(data.investigations.labTests?.ldl?.date),
                 inr_result: data.investigations.labTests?.inr?.result || null,
-                inr_date: data.investigations.labTests?.inr?.date || null,
+                inr_date: toSqlDate(data.investigations.labTests?.inr?.date),
                 st2_result: data.investigations.labTests?.st2?.result || null,
-                st2_date: data.investigations.labTests?.st2?.date || null,
+                st2_date: toSqlDate(data.investigations.labTests?.st2?.date),
                 other_lab_test_name: data.investigations.labTests?.other?.name || null,
                 other_lab_test_result: data.investigations.labTests?.other?.result || null,
-                other_lab_test_date: data.investigations.labTests?.other?.date || null
+                other_lab_test_date: toSqlDate(data.investigations.labTests?.other?.date)
             };
             await hfModel.insertHfLabTests(conn, withHfId(labData));
 
             const cardiacData = {
-                ecg_test_date: data.investigations.ecgDate || null,
+                ecg_test_date: toSqlDate(data.investigations.ecgDate),
                 ecg_qrs_duration: (data.investigations?.ecgQrsDuration && !isNaN(parseFloat(data.investigations.ecgQrsDuration))) ? parseFloat(data.investigations.ecgQrsDuration) : null,
                 ecg_rhythm_sinus: (data.investigations?.ecgRhythm === 'Sinus' || data.investigations?.ecgRhythm === 'Sinus Rhythm') ? 'Yes' : 'No',
                 ecg_rhythm_af: (data.investigations?.ecgRhythm === 'AF' || data.investigations?.ecgRhythm === 'Atrial Fibrillation (AF)') ? 'Yes' : 'No',
@@ -302,23 +349,23 @@ async function saveHfAssessment(data) {
                 ecg_qwaves_yes: data.investigations.ecgQWaves === 'Yes' ? 'Yes' : 'No',
                 ecg_qwaves_none: (data.investigations.ecgQWaves === 'No' || data.investigations.ecgQWaves === 'None') ? 'Yes' : 'No',
                 ecg_qwave_leads: data.investigations.ecgQWavesLeads || null,
-                ecg_lbbb: data.investigations.ecgBlockages === 'LBBB' ? 'Yes' : 'No',
-                ecg_rbbb: data.investigations.ecgBlockages === 'RBBB' ? 'Yes' : 'No',
-                ecg_block_other: data.investigations.ecgBlockages === 'Other Block' ? 'Yes' : 'No',
-                ecg_block_other_details: data.investigations.ecgBlockagesOther || null,
+                ecg_lbbb: (data.investigations.ecgBlockages === 'LBBB' || data.investigations.lbbb === true || data.investigations.lbbb === 'Yes' || data.investigations.ecg_lbbb === 'Yes') ? 'Yes' : 'No',
+                ecg_rbbb: (data.investigations.ecgBlockages === 'RBBB' || data.investigations.ecgBlockages === 'RBB' || data.investigations.rbbb === true || data.investigations.rbbb === 'Yes' || data.investigations.ecg_rbbb === 'Yes') ? 'Yes' : 'No',
+                ecg_block_other: (data.investigations.ecgBlockages === 'Other' || data.investigations.ecgBlockages === 'Other Block' || data.investigations.blockOther === true || data.investigations.blockOther === 'Yes' || data.investigations.ecg_block_other === 'Yes') ? 'Yes' : 'No',
+                ecg_block_other_details: data.investigations.ecgBlockagesOther || data.investigations.blockOtherDetails || data.investigations.ecg_block_other_details || null,
                 ecg_apc: (data.investigations?.ecgExtraBeats === 'APC' || data.investigations?.ecgExtraBeats === 'APCs') ? 'Yes' : 'No',
                 ecg_vpc: (data.investigations?.ecgExtraBeats === 'VPC' || data.investigations?.ecgExtraBeats === 'VPCs') ? 'Yes' : 'No',
                 ecg_extra_beats_none: (data.investigations?.ecgExtraBeats === 'None') ? 'Yes' : 'No',
                 ecg_qt: data.investigations.ecgQt ? Number(data.investigations.ecgQt) : null,
                 ecg_qtc: data.investigations.ecgQtc ? Number(data.investigations.ecgQtc) : null,
-                chest_xray_test_date: data.investigations.cxrDate || null,
+                chest_xray_test_date: toSqlDate(data.investigations.cxrDate),
                 cardiothoracic_ratio: (data.investigations?.cxrCtRatio && !isNaN(parseFloat(data.investigations.cxrCtRatio))) ? parseFloat(data.investigations.cxrCtRatio) : null,
                 chest_pvh: data.investigations.cxrPvh ? 'Yes' : 'No',
                 chest_pulmonary_edema: data.investigations.cxrPulmonaryEdema ? 'Yes' : 'No',
                 chest_pleural_effusion: data.investigations.cxrPleuralEffusion ? 'Yes' : 'No',
                 chest_other: data.investigations.cxrOthers ? 'Yes' : 'No',
                 chest_other_details: data.investigations.cxrOthers || null,
-                echo_test_date: data.investigations.echoDate || null,
+                echo_test_date: toSqlDate(data.investigations.echoDate),
                 echo_ef: data.investigations.echoEfPercent ? Number(data.investigations.echoEfPercent) : null,
                 echo_ea_ratio: data.investigations.echoEaRatio ? Number(data.investigations.echoEaRatio) : null,
                 echo_ee_ratio: data.investigations.echoEePrimeRatio ? Number(data.investigations.echoEePrimeRatio) : null,
@@ -345,7 +392,7 @@ async function saveHfAssessment(data) {
             await hfModel.insertHfCardiacInvestigations(conn, withHfId(cardiacData));
 
             const advancedData = {
-                holter_test_date: data.investigations.holterDate || null,
+                holter_test_date: toSqlDate(data.investigations.holterDate),
                 ventricular_arrhythmia_no: data.investigations.holterVentricularArrhythmia === 'No' ? 'Yes' : 'No',
                 ventricular_arrhythmia_yes: data.investigations.holterVentricularArrhythmia === 'Yes' ? 'Yes' : 'No',
                 ventricular_arrhythmia_complex_vpc: data.investigations.holterVentricularArrhythmia === 'Complex VPC' ? 'Yes' : 'No',
@@ -357,7 +404,7 @@ async function saveHfAssessment(data) {
                 ventricular_pvc: data.investigations.holterVpcChecked ? 'Yes' : 'No',
                 heart_rate_variability: data.investigations.holterHrv || null,
                 stress_test_done: data.investigations.stressStatus === 'Done' ? 'Yes' : 'No',
-                stress_test_date: data.investigations.stressDate || null,
+                stress_test_date: toSqlDate(data.investigations.stressDate),
                 stress_test_not_done: data.investigations.stressStatus === 'Not Done' ? 'Yes' : 'No',
                 stress_mets_achieved: data.investigations.stressMets ? Number(data.investigations.stressMets) : null,
                 stress_target_heart_rate_achieved: data.investigations.stressTargetHr || null,
@@ -365,20 +412,20 @@ async function saveHfAssessment(data) {
                 stress_ischemic_changes_no: (data.investigations.stressIschemicChanges === 'No' || data.investigations.stressIschemicChanges === 'Absent') ? 'Yes' : 'No',
                 stress_arrhythmias_yes: data.investigations.stressArrhythmias === 'Yes' ? 'Yes' : 'No',
                 stress_arrhythmias_no: data.investigations.stressArrhythmias === 'No' ? 'Yes' : 'No',
-                mri_test_date: data.investigations.mriDate || null,
+                mri_test_date: toSqlDate(data.investigations.mriDate),
                 mri_lvef: data.investigations.mriLvef ? Number(data.investigations.mriLvef) : null,
                 mri_scar_present: (data.investigations.mriScar === 'Yes' || data.investigations.mriScar === 'Present') ? 'Yes' : 'No',
                 mri_scar_absent: (data.investigations.mriScar === 'No' || data.investigations.mriScar === 'Absent') ? 'Yes' : 'No',
-                pet_test_date: data.investigations.petDate || null,
+                pet_test_date: toSqlDate(data.investigations.petDate),
                 six_minute_walk_done: data.investigations.sixMwtStatus === 'Done' ? 'Yes' : 'No',
-                six_minute_walk_date: data.investigations.sixMwtDate || null,
+                six_minute_walk_date: toSqlDate(data.investigations.sixMwtDate),
                 six_minute_walk_distance: data.investigations.sixMwtDistance ? Number(data.investigations.sixMwtDistance) : null,
                 six_minute_walk_heart_rate_recovery: data.investigations.sixMwtHrRecovery || null,
                 six_minute_walk_not_done: data.investigations.sixMwtStatus === 'Not Done' ? 'Yes' : 'No',
                 six_minute_walk_reason: data.investigations.sixMwtNotDoneReason || null,
-                anaerobic_threshold_test_date: data.investigations.anaerobicDate || null,
+                anaerobic_threshold_test_date: toSqlDate(data.investigations.anaerobicDate),
                 angiogram_done: data.investigations.angioStatus === 'Done' ? 'Yes' : 'No',
-                angiogram_test_date: data.investigations.angioDate || null,
+                angiogram_test_date: toSqlDate(data.investigations.angioDate),
                 angiogram_normal: (data.investigations?.angioFinding === 'Normal' || data.investigations?.angioFinding === 'Normal Coronaries') ? 'Yes' : 'No',
                 angiogram_one_vessel_disease: (data.investigations?.angioFinding === '1 vessel disease' || data.investigations?.angioFinding === 'Single Vessel Disease (SVD)') ? 'Yes' : 'No',
                 angiogram_two_vessel_disease: (data.investigations?.angioFinding === '2 vessel disease' || data.investigations?.angioFinding === 'Double Vessel Disease (DVD)') ? 'Yes' : 'No',
@@ -386,7 +433,7 @@ async function saveHfAssessment(data) {
                 angiogram_lmca: (data.investigations?.angioFinding === 'LMCA' || data.investigations?.angioFinding === 'Left Main Disease') ? 'Yes' : 'No',
                 angiogram_not_done: data.investigations.angioStatus === 'Not Done' ? 'Yes' : 'No',
                 biopsy_done: data.investigations.biopsyStatus === 'Done' ? 'Yes' : 'No',
-                biopsy_test_date: data.investigations.biopsyDate || null,
+                biopsy_test_date: toSqlDate(data.investigations.biopsyDate),
                 biopsy_not_done: data.investigations.biopsyStatus === 'Not Done' ? 'Yes' : 'No'
             };
             await hfModel.insertHfAdvancedInvestigations(conn, withHfId(advancedData));
@@ -538,7 +585,7 @@ async function getHfAssessment(hf_id) {
         let ecgBlockages = '';
         if (cardiac.ecg_lbbb === 'Yes') ecgBlockages = 'LBBB';
         else if (cardiac.ecg_rbbb === 'Yes') ecgBlockages = 'RBBB';
-        else if (cardiac.ecg_block_other === 'Yes') ecgBlockages = 'Other Block';
+        else if (cardiac.ecg_block_other === 'Yes') ecgBlockages = 'Other';
 
         let ecgExtraBeats = '';
         if (cardiac.ecg_apc === 'Yes') ecgExtraBeats = 'APC';

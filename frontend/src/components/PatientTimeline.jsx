@@ -37,7 +37,7 @@ const MODULE_BADGES = {
   FOLLOWUP: 'bg-purple-50 border-purple-200 text-purple-700',
 };
 
-export default function PatientTimeline({ record, onBack, onAddEventClick, onViewEventDetails, onDeleteEvent, onRefreshPatient }) {
+export default function PatientTimeline({ record, onBack, onAddEventClick, onEditEventClick, onViewEventDetails, onDeleteEvent, onRefreshPatient }) {
   const [activeTab, setActiveTab] = useState('timeline');
   const [isEditingPatient, setIsEditingPatient] = useState(false);
 
@@ -358,7 +358,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onVie
       {/* Tab Content 2: HF Registry Assessment List */}
       {activeTab === 'hf' && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
-          <HFHistoryList patientId={record.patient.id} />
+          <HFHistoryList patientId={record.patient.id} onEditEventClick={onEditEventClick} />
         </div>
       )}
     </div>

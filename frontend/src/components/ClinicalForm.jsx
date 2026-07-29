@@ -317,7 +317,7 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
               type="submit"
               className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm"
             >
-              Verify & Submit Registry
+              {editingRecord?.id && !String(editingRecord.id).startsWith("hfa-") ? "Update Registry Entry" : "Verify & Submit Registry"}
             </button>
           </div>
         </div>

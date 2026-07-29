@@ -13,6 +13,7 @@ require("./config/db");
 const patientRoutes = require("./routes/patientRoutes");
 const hfRoutes = require("./routes/hfRoutes");
 const documentRoutes = require("./routes/documentRoutes");
+const hfFilesRoutes = require("./routes/hfFilesRoutes");
 const hfController = require('./controllers/hfController');
 
 // Middleware
@@ -35,6 +36,7 @@ app.get("/", (req, res) => {
 app.use("/api/patients", patientRoutes);
 app.use("/api/hf-assessment", hfRoutes);
 app.use("/api/documents", documentRoutes);
+app.use("/api/hf-files", hfFilesRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.get('/api/hf/history/:patientId', hfController.getHfHistory);
 

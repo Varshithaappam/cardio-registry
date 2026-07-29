@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, FileText, Loader2, ArrowUpRight } from 'lucide-react';
 import api from '../../api/axios';
 
-export default function HFHistoryList({ patientId }) {
+export default function HFHistoryList({ patientId, onEditEventClick }) {
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +63,7 @@ export default function HFHistoryList({ patientId }) {
           return (
             <div
               key={record.hf_id}
-              className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-lg hover:border-slate-200 hover:bg-slate-100/30 transition-all"
+              className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-lg hover:border-slate-200 hover:bg-slate-100/30 transition-all animate-fadeIn"
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center text-teal-700 text-xs font-bold border border-teal-100">
@@ -83,13 +83,24 @@ export default function HFHistoryList({ patientId }) {
                 </div>
               </div>
 
-              <button
-                onClick={() => navigate(`/hf-form/view/${record.hf_id}`)}
-                className="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
-              >
-                <span>View Form</span>
-                <ArrowUpRight className="w-3 h-3" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigate(`/hf-form/view/${record.hf_id}`)}
+                  className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer border border-slate-200"
+                >
+                  <span>View Form</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
+                </button>
+                {onEditEventClick && (
+                  <button
+                    onClick={() => onEditEventClick(record.hf_id)}
+                    className="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <span>Edit Form</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}

@@ -90,6 +90,7 @@ function MainApp() {
         const response = await api.post("/hf-assessment", eventData);
         if (response.data && response.data.success) {
           alert("Heart Failure Assessment details saved into database successfully.");
+          await loadPatients();
         } else {
           alert(response.data?.message || "Failed to save Heart Failure Assessment details.");
         }
@@ -222,6 +223,22 @@ function MainApp() {
     setActiveFormType(formType);
     setEditingRecord(null);
     setCurrentView('form');
+  };
+
+  const handleOpenEditForm = async (hfId) => {
+    try {
+      const response = await api.get(`/hf-assessment/${hfId}`);
+      if (response.data && response.data.success) {
+        setActiveFormType('HF');
+        setEditingRecord(response.data.data);
+        setCurrentView('form');
+      } else {
+        alert(response.data?.message || 'Failed to load assessment details for editing.');
+      }
+    } catch (error) {
+      console.error('Error fetching HF assessment for editing:', error);
+      alert(error.response?.data?.message || error.message || 'Failed to load assessment details.');
+    }
   };
 
 
@@ -410,6 +427,7 @@ useEffect(() => {
               setCurrentView('patients');
             }}
             onAddEventClick={handleOpenAddForm}
+            onEditEventClick={handleOpenEditForm}
             onViewEventDetails={handleViewEventDetails}
             onDeleteEvent={handleDeleteClinicalEvent} />
 
