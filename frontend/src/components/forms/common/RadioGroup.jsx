@@ -30,7 +30,13 @@ export default function RadioGroup({
           return (
             <label
               key={optionValue}
-              className={`flex items-center gap-2 p-2.5 bg-white border ${error ? 'border-red-500' : 'border-slate-200'} rounded-lg ${readOnly ? 'pointer-events-none' : 'cursor-pointer hover:border-slate-300'} form-option-label transition-colors`}
+              className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition-colors text-xs font-medium ${
+                value === optionValue
+                  ? 'bg-blue-50/50 border-blue-500 text-blue-900 font-semibold'
+                  : error
+                  ? 'bg-white border-red-500 text-slate-700'
+                  : 'bg-white border-slate-200 text-slate-700'
+              } ${readOnly ? 'pointer-events-none' : 'cursor-pointer hover:border-slate-300'} transition-all duration-150`}
             >
               <input
                 type="radio"
@@ -38,7 +44,7 @@ export default function RadioGroup({
                 value={optionValue}
                 checked={value === optionValue}
                 onChange={() => onChange(optionValue)}
-                className="shrink-0 accent-teal-600 disabled:opacity-100 disabled:accent-black"
+                className="shrink-0 accent-blue-600 disabled:opacity-100 disabled:accent-blue-600"
                 disabled={readOnly}
               />
               <span>{optionLabel}</span>

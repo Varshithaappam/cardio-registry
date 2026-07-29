@@ -972,7 +972,7 @@ const hf = forwardRef(function hf(
     const displayErr = outErr || formErrors[errorKey];
     return (
       <div className="flex flex-col">
-        <label className="block text-[10px] text-slate-600 mb-1">
+        <label className="text-xs font-semibold text-slate-700 block mb-1">
           {label} {required && <span className="text-red-500 font-bold ml-0.5">*</span>}
         </label>
         <div className="flex items-center gap-1.5 w-full">
@@ -1240,12 +1240,12 @@ const hf = forwardRef(function hf(
     return val;
   };
 
-  const renderInlineDate = (val, onChange, className = "border-b border-slate-300 p-0 focus:ring-0 text-xs bg-transparent", error = null) => {
+  const renderInlineDate = (val, onChange, className = "border border-slate-300 rounded-lg px-2 py-0.5 text-xs outline-none bg-white text-slate-800 placeholder:text-slate-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500", error = null) => {
     if (readOnly) {
       return <span className="text-slate-900 font-bold text-xs px-1">{formatDateToView(val) || '—'}</span>;
     }
     const formattedVal = val ? val.split('T')[0] : '';
-    const finalClassName = error ? "border-b border-red-500 p-0 focus:ring-0 text-xs bg-red-50/50 text-red-700" : className;
+    const finalClassName = error ? "border border-red-500 rounded-lg px-2 py-0.5 text-xs bg-red-50 text-red-700 focus:ring-1 focus:ring-red-500 focus:border-red-500" : className;
     return (
       <input
         type="date"
@@ -3748,8 +3748,12 @@ const hf = forwardRef(function hf(
       </SectionCard>
 
       {/* 2. Inpatient Details Section */}
-      <SectionCard title="2. Inpatient Details" subtitle="Precipitating factors and admission context for heart failure hospitalizations">
-        <fieldset disabled={readOnly || visitType !== 'Inpatient'} className={`space-y-4 ${visitType !== 'Inpatient' ? 'opacity-50 pointer-events-none' : ''}`}>
+      <SectionCard 
+        title="2. Inpatient Details" 
+        subtitle="Precipitating factors and admission context for heart failure hospitalizations"
+        disabled={visitType !== 'Inpatient'}
+      >
+        <fieldset disabled={readOnly || visitType !== 'Inpatient'} className="space-y-4">
           <CheckboxGroup readOnly={readOnly || visitType !== 'Inpatient'}
             label="If admission for heart failure, please select precipitating factors for admission:"
             options={PRECIPITATING_FACTORS_OPTIONS}
@@ -4531,11 +4535,11 @@ const hf = forwardRef(function hf(
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-500 block font-medium">Reason :</span>
-                      <input disabled={readOnly || maceDeath !== 'Yes'} type="text" value={maceDeathReason} onChange={(e) => setMaceDeathReason(e.target.value)} className="w-full border border-slate-300 rounded p-0.5 text-xs disabled:bg-slate-100 disabled:text-slate-400" placeholder="Cause of death" />
+                      <input disabled={readOnly || maceDeath !== 'Yes'} type="text" value={maceDeathReason} onChange={(e) => setMaceDeathReason(e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full p-0.5 disabled:bg-slate-100 disabled:text-slate-400" placeholder="Cause of death" />
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-500 block font-medium">Note :</span>
-                      <input disabled={readOnly || maceDeath !== 'Yes'} type="text" value={deathNote} onChange={(e) => setDeathNote(e.target.value)} className="w-full border border-slate-300 rounded p-0.5 text-xs disabled:bg-slate-100 disabled:text-slate-400" placeholder="Death note / observations" />
+                      <input disabled={readOnly || maceDeath !== 'Yes'} type="text" value={deathNote} onChange={(e) => setDeathNote(e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full p-0.5 disabled:bg-slate-100 disabled:text-slate-400" placeholder="Death note / observations" />
                     </div>
                   </div>
               </div>
@@ -4574,7 +4578,7 @@ const hf = forwardRef(function hf(
                           type="text" 
                           value={ecgQrsDuration} 
                           onChange={(e) => handleNumericChange(setEcgQrsDuration, e.target.value)} 
-                          className={`border-b p-0 focus:ring-0 text-xs w-24 rounded px-1 ${
+                          className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-24 ${
                             qrsCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                             qrsCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
                             qrsCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -4649,7 +4653,7 @@ const hf = forwardRef(function hf(
                   {ecgQWaves === 'Yes' && (
                     <div className="pl-4 flex items-center gap-1 mt-0.5">
                       <span className="text-[10px] text-slate-500">• Leads:</span>
-                      <input disabled={readOnly} type="text" value={ecgQWavesLeads} onChange={(e) => setEcgQWavesLeads(e.target.value)} className="border-b border-slate-300 p-0 text-xs w-full focus:ring-0" />
+                      <input disabled={readOnly} type="text" value={ecgQWavesLeads} onChange={(e) => setEcgQWavesLeads(e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full" />
                     </div>
                   )}
                   <label className="flex items-center gap-1.5 mt-0.5"><input disabled={readOnly} type="radio" name="ecg_qw" checked={ecgQWaves === 'None'} onChange={() => setEcgQWaves('None')} /> None</label>
@@ -4712,7 +4716,7 @@ const hf = forwardRef(function hf(
                             type="text" 
                             value={ecgQt} 
                             onChange={(e) => handleNumericChange(setEcgQt, e.target.value)} 
-                            className={`border-b p-0 w-full text-xs focus:ring-0 rounded px-1 ${
+                            className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${
                               qtCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               qtCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
                               qtCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -4741,7 +4745,7 @@ const hf = forwardRef(function hf(
                             type="text" 
                             value={ecgQtc} 
                             onChange={(e) => handleNumericChange(setEcgQtc, e.target.value)} 
-                            className={`border-b p-0 w-full text-xs focus:ring-0 rounded px-1 ${
+                            className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${
                               qtcCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               qtcCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
                               qtcCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -4790,7 +4794,7 @@ const hf = forwardRef(function hf(
                           type="text" 
                           value={cxrCtRatio} 
                           onChange={(e) => handleNumericChange(setCxrCtRatio, e.target.value)} 
-                          className={`border-b p-0 focus:ring-0 text-xs w-full rounded px-1 ${
+                          className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${
                             ctRatioCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                             ctRatioCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
                             ctRatioCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -4873,7 +4877,7 @@ const hf = forwardRef(function hf(
                             value={echoEfPercent}
                             onChange={(e) => handleFieldChange('echoEfPercent', e.target.value, setEchoEfPercent, setEchoEfPercentError)}
                             placeholder="E.g. 45"
-                            className={`border-b p-0 w-full focus:ring-0 text-xs disabled:bg-slate-100 disabled:text-slate-400 rounded px-1 ${
+                            className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
                               efCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               efCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
                               efCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -4907,7 +4911,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={echoEaRatio}
                             onChange={(e) => handleNumericChange(setEchoEaRatio, e.target.value)}
-                            className={`border-b p-0 w-full focus:ring-0 text-xs disabled:bg-slate-100 disabled:text-slate-400 rounded px-1 ${
+                            className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
                               eaCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               eaCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
                               eaCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -4941,7 +4945,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={echoRvTapsv}
                             onChange={(e) => handleNumericChange(setEchoRvTapsv, e.target.value)}
-                            className={`border-b p-0 w-full focus:ring-0 text-xs disabled:bg-slate-100 disabled:text-slate-400 rounded px-1 ${
+                            className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
                               tapseCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               tapseCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
                               tapseCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -4977,7 +4981,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={echoEePrimeRatio}
                             onChange={(e) => handleNumericChange(setEchoEePrimeRatio, e.target.value)}
-                            className={`border-b p-0 w-full focus:ring-0 text-xs disabled:bg-slate-100 disabled:text-slate-400 rounded px-1 ${
+                            className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
                               eePrimeCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               eePrimeCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
                               eePrimeCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -5012,7 +5016,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={echoEDecelTime}
                             onChange={(e) => handleNumericChange(setEchoEDecelTime, e.target.value)}
-                            className={`border-b p-0 w-full focus:ring-0 text-xs disabled:bg-slate-100 disabled:text-slate-400 rounded px-1 ${
+                            className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
                               eDecelCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               eDecelCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
                               eDecelCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -5056,7 +5060,7 @@ const hf = forwardRef(function hf(
                 </div>
 
                 <div className="space-y-2 bg-slate-50/50 p-2 rounded border border-slate-200">
-                  <div className="flex items-center gap-1" id="echoOtherValvesBlock"><span className="font-semibold text-slate-600">Other Valves <span className="text-red-500 font-bold ml-0.5">*</span>:</span><input disabled={readOnly} type="text" value={echoOtherValves} onChange={(e) => setEchoOtherValves(e.target.value)} className={`border-b p-0 bg-transparent text-xs w-full focus:ring-0 ${formErrors.echoOtherValves ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-slate-300'}`} /></div>
+                  <div className="flex items-center gap-1" id="echoOtherValvesBlock"><span className="font-semibold text-slate-600">Other Valves <span className="text-red-500 font-bold ml-0.5">*</span>:</span><input disabled={readOnly} type="text" value={echoOtherValves} onChange={(e) => setEchoOtherValves(e.target.value)} className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.echoOtherValves ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-slate-300'}`} /></div>
                   {(() => {
                     const rvspCls = getClassification('rvsp', echoRvSystolicPressure);
                     return (
@@ -5068,7 +5072,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={echoRvSystolicPressure}
                             onChange={(e) => handleNumericChange(setEchoRvSystolicPressure, e.target.value)}
-                            className={`border-b p-0 w-full focus:ring-0 text-xs disabled:bg-slate-100 disabled:text-slate-400 rounded px-1 ${
+                            className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
                               rvspCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                               rvspCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
                               rvspCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -5146,7 +5150,7 @@ const hf = forwardRef(function hf(
 
                 <div className="flex items-center gap-1 pt-1" id="holterHrvBlock">
                   <span className="font-semibold text-slate-700">Heart rate variability <span className="text-red-500 font-bold ml-0.5">*</span>:</span>
-                  <input disabled={readOnly} type="text" value={holterHrv} onChange={(e) => handleNumericChange(setHolterHrv, e.target.value)} className={`border-b p-0 focus:ring-0 text-xs w-full ${formErrors.holterHrv ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-slate-300'}`} />
+                  <input disabled={readOnly} type="text" value={holterHrv} onChange={(e) => handleNumericChange(setHolterHrv, e.target.value)} className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.holterHrv ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-slate-300'}`} />
                 </div>
               </div>
             </div>
@@ -5168,13 +5172,13 @@ const hf = forwardRef(function hf(
                   <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Done'} onChange={() => setStressStatus('Done')} /> Done</label>
                   {stressStatus === 'Done' && (
                     <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 pl-5 bg-slate-50 p-2 rounded border">
-                      <div className="flex items-center gap-1"><span>▪ METS achieved:</span><input disabled={readOnly} type="text" value={stressMets} onChange={(e) => setStressMets(e.target.value)} className="border-b border-slate-300 bg-transparent p-0 text-xs w-full focus:ring-0" /></div>
+                      <div className="flex items-center gap-1"><span>▪ METS achieved:</span><input disabled={readOnly} type="text" value={stressMets} onChange={(e) => setStressMets(e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full" /></div>
                       <div className="flex items-center gap-3">
                         <span>▪ Ischemic changes:</span>
                         <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="stress_isc" checked={stressIschemicChanges === 'Yes'} onChange={() => setStressIschemicChanges('Yes')} /> Yes</label>
                         <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="stress_isc" checked={stressIschemicChanges === 'No'} onChange={() => setStressIschemicChanges('No')} /> No</label>
                       </div>
-                      <div className="flex items-center gap-1"><span>▪ Target heart rate achieved:</span><input disabled={readOnly} type="text" value={stressTargetHr} onChange={(e) => setStressTargetHr(e.target.value)} className="border-b border-slate-300 bg-transparent p-0 text-xs w-full focus:ring-0" /></div>
+                      <div className="flex items-center gap-1"><span>▪ Target heart rate achieved:</span><input disabled={readOnly} type="text" value={stressTargetHr} onChange={(e) => setStressTargetHr(e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full" /></div>
                       <div className="flex items-center gap-3">
                         <span>▪ Arrhythmias:</span>
                         <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="stress_arr" checked={stressArrhythmias === 'Yes'} onChange={() => setStressArrhythmias('Yes')} /> Yes</label>
@@ -5211,7 +5215,7 @@ const hf = forwardRef(function hf(
                   type="text"
                   value={mriLvef}
                   onChange={(e) => handleNumericChange(setMriLvef, e.target.value)}
-                  className="border-b border-slate-300 p-0 text-xs w-28 focus:ring-0 disabled:bg-slate-100 disabled:text-slate-400"
+                  className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-28 disabled:bg-slate-100 disabled:text-slate-400"
                 />
               </div>
               <div className="flex items-center gap-4">
@@ -5220,7 +5224,7 @@ const hf = forwardRef(function hf(
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-slate-500 font-medium">Date of test:</span>
-                {renderInlineDate(mriDate, setMriDate, "border-b border-slate-300 p-0 text-xs focus:ring-0")}
+                {renderInlineDate(mriDate, setMriDate, "border border-slate-300 rounded-lg px-2 py-0.5 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400")}
               </div>
             </div>
           </div>
@@ -5253,11 +5257,11 @@ const hf = forwardRef(function hf(
                     <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-4 pl-5 bg-slate-50 p-2 rounded border border-slate-200">
                       <div className="flex items-center gap-1">
                         <span>▪ Distance walked in m: <span className="text-red-500 font-bold">*</span></span>
-                        <input disabled={readOnly} type="text" value={sixMwtDistance} onChange={(e) => handleNumericChange(setSixMwtDistance, e.target.value)} className={`border-b p-0 text-xs w-full focus:ring-0 bg-transparent ${formErrors.sixMwtDistance ? 'border-red-500 text-red-700' : 'border-slate-300'}`} />
+                        <input disabled={readOnly} type="text" value={sixMwtDistance} onChange={(e) => handleNumericChange(setSixMwtDistance, e.target.value)} className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.sixMwtDistance ? 'border-red-500 text-red-700' : 'border-slate-300'}`} />
                       </div>
                       <div className="flex items-center gap-1">
                         <span>▪ Heart rate recovery in first 1 minute: <span className="text-red-500 font-bold">*</span></span>
-                        <input disabled={readOnly} type="text" value={sixMwtHrRecovery} onChange={(e) => handleNumericChange(setSixMwtHrRecovery, e.target.value)} className={`border-b p-0 text-xs w-full focus:ring-0 bg-transparent ${formErrors.sixMwtHrRecovery ? 'border-red-500 text-red-700' : 'border-slate-300'}`} />
+                        <input disabled={readOnly} type="text" value={sixMwtHrRecovery} onChange={(e) => handleNumericChange(setSixMwtHrRecovery, e.target.value)} className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.sixMwtHrRecovery ? 'border-red-500 text-red-700' : 'border-slate-300'}`} />
                       </div>
                     </div>
                   )}
@@ -5265,7 +5269,7 @@ const hf = forwardRef(function hf(
                 <div className="flex items-center gap-2">
                   <label className="flex items-center gap-1.5 font-bold text-slate-700 whitespace-nowrap"><input disabled={readOnly} type="radio" name="six_mwt" checked={sixMwtStatus === 'Not Done'} onChange={() => setSixMwtStatus('Not Done')} /> Not Done, Reasons:</label>
                   {sixMwtStatus === 'Not Done' && (
-                    <input disabled={readOnly} type="text" value={sixMwtNotDoneReason} onChange={(e) => setSixMwtNotDoneReason(e.target.value)} className={`border-b p-0 text-xs w-full focus:ring-0 bg-transparent ${formErrors.sixMwtNotDoneReason ? 'border-red-500 text-red-700' : 'border-slate-300'}`} placeholder="Specify clinical barriers..." />
+                    <input disabled={readOnly} type="text" value={sixMwtNotDoneReason} onChange={(e) => setSixMwtNotDoneReason(e.target.value)} className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.sixMwtNotDoneReason ? 'border-red-500 text-red-700' : 'border-slate-300'}`} placeholder="Specify clinical barriers..." />
                   )}
                 </div>
                 {formErrors.sixMwtStatus && (
@@ -5427,7 +5431,7 @@ const hf = forwardRef(function hf(
                             }));
                             handleLabChange(item.key, 'result', val);
                           }}
-                          className={`border-b px-1 py-0 text-center text-xs focus:ring-0 outline-none w-full rounded ${
+                          className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 text-center w-full ${
                             cls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                             cls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
                             cls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -5451,7 +5455,7 @@ const hf = forwardRef(function hf(
                     {readOnly ? (
                       <span className="text-slate-900 font-bold text-xs text-right w-full block">{formatDateToView(labTests[item.key].date) || '—'}</span>
                     ) : (
-                      <input type="date" value={labTests[item.key].date ? labTests[item.key].date.split('T')[0] : ''} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />
+                      <input type="date" value={labTests[item.key].date ? labTests[item.key].date.split('T')[0] : ''} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 text-right w-full" />
                     )}
                   </div>
                 );
@@ -5496,7 +5500,7 @@ const hf = forwardRef(function hf(
                             }));
                             handleLabChange(item.key, 'result', val);
                           }}
-                          className={`border-b px-1 py-0 text-center text-xs focus:ring-0 outline-none w-full rounded ${
+                          className={`border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 text-center w-full ${
                             cls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
                             cls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
                             cls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -5520,7 +5524,7 @@ const hf = forwardRef(function hf(
                     {readOnly ? (
                       <span className="text-slate-900 font-bold text-xs text-right w-full block">{formatDateToView(labTests[item.key].date) || '—'}</span>
                     ) : (
-                      <input type="date" value={labTests[item.key].date ? labTests[item.key].date.split('T')[0] : ''} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />
+                      <input type="date" value={labTests[item.key].date ? labTests[item.key].date.split('T')[0] : ''} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 text-right w-full" />
                     )}
                   </div>
                 );
@@ -5529,10 +5533,10 @@ const hf = forwardRef(function hf(
               <div className="grid grid-cols-3 items-center gap-2 py-0.5">
                 <div className="flex items-center gap-1">
                   <input disabled={readOnly} type="checkbox" checked={labTests.other.checked} onChange={(e) => handleLabChange('other', 'checked', e.target.checked)} />
-                  <input disabled={readOnly} type="text" placeholder="Other:" value={labTests.other.name || ''} onChange={(e) => handleLabChange('other', 'name', e.target.value)} className="border-b border-slate-300 p-0 text-xs w-full focus:ring-0 outline-none" />
+                  <input disabled={readOnly} type="text" placeholder="Other:" value={labTests.other.name || ''} onChange={(e) => handleLabChange('other', 'name', e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full" />
                 </div>
-                <input disabled={readOnly} type="text" value={labTests.other.result} onChange={(e) => handleLabChange('other', 'result', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-center text-xs focus:ring-0 outline-none w-full" />
-                {readOnly ? <span className="text-slate-900 font-bold text-xs text-right w-full block">{formatDateToView(labTests.other.date) || '—'}</span> : <input type="date" value={labTests.other.date ? labTests.other.date.split('T')[0] : ''} onChange={(e) => handleLabChange('other', 'date', e.target.value)} className="border-b border-slate-300 px-1 py-0 text-right text-[11px] focus:ring-0 outline-none w-full" />}
+                <input disabled={readOnly} type="text" value={labTests.other.result} onChange={(e) => handleLabChange('other', 'result', e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 text-center w-full" />
+                {readOnly ? <span className="text-slate-900 font-bold text-xs text-right w-full block">{formatDateToView(labTests.other.date) || '—'}</span> : <input type="date" value={labTests.other.date ? labTests.other.date.split('T')[0] : ''} onChange={(e) => handleLabChange('other', 'date', e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 text-right w-full" />}
               </div>
             </div>
           </div>
@@ -5892,79 +5896,90 @@ const hf = forwardRef(function hf(
             </div>
             <div className={`p-3 space-y-3 ${formErrors.anticoagulation ? 'bg-red-50/20' : ''}`}>
               {/* Warfarin */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-2 border-b border-slate-100">
-                <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                  <span className="font-medium text-slate-700">Warfarin</span>
+              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 py-1 border-b border-slate-100/50 pl-2 pr-6">
+                <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap min-w-fit flex-shrink-0">
+                  <span className="font-semibold text-slate-700">Warfarin</span>
                 </label>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-slate-600">INR:</span>
-                    <input disabled={readOnly}
-                      type="text"
-                      value={warfarinInr}
-                      onChange={(e) => handleFieldChange('inr', e.target.value, setWarfarinInr, (err) => {})}
-                      className="border border-slate-300 rounded p-1 text-xs w-20 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
-                      placeholder="INR"
-                    />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-slate-600">Target INR:</span>
-                    <input disabled={readOnly}
-                      type="text"
-                      value={warfarinTargetInr}
-                      onChange={(e) => setWarfarinTargetInr(e.target.value)}
-                      className="border border-slate-300 rounded p-1 text-xs w-20 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
-                      placeholder="Target INR"
-                    />
+                <div className="flex flex-col items-end justify-center flex-1 ml-auto">
+                  <div className="flex items-center gap-2 w-full justify-end">
+                    <div className="flex items-center gap-1 flex-1 min-w-[120px] justify-end">
+                      <span className="text-xs text-slate-600 whitespace-nowrap">INR:</span>
+                      <input disabled={readOnly}
+                        type="text"
+                        value={warfarinInr}
+                        onChange={(e) => handleFieldChange('inr', e.target.value, setWarfarinInr, (err) => {})}
+                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
+                        placeholder="INR"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-xs text-slate-600 whitespace-nowrap">Target INR:</span>
+                      <input disabled={readOnly}
+                        type="text"
+                        value={warfarinTargetInr}
+                        onChange={(e) => setWarfarinTargetInr(e.target.value)}
+                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
+                        placeholder="Target INR"
+                      />
+                      <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 w-12 text-left"></span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Vitamin K Inhibitor */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                  <span className="font-medium text-slate-700">Vitamin K Inhibitor</span>
+              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 py-1 border-b border-slate-100/50 pl-2 pr-6">
+                <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap min-w-fit flex-shrink-0">
+                  <span className="font-semibold text-slate-700">Vitamin K Inhibitor</span>
                 </label>
-                <div className="flex items-center gap-1.5">
-                  <input disabled={readOnly}
-                    type="text"
-                    value={vitaminKInhibitorName}
-                    onChange={(e) => setVitaminKInhibitorName(e.target.value)}
-                    className="border border-slate-300 rounded p-1 text-xs w-36 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
-                    placeholder="Name"
-                  />
-                  <input disabled={readOnly}
-                    type="text"
-                    value={vitaminKInhibitorDose}
-                    onChange={(e) => setVitaminKInhibitorDose(e.target.value)}
-                    className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
-                    placeholder="Dose"
-                  />
-                  <span className="text-[10px] text-slate-400">/per day</span>
+                <div className="flex flex-col items-end justify-center flex-1 ml-auto">
+                  <div className="flex items-center gap-2 w-full justify-end">
+                    <input disabled={readOnly}
+                      type="text"
+                      value={vitaminKInhibitorName}
+                      onChange={(e) => setVitaminKInhibitorName(e.target.value)}
+                      className="border border-slate-300 rounded p-1 text-xs flex-1 min-w-[120px] focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      placeholder="Name"
+                    />
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <input disabled={readOnly}
+                        type="text"
+                        value={vitaminKInhibitorDose}
+                        onChange={(e) => setVitaminKInhibitorDose(e.target.value)}
+                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
+                        placeholder="Dose"
+                      />
+                      <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 w-12 text-left">/per day</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* NOAC */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-100">
-                <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
-                  <span className="font-medium text-slate-700">NOAC</span>
+              <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 py-1 border-b border-slate-100/50 last:border-0 pl-2 pr-6">
+                <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap min-w-fit flex-shrink-0">
+                  <span className="font-semibold text-slate-700">NOAC</span>
                 </label>
-                <div className="flex items-center gap-1.5">
-                  <input disabled={readOnly}
-                    type="text"
-                    value={noacName}
-                    onChange={(e) => setNoacName(e.target.value)}
-                    className="border border-slate-300 rounded p-1 text-xs w-36 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
-                    placeholder="Name"
-                  />
-                  <input disabled={readOnly}
-                    type="text"
-                    value={noacDose}
-                    onChange={(e) => setNoacDose(e.target.value)}
-                    className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
-                    placeholder="Dose"
-                  />
-                  <span className="text-[10px] text-slate-400">/per day</span>
+                <div className="flex flex-col items-end justify-center flex-1 ml-auto">
+                  <div className="flex items-center gap-2 w-full justify-end">
+                    <input disabled={readOnly}
+                      type="text"
+                      value={noacName}
+                      onChange={(e) => setNoacName(e.target.value)}
+                      className="border border-slate-300 rounded p-1 text-xs flex-1 min-w-[120px] focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      placeholder="Name"
+                    />
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <input disabled={readOnly}
+                        type="text"
+                        value={noacDose}
+                        onChange={(e) => setNoacDose(e.target.value)}
+                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
+                        placeholder="Dose"
+                      />
+                      <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 w-12 text-left">/per day</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -6319,7 +6334,7 @@ const hf = forwardRef(function hf(
                     ))}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">Device Brand / Model</label>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Device Brand / Model</label>
                     <input type="text"
                       disabled={readOnly || currentDeviceYes !== 'Yes'}
                       value={currentDeviceBrand}
@@ -6428,7 +6443,7 @@ const hf = forwardRef(function hf(
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1">Recommended Brand / Model {eligibleYes === 'Yes' && <span className="text-red-500 font-bold ml-0.5">*</span>}</label>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1">Recommended Brand / Model {eligibleYes === 'Yes' && <span className="text-red-500 font-bold ml-0.5">*</span>}</label>
                       <input type="text"
                         disabled={readOnly || eligibleYes !== 'Yes'}
                         value={eligibleDeviceBrand}
@@ -6438,7 +6453,7 @@ const hf = forwardRef(function hf(
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1">Patient Acceptance {eligibleYes === 'Yes' && <span className="text-red-500 font-bold ml-0.5">*</span>}</label>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1">Patient Acceptance {eligibleYes === 'Yes' && <span className="text-red-500 font-bold ml-0.5">*</span>}</label>
                       <div className={`flex items-center gap-4 mt-2 p-1 rounded ${formErrors.patientAcceptance ? 'border border-red-500 bg-red-50/20' : ''}`}>
                         <label className="flex items-center gap-1.5 cursor-pointer">
                           <input disabled={readOnly}
@@ -6479,7 +6494,7 @@ const hf = forwardRef(function hf(
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">If No, reasons:</label>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">If No, reasons:</label>
                     <textarea disabled={readOnly || patientAcceptanceNo !== 'Yes'}
                       value={patientAcceptanceReason}
                       onChange={(e) => setPatientAcceptanceReason(e.target.value)}
@@ -6532,7 +6547,7 @@ const hf = forwardRef(function hf(
                   {renderDeviceMetric('# of appropriate shocks', appropriateShocks, setAppropriateShocks, 'appropriateShocks', 'Count', 'appropriateShocks', true, icdShock !== 'Yes', 'number')}
                   {renderDeviceMetric('# of inappropriate shocks', inappropriateShocks, setInappropriateShocks, 'inappropriateShocks', 'Count', 'inappropriateShocks', true, icdShock !== 'Yes', 'number')}
                   <div className="md:col-span-3">
-                    <label className="block text-[10px] text-slate-600 mb-1">Cause of Shocks</label>
+                    <label className="text-xs font-semibold text-slate-700 block mb-1">Cause of Shocks</label>
                     <input disabled={readOnly || icdShock !== 'Yes'}
                       type="text"
                       value={causeOfShocks}
@@ -6558,7 +6573,7 @@ const hf = forwardRef(function hf(
                 {atp === 'Yes' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-5 animate-fadeIn">
                     <div>
-                      <label className="block text-[10px] text-slate-600 mb-1"># of times <span className="text-red-500 font-bold ml-0.5">*</span></label>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1"># of times <span className="text-red-500 font-bold ml-0.5">*</span></label>
                       <input disabled={readOnly}
                         type="number"
                         value={atpTimes}
@@ -6567,7 +6582,7 @@ const hf = forwardRef(function hf(
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] text-slate-600 mb-1">ATP successful?</label>
+                      <label className="text-xs font-semibold text-slate-700 block mb-1">ATP successful?</label>
                       <div className="flex flex-wrap items-center gap-3 mt-1.5">
                         {[
                           { val: atpSuccessAlways, set: setAtpSuccessAlways, label: 'Always' },
@@ -6616,7 +6631,7 @@ const hf = forwardRef(function hf(
               {renderDeviceMetric('NSVT episodes (#)', nsvtEpisodes, setNsvtEpisodes, 'nsvtEpisodes', 'Count', 'nsvtEpisodes', true, false, 'number')}
               {renderDeviceMetric('SVT episodes (#)', svtEpisodes, setSvtEpisodes, 'svtEpisodes', 'Count', 'svtEpisodes', false, false, 'number')}
               <div className="col-span-2">
-                <label className="block text-[10px] text-slate-600 mb-1">Device Volume alert</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Device Volume alert</label>
                 <input disabled={readOnly}
                   type="text"
                   value={deviceVolumeAlert}

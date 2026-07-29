@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Printer, Loader2 } from 'lucide-react';
+import { ArrowLeft, Printer, Loader2, FileText } from 'lucide-react';
 import api from '../../../api/axios';
 import { mapPatientRecord } from '../../utils/patientMapper';
-import HFForm from './hf';
+import hf from './hf';
 
 export default function HFFormView() {
   const { recordId } = useParams();
@@ -75,8 +75,10 @@ export default function HFFormView() {
     );
   }
 
+  const HFForm = hf;
+
   return (
-    <div className="min-h-screen bg-black text-white print:bg-white print:text-black">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans print:bg-white print:text-black">
       {/* Print-specific style block */}
       <style dangerouslySetInnerHTML={{ __html: `
         /* General High Contrast styles for disabled fields */
@@ -144,8 +146,8 @@ export default function HFFormView() {
       `}} />
 
       {/* Top bar (Hidden when printing) */}
-      <div className="no-print bg-black/95 backdrop-blur-md border-b border-black sticky top-0 z-50 px-4 py-3 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      <header className="no-print bg-teal-950 text-white border-b border-teal-900 shrink-0 shadow-sm relative z-20 px-4 py-3.5 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
@@ -156,40 +158,46 @@ export default function HFFormView() {
                   navigate(-1);
                 }
               }}
-              className="p-2 bg-black hover:bg-gray-900 rounded-xl border border-white/20 transition-colors text-white cursor-pointer"
+              className="p-1.5 bg-slate-950/40 hover:bg-slate-950/60 text-white rounded-lg transition-colors cursor-pointer flex items-center justify-center mr-1"
               title="Go Back"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
+            <div className="p-2 bg-teal-500/20 text-teal-400 rounded-lg">
+              <FileText className="w-5 h-5" />
+            </div>
             <div>
-              <h1 className="text-sm font-bold text-white uppercase tracking-wider">
-                Heart Failure Registry Assessment View
+              <h1 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+                <span>View Existing Entry: Heart Failure (HF) Clinical Form</span>
               </h1>
-              <p className="text-[10px] text-white/70 mt-0.5">
-                Registry ID: {assessmentData?.id || recordId} • Patient: {patientRecord?.patient?.name}
+              <p className="text-[10px] text-teal-300 mt-0.5">
+                Patient Reference: {patientRecord?.patient?.name} ({patientRecord?.patient?.mrNo}) • CARE CHF Assessment & Cohort Tracking
               </p>
             </div>
           </div>
 
           <button
             onClick={handlePrint}
-            className="px-4 py-2 bg-black hover:bg-gray-900 active:scale-95 text-white border border-white/20 rounded-xl transition-all flex items-center gap-2 text-xs font-bold cursor-pointer"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white border border-blue-500 rounded-xl transition-all flex items-center gap-2 text-xs font-bold cursor-pointer shadow-sm animate-fadeIn"
           >
             <Printer className="w-4 h-4" /> Print / Export to PDF
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Main Form Content Container */}
-      <div className="print-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-black">
-        {patientRecord && assessmentData && (
-          <HFForm
-            patientRecord={patientRecord}
-            editingRecord={assessmentData}
-            onCompletionChange={() => {}}
-            readOnly={true}
-          />
-        )}
+      <div className="print-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 text-black">
+          {patientRecord && assessmentData && (
+            <HFForm
+              patientRecord={patientRecord}
+              editingRecord={assessmentData}
+              onCompletionChange={() => {}}
+              readOnly={true}
+              viewMode="detailed"
+            />
+          )}
+        </div>
       </div>
     </div>
   );

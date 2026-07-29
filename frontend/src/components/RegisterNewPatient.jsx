@@ -318,7 +318,7 @@ export default function RegisterNewPatient({
 
           {/* 6. Higher Education (Radio Group) */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Higher Education</label>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">Higher Education</label>
             <div className="grid grid-cols-2 gap-1 bg-white p-2 rounded-lg border border-slate-300">
               {HIGHER_EDUCATION_OPTIONS.map((eduOption) => (
                 <label key={eduOption} className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer py-0.5">
@@ -443,17 +443,17 @@ export default function RegisterNewPatient({
 
           {/* Hypertension */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Hypertension</label>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">Hypertension</label>
             <div className="flex gap-1">
               {['Yes', 'No', 'Unknown'].map((opt) => (
                 <button
                   type="button"
                   key={opt}
                   onClick={() => setHypertension(opt)}
-                  className={`flex-1 py-1 text-xs font-bold rounded-md border text-center transition-all ${
+                  className={`flex-1 py-1 text-xs rounded-md border text-center transition-all ${
                     hypertension === opt
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                      : 'bg-white border-slate-200 hover:bg-slate-100 text-slate-600'
+                      ? 'bg-blue-50/50 border-blue-500 text-blue-900 font-semibold shadow-sm'
+                      : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 font-medium'
                   }`}
                 >
                   {opt}
@@ -464,17 +464,17 @@ export default function RegisterNewPatient({
 
           {/* Smoking */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Smoking</label>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">Smoking</label>
             <div className="flex gap-1">
               {['Yes', 'No', 'Unknown'].map((opt) => (
                 <button
                   type="button"
                   key={opt}
                   onClick={() => setSmoking(opt)}
-                  className={`flex-1 py-1 text-xs font-bold rounded-md border text-center transition-all ${
+                  className={`flex-1 py-1 text-xs rounded-md border text-center transition-all ${
                     smoking === opt
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                      : 'bg-white border-slate-200 hover:bg-slate-100 text-slate-600'
+                      ? 'bg-blue-50/50 border-blue-500 text-blue-900 font-semibold shadow-sm'
+                      : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 font-medium'
                   }`}
                 >
                   {opt}
@@ -485,17 +485,17 @@ export default function RegisterNewPatient({
 
           {/* Diabetes Mellitus */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Diabetes Mellitus</label>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">Diabetes Mellitus</label>
             <div className="flex gap-1 mb-1.5">
               {['Yes', 'No', 'Unknown'].map((opt) => (
                 <button
                   type="button"
                   key={opt}
                   onClick={() => setDiabetes(opt)}
-                  className={`flex-1 py-1 text-xs font-bold rounded-md border text-center transition-all ${
+                  className={`flex-1 py-1 text-xs rounded-md border text-center transition-all ${
                     diabetes === opt
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                      : 'bg-white border-slate-200 hover:bg-slate-100 text-slate-600'
+                      ? 'bg-blue-50/50 border-blue-500 text-blue-900 font-semibold shadow-sm'
+                      : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 font-medium'
                   }`}
                 >
                   {opt}
@@ -505,7 +505,7 @@ export default function RegisterNewPatient({
 
             {diabetes === 'Yes' && (
               <div className="bg-white p-2 rounded-lg border border-slate-200 space-y-1">
-                <label className="block text-[10px] font-bold text-slate-600 uppercase">Diabetes Control Mode</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Diabetes Control Mode</label>
                 <select
                   className="w-full p-1 text-xs bg-slate-50 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   value={diabetesControl}
@@ -523,17 +523,17 @@ export default function RegisterNewPatient({
 
           {/* Renal Failure */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Renal Failure</label>
+            <label className="text-xs font-semibold text-slate-700 block mb-1">Renal Failure</label>
             <div className="flex gap-1 mb-1.5">
               {['Yes', 'No', 'Unknown'].map((opt) => (
                 <button
                   type="button"
                   key={opt}
                   onClick={() => setRenalFailure(opt)}
-                  className={`flex-1 py-1 text-xs font-bold rounded-md border text-center transition-all ${
+                  className={`flex-1 py-1 text-xs rounded-md border text-center transition-all ${
                     renalFailure === opt
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                      : 'bg-white border-slate-200 hover:bg-slate-100 text-slate-600'
+                      ? 'bg-blue-50/50 border-blue-500 text-blue-900 font-semibold shadow-sm'
+                      : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 font-medium'
                   }`}
                 >
                   {opt}
@@ -543,7 +543,7 @@ export default function RegisterNewPatient({
 
             {renalFailure === 'Yes' && (
               <div className="bg-white p-2 rounded-lg border border-slate-200 space-y-1">
-                <label className="block text-[10px] font-bold text-slate-600 uppercase">Active Dialysis Status</label>
+                <label className="text-xs font-semibold text-slate-700 block mb-1">Active Dialysis Status</label>
                 <div className="flex gap-2">
                   <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
                     <input

@@ -376,26 +376,29 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                               + HF
                             </button>
                             <button
+                            disabled={true}
                             id={`tbl-add-stemi-${record.patient.id}`}
                             onClick={() => onAddEventClick(record.patient.id, 'STEMI')}
-                            className="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg text-[10px] font-black cursor-pointer transition-colors"
-                            title="Add STEMI Case">
+                            className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-black cursor-not-allowed opacity-50 pointer-events-none transition-colors"
+                            title="STEMI registry under development">
                             
                               + STEMI
                             </button>
                             <button
+                            disabled={true}
                             id={`tbl-add-nstemi-${record.patient.id}`}
                             onClick={() => onAddEventClick(record.patient.id, 'NSTEMI')}
-                            className="px-2 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg text-[10px] font-black cursor-pointer transition-colors"
-                            title="Add NSTEMI Case">
+                            className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-black cursor-not-allowed opacity-50 pointer-events-none transition-colors"
+                            title="NSTEMI registry under development">
                             
                               + NSTEMI
                             </button>
                             <button
+                            disabled={true}
                             id={`tbl-add-cabg-${record.patient.id}`}
                             onClick={() => onAddEventClick(record.patient.id, 'CABG')}
-                            className="px-2 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg text-[10px] font-black cursor-pointer transition-colors"
-                            title="Add CABG Quality Audit">
+                            className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-black cursor-not-allowed opacity-50 pointer-events-none transition-colors"
+                            title="CABG registry under development">
                             
                               + CABG
                             </button>
@@ -530,23 +533,26 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       + HF Assess
                     </button>
                     <button
+                    disabled={true}
                     id={`btn-add-stemi-${record.patient.id}`}
                     onClick={() => onAddEventClick(record.patient.id, 'STEMI')}
-                    className="px-2 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-md text-[10px] font-bold shrink-0 transition-colors cursor-pointer">
+                    className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[10px] font-bold shrink-0 cursor-not-allowed opacity-50 pointer-events-none transition-colors">
                     
                       + STEMI
                     </button>
                     <button
+                    disabled={true}
                     id={`btn-add-nstemi-${record.patient.id}`}
                     onClick={() => onAddEventClick(record.patient.id, 'NSTEMI')}
-                    className="px-2 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-md text-[10px] font-bold shrink-0 transition-colors cursor-pointer">
+                    className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[10px] font-bold shrink-0 cursor-not-allowed opacity-50 pointer-events-none transition-colors">
                     
                       + NSTEMI
                     </button>
                     <button
+                    disabled={true}
                     id={`btn-add-cabg-${record.patient.id}`}
                     onClick={() => onAddEventClick(record.patient.id, 'CABG')}
-                    className="px-2 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-md text-[10px] font-bold shrink-0 transition-colors cursor-pointer">
+                    className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[10px] font-bold shrink-0 cursor-not-allowed opacity-50 pointer-events-none transition-colors">
                     
                       + CABG
                     </button>

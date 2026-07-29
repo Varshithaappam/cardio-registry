@@ -48,11 +48,12 @@ input, select, textarea {
 }
 
 .form-field-label {
-  font-size: 13px !important;
+  font-size: 12px !important;
   font-style: normal !important;
   font-weight: 600 !important;
-  color: #475569 !important; /* slate-600 */
+  color: #334155 !important; /* slate-700 */
   display: block !important;
+  margin-bottom: 4px !important;
 }
 
 /* Style all form option labels consistently */
