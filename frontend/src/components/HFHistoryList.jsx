@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, FileText, Loader2, ArrowUpRight } from 'lucide-react';
+import { Calendar, FileText, Loader2, ArrowUpRight, Trash2 } from 'lucide-react';
 import api from '../../api/axios';
 
 export default function HFHistoryList({ patientId, onEditEventClick }) {
@@ -9,29 +9,48 @@ export default function HFHistoryList({ patientId, onEditEventClick }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    async function fetchHistory() {
-      try {
-        setLoading(true);
-        // Correct path without redundant '/api' prefix
-        const res = await api.get(`/hf/history/${patientId}`);
-        if (res.data && res.data.success) {
-          setHistory(res.data.data);
-        } else {
-          throw new Error(res.data?.message || 'Failed to retrieve history');
-        }
-      } catch (err) {
-        console.error('Error fetching HF history list:', err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
+  const currentUserRole = (localStorage.getItem('userRole') || 'CLINICIAN').toUpperCase();
+  const canDelete = ['ADMIN', 'CLINICIAN'].includes(currentUserRole);
 
-    if (patientId) {
-      fetchHistory();
+  const fetchHistory = async () => {
+    if (!patientId) return;
+    try {
+      setLoading(true);
+      const res = await api.get(`/hf/history/${patientId}`);
+      if (res.data && res.data.success) {
+        setHistory(res.data.data);
+      } else {
+        throw new Error(res.data?.message || 'Failed to retrieve history');
+      }
+    } catch (err) {
+      console.error('Error fetching HF history list:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchHistory();
   }, [patientId]);
+
+  const handleDeleteRecord = async (hfId, registryNo) => {
+    if (!window.confirm(`Are you sure you want to soft-delete HF Registry Record ${registryNo || '#' + hfId}? This record will become read-only and archived.`)) {
+      return;
+    }
+    try {
+      const res = await api.delete(`/hf-registry/${hfId}`);
+      if (res.data && res.data.success) {
+        alert('HF Registry record soft-deleted successfully.');
+        fetchHistory();
+      } else {
+        alert(res.data?.message || 'Failed to soft-delete record.');
+      }
+    } catch (err) {
+      console.error('Soft delete error:', err);
+      alert(err.response?.data?.message || 'Failed to soft-delete HF Registry record.');
+    }
+  };
 
   if (loading) {
     return (
@@ -57,9 +76,10 @@ export default function HFHistoryList({ patientId, onEditEventClick }) {
         <Calendar className="w-4 h-4 text-teal-600" /> HF Encounter History ({history.length})
       </h3>
 
-      <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+      <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
         {history.map((record, index) => {
           const encounterNum = history.length - index;
+          const isDeletedRecord = record.is_deleted === 1 || record.is_deleted === true;
           return (
             <div
               key={record.hf_id}
@@ -77,9 +97,16 @@ export default function HFHistoryList({ patientId, onEditEventClick }) {
                       day: 'numeric'
                     }) : 'N/A'}
                   </span>
-                  <span className="text-xs font-bold text-slate-800">
-                    {record.hf_registry_no}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-slate-800">
+                      {record.hf_registry_no}
+                    </span>
+                    {isDeletedRecord && (
+                      <span className="px-2 py-0.5 bg-red-100 text-red-800 border border-red-200 text-[10px] font-extrabold rounded-md uppercase">
+                        Deleted (Read-Only)
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -91,13 +118,23 @@ export default function HFHistoryList({ patientId, onEditEventClick }) {
                   <span>View Form</span>
                   <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
                 </button>
-                {onEditEventClick && (
+                {onEditEventClick && !isDeletedRecord && (
                   <button
                     onClick={() => onEditEventClick(record.hf_id)}
                     className="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <span>Edit Form</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {canDelete && !isDeletedRecord && (
+                  <button
+                    onClick={() => handleDeleteRecord(record.hf_id, record.hf_registry_no)}
+                    className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                    title="Soft Delete HF Record"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                    <span>Delete</span>
                   </button>
                 )}
               </div>

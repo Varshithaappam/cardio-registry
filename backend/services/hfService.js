@@ -1,5 +1,6 @@
 const db = require("../config/db");
 const hfModel = require("../models/hfModel");
+const { logAudit } = require("../utils/auditLogger");
 
 /**
  * Format an HF registry number from the database insert ID.
@@ -21,7 +22,17 @@ const toSqlDate = (dateVal) => {
   }
 };
 
-async function saveHfAssessment(data) {
+async function saveHfAssessment(data, userId = 1) {
+    let previousAssessment = null;
+    const isEdit = !!(data.id && !String(data.id).startsWith("hfa-") && !isNaN(Number(data.id)));
+    if (isEdit) {
+        try {
+            previousAssessment = await getHfAssessment(Number(data.id));
+        } catch (prevErr) {
+            console.error("Failed to fetch previous assessment for audit:", prevErr);
+        }
+    }
+
     const conn = await db.getConnection();
     try {
         await conn.beginTransaction();
@@ -82,11 +93,40 @@ async function saveHfAssessment(data) {
 
         const withHfId = (obj) => ({ ...obj, hf_id });
 
+        // Resolve care_mr_no from payload or fetch from patients table
+        let care_mr_no = data.care_mr_no || data.careMrNo || data.mr_no || data.mrNo || 
+                         data.patient?.mr_no || data.patient?.mrNo || 
+                         data.patientRecord?.patient?.mr_no || data.patientRecord?.patient?.mrNo;
+
+        if ((!care_mr_no || care_mr_no === 'Unknown') && (data.patientId || data.patient_id)) {
+            const pid = data.patientId || data.patient_id;
+            try {
+                const [pRows] = await conn.execute("SELECT mr_no FROM patients WHERE patient_id = ?", [pid]);
+                if (pRows.length > 0 && pRows[0].mr_no) {
+                    care_mr_no = pRows[0].mr_no;
+                }
+            } catch (dbErr) {
+                console.error("Failed to fetch mr_no from patients table:", dbErr);
+            }
+        }
+
+        if (!care_mr_no || care_mr_no === 'Unknown') {
+            care_mr_no = null;
+        }
+
+        // Resolve assessed_by user_id from payload or authenticated user ID
+        let assessed_by = data.assessed_by || data.assessedBy || userId;
+        if (!assessed_by || isNaN(Number(assessed_by))) {
+            assessed_by = userId || 1;
+        } else {
+            assessed_by = Number(assessed_by);
+        }
+
         // 2. Insert hf_administrative
         const adminData = {
-            assessed_by: data.assessed_by,
+            assessed_by: assessed_by,
             assessment_date: toSqlDate(data.assessmentDate),
-            care_mr_no: data.patient?.mrNo || 'Unknown',
+            care_mr_no: care_mr_no,
             visit_type: data.visitType || 'Outpatient',
             address: data.patient?.address,
             education_level: data.patient?.highestEducation,
@@ -122,7 +162,7 @@ async function saveHfAssessment(data) {
 
         // 3. Insert hf_initial_assessment
         const initialData = {
-            assessed_by: data.assessed_by,
+            assessed_by: assessed_by,
             assessment_date: toSqlDate(data.assessmentDate),
             previous_diagnosis: data.previous_diagnosis,
             history_cabg: data.history_cabg,
@@ -349,10 +389,34 @@ async function saveHfAssessment(data) {
                 ecg_qwaves_yes: data.investigations.ecgQWaves === 'Yes' ? 'Yes' : 'No',
                 ecg_qwaves_none: (data.investigations.ecgQWaves === 'No' || data.investigations.ecgQWaves === 'None') ? 'Yes' : 'No',
                 ecg_qwave_leads: data.investigations.ecgQWavesLeads || null,
-                ecg_lbbb: (data.investigations.ecgBlockages === 'LBBB' || data.investigations.lbbb === true || data.investigations.lbbb === 'Yes' || data.investigations.ecg_lbbb === 'Yes') ? 'Yes' : 'No',
-                ecg_rbbb: (data.investigations.ecgBlockages === 'RBBB' || data.investigations.ecgBlockages === 'RBB' || data.investigations.rbbb === true || data.investigations.rbbb === 'Yes' || data.investigations.ecg_rbbb === 'Yes') ? 'Yes' : 'No',
-                ecg_block_other: (data.investigations.ecgBlockages === 'Other' || data.investigations.ecgBlockages === 'Other Block' || data.investigations.blockOther === true || data.investigations.blockOther === 'Yes' || data.investigations.ecg_block_other === 'Yes') ? 'Yes' : 'No',
-                ecg_block_other_details: data.investigations.ecgBlockagesOther || data.investigations.blockOtherDetails || data.investigations.ecg_block_other_details || null,
+                ecg_lbbb: (
+                    data.investigations?.ecg_lbbb === 'Yes' ||
+                    data.investigations?.lbbb === true ||
+                    data.investigations?.lbbb === 'Yes' ||
+                    data.investigations?.ecgBlockages === 'LBBB'
+                ) ? 'Yes' : 'No',
+                ecg_rbbb: (
+                    data.investigations?.ecg_rbbb === 'Yes' ||
+                    data.investigations?.rbbb === true ||
+                    data.investigations?.rbbb === 'Yes' ||
+                    data.investigations?.ecgBlockages === 'RBBB'
+                ) ? 'Yes' : 'No',
+                ecg_block_other: (
+                    data.investigations?.ecg_block_other === 'Yes' ||
+                    data.investigations?.blockOther === true ||
+                    data.investigations?.blockOther === 'Yes' ||
+                    data.investigations?.ecgBlockages === 'Other'
+                ) ? 'Yes' : 'No',
+                ecg_block_other_details: (
+                    (
+                        data.investigations?.ecg_block_other === 'Yes' ||
+                        data.investigations?.blockOther === true ||
+                        data.investigations?.blockOther === 'Yes' ||
+                        data.investigations?.ecgBlockages === 'Other'
+                    )
+                    ? (data.investigations?.ecg_block_other_details || data.investigations?.blockOtherDetails || data.investigations?.ecgBlockagesOther || null)
+                    : null
+                ),
                 ecg_apc: (data.investigations?.ecgExtraBeats === 'APC' || data.investigations?.ecgExtraBeats === 'APCs') ? 'Yes' : 'No',
                 ecg_vpc: (data.investigations?.ecgExtraBeats === 'VPC' || data.investigations?.ecgExtraBeats === 'VPCs') ? 'Yes' : 'No',
                 ecg_extra_beats_none: (data.investigations?.ecgExtraBeats === 'None') ? 'Yes' : 'No',
@@ -440,6 +504,15 @@ async function saveHfAssessment(data) {
         }
 
         await conn.commit();
+
+        try {
+            const actionType = isEdit ? 'UPDATE' : 'CREATE';
+            const activeUserId = userId || data.user_id || data.userId || 1;
+            await logAudit(hf_id, activeUserId, actionType, previousAssessment, data);
+        } catch (auditErr) {
+            console.error("Error writing audit log in saveHfAssessment:", auditErr);
+        }
+
         return { hf_id, hf_registry_no };
     } catch (err) {
         await conn.rollback();
@@ -452,7 +525,7 @@ async function saveHfAssessment(data) {
 
 async function getHfHistory(patientId) {
     const query = `
-        SELECT hf_id, hf_registry_no, created_at, 
+        SELECT hf_id, hf_registry_no, created_at, is_deleted, deleted_at, deleted_by,
                COALESCE(
                    (SELECT assessment_date FROM hf_initial_assessment WHERE hf_initial_assessment.hf_id = hf_registry.hf_id LIMIT 1),
                    (SELECT assessment_date FROM hf_administrative WHERE hf_administrative.hf_id = hf_registry.hf_id LIMIT 1)
@@ -471,6 +544,18 @@ async function getHfAssessment(hf_id) {
         const [registries] = await conn.execute("SELECT * FROM hf_registry WHERE hf_id = ?", [hf_id]);
         if (registries.length === 0) return null;
         const registry = registries[0];
+
+        let deleted_by_user = null;
+        if (registry.deleted_by) {
+            try {
+                const [uRows] = await conn.execute("SELECT username, email FROM users WHERE user_id = ?", [registry.deleted_by]);
+                if (uRows.length > 0) {
+                    deleted_by_user = uRows[0].username || uRows[0].email;
+                }
+            } catch (uErr) {
+                console.error("Error resolving deleted_by_user:", uErr);
+            }
+        }
 
         const [adminRows] = await conn.execute("SELECT * FROM hf_administrative WHERE hf_id = ?", [hf_id]);
         const [initialRows] = await conn.execute("SELECT * FROM hf_initial_assessment WHERE hf_id = ?", [hf_id]);
@@ -831,6 +916,14 @@ async function getHfAssessment(hf_id) {
                 ecgQWavesLeads: cardiac.ecg_qwave_leads,
                 ecgBlockages,
                 ecgBlockagesOther: cardiac.ecg_block_other_details,
+                ecg_lbbb: cardiac.ecg_lbbb || 'No',
+                ecg_rbbb: cardiac.ecg_rbbb || 'No',
+                ecg_block_other: cardiac.ecg_block_other || 'No',
+                ecg_block_other_details: cardiac.ecg_block_other_details || null,
+                lbbb: cardiac.ecg_lbbb === 'Yes',
+                rbbb: cardiac.ecg_rbbb === 'Yes',
+                blockOther: cardiac.ecg_block_other === 'Yes',
+                blockOtherDetails: cardiac.ecg_block_other_details || null,
                 ecgExtraBeats,
                 ecgQt: cardiac.ecg_qt,
                 ecgQtc: cardiac.ecg_qtc,
@@ -904,7 +997,11 @@ async function getHfAssessment(hf_id) {
                 procedures_details: recommendation.procedures_details,
                 other_recommendation: recommendation.other_recommendation,
                 other_recommendation_details: recommendation.other_recommendation_details
-            }
+            },
+            is_deleted: registry.is_deleted === 1 || registry.is_deleted === true,
+            deleted_at: registry.deleted_at,
+            deleted_by: registry.deleted_by,
+            deleted_by_user
         };
     } finally {
         conn.release();

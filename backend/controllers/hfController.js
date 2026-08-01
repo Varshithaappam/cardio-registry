@@ -2,8 +2,9 @@ const hfService = require("../services/hfService");
 
 async function saveHfAssessment(req, res) {
     try {
-        console.log("Saving HF Assessment for patient_id:", req.body.patientId);
-        const result = await hfService.saveHfAssessment(req.body);
+        const userId = req.user?.id || req.user?.userId || 1;
+        console.log("Saving HF Assessment for patient_id:", req.body.patientId, "User ID:", userId);
+        const result = await hfService.saveHfAssessment(req.body, userId);
         return res.status(201).json({
             success: true,
             message: "Heart Failure Assessment details saved into database successfully.",

@@ -17,6 +17,8 @@ import PatientTimeline from "./components/PatientTimeline";
 import ClinicalForm from "./components/ClinicalForm";
 import EventViewer from "./components/EventViewer";
 import NurseLogin from "./components/NurseLogin";
+import { sanitizePayload } from "./utils/payloadSanitizer";
+import AuditLogViewer from "./components/hf/AuditLogViewer";
 
 import {
   Heart,
@@ -86,8 +88,9 @@ function MainApp() {
 
     if (formType === 'HF') {
       try {
-        console.log("Saving HF Assessment to backend:", eventData);
-        const response = await api.post("/hf-assessment", eventData);
+        const sanitizedData = sanitizePayload(eventData);
+        console.log("Saving HF Assessment to backend:", sanitizedData);
+        const response = await api.post("/hf-assessment", sanitizedData);
         if (response.data && response.data.success) {
           alert("Heart Failure Assessment details saved into database successfully.");
           await loadPatients();
@@ -179,11 +182,25 @@ function MainApp() {
   };
 
   // Delete an event
-  const handleDeleteClinicalEvent = (eventId, type) => {
+  const handleDeleteClinicalEvent = async (eventId, type, hfId) => {
     if (!selectedPatientId) return;
 
-    if (!window.confirm('Are you sure you want to delete this clinical record from the patient timeline? This action is irreversible.')) {
+    if (!window.confirm('Are you sure you want to soft-delete this clinical record? This record will be archived as read-only.')) {
       return;
+    }
+
+    const targetHfId = hfId || eventId;
+    if (type === 'HF' || type === 'HF Assessment') {
+      try {
+        await api.delete(`/hf-registry/${targetHfId}`);
+        alert('HF Registry record soft-deleted successfully.');
+        loadPatients();
+        return;
+      } catch (err) {
+        console.error('Error soft-deleting HF record:', err);
+        alert(err.response?.data?.message || 'Failed to soft-delete record.');
+        return;
+      }
     }
 
     setRecords((prevRecords) => {

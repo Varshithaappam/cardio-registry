@@ -1,5 +1,7 @@
 const patientModel = require("../models/patientModel");
 const { normalizePatientInput } = require("../utils/patientValidation");
+const db = require("../config/db");
+const { logAudit } = require("../utils/auditLogger");
 
 /**
  * Generate MR Number
@@ -20,7 +22,7 @@ function generateIPNumber(patientId) {
 /**
  * Register New Patient
  */
-async function registerPatient(patientData) {
+async function registerPatient(patientData, userId = 1) {
     const normalizedData = normalizePatientInput(patientData);
 
     console.log("Registering patient:", {
@@ -46,9 +48,18 @@ async function registerPatient(patientData) {
         ip_no
     );
 
-    console.log(`Patient registered successfully: patient_id=${patientId}, mr_no=${mr_no}, ip_no=${ip_no}`);
+    const registeredPatient = await patientModel.getPatientById(patientId);
 
-    return await patientModel.getPatientById(patientId);
+    try {
+        const [regRows] = await db.execute("SELECT hf_id FROM hf_registry WHERE patient_id = ?", [patientId]);
+        for (const reg of regRows) {
+            await logAudit(reg.hf_id, userId, 'CREATE', null, registeredPatient);
+        }
+    } catch (auditErr) {
+        console.error("Failed to log audit for patient registration:", auditErr);
+    }
+
+    return registeredPatient;
 }
 
 /**
@@ -68,23 +79,45 @@ async function getPatientById(patientId) {
 /**
  * Update Patient
  */
-async function updatePatient(patientId, patientData) {
+async function updatePatient(patientId, patientData, userId = 1) {
     const normalizedData = normalizePatientInput(patientData);
 
     console.log(`Updating patient_id=${patientId}`);
 
+    const previousPatient = await patientModel.getPatientById(patientId);
+
     await patientModel.updatePatient(patientId, normalizedData);
-    return await patientModel.getPatientById(patientId);
+
+    const updatedPatient = await patientModel.getPatientById(patientId);
+
+    try {
+        const [regRows] = await db.execute("SELECT hf_id FROM hf_registry WHERE patient_id = ?", [patientId]);
+        for (const reg of regRows) {
+            await logAudit(reg.hf_id, userId, 'UPDATE', previousPatient, updatedPatient);
+        }
+    } catch (auditErr) {
+        console.error("Failed to log audit for patient update:", auditErr);
+    }
+
+    return updatedPatient;
 }
 
 /**
  * Delete Patient
  */
-async function deletePatient(patientId) {
+async function deletePatient(patientId, userId = 1) {
     console.log(`Deleting patient_id=${patientId}`);
+    const previousPatient = await patientModel.getPatientById(patientId);
+    try {
+        const [regRows] = await db.execute("SELECT hf_id FROM hf_registry WHERE patient_id = ?", [patientId]);
+        for (const reg of regRows) {
+            await logAudit(reg.hf_id, userId, 'DELETE', previousPatient, null);
+        }
+    } catch (auditErr) {
+        console.error("Failed to log audit for patient deletion:", auditErr);
+    }
     return await patientModel.deletePatient(patientId);
 }
-
 
 async function getPatientCounts(patientId) {
     return await patientModel.getPatientCounts(patientId);

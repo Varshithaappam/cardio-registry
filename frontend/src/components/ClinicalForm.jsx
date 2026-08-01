@@ -211,18 +211,21 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
           <button
             type="button"
             onClick={() => {
-              if (formType === 'HF') {
-                if (onBackPatients) {
+              if (onCancel) {
+                onCancel();
+              } else {
+                const pid = patientRecord?.patient?.id || patientRecord?.patient?.patient_id;
+                if (pid) {
+                  navigate(`/patient/${pid}`);
+                } else if (onBackPatients) {
                   onBackPatients();
                 } else {
                   navigate('/patients');
                 }
-              } else {
-                onCancel();
               }
             }}
             className="p-1.5 bg-slate-900/40 hover:bg-slate-900/60 text-white rounded-lg transition-colors cursor-pointer flex items-center justify-center mr-1"
-            title="Go Back"
+            title="Go Back to Master Patient Portfolio"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>

@@ -1,4 +1,5 @@
 import React, { useState, forwardRef, useImperativeHandle, useMemo, useEffect } from 'react';
+import { AlertCircle } from 'lucide-react';
 import api from '../../../api/axios';
 import { calculateAge } from '../../utils/calculateAge';
 import SectionCard from './common/SectionCard';
@@ -279,10 +280,16 @@ function normalizeInsuranceModeForForm(val) {
 }
 
 const hf = forwardRef(function hf(
-  { patientRecord, editingRecord, onCompletionChange, readOnly = false, viewMode = 'detailed' },
+  { patientRecord, editingRecord, onCompletionChange, readOnly: propsReadOnly = false, viewMode = 'detailed' },
   ref
 ) {
   const patient = patientRecord?.patient || {};
+  const isDeleted = editingRecord?.is_deleted === 1 || 
+                    editingRecord?.is_deleted === true || 
+                    editingRecord?.is_deleted === '1' || 
+                    patientRecord?.is_deleted === 1 || 
+                    patientRecord?.is_deleted === true;
+  const readOnly = propsReadOnly || isDeleted;
 
   const getDocumentUrl = (filePath) => {
     try {
@@ -1348,8 +1355,20 @@ const hf = forwardRef(function hf(
   const [ecgAvConduction, setEcgAvConduction] = useState(editingRecord?.investigations?.ecgAvConduction ?? '');
   const [ecgQWaves, setEcgQWaves] = useState(editingRecord?.investigations?.ecgQWaves ?? '');
   const [ecgQWavesLeads, setEcgQWavesLeads] = useState(editingRecord?.investigations?.ecgQWavesLeads ?? '');
-  const [ecgBlockages, setEcgBlockages] = useState(editingRecord?.investigations?.ecgBlockages ?? '');
-  const [ecgBlockagesOther, setEcgBlockagesOther] = useState(editingRecord?.investigations?.ecgBlockagesOther ?? '');
+  const [ecgBlockages, setEcgBlockages] = useState(() => {
+    if (editingRecord?.investigations?.ecgBlockages) return editingRecord.investigations.ecgBlockages;
+    if (editingRecord?.investigations?.ecg_lbbb === 'Yes' || editingRecord?.investigations?.lbbb === true || editingRecord?.investigations?.lbbb === 'Yes' || editingRecord?.cardiacInvestigations?.ecg_lbbb === 'Yes') return 'LBBB';
+    if (editingRecord?.investigations?.ecg_rbbb === 'Yes' || editingRecord?.investigations?.rbbb === true || editingRecord?.investigations?.rbbb === 'Yes' || editingRecord?.cardiacInvestigations?.ecg_rbbb === 'Yes') return 'RBBB';
+    if (editingRecord?.investigations?.ecg_block_other === 'Yes' || editingRecord?.investigations?.blockOther === true || editingRecord?.investigations?.blockOther === 'Yes' || editingRecord?.cardiacInvestigations?.ecg_block_other === 'Yes') return 'Other';
+    return editingRecord?.investigations?.ecgBlockages ?? '';
+  });
+  const [ecgBlockagesOther, setEcgBlockagesOther] = useState(() => {
+    return editingRecord?.investigations?.ecgBlockagesOther || 
+           editingRecord?.investigations?.blockOtherDetails || 
+           editingRecord?.investigations?.ecg_block_other_details || 
+           editingRecord?.cardiacInvestigations?.ecg_block_other_details || 
+           '';
+  });
   const [ecgExtraBeats, setEcgExtraBeats] = useState(() => {
     const raw = editingRecord?.investigations?.ecgExtraBeats;
     if (raw) {
@@ -2178,14 +2197,32 @@ const hf = forwardRef(function hf(
       }
     });
 
+    let activeUserId = undefined;
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const uObj = JSON.parse(userStr);
+        activeUserId = uObj?.user_id || uObj?.id || uObj?.userId;
+      }
+    } catch (e) {
+      console.error('Error getting user_id from localStorage:', e);
+    }
+
+    const activeMrNo = patient.mrNo || patient.mr_no || editingRecord?.care_mr_no || editingRecord?.encounterId || undefined;
+
     return {
     id: editingRecord?.id ?? `hfa-${Date.now()}`,
     tempHfId: !editingRecord?.id ? tempHfId : undefined,
-    patientId: patient.id,
-    encounterId: encounterId || editingRecord?.encounterId,
+    patientId: patient.id || patient.patient_id,
+    encounterId: encounterId || editingRecord?.encounterId || activeMrNo,
+    care_mr_no: activeMrNo,
+    mr_no: activeMrNo,
+    assessed_by: activeUserId,
     assessmentDate,
     visitType,
     patient: {
+      mrNo: activeMrNo,
+      mr_no: activeMrNo,
       highestEducation,
       monthlyIncome,
       occupation,
@@ -2328,6 +2365,14 @@ const hf = forwardRef(function hf(
       ecgQWavesLeads,
       ecgBlockages,
       ecgBlockagesOther,
+      lbbb: ecgBlockages === 'LBBB',
+      rbbb: ecgBlockages === 'RBBB',
+      blockOther: ecgBlockages === 'Other',
+      blockOtherDetails: ecgBlockages === 'Other' ? ecgBlockagesOther : null,
+      ecg_lbbb: ecgBlockages === 'LBBB' ? 'Yes' : 'No',
+      ecg_rbbb: ecgBlockages === 'RBBB' ? 'Yes' : 'No',
+      ecg_block_other: ecgBlockages === 'Other' ? 'Yes' : 'No',
+      ecg_block_other_details: ecgBlockages === 'Other' ? ecgBlockagesOther : null,
       ecgExtraBeats,
       ecgQt,
       ecgQtc,
@@ -3548,7 +3593,21 @@ const hf = forwardRef(function hf(
   }));
 
   return (
-    <fieldset disabled={readOnly} className="contents border-none p-0 m-0">
+    <div className="space-y-4">
+      {isDeleted && (
+        <div className="p-4 bg-red-100 border-2 border-red-500 text-red-900 rounded-xl shadow-md flex items-start gap-3 animate-fadeIn">
+          <AlertCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
+          <div>
+            <h4 className="font-extrabold text-sm uppercase tracking-wide text-red-900">
+              ⚠️ THIS HF REGISTRY RECORD HAS BEEN DELETED
+            </h4>
+            <p className="text-xs font-semibold mt-1">
+              Archived on {editingRecord?.deleted_at ? new Date(editingRecord.deleted_at).toLocaleString() : 'N/A'} by {editingRecord?.deleted_by_user || editingRecord?.deleted_by || 'Admin/User'}. THIS RECORD IS READ-ONLY AND CANNOT BE EDITED.
+            </p>
+          </div>
+        </div>
+      )}
+      <fieldset disabled={readOnly} className={`contents border-none p-0 m-0 ${isDeleted ? 'opacity-60 pointer-events-none select-none filter grayscale-[30%]' : ''}`}>
       <HFFormWizard
         activeSection={activeSection}
         onSectionChange={setActiveSection}
@@ -6867,6 +6926,7 @@ const hf = forwardRef(function hf(
 
       </HFFormWizard>
     </fieldset>
+    </div>
   );
 });
 

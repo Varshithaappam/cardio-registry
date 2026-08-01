@@ -2,12 +2,12 @@ const db = require("../config/db");
 
 // Helpers to execute inserts using a connection (to participate in transaction)
 
-async function insertHfRegistry(conn, { patient_id, hf_registry_no }) {
+async function insertHfRegistry(conn, { patient_id, hf_registry_no, created_by, updated_by }) {
     const query = `
-        INSERT INTO hf_registry (patient_id, hf_registry_no)
-        VALUES (?, ?)
+        INSERT INTO hf_registry (patient_id, hf_registry_no, created_by, updated_by)
+        VALUES (?, ?, ?, ?)
     `;
-    const [result] = await conn.execute(query, [patient_id, hf_registry_no]);
+    const [result] = await conn.execute(query, [patient_id, hf_registry_no, created_by || null, updated_by || null]);
     return result.insertId;
 }
 

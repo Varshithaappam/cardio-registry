@@ -28,7 +28,8 @@ function handlePatientError(res, error, action) {
  */
 async function registerPatient(req, res) {
     try {
-        const patient = await patientService.registerPatient(req.body);
+        const userId = req.user?.id || req.user?.userId || 1;
+        const patient = await patientService.registerPatient(req.body, userId);
 
         return res.status(201).json({
             success: true,
@@ -87,9 +88,11 @@ async function getPatientById(req, res) {
 async function updatePatient(req, res) {
     try {
         const patientId = req.params.id;
+        const userId = req.user?.id || req.user?.userId || 1;
         const patient = await patientService.updatePatient(
             patientId,
-            req.body
+            req.body,
+            userId
         );
 
         if (!patient) {
@@ -115,7 +118,8 @@ async function updatePatient(req, res) {
 async function deletePatient(req, res) {
     try {
         const patientId = req.params.id;
-        const result = await patientService.deletePatient(patientId);
+        const userId = req.user?.id || req.user?.userId || 1;
+        const result = await patientService.deletePatient(patientId, userId);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({

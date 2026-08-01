@@ -14,6 +14,8 @@ const patientRoutes = require("./routes/patientRoutes");
 const hfRoutes = require("./routes/hfRoutes");
 const documentRoutes = require("./routes/documentRoutes");
 const hfFilesRoutes = require("./routes/hfFilesRoutes");
+const authRoutes = require("./routes/authRoutes");
+const hfRegistryRoutes = require("./routes/hfRegistryRoutes");
 const hfController = require('./controllers/hfController');
 
 // Middleware
@@ -32,7 +34,9 @@ app.get("/", (req, res) => {
     });
 });
 
-// Patient Routes
+// API Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/hf-registry", hfRegistryRoutes);
 app.use("/api/patients", patientRoutes);
 app.use("/api/hf-assessment", hfRoutes);
 app.use("/api/documents", documentRoutes);

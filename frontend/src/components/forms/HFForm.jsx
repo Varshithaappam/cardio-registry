@@ -324,20 +324,39 @@ const HFForm = forwardRef(function HFForm(
     onCompletionChange?.(completionPercent);
   }, [completionPercent, onCompletionChange]);
 
-  const getSubmissionData = () => ({
-    id: editingRecord?.id ?? `hfa-${Date.now()}`,
-    patientId: patient.id,
-    encounterId: encounterId || editingRecord?.encounterId,
-    assessmentDate,
-    visitType,
-    patient: {
-      highestEducation,
-      monthlyIncome,
-      occupation,
-      caregiverName,
-      caregiverRelationship,
-      insuranceMode
-    },
+  const getSubmissionData = () => {
+    let activeUserId = undefined;
+    try {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        const uObj = JSON.parse(userStr);
+        activeUserId = uObj?.user_id || uObj?.id || uObj?.userId;
+      }
+    } catch (e) {
+      console.error('Error getting user_id from localStorage:', e);
+    }
+
+    const activeMrNo = patient.mrNo || patient.mr_no || editingRecord?.care_mr_no || editingRecord?.encounterId || undefined;
+
+    return {
+      id: editingRecord?.id ?? `hfa-${Date.now()}`,
+      patientId: patient.id || patient.patient_id,
+      encounterId: encounterId || editingRecord?.encounterId || activeMrNo,
+      care_mr_no: activeMrNo,
+      mr_no: activeMrNo,
+      assessed_by: activeUserId,
+      assessmentDate,
+      visitType,
+      patient: {
+        mrNo: activeMrNo,
+        mr_no: activeMrNo,
+        highestEducation,
+        monthlyIncome,
+        occupation,
+        caregiverName,
+        caregiverRelationship,
+        insuranceMode
+      },
     inpatientDetails: {
       treatingCardiologist,
       referringDoctor,
@@ -426,7 +445,7 @@ const HFForm = forwardRef(function HFForm(
       investigations: recInvestigations || undefined,
       procedures: recProcedures || undefined
     }
-  });
+  };
 
   useImperativeHandle(ref, () => ({
     getSubmissionData

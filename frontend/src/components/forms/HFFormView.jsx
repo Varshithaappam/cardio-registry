@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Printer, Loader2, FileText } from 'lucide-react';
 import api from '../../../api/axios';
 import { mapPatientRecord } from '../../utils/patientMapper';
@@ -8,10 +8,33 @@ import hf from './hf';
 export default function HFFormView() {
   const { recordId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [assessmentData, setAssessmentData] = useState(null);
   const [patientRecord, setPatientRecord] = useState(null);
+
+  const handleGoBack = () => {
+    // 1. Check state passed via navigate
+    if (location.state && location.state.from) {
+      navigate(location.state.from);
+      return;
+    }
+
+    // 2. Resolve patient ID and navigate to Master Patient Clinical Portfolio
+    const patientId = patientRecord?.patient?.id || 
+                      patientRecord?.patient?.patient_id || 
+                      assessmentData?.patientId || 
+                      assessmentData?.patient_id;
+
+    if (patientId) {
+      navigate(`/patient/${patientId}`);
+    } else if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/patients');
+    }
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -65,10 +88,10 @@ export default function HFFormView() {
           <p className="text-red-400 font-bold mb-4">Error Loading Assessment</p>
           <p className="text-white/80 text-sm mb-6">{error}</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={handleGoBack}
             className="px-4 py-2 bg-black hover:bg-gray-900 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer border border-white/20"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Return to Dashboard
+            <ArrowLeft className="w-3.5 h-3.5" /> Return to Patient Portfolio
           </button>
         </div>
       </div>
@@ -150,16 +173,9 @@ export default function HFFormView() {
         <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => {
-                const patientId = patientRecord?.patient?.id || assessmentData?.patientId || assessmentData?.patient_id;
-                if (patientId) {
-                  navigate(`/patient/${patientId}`);
-                } else {
-                  navigate(-1);
-                }
-              }}
+              onClick={handleGoBack}
               className="p-1.5 bg-slate-950/40 hover:bg-slate-950/60 text-white rounded-lg transition-colors cursor-pointer flex items-center justify-center mr-1"
-              title="Go Back"
+              title="Go Back to Master Patient Portfolio"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>

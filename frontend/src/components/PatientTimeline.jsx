@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { 
   ArrowLeft, Plus, Activity, Heart, Stethoscope, Scissors, FileText, 
   Clock, ShieldAlert, CheckCircle, ChevronRight, RefreshCw, Calendar, 
-  MapPin, AlertCircle, Edit, Trash2, Eye, User, Briefcase, GraduationCap
+  MapPin, AlertCircle, Edit, Trash2, Eye, User, Briefcase, GraduationCap, Shield
 } from 'lucide-react';
 import { calculateDataQualityScore } from '../data/mockPatients';
 import HFHistoryList from './HFHistoryList';
 import RegisterNewPatient from './RegisterNewPatient';
+import AuditLogViewer from './hf/AuditLogViewer';
 
 // Age calculator helper
 function calculateAge(dobString) {
@@ -40,6 +41,22 @@ const MODULE_BADGES = {
 export default function PatientTimeline({ record, onBack, onAddEventClick, onEditEventClick, onViewEventDetails, onDeleteEvent, onRefreshPatient }) {
   const [activeTab, setActiveTab] = useState('timeline');
   const [isEditingPatient, setIsEditingPatient] = useState(false);
+  const [isAuditViewerExpanded, setIsAuditViewerExpanded] = useState(false);
+
+  const currentUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user'));
+    } catch (e) {
+      return null;
+    }
+  })();
+
+  const isAuthorizedForAudit = ['ADMIN', 'CLINICIAN'].includes(currentUser?.role);
+
+  const targetHfId = record?.hf_id || 
+                     record?.patient?.hf_id || 
+                     (record?.hfAssessments && record.hfAssessments.length > 0 ? (record.hfAssessments[0].hf_id || record.hfAssessments[0].id) : null) || 
+                     record?.patient?.id;
 
   if (!record || !record.patient) {
     return (
@@ -289,13 +306,26 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
           <Activity className="w-4 h-4" />
           <span>Heart Failure Registry ({record.hfAssessments?.length || 0})</span>
         </button>
+        {isAuthorizedForAudit && (
+          <button
+            onClick={() => setActiveTab('audit')}
+            className={`py-3 px-1 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'audit'
+                ? 'border-purple-600 text-purple-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Shield className="w-4 h-4 text-purple-600" />
+            <span>📋 Audit Log</span>
+          </button>
+        )}
       </div>
 
       {/* Tab Content 1: Full Clinical Timeline */}
       {activeTab === 'timeline' && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Chronological Event Timeline</h3>
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Clinical Event Timeline</h3>
             <span className="text-xs text-slate-400">Ordered newest to oldest</span>
           </div>
 
@@ -346,6 +376,16 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
                         <Eye className="w-3.5 h-3.5" />
                         <span>View Assessment</span>
                       </button>
+                      {onDeleteEvent && isAuthorizedForAudit && (
+                        <button
+                          onClick={() => onDeleteEvent(evt.id, evt.type, evt.hfId || evt.id)}
+                          className="px-3 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                          title="Soft Delete Event"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                          <span>Delete</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -359,6 +399,28 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
       {activeTab === 'hf' && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
           <HFHistoryList patientId={record.patient.id} onEditEventClick={onEditEventClick} />
+        </div>
+      )}
+
+      {/* Tab Content 3: Audit Log Tab */}
+      {activeTab === 'audit' && isAuthorizedForAudit && (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">CHRONOLOGICAL EVENT TIMELINE</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Immutable record of modifications, creations, and deletions.</p>
+            </div>
+            <button
+              onClick={() => setIsAuditViewerExpanded(!isAuditViewerExpanded)}
+              className="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+            >
+              <Shield className="w-3.5 h-3.5 text-blue-600" />
+              <span>{isAuditViewerExpanded ? 'Collapse Audit Viewer' : 'Expand Audit Viewer'}</span>
+            </button>
+          </div>
+
+          {/* Inline Audit Viewer (Queried by Patient ID) */}
+          <AuditLogViewer patientId={record.patient.id} hfId={targetHfId} isInline={true} />
         </div>
       )}
     </div>
