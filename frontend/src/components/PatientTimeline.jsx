@@ -321,9 +321,10 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
         )}
       </div>
 
-      {/* Tab Content 1: Full Clinical Timeline */}
-      {activeTab === 'timeline' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+      {/* Outer Tab Content Area with explicit background color & fixed min-height */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[450px]">
+        {/* Tab Content 1: Full Clinical Timeline */}
+        <div className={activeTab === 'timeline' ? 'block space-y-6' : 'hidden'}>
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Clinical Event Timeline</h3>
             <span className="text-xs text-slate-400">Ordered newest to oldest</span>
@@ -393,36 +394,34 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
             </div>
           )}
         </div>
-      )}
 
-      {/* Tab Content 2: HF Registry Assessment List */}
-      {activeTab === 'hf' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+        {/* Tab Content 2: HF Registry Assessment List */}
+        <div className={activeTab === 'hf' ? 'block space-y-6' : 'hidden'}>
           <HFHistoryList patientId={record.patient.id} onEditEventClick={onEditEventClick} />
         </div>
-      )}
 
-      {/* Tab Content 3: Audit Log Tab */}
-      {activeTab === 'audit' && isAuthorizedForAudit && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-            <div>
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">CHRONOLOGICAL EVENT TIMELINE</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Immutable record of modifications, creations, and deletions.</p>
+        {/* Tab Content 3: Audit Log Tab */}
+        {isAuthorizedForAudit && (
+          <div className={activeTab === 'audit' ? 'block space-y-6' : 'hidden'}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">CHRONOLOGICAL EVENT TIMELINE</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Immutable record of modifications, creations, and deletions.</p>
+              </div>
+              <button
+                onClick={() => setIsAuditViewerExpanded(!isAuditViewerExpanded)}
+                className="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <Shield className="w-3.5 h-3.5 text-blue-600" />
+                <span>{isAuditViewerExpanded ? 'Collapse Audit Viewer' : 'Expand Audit Viewer'}</span>
+              </button>
             </div>
-            <button
-              onClick={() => setIsAuditViewerExpanded(!isAuditViewerExpanded)}
-              className="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-            >
-              <Shield className="w-3.5 h-3.5 text-blue-600" />
-              <span>{isAuditViewerExpanded ? 'Collapse Audit Viewer' : 'Expand Audit Viewer'}</span>
-            </button>
-          </div>
 
-          {/* Inline Audit Viewer (Queried by Patient ID) */}
-          <AuditLogViewer patientId={record.patient.id} hfId={targetHfId} isInline={true} />
-        </div>
-      )}
+            {/* Inline Audit Viewer (Queried by Patient ID) */}
+            <AuditLogViewer patientId={record.patient.id} hfId={targetHfId} isInline={true} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
