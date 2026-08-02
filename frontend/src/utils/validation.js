@@ -1,5 +1,5 @@
 /**
- * Validation Utility for CARE Registry Form fields
+ * Validation Utility for CARE Registry Form fields & MS SQL Database Alignment
  */
 
 export const validateField = (fieldName, value) => {
@@ -118,234 +118,124 @@ export const validateField = (fieldName, value) => {
         color: 'text-red-500 font-bold'
       };
     }
-    if (num < 60) {
-      return {
-        isValid: true,
-        error: null,
-        warning: 'Heart Rate is Low (Bradycardia).',
-        status: 'Low (Bradycardia)',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num > 100) {
-      return {
-        isValid: true,
-        error: null,
-        warning: 'Heart Rate is High (Tachycardia).',
-        status: 'High (Tachycardia)',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
-  }
-
-  if (fieldName === 'systolicBp') {
-    const num = parseInt(strVal, 10);
-    if (isNaN(num) || !/^\d+$/.test(strVal)) {
-      return {
-        isValid: false,
-        error: 'Please enter valid values like integers or numbers.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num < 60 || num > 260) {
-      return {
-        isValid: false,
-        error: 'Please enter a realistic Systolic BP between 60 and 260.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num < 90) {
-      return {
-        isValid: true,
-        error: null,
-        warning: 'Systolic BP is Low.',
-        status: 'Low',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num > 140) {
-      return {
-        isValid: true,
-        error: null,
-        warning: 'Systolic BP is High.',
-        status: 'High',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
-  }
-
-  if (fieldName === 'diastolicBp') {
-    const num = parseInt(strVal, 10);
-    if (isNaN(num) || !/^\d+$/.test(strVal)) {
-      return {
-        isValid: false,
-        error: 'Please enter valid values like integers or numbers.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num < 40 || num > 150) {
-      return {
-        isValid: false,
-        error: 'Please enter a realistic Diastolic BP between 40 and 150.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
-  }
-
-  if (fieldName === 'o2Saturation') {
-    const num = parseFloat(strVal);
-    if (isNaN(num)) {
-      return {
-        isValid: false,
-        error: 'Please enter valid values like integers or numbers.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num < 50 || num > 100) {
-      return {
-        isValid: false,
-        error: 'Please enter a realistic O₂ Saturation between 50 and 100.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num < 90) {
-      return {
-        isValid: true,
-        error: null,
-        warning: 'O₂ Saturation is Critical.',
-        status: 'Critical',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num >= 95) {
-      return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
-    }
-    return {
-      isValid: true,
-      error: null,
-      warning: 'O₂ Saturation is Low.',
-      status: 'Low',
-      color: 'text-yellow-600 font-bold'
-    };
-  }
-
-  // 3. Medical Therapy (Doses)
-  if (fieldName.endsWith('Dose') || fieldName.endsWith('dose') || fieldName === 'dose') {
-    const doseRegex = /^\d+(\.\d+)?$/;
-    if (!doseRegex.test(strVal)) {
-      return {
-        isValid: false,
-        error: 'Please enter valid values like integers or numbers for the drug dose.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
-  }
-
-  // 4. Lab Tests & Imaging
-  if (fieldName === 'echoEfPercent') {
-    const num = parseFloat(strVal);
-    if (isNaN(num)) {
-      return {
-        isValid: false,
-        error: 'Please enter valid values like integers or numbers.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num < 1 || num > 100) {
-      return {
-        isValid: false,
-        error: 'Please enter a valid EF% between 1% and 100%.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
-  }
-
-  if (fieldName === 'potassium') {
-    const num = parseFloat(strVal);
-    if (isNaN(num)) {
-      return {
-        isValid: false,
-        error: 'Please enter valid values like integers or numbers.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num < 1.0 || num > 10.0) {
-      return {
-        isValid: false,
-        error: 'Please enter a valid Potassium level between 1.0 and 10.0 mmol/L.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num < 3.5) {
-      return {
-        isValid: true,
-        error: null,
-        warning: 'Potassium is Low.',
-        status: 'Low',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num > 5.0) {
-      return {
-        isValid: true,
-        error: null,
-        warning: 'Potassium is High.',
-        status: 'High',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
-  }
-
-  if (fieldName === 'creatinine') {
-    const num = parseFloat(strVal);
-    if (isNaN(num)) {
-      return {
-        isValid: false,
-        error: 'Please enter valid values like integers or numbers.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num < 0.1 || num > 15.0) {
-      return {
-        isValid: false,
-        error: 'Please enter a valid Creatinine level between 0.1 and 15.0 mg/dL.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
     return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
   }
 
   return { isValid: true, error: null, warning: null, status: null, color: null };
+};
+
+/**
+ * Transforms form state payload into clean MS SQL-compatible DB payload by converting empty strings to null.
+ */
+export const mapFormToDBPayload = (formData) => {
+  if (formData === null || formData === undefined) return null;
+  if (typeof formData !== 'object') {
+    if (typeof formData === 'string' && formData.trim() === '') {
+      return null;
+    }
+    return formData;
+  }
+
+  if (Array.isArray(formData)) {
+    return formData.map(item => mapFormToDBPayload(item));
+  }
+
+  const cleaned = {};
+  for (const key of Object.keys(formData)) {
+    const val = formData[key];
+    if (val === '' || (typeof val === 'string' && val.trim() === '')) {
+      cleaned[key] = null;
+    } else if (typeof val === 'object' && val !== null && !(val instanceof Date)) {
+      cleaned[key] = mapFormToDBPayload(val);
+    } else {
+      cleaned[key] = val;
+    }
+  }
+  return cleaned;
+};
+
+/**
+ * Validates Heart Failure Registry Form data conditionally matching MS SQL schema rules.
+ */
+export const validateHFForm = (formData = {}, isDraft = false) => {
+  // Draft Mode bypasses mandatory validation completely
+  if (isDraft) {
+    return { isValid: true, errors: {}, missingFields: [] };
+  }
+
+  const errors = {};
+  const isYes = (val) => val === true || val === 1 || val === '1' || val === 'Yes' || String(val).toLowerCase() === 'yes';
+
+  // 1. Mandatory Vitals & Metrics if entered
+  if (formData.vUnableToWeigh !== 'Yes' && (!formData.vWeight || String(formData.vWeight).trim() === '')) {
+    errors.vWeight = 'Weight is required unless unable to weigh is selected.';
+  }
+
+  // 2. Conditional Medication Validation Rules
+  const medDoseMappings = [
+    { flag: 'carvedilol', dose: 'carvedilolDose', label: 'Carvedilol Dose' },
+    { flag: 'bisoprolol', dose: 'bisoprololDose', label: 'Bisoprolol Dose' },
+    { flag: 'metoprololSuccinate', dose: 'metoprololSuccinateDose', label: 'Metoprolol Succinate Dose' },
+    { flag: 'nebivolol', dose: 'nebivololDose', label: 'Nebivolol Dose' },
+    { flag: 'enalapril', dose: 'enalaprilDose', label: 'Enalapril Dose' },
+    { flag: 'ramipril', dose: 'ramiprilDose', label: 'Ramipril Dose' },
+    { flag: 'lisinopril', dose: 'lisinoprilDose', label: 'Lisinopril Dose' },
+    { flag: 'perindopril', dose: 'perindoprilDose', label: 'Perindopril Dose' },
+    { flag: 'valsartan', dose: 'valsartanDose', label: 'Valsartan Dose' },
+    { flag: 'losartan', dose: 'losartanDose', label: 'Losartan Dose' },
+    { flag: 'telmisartan', dose: 'telmisartanDose', label: 'Telmisartan Dose' },
+    { flag: 'olmesartan', dose: 'olmesartanDose', label: 'Olmesartan Dose' },
+    { flag: 'spironolactone', dose: 'spironolactoneDose', label: 'Spironolactone Dose' },
+    { flag: 'eplerenone', dose: 'eplerenoneDose', label: 'Eplerenone Dose' }
+  ];
+
+  medDoseMappings.forEach(({ flag, dose, label }) => {
+    if (isYes(formData[flag]) && (!formData[dose] || String(formData[dose]).trim() === '')) {
+      errors[dose] = `${label} is required when ${flag} is prescribed.`;
+    }
+  });
+
+  // 3. Conditional Lab Validation Rules
+  const labTests = formData.labTests || {};
+  const labKeys = ['calcium', 'glucose', 'hba1c', 'magnesium', 't3', 't4', 'potassium', 'creatinine', 'sodium', 'tsh', 'ldl', 'inr', 'st2'];
+  
+  labKeys.forEach((key) => {
+    const test = labTests[key] || {};
+    const resVal = test.result ?? formData[`${key}_result`] ?? formData[key];
+    const dateVal = test.date ?? formData[`${key}_date`] ?? formData[`${key}Date`];
+
+    if (resVal && String(resVal).trim() !== '' && (!dateVal || String(dateVal).trim() === '')) {
+      errors[`${key}_date`] = `${key.toUpperCase()} Test Date is required when result value is entered.`;
+    }
+  });
+
+  // Biomarker Check: Allow EITHER BNP OR NT-proBNP (result + date)
+  const bnpTest = labTests.bnp || {};
+  const bnpRes = bnpTest.result ?? formData.bnp_result ?? formData.bnpResult;
+  const bnpDt = bnpTest.date ?? formData.bnp_date ?? formData.bnpDate;
+  const hasBnp = bnpRes && String(bnpRes).trim() !== '' && bnpDt && String(bnpDt).trim() !== '';
+
+  const ntProBnpTest = labTests.ntProBnp || labTests.nt_pro_bnp || {};
+  const ntRes = ntProBnpTest.result ?? formData.nt_pro_bnp_result ?? formData.ntProBnpResult;
+  const ntDt = ntProBnpTest.date ?? formData.nt_pro_bnp_date ?? formData.ntProBnpDate;
+  const hasNtProBnp = ntRes && String(ntRes).trim() !== '' && ntDt && String(ntDt).trim() !== '';
+
+  if (!hasBnp && !hasNtProBnp) {
+    errors.biomarker = 'Either BNP OR NT-proBNP (Result and Date) is required.';
+  }
+
+  // 4. MACE Conditional Validation Rules
+  if (isYes(formData.maceDeath) || isYes(formData.mace_death)) {
+    const deathDate = formData.maceDeathDate || formData.death_date;
+    if (!deathDate || String(deathDate).trim() === '') {
+      errors.maceDeathDate = 'MACE Death Date is required when MACE Death is checked.';
+    }
+  }
+
+  const isValid = Object.keys(errors).length === 0;
+  return {
+    isValid,
+    errors,
+    missingFields: Object.values(errors)
+  };
 };

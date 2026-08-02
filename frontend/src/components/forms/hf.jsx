@@ -10,6 +10,7 @@ import TextArea from './common/TextArea';
 import Select from './common/Select';
 import RadioGroup from './common/RadioGroup';
 import CheckboxGroup from './common/CheckboxGroup';
+import FormField from './common/FormField';
 import DrugTable from './common/DrugTable';
 import { validateField } from '../../utils/validation';
 
@@ -462,9 +463,9 @@ const hf = forwardRef(function hf(
     }
 
     if (fieldName === 'magnesium') {
-      const outOfBounds = val < 0.5 || val > 10.0;
+      const outOfBounds = val < 0.1 || val > 50.0;
       if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
-      if (val < 1.3 || val > 2.1) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
+      if (val < 1.3 || val > 2.1) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
       if (val >= 1.3 && val <= 1.4) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
@@ -502,17 +503,17 @@ const hf = forwardRef(function hf(
     }
 
     if (fieldName === 'bnp') {
-      const outOfBounds = val < 0 || val > 100;
+      const outOfBounds = val < 0 || val > 100000;
       if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
-      if (val > 400) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
+      if (val > 400) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
       if (val >= 100 && val <= 400) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'ntProBnp') {
-      const outOfBounds = val < 0 || val > 300;
+      const outOfBounds = val < 0 || val > 100000;
       if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
-      if (val > 900) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
+      if (val > 900) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
       if (val >= 300 && val <= 900) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
@@ -919,15 +920,13 @@ const hf = forwardRef(function hf(
 
     return (
       <div key={drug.label} className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 py-1 border-b border-slate-100/50 last:border-0 pl-2 pr-6" id={errorKey || undefined}>
-        <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap min-w-fit flex-shrink-0">
-          {drug.isOther && (
-            <input disabled={readOnly}
-              type="checkbox"
-              checked={drug.val === 'Yes'}
-              onChange={(e) => drug.set(e.target.checked ? 'Yes' : 'No')}
-              className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
-            />
-          )}
+        <label className="flex items-center gap-1.5 cursor-pointer whitespace-nowrap min-w-[140px] flex-shrink-0">
+          <input disabled={readOnly || (!drug.isOther)}
+            type="checkbox"
+            checked={drug.isOther ? drug.val === 'Yes' : true}
+            onChange={(e) => drug.isOther && drug.set(e.target.checked ? 'Yes' : 'No')}
+            className={`rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 ${drug.isOther ? 'cursor-pointer' : 'invisible'}`}
+          />
           <span className="font-semibold text-slate-700">{drug.label}</span>
         </label>
         <div className="flex flex-col items-end justify-center flex-1 ml-auto">
@@ -2922,92 +2921,58 @@ const hf = forwardRef(function hf(
       newErrors.labTests = 'Please enter result and date for at least one lab test';
     }
 
-    // BNP is mandatory
+    // Biomarker Check: Allow EITHER BNP OR NT-proBNP (Result and Date) to satisfy biomarker requirement
     const bnpRes = labTests.bnp?.result;
     const bnpDt = labTests.bnp?.date;
-    if (!bnpRes || String(bnpRes).trim() === '' || !bnpDt || String(bnpDt).trim() === '') {
-      newErrors.bnp = 'BNP Result and Date are required';
-    }
+    const hasBnp = bnpRes && String(bnpRes).trim() !== '' && bnpDt && String(bnpDt).trim() !== '';
 
-    ['potassium', 'creatinine', 'hb', 'calcium', 'bun', 'glucose', 'hba1c', 'magnesium', 'sodium', 'tsh', 't3', 't4', 'bnp', 'ntProBnp', 'ldl', 'inr', 'st2'].forEach(key => {
-      const valStr = labTests[key]?.result;
-      if (valStr !== undefined && valStr !== null && String(valStr).trim() !== '') {
-        const res = getClassification(key, valStr);
-        if (res.status === 'out') {
-          newErrors[key] = res.message;
-        }
-      }
-    });
+    const ntRes = labTests.ntProBnp?.result || labTests.nt_pro_bnp?.result;
+    const ntDt = labTests.ntProBnp?.date || labTests.nt_pro_bnp?.date;
+    const hasNtProBnp = ntRes && String(ntRes).trim() !== '' && ntDt && String(ntDt).trim() !== '';
+
+    if (!hasBnp && !hasNtProBnp) {
+      newErrors.bnp = 'Either BNP OR NT-proBNP (Result and Date) is required';
+    }
 
     // --- Section 6: Medical Therapy ---
     req(drugIntoleranceContraindications, 'drugIntoleranceContraindications');
     req(recommendedConsults, 'recommendedConsults');
 
-    // 1. Beta-Blocker
-    const hasBetaDose = [carvedilolDose, bisoprololDose, metoprololSuccinateDose, nebivololDose, betaBlockerOtherDose].some(d => d && String(d).trim() !== '');
+    // 1. Beta-Blocker Validation (strictly conditional on prescribed drug or contraindication)
+    const isBetaPrescribed = [carvedilol, bisoprolol, metoprololSuccinate, nebivolol, betaBlockerOther].some(c => c === 'Yes');
     const hasBetaContra = [betaNotUsedBradycardia, betaNotUsedHeartBlocks, betaNotUsedCopdAsthma, betaNotUsedHypotension, betaNotUsedOther].some(c => c === 'Yes');
-    
-    if (carvedilolDose && String(carvedilolDose).trim() !== '') checkLimits(carvedilolDose, 'carvedilol', 'carvedilolDose');
-    if (bisoprololDose && String(bisoprololDose).trim() !== '') checkLimits(bisoprololDose, 'bisoprolol', 'bisoprololDose');
-    if (metoprololSuccinateDose && String(metoprololSuccinateDose).trim() !== '') checkLimits(metoprololSuccinateDose, 'metoprolol', 'metoprololSuccinateDose');
-    if (nebivololDose && String(nebivololDose).trim() !== '') checkLimits(nebivololDose, 'nebivolol', 'nebivololDose');
+    if (!isBetaPrescribed && !hasBetaContra) {
+      newErrors.betaBlocker = 'Please enter a dose or select a contraindication';
+    } else if (isBetaPrescribed) {
+      if (bisoprolol === 'Yes' && (!bisoprololDose || String(bisoprololDose).trim() === '')) newErrors.bisoprololDose = 'Bisoprolol dose is required when prescribed';
+      if (metoprololSuccinate === 'Yes' && (!metoprololSuccinateDose || String(metoprololSuccinateDose).trim() === '')) newErrors.metoprololSuccinateDose = 'Metoprolol Succinate dose is required when prescribed';
+      if (nebivolol === 'Yes' && (!nebivololDose || String(nebivololDose).trim() === '')) newErrors.nebivololDose = 'Nebivolol dose is required when prescribed';
+      if (carvedilol === 'Yes' && (!carvedilolDose || String(carvedilolDose).trim() === '')) newErrors.carvedilolDose = 'Carvedilol dose is required when prescribed';
+    }
 
-    if (enalaprilDose && String(enalaprilDose).trim() !== '') checkLimits(enalaprilDose, 'enalapril', 'enalaprilDose');
-    if (ramiprilDose && String(ramiprilDose).trim() !== '') checkLimits(ramiprilDose, 'ramipril', 'ramiprilDose');
-    if (lisinoprilDose && String(lisinoprilDose).trim() !== '') checkLimits(lisinoprilDose, 'lisinopril', 'lisinoprilDose');
-    if (perindoprilDose && String(perindoprilDose).trim() !== '') checkLimits(perindoprilDose, 'perindopril', 'perindoprilDose');
-
-    if (valsartanDose && String(valsartanDose).trim() !== '') checkLimits(valsartanDose, 'valsartan', 'valsartanDose');
-    if (losartanDose && String(losartanDose).trim() !== '') checkLimits(losartanDose, 'losartan', 'losartanDose');
-    if (telmisartanDose && String(telmisartanDose).trim() !== '') checkLimits(telmisartanDose, 'telmisartan', 'telmisartanDose');
-    if (olmesartanDose && String(olmesartanDose).trim() !== '') checkLimits(olmesartanDose, 'olmesartan', 'olmesartanDose');
-
-    if (spironolactoneDose && String(spironolactoneDose).trim() !== '') checkLimits(spironolactoneDose, 'spironolactone', 'spironolactoneDose');
-    if (eplerenoneDose && String(eplerenoneDose).trim() !== '') checkLimits(eplerenoneDose, 'eplerenone', 'eplerenoneDose');
-
-    if (acitromDose && String(acitromDose).trim() !== '') checkLimits(acitromDose, 'acitrom', 'acitromDose');
-    if (ufhDose && String(ufhDose).trim() !== '') checkLimits(ufhDose, 'ufh', 'ufhDose');
-    if (lmwhDose && String(lmwhDose).trim() !== '') checkLimits(lmwhDose, 'lmwh', 'lmwhDose');
-
-    if (aspirinDose && String(aspirinDose).trim() !== '') checkLimits(aspirinDose, 'aspirin', 'aspirinDose');
-    if (clopidogrelDose && String(clopidogrelDose).trim() !== '') checkLimits(clopidogrelDose, 'clopidogrel', 'clopidogrelDose');
-    if (prasugrelDose && String(prasugrelDose).trim() !== '') checkLimits(prasugrelDose, 'prasugrel', 'prasugrelDose');
-    if (ticagrelorDose && String(ticagrelorDose).trim() !== '') checkLimits(ticagrelorDose, 'ticagrelor', 'ticagrelorDose');
-
-    if (amiodaroneDose && String(amiodaroneDose).trim() !== '') checkLimits(amiodaroneDose, 'amiodarone', 'amiodaroneDose');
-
-    if (furosemideDose && String(furosemideDose).trim() !== '') checkLimits(furosemideDose, 'furosemide', 'furosemideDose');
-    if (torsemideDose && String(torsemideDose).trim() !== '') checkLimits(torsemideDose, 'torsemide', 'torsemideDose');
-    if (metolazoneDose && String(metolazoneDose).trim() !== '') checkLimits(metolazoneDose, 'metolazone', 'metolazoneDose');
-
-    if (digoxinDose && String(digoxinDose).trim() !== '') checkLimits(digoxinDose, 'digoxin', 'digoxinDose');
-    if (ivabradineDose && String(ivabradineDose).trim() !== '') checkLimits(ivabradineDose, 'ivabradine', 'ivabradineDose');
-
-    if (atorvastatinDose && String(atorvastatinDose).trim() !== '') checkLimits(atorvastatinDose, 'atorvastatin', 'atorvastatinDose');
-    if (simvastatinDose && String(simvastatinDose).trim() !== '') checkLimits(simvastatinDose, 'simvastatin', 'simvastatinDose');
-    if (rosuvastatinDose && String(rosuvastatinDose).trim() !== '') checkLimits(rosuvastatinDose, 'rosuvastatin', 'rosuvastatinDose');
-
-    if (sulfonylureasDose && String(sulfonylureasDose).trim() !== '') checkLimits(sulfonylureasDose, 'sulfonylureas', 'sulfonylureasDose');
-    if (metforminDose && String(metforminDose).trim() !== '') checkLimits(metforminDose, 'metformin', 'metforminDose');
-    if (glitazoneDose && String(glitazoneDose).trim() !== '') checkLimits(glitazoneDose, 'glitazone', 'glitazoneDose');
-    if (gliptinDose && String(gliptinDose).trim() !== '') checkLimits(gliptinDose, 'gliptin', 'gliptinDose');
-    if (acarboseDerivativeDose && String(acarboseDerivativeDose).trim() !== '') checkLimits(acarboseDerivativeDose, 'acarbose', 'acarboseDerivativeDose');
-    if (humanInsulinDose && String(humanInsulinDose).trim() !== '') checkLimits(humanInsulinDose, 'insulin', 'humanInsulinDose');
-    if (syntheticInsulinDose && String(syntheticInsulinDose).trim() !== '') checkLimits(syntheticInsulinDose, 'insulin', 'syntheticInsulinDose');
-    if (antihypertensiveDose && String(antihypertensiveDose).trim() !== '') checkLimits(antihypertensiveDose, 'antihypertensive', 'antihypertensiveDose');
-    if (thyroxineDose && String(thyroxineDose).trim() !== '') checkLimits(thyroxineDose, 'thyroxine', 'thyroxineDose');
-
-    if (!hasBetaDose && !hasBetaContra) newErrors.betaBlocker = 'Please enter a dose or select a contraindication';
-
-    // 2. ACE Inhibitor
-    const hasAceDose = [enalaprilDose, ramiprilDose, lisinoprilDose, perindoprilDose, aceOtherDose].some(d => d && String(d).trim() !== '');
+    // 2. ACE Inhibitor Validation (strictly conditional)
+    const isAcePrescribed = [enalapril, ramipril, lisinopril, perindopril, aceOther].some(c => c === 'Yes');
     const hasAceContra = [aceNotUsedElevatedCreatinine, aceNotUsedHyperkalemia, aceNotUsedCough, aceNotUsedHypotension, aceNotUsedOther].some(c => c === 'Yes');
-    if (!hasAceDose && !hasAceContra) newErrors.aceInhibitor = 'Please enter a dose or select a contraindication';
+    if (!isAcePrescribed && !hasAceContra) {
+      newErrors.aceInhibitor = 'Please enter a dose or select a contraindication';
+    } else if (isAcePrescribed) {
+      if (ramipril === 'Yes' && (!ramiprilDose || String(ramiprilDose).trim() === '')) newErrors.ramiprilDose = 'Ramipril dose is required when prescribed';
+      if (perindopril === 'Yes' && (!perindoprilDose || String(perindoprilDose).trim() === '')) newErrors.perindoprilDose = 'Perindopril dose is required when prescribed';
+      if (enalapril === 'Yes' && (!enalaprilDose || String(enalaprilDose).trim() === '')) newErrors.enalaprilDose = 'Enalapril dose is required when prescribed';
+      if (lisinopril === 'Yes' && (!lisinoprilDose || String(lisinoprilDose).trim() === '')) newErrors.lisinoprilDose = 'Lisinopril dose is required when prescribed';
+    }
 
-    // 3. Angiotensin Receptor Blocker
-    const hasArbDose = [losartanDose, telmisartanDose, valsartanDose, olmesartanDose, arbOtherDose].some(d => d && String(d).trim() !== '');
+    // 3. ARB Validation (strictly conditional)
+    const isArbPrescribed = [losartan, telmisartan, valsartan, olmesartan, arbOther].some(c => c === 'Yes');
     const hasArbContra = [arbNotUsedElevatedCreatinine, arbNotUsedHyperkalemia, arbNotUsedHypotension, arbNotUsedOther].some(c => c === 'Yes');
-    if (!hasArbDose && !hasArbContra) newErrors.arb = 'Please enter a dose or select a contraindication';
+    if (!isArbPrescribed && !hasArbContra) {
+      newErrors.arb = 'Please enter a dose or select a contraindication';
+    } else if (isArbPrescribed) {
+      if (losartan === 'Yes' && (!losartanDose || String(losartanDose).trim() === '')) newErrors.losartanDose = 'Losartan dose is required when prescribed';
+      if (valsartan === 'Yes' && (!valsartanDose || String(valsartanDose).trim() === '')) newErrors.valsartanDose = 'Valsartan dose is required when prescribed';
+      if (telmisartan === 'Yes' && (!telmisartanDose || String(telmisartanDose).trim() === '')) newErrors.telmisartanDose = 'Telmisartan dose is required when prescribed';
+      if (olmesartan === 'Yes' && (!olmesartanDose || String(olmesartanDose).trim() === '')) newErrors.olmesartanDose = 'Olmesartan dose is required when prescribed';
+    }
 
     // 4. Aldosterone Antagonist
     const hasAldoDose = [spironolactoneDose, eplerenoneDose].some(d => d && String(d).trim() !== '');
@@ -4368,62 +4333,99 @@ const hf = forwardRef(function hf(
             </div>
             <div className="p-3 space-y-3">
               <div>
-                <CheckboxGroup readOnly={readOnly} id="comorbidities" label="Comorbidities" options={COMORBIDITIES_OPTIONS} values={comorbidities} onChange={setComorbidities} columns={3} required={true} error={formErrors.comorbidities} />
-                <div className="mt-2 pl-1 max-w-md space-y-1.5">
-                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
-                    <input 
-                      disabled={readOnly}
-                      type="checkbox"
-                      checked={hasOtherComorbidity}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setHasOtherComorbidity(checked);
-                        if (!checked) setOtherComorbidity('');
-                      }}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
-                    />
-                    <span>Others</span>
-                  </label>
-                  {hasOtherComorbidity && (
-                    <input 
-                      disabled={readOnly} 
-                      type="text" 
-                      placeholder="Specify other details..." 
-                      value={otherComorbidity} 
-                      onChange={(e) => setOtherComorbidity(e.target.value)} 
-                      className="w-full border border-slate-300 rounded p-1.5 text-xs bg-white text-slate-800 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none" 
-                    />
-                  )}
-                </div>
+                <FormField label="Comorbidities" id="comorbidities" required={true} error={formErrors.comorbidities}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {COMORBIDITIES_OPTIONS.map((opt) => (
+                      <label key={opt} className={`flex items-center gap-2 p-2.5 bg-white border ${formErrors.comorbidities ? 'border-red-500' : 'border-slate-200'} rounded-lg ${readOnly ? 'pointer-events-none' : 'cursor-pointer hover:border-slate-300'} form-option-label transition-colors`}>
+                        <input
+                          type="checkbox"
+                          checked={comorbidities.includes(opt)}
+                          onChange={() => {
+                            const updated = comorbidities.includes(opt) ? comorbidities.filter(x => x !== opt) : [...comorbidities, opt];
+                            setComorbidities(updated);
+                          }}
+                          className="shrink-0 accent-teal-600"
+                          disabled={readOnly}
+                        />
+                        <span className="text-xs text-slate-800 font-medium">{opt}</span>
+                      </label>
+                    ))}
+                    <div className="flex flex-col gap-1.5">
+                      <label className={`flex items-center gap-2 p-2.5 bg-white border border-slate-200 rounded-lg ${readOnly ? 'pointer-events-none' : 'cursor-pointer hover:border-slate-300'} form-option-label transition-colors`}>
+                        <input
+                          disabled={readOnly}
+                          type="checkbox"
+                          checked={hasOtherComorbidity}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setHasOtherComorbidity(checked);
+                            if (!checked) setOtherComorbidity('');
+                          }}
+                          className="shrink-0 accent-teal-600 cursor-pointer"
+                        />
+                        <span className="text-xs text-slate-800 font-medium">Others</span>
+                      </label>
+                      {hasOtherComorbidity && (
+                        <input
+                          disabled={readOnly}
+                          type="text"
+                          placeholder="Specify other comorbidity..."
+                          value={otherComorbidity}
+                          onChange={(e) => setOtherComorbidity(e.target.value)}
+                          className="w-full border border-slate-300 rounded p-1.5 text-xs bg-white text-slate-800 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </FormField>
               </div>
-              <div className="pt-2 border-t border-slate-100">
-                <CheckboxGroup readOnly={readOnly} label="Risk Factors" options={RISK_FACTOR_OPTIONS} values={riskFactors} onChange={setRiskFactors} columns={2} />
-                <div className="mt-2 pl-1 max-w-md space-y-1.5">
-                  <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
-                    <input 
-                      disabled={readOnly}
-                      type="checkbox"
-                      checked={hasOtherRiskFactor}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setHasOtherRiskFactor(checked);
-                        if (!checked) setOtherRiskFactor('');
-                      }}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
-                    />
-                    <span>Others</span>
-                  </label>
-                  {hasOtherRiskFactor && (
-                    <input 
-                      disabled={readOnly} 
-                      type="text" 
-                      placeholder="Specify other details..." 
-                      value={otherRiskFactor} 
-                      onChange={(e) => setOtherRiskFactor(e.target.value)} 
-                      className="w-full border border-slate-300 rounded p-1.5 text-xs bg-white text-slate-800 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none" 
-                    />
-                  )}
-                </div>
+
+              <div className="pt-3 border-t border-slate-100">
+                <FormField label="Risk Factors">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {RISK_FACTOR_OPTIONS.map((opt) => (
+                      <label key={opt} className={`flex items-center gap-2 p-2.5 bg-white border border-slate-200 rounded-lg ${readOnly ? 'pointer-events-none' : 'cursor-pointer hover:border-slate-300'} form-option-label transition-colors`}>
+                        <input
+                          type="checkbox"
+                          checked={riskFactors.includes(opt)}
+                          onChange={() => {
+                            const updated = riskFactors.includes(opt) ? riskFactors.filter(x => x !== opt) : [...riskFactors, opt];
+                            setRiskFactors(updated);
+                          }}
+                          className="shrink-0 accent-teal-600"
+                          disabled={readOnly}
+                        />
+                        <span className="text-xs text-slate-800 font-medium">{opt}</span>
+                      </label>
+                    ))}
+                    <div className="flex flex-col gap-1.5">
+                      <label className={`flex items-center gap-2 p-2.5 bg-white border border-slate-200 rounded-lg ${readOnly ? 'pointer-events-none' : 'cursor-pointer hover:border-slate-300'} form-option-label transition-colors`}>
+                        <input
+                          disabled={readOnly}
+                          type="checkbox"
+                          checked={hasOtherRiskFactor}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setHasOtherRiskFactor(checked);
+                            if (!checked) setOtherRiskFactor('');
+                          }}
+                          className="shrink-0 accent-teal-600 cursor-pointer"
+                        />
+                        <span className="text-xs text-slate-800 font-medium">Others</span>
+                      </label>
+                      {hasOtherRiskFactor && (
+                        <input
+                          disabled={readOnly}
+                          type="text"
+                          placeholder="Specify other risk factor..."
+                          value={otherRiskFactor}
+                          onChange={(e) => setOtherRiskFactor(e.target.value)}
+                          className="w-full border border-slate-300 rounded p-1.5 text-xs bg-white text-slate-800 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </FormField>
               </div>
             </div>
           </div>
@@ -5365,7 +5367,7 @@ const hf = forwardRef(function hf(
                   {angioStatus === 'Done' && (
                     <div className={`mt-1 flex flex-wrap gap-4 pl-5 bg-slate-50 p-2 rounded border ${formErrors.angioFinding ? 'border-red-500' : 'border-slate-200'}`}>
                       {['Normal', '1 vessel disease', '2 vessel disease', '3 vessel disease', 'LMCA'].map(f => (
-                        <label key={f} className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="angio_find" checked={angioFinding === f} onChange={() => setOriginalAngioFinding(f)} /> {f}</label>
+                        <label key={f} className="flex items-center gap-1 cursor-pointer"><input disabled={readOnly} type="radio" name="angio_find" checked={angioFinding === f} onChange={() => setAngioFinding(f)} /> {f}</label>
                       ))}
                       {formErrors.angioFinding && (
                         <span className="text-red-500 text-[10px] font-bold block w-full mt-1">{formErrors.angioFinding}</span>
