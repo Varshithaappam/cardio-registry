@@ -126,33 +126,34 @@ function normalizePatientInput(body = {}) {
 }
 
 function mapDatabaseError(error) {
-    if (!error || !error.code) {
+    if (!error || (!error.code && !error.number)) {
         return {
             status: 500,
             message: error?.message || "An unexpected error occurred."
         };
     }
 
-    switch (error.code) {
-        case "ER_TRUNCATED_WRONG_VALUE_FOR_FIELD":
-        case "WARN_DATA_TRUNCATED":
+    switch (error.number || error.code) {
+        case 245:
+        case 241:
             return {
                 status: 400,
                 message: `Invalid field value: ${error.sqlMessage || error.message}`
             };
-        case "ER_DUP_ENTRY":
+        case 2601:
+        case 2627:
             return {
                 status: 409,
                 message: "A patient with the same MR Number or IP Number already exists."
             };
-        case "ER_BAD_NULL_ERROR":
+        case 515:
             return {
                 status: 400,
                 message: `Missing required field: ${error.sqlMessage || error.message}`
             };
         case "ECONNREFUSED":
-        case "ER_ACCESS_DENIED_ERROR":
-        case "ER_BAD_DB_ERROR":
+        case "ELOGIN":
+        case "ESOCKET":
             return {
                 status: 503,
                 message: "Database connection failed. Please verify backend database settings."

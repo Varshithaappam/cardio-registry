@@ -1,96 +1,72 @@
 const db = require('../config/db');
 
-/**
- * Logs clinical actions to the audit table (hf_registry_audit).
- * Ensures foreign key constraints (fk_audit_hf_registry, fk_audit_users) are satisfied.
- */
+async function resolveAuditUserId(userId) {
+  const requestedUserId = userId ? Number(userId) : null;
+  if (requestedUserId && !Number.isNaN(requestedUserId)) {
+    const { recordset } = await db.query('SELECT [user_id] FROM [users] WHERE [user_id] = @userId;', { userId: requestedUserId });
+    if (recordset.length > 0) return requestedUserId;
+  }
+
+  const { recordset } = await db.query('SELECT TOP 1 [user_id] FROM [users] ORDER BY [user_id] ASC;');
+  return recordset[0]?.user_id || null;
+}
+
+async function writeAudit(targetDb, values, includeSnapshots) {
+  const snapshotColumns = includeSnapshots ? ', [previous_values], [new_values]' : '';
+  const snapshotParameters = includeSnapshots ? ', @previousValues, @newValues' : '';
+  return targetDb.query(`
+    INSERT INTO [hf_registry_audit] ([hf_id], [user_id], [action_type], [changed_fields]${snapshotColumns}, [timestamp])
+    VALUES (@hfId, @userId, @actionType, @changedFields${snapshotParameters}, SYSDATETIME());
+  `, values);
+}
+
 const logAudit = async (hfId, userId, action, previousData = null, newData = null) => {
   try {
-    if (!hfId || isNaN(Number(hfId))) {
-      console.warn(`[AuditLogger] Skipped logging: Invalid hf_id (${hfId})`);
-      return;
-    }
-
     const targetHfId = Number(hfId);
+    if (!targetHfId || Number.isNaN(targetHfId)) return;
 
-    // 1. Verify targetHfId exists in hf_registry table
-    const [hfRows] = await db.execute('SELECT hf_id FROM hf_registry WHERE hf_id = ?', [targetHfId]);
-    if (hfRows.length === 0) {
-      console.warn(`[AuditLogger] Skipped logging: hf_id ${targetHfId} does not exist in hf_registry.`);
-      return;
-    }
+    const { recordset: hfRows } = await db.query('SELECT [hf_id] FROM [hf_registry] WHERE [hf_id] = @hfId;', { hfId: targetHfId });
+    if (hfRows.length === 0) return;
 
-    // 2. Verify and resolve valid user_id to satisfy fk_audit_users constraint
-    let validUserId = userId ? Number(userId) : null;
-    if (validUserId && !isNaN(validUserId)) {
-      const [userRows] = await db.execute('SELECT user_id FROM users WHERE user_id = ?', [validUserId]);
-      if (userRows.length === 0) {
-        validUserId = null;
-      }
-    }
+    const validUserId = await resolveAuditUserId(userId);
+    if (!validUserId) return;
 
-    if (!validUserId) {
-      const [firstUserRows] = await db.execute('SELECT user_id FROM users ORDER BY user_id ASC LIMIT 1');
-      if (firstUserRows.length > 0) {
-        validUserId = firstUserRows[0].user_id;
-      } else {
-        console.warn('[AuditLogger] Skipped logging: No valid user accounts found in users table.');
-        return;
-      }
-    }
+    const values = {
+      hfId: targetHfId,
+      userId: validUserId,
+      actionType: action,
+      previousValues: previousData ? JSON.stringify(previousData) : null,
+      newValues: newData ? JSON.stringify(newData) : null,
+      changedFields: JSON.stringify({ previous: previousData, new: newData })
+    };
 
-    const prevStr = previousData ? (typeof previousData === 'object' ? JSON.stringify(previousData) : String(previousData)) : null;
-    const newStr = newData ? (typeof newData === 'object' ? JSON.stringify(newData) : String(newData)) : null;
-    const changedPayload = JSON.stringify({ previous: previousData, new: newData });
-
-    // 3. Insert into hf_registry_audit
     try {
-      const queryWithValues = `
-        INSERT INTO hf_registry_audit (hf_id, user_id, action_type, previous_values, new_values, changed_fields, timestamp)
-        VALUES (?, ?, ?, ?, ?, ?, NOW())
-      `;
-      await db.execute(queryWithValues, [targetHfId, validUserId, action, prevStr, newStr, changedPayload]);
-    } catch (colErr) {
-      const queryFallback = `
-        INSERT INTO hf_registry_audit (hf_id, user_id, action_type, changed_fields, timestamp)
-        VALUES (?, ?, ?, ?, NOW())
-      `;
-      await db.execute(queryFallback, [targetHfId, validUserId, action, changedPayload]);
+      await writeAudit(db, values, true);
+    } catch {
+      await writeAudit(db, values, false);
     }
-
-    console.log(`[AuditLogger] ✅ Logged ${action} for hf_id #${targetHfId} by user_id #${validUserId}`);
   } catch (error) {
-    console.error('[AuditLogger] ❌ Error writing audit log:', error);
+    console.error('[AuditLogger] Error writing audit log:', error.message);
   }
 };
 
 const logRegistryAction = async (dbConnection, { hf_id, user_id, action_type, changed_fields }) => {
-  const targetDb = (dbConnection && typeof dbConnection.execute === 'function') ? dbConnection : db;
+  const targetDb = dbConnection?.query ? dbConnection : db;
+  const details = typeof changed_fields === 'object' ? JSON.stringify(changed_fields) : String(changed_fields);
+  const values = {
+    hfId: Number(hf_id),
+    userId: Number(user_id) || 1,
+    actionType: action_type,
+    previousValues: null,
+    newValues: details,
+    changedFields: details
+  };
+
   try {
-    const targetHfId = Number(hf_id);
-    let validUserId = user_id ? Number(user_id) : 1;
-
-    const details = typeof changed_fields === 'object' ? JSON.stringify(changed_fields) : String(changed_fields);
-
-    try {
-      const queryWithValues = `
-        INSERT INTO hf_registry_audit (hf_id, user_id, action_type, new_values, changed_fields, timestamp)
-        VALUES (?, ?, ?, ?, ?, NOW())
-      `;
-      await targetDb.execute(queryWithValues, [targetHfId, validUserId, action_type, details, details]);
-    } catch {
-      const queryFallback = `
-        INSERT INTO hf_registry_audit (hf_id, user_id, action_type, changed_fields, timestamp)
-        VALUES (?, ?, ?, ?, NOW())
-      `;
-      await targetDb.execute(queryFallback, [targetHfId, validUserId, action_type, details]);
-    }
+    await writeAudit(targetDb, values, true);
   } catch (error) {
-    console.error('[AuditLogger] ❌ Error writing audit log:', error);
+    console.error('[AuditLogger] Error writing audit log:', error.message);
   }
 };
 
-module.exports = {
-  logAudit,
-  logRegistryAction
-};
+module.exports = { logAudit, logRegistryAction };

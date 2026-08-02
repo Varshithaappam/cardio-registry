@@ -67,9 +67,9 @@ router.post("/upload", (req, res) => {
 
         try {
             // Query DB to see how many documents already exist for this hf_id
-            const [countRows] = await db.execute(
-                "SELECT COUNT(*) AS count FROM hf_patient_documents WHERE hf_id = ?",
-                [hf_id]
+            const { recordset: countRows } = await db.query(
+                'SELECT COUNT(*) AS [count] FROM [hf_patient_documents] WHERE [hf_id] = @hfId;',
+                { hfId: hf_id }
             );
             const currentCount = countRows[0].count;
             const newFilesCount = req.files ? req.files.length : 0;
@@ -96,11 +96,11 @@ router.post("/upload", (req, res) => {
                 const notes = getParam(req.body.notes, i) || null;
                 const fileSizeKb = Math.round(file.size / 1024);
 
-                await db.execute(
+                await db.query(
                     `INSERT INTO hf_patient_documents 
                     (hf_id, care_mr_no, document_type, notes, original_file_name, file_path, mime_type, file_size_kb) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [hf_id, care_mr_no, docType, notes, file.originalname, file.filename, file.mimetype, fileSizeKb]
+                    VALUES (@hfId, @careMrNo, @documentType, @notes, @originalFileName, @filePath, @mimeType, @fileSizeKb);`,
+                    { hfId: hf_id, careMrNo: care_mr_no, documentType: docType, notes, originalFileName: file.originalname, filePath: file.filename, mimeType: file.mimetype, fileSizeKb }
                 );
             }
 
@@ -119,9 +119,9 @@ router.post("/upload", (req, res) => {
 router.get("/:hf_id", async (req, res) => {
     try {
         const hf_id = req.params.hf_id;
-        const [rows] = await db.execute(
-            "SELECT * FROM hf_patient_documents WHERE hf_id = ? ORDER BY uploaded_at DESC",
-            [hf_id]
+        const { recordset: rows } = await db.query(
+            'SELECT * FROM [hf_patient_documents] WHERE [hf_id] = @hfId ORDER BY [uploaded_at] DESC;',
+            { hfId: hf_id }
         );
         return res.status(200).json({ success: true, data: rows });
     } catch (error) {
@@ -134,9 +134,9 @@ router.get("/:hf_id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
     try {
         const id = req.params.id;
-        const [rows] = await db.execute(
-            "SELECT * FROM hf_patient_documents WHERE id = ?",
-            [id]
+        const { recordset: rows } = await db.query(
+            'SELECT * FROM [hf_patient_documents] WHERE [id] = @id;',
+            { id }
         );
 
         if (rows.length === 0) {
@@ -152,9 +152,9 @@ router.delete("/:id", async (req, res) => {
         }
 
         // Delete DB record
-        await db.execute(
-            "DELETE FROM hf_patient_documents WHERE id = ?",
-            [id]
+        await db.query(
+            'DELETE FROM [hf_patient_documents] WHERE [id] = @id;',
+            { id }
         );
 
         return res.status(200).json({ success: true, message: "Document deleted successfully." });

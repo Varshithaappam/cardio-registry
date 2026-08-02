@@ -35,7 +35,7 @@ async function saveHfAssessment(data, userId = 1) {
 
     const conn = await db.getConnection();
     try {
-        await conn.beginTransaction();
+        await conn.begin();
 
         let hf_id = null;
         let hf_registry_no = null;
@@ -44,9 +44,9 @@ async function saveHfAssessment(data, userId = 1) {
             hf_id = Number(data.id);
             
             // Retrieve the existing hf_registry_no from the database
-            const [regRows] = await conn.execute(
-                "SELECT hf_registry_no FROM hf_registry WHERE hf_id = ?",
-                [hf_id]
+            const { recordset: regRows } = await conn.query(
+                'SELECT [hf_registry_no] FROM [hf_registry] WHERE [hf_id] = @hfId;',
+                { hfId: hf_id }
             );
             if (regRows.length > 0) {
                 hf_registry_no = regRows[0].hf_registry_no;
@@ -68,7 +68,7 @@ async function saveHfAssessment(data, userId = 1) {
                 'hf_advanced_investigations'
             ];
             for (const table of childTables) {
-                await conn.execute(`DELETE FROM ${table} WHERE hf_id = ?`, [hf_id]);
+                await conn.query(`DELETE FROM [${table}] WHERE [hf_id] = @hfId;`, { hfId: hf_id });
             }
         } else {
             // 1. Insert hf_registry with a placeholder and then update it with the final number
@@ -77,16 +77,16 @@ async function saveHfAssessment(data, userId = 1) {
                 hf_registry_no: 'HF00000'
             });
             hf_registry_no = formatRegistryNumber(hf_id);
-            await conn.execute(
-                "UPDATE hf_registry SET hf_registry_no = ? WHERE hf_id = ?",
-                [hf_registry_no, hf_id]
+            await conn.query(
+                'UPDATE [hf_registry] SET [hf_registry_no] = @hfRegistryNo WHERE [hf_id] = @hfId;',
+                { hfRegistryNo: hf_registry_no, hfId: hf_id }
             );
 
             // Update pre-uploaded documents to final hf_id
             if (data.tempHfId) {
-                await conn.execute(
-                    "UPDATE hf_patient_documents SET hf_id = ? WHERE hf_id = ?",
-                    [hf_id, data.tempHfId]
+                await conn.query(
+                    'UPDATE [hf_patient_documents] SET [hf_id] = @hfId WHERE [hf_id] = @tempHfId;',
+                    { hfId: hf_id, tempHfId: data.tempHfId }
                 );
             }
         }
@@ -101,7 +101,7 @@ async function saveHfAssessment(data, userId = 1) {
         if ((!care_mr_no || care_mr_no === 'Unknown') && (data.patientId || data.patient_id)) {
             const pid = data.patientId || data.patient_id;
             try {
-                const [pRows] = await conn.execute("SELECT mr_no FROM patients WHERE patient_id = ?", [pid]);
+                const { recordset: pRows } = await conn.query('SELECT [mr_no] FROM [patients] WHERE [patient_id] = @patientId;', { patientId: pid });
                 if (pRows.length > 0 && pRows[0].mr_no) {
                     care_mr_no = pRows[0].mr_no;
                 }
@@ -527,28 +527,28 @@ async function getHfHistory(patientId) {
     const query = `
         SELECT hf_id, hf_registry_no, created_at, is_deleted, deleted_at, deleted_by,
                COALESCE(
-                   (SELECT assessment_date FROM hf_initial_assessment WHERE hf_initial_assessment.hf_id = hf_registry.hf_id LIMIT 1),
-                   (SELECT assessment_date FROM hf_administrative WHERE hf_administrative.hf_id = hf_registry.hf_id LIMIT 1)
+                   (SELECT TOP 1 assessment_date FROM hf_initial_assessment WHERE hf_initial_assessment.hf_id = hf_registry.hf_id),
+                   (SELECT TOP 1 assessment_date FROM hf_administrative WHERE hf_administrative.hf_id = hf_registry.hf_id)
                ) as assessment_date
         FROM hf_registry
-        WHERE patient_id = ?
+        WHERE patient_id = @patientId
         ORDER BY created_at DESC
     `;
-    const [rows] = await db.execute(query, [patientId]);
-    return rows;
+    const { recordset } = await db.query(query, { patientId });
+    return recordset;
 }
 
 async function getHfAssessment(hf_id) {
     const conn = await db.getConnection();
     try {
-        const [registries] = await conn.execute("SELECT * FROM hf_registry WHERE hf_id = ?", [hf_id]);
+        const { recordset: registries } = await conn.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @hfId;', { hfId: hf_id });
         if (registries.length === 0) return null;
         const registry = registries[0];
 
         let deleted_by_user = null;
         if (registry.deleted_by) {
             try {
-                const [uRows] = await conn.execute("SELECT username, email FROM users WHERE user_id = ?", [registry.deleted_by]);
+                const { recordset: uRows } = await conn.query('SELECT [username], [email] FROM [users] WHERE [user_id] = @userId;', { userId: registry.deleted_by });
                 if (uRows.length > 0) {
                     deleted_by_user = uRows[0].username || uRows[0].email;
                 }
@@ -557,18 +557,9 @@ async function getHfAssessment(hf_id) {
             }
         }
 
-        const [adminRows] = await conn.execute("SELECT * FROM hf_administrative WHERE hf_id = ?", [hf_id]);
-        const [initialRows] = await conn.execute("SELECT * FROM hf_initial_assessment WHERE hf_id = ?", [hf_id]);
-        const [finalRows] = await conn.execute("SELECT * FROM hf_final_clinical_assessment WHERE hf_id = ?", [hf_id]);
-        const [part1Rows] = await conn.execute("SELECT * FROM hf_medical_therapy_part1 WHERE hf_id = ?", [hf_id]);
-        const [part2Rows] = await conn.execute("SELECT * FROM hf_medical_therapy_part2 WHERE hf_id = ?", [hf_id]);
-        const [part3Rows] = await conn.execute("SELECT * FROM hf_medical_therapy_part3 WHERE hf_id = ?", [hf_id]);
-        const [deviceRows] = await conn.execute("SELECT * FROM hf_device_therapy WHERE hf_id = ?", [hf_id]);
-        const [educationRows] = await conn.execute("SELECT * FROM hf_patient_education WHERE hf_id = ?", [hf_id]);
-        const [recommendationRows] = await conn.execute("SELECT * FROM hf_recommendations WHERE hf_id = ?", [hf_id]);
-        const [labRows] = await conn.execute("SELECT * FROM hf_lab_tests WHERE hf_id = ?", [hf_id]);
-        const [cardiacRows] = await conn.execute("SELECT * FROM hf_cardiac_investigations WHERE hf_id = ?", [hf_id]);
-        const [advancedRows] = await conn.execute("SELECT * FROM hf_advanced_investigations WHERE hf_id = ?", [hf_id]);
+        const tables = ['hf_administrative', 'hf_initial_assessment', 'hf_final_clinical_assessment', 'hf_medical_therapy_part1', 'hf_medical_therapy_part2', 'hf_medical_therapy_part3', 'hf_device_therapy', 'hf_patient_education', 'hf_recommendations', 'hf_lab_tests', 'hf_cardiac_investigations', 'hf_advanced_investigations'];
+        const detailResults = await Promise.all(tables.map((table) => conn.query(`SELECT * FROM [${table}] WHERE [hf_id] = @hfId;`, { hfId: hf_id })));
+        const [adminRows, initialRows, finalRows, part1Rows, part2Rows, part3Rows, deviceRows, educationRows, recommendationRows, labRows, cardiacRows, advancedRows] = detailResults.map((result) => result.recordset);
 
         const admin = adminRows[0] || {};
         const initial = initialRows[0] || {};

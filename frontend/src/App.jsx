@@ -365,11 +365,13 @@ export default function App() {
         <Route
           path="/login"
           element={
-            <NurseLogin
-              onLoginSuccess={(userData) => {
-                setNurse(userData);
-              }}
-            />
+            nurse ? <Navigate to="/dashboard" replace /> : (
+              <NurseLogin
+                onLoginSuccess={(userData) => {
+                  setNurse(userData);
+                }}
+              />
+            )
           }
         />
 

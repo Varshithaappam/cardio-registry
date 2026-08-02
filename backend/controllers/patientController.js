@@ -121,7 +121,7 @@ async function deletePatient(req, res) {
         const userId = req.user?.id || req.user?.userId || 1;
         const result = await patientService.deletePatient(patientId, userId);
 
-        if (result.affectedRows === 0) {
+        if ((result.rowsAffected?.[0] || 0) === 0) {
             return res.status(404).json({
                 success: false,
                 message: "Patient not found."

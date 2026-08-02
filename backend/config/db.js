@@ -1,70 +1,123 @@
-const mysql = require("mysql2/promise");
-require("dotenv").config();
+const sql = require('mssql/msnodesqlv8');
+require('dotenv').config();
 
-const pool = mysql.createPool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+const authMode = (process.env.DB_AUTH_MODE || 'windows').toLowerCase();
+const configuredServer = process.env.DB_SERVER;
+const database = process.env.DB_DATABASE || 'care';
 
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
+if (!configuredServer) {
+  throw new Error('DB_SERVER is required for the SQL Server connection.');
+}
 
-    timezone: "+05:30"
-});
+const [server, instanceName] = configuredServer.split('\\', 2);
 
-// Test Database Connection & Ensure Audit Table Schema Columns
-(async () => {
-    try {
-        const connection = await pool.getConnection();
-        console.log("✅ MySQL Database Connected Successfully");
+const config = {
+  server,
+  database,
+  driver: authMode === 'windows' ? (process.env.DB_ODBC_DRIVER || 'ODBC Driver 18 for SQL Server') : undefined,
+  pool: { max: 10, min: 0, idleTimeoutMillis: 30000 },
+  options: {
+    trustedConnection: authMode === 'windows',
+    encrypt: process.env.DB_ENCRYPT === 'true',
+    trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE !== 'false',
+    instanceName: instanceName || undefined
+  }
+};
 
-        // Dynamically add previous_values and new_values columns to hf_registry_audit if not present
-        try {
-            await connection.execute(`
-                ALTER TABLE hf_registry_audit 
-                ADD COLUMN previous_values TEXT NULL,
-                ADD COLUMN new_values TEXT NULL
-            `);
-            console.log("✅ Added previous_values and new_values columns to hf_registry_audit");
-        } catch (err) {
-            // Ignore if columns already exist
-        }
+if (authMode !== 'windows') {
+  config.user = process.env.DB_USER;
+  config.password = process.env.DB_PASSWORD;
+}
 
-        // Dynamically add soft delete columns to hf_registry if not present
-        try {
-            await connection.execute(`
-                ALTER TABLE hf_registry 
-                ADD COLUMN is_deleted TINYINT(1) DEFAULT 0 NOT NULL,
-                ADD COLUMN deleted_at TIMESTAMP NULL DEFAULT NULL,
-                ADD COLUMN deleted_by INT NULL DEFAULT NULL
-            `);
-            console.log("✅ Added soft-delete columns (is_deleted, deleted_at, deleted_by) to hf_registry");
-        } catch (err) {
-            // Ignore if columns already exist
-        }
+let poolPromise;
 
-        // Auto-fix any 'Unknown' or NULL care_mr_no entries in hf_administrative from patients table
-        try {
-            await connection.execute(`
-                UPDATE hf_administrative a
-                JOIN hf_registry hf ON a.hf_id = hf.hf_id
-                JOIN patients p ON hf.patient_id = p.patient_id
-                SET a.care_mr_no = p.mr_no
-                WHERE a.care_mr_no = 'Unknown' OR a.care_mr_no IS NULL
-            `);
-            console.log("✅ Auto-corrected care_mr_no values in hf_administrative from patients table");
-        } catch (err) {
-            // Ignore if query fails
-        }
+function getPool() {
+  if (!poolPromise) {
+    poolPromise = new sql.ConnectionPool(config).connect().catch((error) => {
+      poolPromise = undefined;
+      throw error;
+    });
+  }
+  return poolPromise;
+}
 
-        connection.release();
-    } catch (error) {
-        console.error("❌ MySQL Connection Failed");
-        console.error(error.message);
+function quoteIdentifier(identifier) {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(identifier)) {
+    throw new Error(`Invalid SQL identifier: ${identifier}`);
+  }
+  return `[${identifier}]`;
+}
+
+function addParameters(request, parameters = {}) {
+  Object.entries(parameters).forEach(([name, value]) => {
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
+      throw new Error(`Invalid SQL parameter name: ${name}`);
     }
-})();
+    request.input(name, value === undefined ? null : value);
+  });
+  return request;
+}
 
-module.exports = pool;
+async function query(statement, parameters = {}, transaction) {
+  const pool = transaction ? null : await getPool();
+  const request = transaction ? new sql.Request(transaction) : pool.request();
+  return addParameters(request, parameters).query(statement);
+}
+
+async function insert(connection, table, data, identityColumn) {
+  const keys = Object.keys(data);
+  if (keys.length === 0) throw new Error(`Cannot insert an empty row into ${table}.`);
+
+  const fields = keys.map(quoteIdentifier).join(', ');
+  const values = keys.map((key) => `@${key}`).join(', ');
+  const output = identityColumn ? ` OUTPUT INSERTED.${quoteIdentifier(identityColumn)}` : '';
+  const parameters = Object.fromEntries(keys.map((key) => [key, data[key] === undefined ? null : data[key]]));
+  const statement = `INSERT INTO ${quoteIdentifier(table)} (${fields})${output} VALUES (${values});`;
+  return connection?.query ? connection.query(statement, parameters) : query(statement, parameters);
+}
+
+async function getConnection() {
+  const transaction = new sql.Transaction(await getPool());
+  let started = false;
+
+  return {
+    async begin() {
+      await transaction.begin(sql.ISOLATION_LEVEL.READ_COMMITTED);
+      started = true;
+    },
+    query(statement, parameters = {}) {
+      return query(statement, parameters, started ? transaction : undefined);
+    },
+    async commit() {
+      if (started) {
+        await transaction.commit();
+        started = false;
+      }
+    },
+    async rollback() {
+      if (started) {
+        await transaction.rollback();
+        started = false;
+      }
+    },
+    release() {}
+  };
+}
+
+async function healthCheck() {
+  try {
+    const result = await query('SELECT 1 AS ok;');
+    if (result.recordset?.[0]?.ok !== 1) throw new Error('SQL Server health check returned an unexpected result.');
+    console.log('✅ SQL Server Database Connected Successfully');
+    return result.recordset[0];
+  } catch (error) {
+    console.error('❌ SQL Server Connection Failed');
+    console.error(`Server: ${configuredServer}`);
+    console.error(`Database: ${database}`);
+    console.error(`Authentication mode: ${authMode}`);
+    console.error(`Reason: ${error.message}`);
+    throw error;
+  }
+}
+
+module.exports = { sql, getPool, getConnection, query, insert, healthCheck };

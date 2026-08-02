@@ -6,9 +6,6 @@ require("dotenv").config();
 // Initialize Express App
 const app = express();
 
-// Initialize Database Connection
-require("./config/db");
-
 // Import Routes
 const patientRoutes = require("./routes/patientRoutes");
 const hfRoutes = require("./routes/hfRoutes");

@@ -38,7 +38,7 @@ async function registerPatient(patientData, userId = 1) {
         ip_no: null
     });
 
-    const patientId = result.insertId;
+    const patientId = result.recordset[0].patient_id;
     const mr_no = generateMRNumber(patientId);
     const ip_no = generateIPNumber(patientId);
 
@@ -51,7 +51,7 @@ async function registerPatient(patientData, userId = 1) {
     const registeredPatient = await patientModel.getPatientById(patientId);
 
     try {
-        const [regRows] = await db.execute("SELECT hf_id FROM hf_registry WHERE patient_id = ?", [patientId]);
+        const { recordset: regRows } = await db.query('SELECT [hf_id] FROM [hf_registry] WHERE [patient_id] = @patientId;', { patientId });
         for (const reg of regRows) {
             await logAudit(reg.hf_id, userId, 'CREATE', null, registeredPatient);
         }
@@ -91,7 +91,7 @@ async function updatePatient(patientId, patientData, userId = 1) {
     const updatedPatient = await patientModel.getPatientById(patientId);
 
     try {
-        const [regRows] = await db.execute("SELECT hf_id FROM hf_registry WHERE patient_id = ?", [patientId]);
+        const { recordset: regRows } = await db.query('SELECT [hf_id] FROM [hf_registry] WHERE [patient_id] = @patientId;', { patientId });
         for (const reg of regRows) {
             await logAudit(reg.hf_id, userId, 'UPDATE', previousPatient, updatedPatient);
         }
@@ -109,7 +109,7 @@ async function deletePatient(patientId, userId = 1) {
     console.log(`Deleting patient_id=${patientId}`);
     const previousPatient = await patientModel.getPatientById(patientId);
     try {
-        const [regRows] = await db.execute("SELECT hf_id FROM hf_registry WHERE patient_id = ?", [patientId]);
+        const { recordset: regRows } = await db.query('SELECT [hf_id] FROM [hf_registry] WHERE [patient_id] = @patientId;', { patientId });
         for (const reg of regRows) {
             await logAudit(reg.hf_id, userId, 'DELETE', previousPatient, null);
         }

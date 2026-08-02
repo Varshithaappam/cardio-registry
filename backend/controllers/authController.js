@@ -1,4 +1,4 @@
-const db = require('../config/db'); // MySQL db connection pool
+const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -10,49 +10,89 @@ const login = async (req, res) => {
   }
 
   try {
-    // Retrieve active user by username or email joining roles
-    const [rows] = await db.execute(
-      `SELECT u.user_id, u.username, u.email, u.password_hash, u.is_active, r.role_name 
-       FROM users u
-       JOIN roles r ON u.role_id = r.role_id
-       WHERE (u.username = ? OR u.email = ?) AND u.is_active = 1`,
-      [username, username]
-    );
+  const { recordset: rows } = await db.query(
+    `SELECT
+        u.user_id,
+        u.username,
+        u.email,
+        u.password_hash,
+        u.is_active,
+        r.role_name
+     FROM [users] u
+     JOIN [roles] r ON u.role_id = r.role_id
+     WHERE (u.username = @username OR u.email = @username)
+       AND u.is_active = 1;`,
+    { username }
+  );
 
-    if (rows.length === 0) {
-      return res.status(401).json({ message: 'Invalid clinical credentials or inactive account.' });
-    }
+  console.log('LOGIN USERNAME:', username);
+  console.log('ROWS FOUND:', rows.length);
 
-    const user = rows[0];
+  if (rows.length === 0) {
+    console.log('LOGIN FAILED: user not found or inactive');
 
-    // Verify password match
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid clinical credentials or inactive account.' });
-    }
-
-    // Sign the JWT token
-    const secret = process.env.JWT_SECRET || 'cardio_registry_secret_key_2026';
-    const token = jwt.sign(
-      { id: user.user_id, userId: user.user_id, username: user.username, role: user.role_name },
-      secret,
-      { expiresIn: '8h' }
-    );
-
-    return res.json({
-      message: 'Login successful',
-      token,
-      user: {
-        id: user.user_id,
-        username: user.username,
-        email: user.email,
-        role: user.role_name
-      }
+    return res.status(401).json({
+      message: 'Invalid clinical credentials or inactive account.'
     });
-  } catch (error) {
-    console.error('Login error:', error);
-    return res.status(500).json({ message: 'Internal server error.' });
   }
+
+  const user = rows[0];
+
+  console.log('DB USERNAME:', user.username);
+  console.log('IS ACTIVE:', user.is_active);
+  console.log('ROLE:', user.role_name);
+  console.log('HASH EXISTS:', Boolean(user.password_hash));
+  console.log('HASH LENGTH:', user.password_hash?.length);
+
+  const isMatch = await bcrypt.compare(
+    password,
+    String(user.password_hash).trim()
+  );
+
+  console.log('PASSWORD MATCH:', isMatch);
+
+  if (!isMatch) {
+    console.log('LOGIN FAILED: password mismatch');
+
+    return res.status(401).json({
+      message: 'Invalid clinical credentials or inactive account.'
+    });
+  }
+
+  const secret =
+    process.env.JWT_SECRET ||
+    'cardio_registry_secret_key_2026';
+
+  const token = jwt.sign(
+    {
+      id: user.user_id,
+      userId: user.user_id,
+      username: user.username,
+      role: user.role_name
+    },
+    secret,
+    { expiresIn: '8h' }
+  );
+
+  console.log('LOGIN SUCCESS:', user.username);
+
+  return res.json({
+    message: 'Login successful',
+    token,
+    user: {
+      id: user.user_id,
+      username: user.username,
+      email: user.email,
+      role: user.role_name
+    }
+  });
+} catch (error) {
+  console.error('Login error:', error);
+
+  return res.status(500).json({
+    message: 'Internal server error.'
+  });
+}
 };
 
 module.exports = { login };

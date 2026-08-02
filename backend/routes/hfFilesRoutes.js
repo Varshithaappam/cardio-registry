@@ -16,9 +16,9 @@ router.put("/:id", async (req, res) => {
 
     try {
         // 1. Verify record exists and is not deleted
-        const [rows] = await db.execute(
-            "SELECT id, facility_code, facility_name FROM hf_files WHERE id = ? AND deleted_at IS NULL",
-            [id]
+        const { recordset: rows } = await db.query(
+            'SELECT [id], [facility_code], [facility_name] FROM [hf_files] WHERE [id] = @id AND [deleted_at] IS NULL;',
+            { id }
         );
 
         if (rows.length === 0) {
@@ -34,9 +34,9 @@ router.put("/:id", async (req, res) => {
         };
 
         // 2. Update record
-        await db.execute(
-            "UPDATE hf_files SET facility_code = ?, facility_name = ? WHERE id = ?",
-            [facility_code, facility_name, id]
+        await db.query(
+            'UPDATE [hf_files] SET [facility_code] = @facilityCode, [facility_name] = @facilityName WHERE [id] = @id;',
+            { facilityCode: facility_code, facilityName: facility_name, id }
         );
 
         // 3. Insert audit log
@@ -45,10 +45,10 @@ router.put("/:id", async (req, res) => {
         const ipAddress = req.ip || req.connection.remoteAddress || "127.0.0.1";
         const changedBy = req.user?.id || 1; // Default to 1 as specified
 
-        await db.execute(
+        await db.query(
             `INSERT INTO hf_files_audit (file_id, action, changed_by, changed_fields, ip_address) 
-             VALUES (?, ?, ?, ?, ?)`,
-            [id, "EDIT", changedBy, changedFieldsJson, ipAddress]
+             VALUES (@fileId, @action, @changedBy, @changedFields, @ipAddress);`,
+            { fileId: id, action: 'EDIT', changedBy, changedFields: changedFieldsJson, ipAddress }
         );
 
         return res.status(200).json({

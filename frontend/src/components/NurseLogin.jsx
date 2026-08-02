@@ -85,7 +85,7 @@ export default function NurseLogin({ onLogin, onLoginSuccess }) {
     try {
       // Send POST request to /api/auth/login via central Axios instance
       const response = await api.post('/auth/login', {
-        username: targetUsername,
+        username: selectedNurse === 'custom' ? username.trim() : targetUsername,
         password: targetPassword
       });
 

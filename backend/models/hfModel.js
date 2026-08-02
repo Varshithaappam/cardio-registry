@@ -1,14 +1,20 @@
 const db = require("../config/db");
 
-// Helpers to execute inserts using a connection (to participate in transaction)
+// Helpers to execute parameterized inserts using a SQL Server transaction.
+
+function insertRow(conn, table, data, keys) {
+    const row = Object.fromEntries(keys.map((key) => [key, data[key] === undefined ? null : data[key]]));
+    return db.insert(conn, table, row);
+}
 
 async function insertHfRegistry(conn, { patient_id, hf_registry_no, created_by, updated_by }) {
-    const query = `
-        INSERT INTO hf_registry (patient_id, hf_registry_no, created_by, updated_by)
-        VALUES (?, ?, ?, ?)
-    `;
-    const [result] = await conn.execute(query, [patient_id, hf_registry_no, created_by || null, updated_by || null]);
-    return result.insertId;
+    const result = await db.insert(conn, 'hf_registry', {
+        patient_id,
+        hf_registry_no,
+        created_by: created_by || null,
+        updated_by: updated_by || null
+    }, 'hf_id');
+    return result.recordset[0].hf_id;
 }
 
 async function insertHfAdministrative(conn, data) {
@@ -21,14 +27,7 @@ async function insertHfAdministrative(conn, data) {
         'renal_failure', 'anaemia', 'medication_non_adherence', 'excessive_salt_intake', 'excessive_water_ingestion',
         'progressive_worsening', 'precipitating_other', 'other_admission_reason', 'hospitalization_days'
     ];
-    const placeholders = keys.map(() => '?').join(', ');
-    const query = `
-        INSERT INTO hf_administrative (${keys.join(', ')})
-        VALUES (${placeholders})
-    `;
-    const values = keys.map(k => data[k] === undefined ? null : data[k]);
-    const [result] = await conn.execute(query, values);
-    return result;
+    return insertRow(conn, 'hf_administrative', data, keys);
 }
 
 async function insertHfInitialAssessment(conn, data) {
@@ -47,14 +46,7 @@ async function insertHfInitialAssessment(conn, data) {
         'peripheral_edema', 'ascites', 'rales', 'jugular_venous_pressure', 'hepatomegaly',
         'clinical_sign_other', 'clinical_sign_other_details'
     ];
-    const placeholders = keys.map(() => '?').join(', ');
-    const query = `
-        INSERT INTO hf_initial_assessment (${keys.join(', ')})
-        VALUES (${placeholders})
-    `;
-    const values = keys.map(k => data[k] === undefined ? null : data[k]);
-    const [result] = await conn.execute(query, values);
-    return result;
+    return insertRow(conn, 'hf_initial_assessment', data, keys);
 }
 
 async function insertHfFinalClinicalAssessment(conn, data) {
@@ -74,14 +66,7 @@ async function insertHfFinalClinicalAssessment(conn, data) {
         'mace_major_procedure', 'mace_other', 'mace_other_details', 'mace_death', 'death_date',
         'death_home', 'death_hospital', 'death_reason', 'hosp_note', 'stroke_note', 'bleed_note', 'arrhythmia_note', 'procedure_note', 'other_note', 'death_note'
     ];
-    const placeholders = keys.map(() => '?').join(', ');
-    const query = `
-        INSERT INTO hf_final_clinical_assessment (${keys.join(', ')})
-        VALUES (${placeholders})
-    `;
-    const values = keys.map(k => data[k] === undefined ? null : data[k]);
-    const [result] = await conn.execute(query, values);
-    return result;
+    return insertRow(conn, 'hf_final_clinical_assessment', data, keys);
 }
 
 async function insertHfMedicalTherapyPart1(conn, data) {
@@ -100,14 +85,7 @@ async function insertHfMedicalTherapyPart1(conn, data) {
         'eplerenone', 'eplerenone_dose', 'aldosterone_not_used_hyperkalemia', 'aldosterone_not_used_hyponatremia', 'aldosterone_not_used_elevated_creatinine',
         'aldosterone_not_used_other', 'aldosterone_not_used_other_reason'
     ];
-    const placeholders = keys.map(() => '?').join(', ');
-    const query = `
-        INSERT INTO hf_medical_therapy_part1 (${keys.join(', ')})
-        VALUES (${placeholders})
-    `;
-    const values = keys.map(k => data[k] === undefined ? null : data[k]);
-    const [result] = await conn.execute(query, values);
-    return result;
+    return insertRow(conn, 'hf_medical_therapy_part1', data, keys);
 }
 
 async function insertHfMedicalTherapyPart2(conn, data) {
@@ -124,14 +102,7 @@ async function insertHfMedicalTherapyPart2(conn, data) {
         'diuretic_other_name', 'diuretic_other_dose', 'diuretic_not_used_hyponatremia', 'diuretic_not_used_hypokalemia', 'diuretic_not_used_worsening_renal_failure',
         'diuretic_not_used_hypotension', 'diuretic_not_used_other', 'diuretic_not_used_other_reason'
     ];
-    const placeholders = keys.map(() => '?').join(', ');
-    const query = `
-        INSERT INTO hf_medical_therapy_part2 (${keys.join(', ')})
-        VALUES (${placeholders})
-    `;
-    const values = keys.map(k => data[k] === undefined ? null : data[k]);
-    const [result] = await conn.execute(query, values);
-    return result;
+    return insertRow(conn, 'hf_medical_therapy_part2', data, keys);
 }
 
 async function insertHfMedicalTherapyPart3(conn, data) {
@@ -146,14 +117,7 @@ async function insertHfMedicalTherapyPart3(conn, data) {
         'other_medication_2_name', 'other_medication_2_dose', 'other_medication_3', 'other_medication_3_name', 'other_medication_3_dose',
         'other_medication_4', 'other_medication_4_name', 'other_medication_4_dose'
     ];
-    const placeholders = keys.map(() => '?').join(', ');
-    const query = `
-        INSERT INTO hf_medical_therapy_part3 (${keys.join(', ')})
-        VALUES (${placeholders})
-    `;
-    const values = keys.map(k => data[k] === undefined ? null : data[k]);
-    const [result] = await conn.execute(query, values);
-    return result;
+    return insertRow(conn, 'hf_medical_therapy_part3', data, keys);
 }
 
 async function insertHfDeviceTherapy(conn, data) {
@@ -168,14 +132,7 @@ async function insertHfDeviceTherapy(conn, data) {
         'atp_success_most_times', 'atp_success_sometimes', 'atp_success_not_successful', 'biv_pacing_percent', 'afib_burden',
         'nsvt_episodes', 'svt_episodes', 'device_volume_alert', 'notes'
     ];
-    const placeholders = keys.map(() => '?').join(', ');
-    const query = `
-        INSERT INTO hf_device_therapy (${keys.join(', ')})
-        VALUES (${placeholders})
-    `;
-    const values = keys.map(k => data[k] === undefined ? null : data[k]);
-    const [result] = await conn.execute(query, values);
-    return result;
+    return insertRow(conn, 'hf_device_therapy', data, keys);
 }
 
 async function insertHfPatientEducation(conn, data) {
@@ -184,14 +141,7 @@ async function insertHfPatientEducation(conn, data) {
         'smoking_cessation', 'alcohol_cessation', 'medication_compliance', 'worsened_symptoms_education', 'device_therapy_education',
         'education_other', 'education_other_details'
     ];
-    const placeholders = keys.map(() => '?').join(', ');
-    const query = `
-        INSERT INTO hf_patient_education (${keys.join(', ')})
-        VALUES (${placeholders})
-    `;
-    const values = keys.map(k => data[k] === undefined ? null : data[k]);
-    const [result] = await conn.execute(query, values);
-    return result;
+    return insertRow(conn, 'hf_patient_education', data, keys);
 }
 
 async function insertHfRecommendations(conn, data) {
@@ -201,14 +151,7 @@ async function insertHfRecommendations(conn, data) {
         'stress_management_details', 'drugs', 'drugs_details', 'investigations', 'investigations_details',
         'procedures', 'procedures_details', 'other_recommendation', 'other_recommendation_details'
     ];
-    const placeholders = keys.map(() => '?').join(', ');
-    const query = `
-        INSERT INTO hf_recommendations (${keys.join(', ')})
-        VALUES (${placeholders})
-    `;
-    const values = keys.map(k => data[k] === undefined ? null : data[k]);
-    const [result] = await conn.execute(query, values);
-    return result;
+    return insertRow(conn, 'hf_recommendations', data, keys);
 }
 
 async function insertHfLabTests(conn, data) {
@@ -223,14 +166,7 @@ async function insertHfLabTests(conn, data) {
         'ldl_date', 'inr_result', 'inr_date', 'st2_result', 'st2_date',
         'other_lab_test_name', 'other_lab_test_result', 'other_lab_test_date'
     ];
-    const placeholders = keys.map(() => '?').join(', ');
-    const query = `
-        INSERT INTO hf_lab_tests (${keys.join(', ')})
-        VALUES (${placeholders})
-    `;
-    const values = keys.map(k => data[k] === undefined ? null : data[k]);
-    const [result] = await conn.execute(query, values);
-    return result;
+    return insertRow(conn, 'hf_lab_tests', data, keys);
 }
 
 async function insertHfCardiacInvestigations(conn, data) {
@@ -247,14 +183,7 @@ async function insertHfCardiacInvestigations(conn, data) {
         'rv_systolic_pressure', 'rv_function_normal', 'rv_function_impaired', 'rwmi_none', 'rwmi_global',
         'rwmi_anterior', 'rwmi_lateral', 'rwmi_inferior'
     ];
-    const placeholders = keys.map(() => '?').join(', ');
-    const query = `
-        INSERT INTO hf_cardiac_investigations (${keys.join(', ')})
-        VALUES (${placeholders})
-    `;
-    const values = keys.map(k => data[k] === undefined ? null : data[k]);
-    const [result] = await conn.execute(query, values);
-    return result;
+    return insertRow(conn, 'hf_cardiac_investigations', data, keys);
 }
 
 async function insertHfAdvancedInvestigations(conn, data) {
@@ -269,14 +198,7 @@ async function insertHfAdvancedInvestigations(conn, data) {
         'angiogram_normal', 'angiogram_one_vessel_disease', 'angiogram_two_vessel_disease', 'angiogram_three_vessel_disease', 'angiogram_lmca',
         'angiogram_not_done', 'biopsy_done', 'biopsy_test_date', 'biopsy_not_done'
     ];
-    const placeholders = keys.map(() => '?').join(', ');
-    const query = `
-        INSERT INTO hf_advanced_investigations (${keys.join(', ')})
-        VALUES (${placeholders})
-    `;
-    const values = keys.map(k => data[k] === undefined ? null : data[k]);
-    const [result] = await conn.execute(query, values);
-    return result;
+    return insertRow(conn, 'hf_advanced_investigations', data, keys);
 }
 
 module.exports = {

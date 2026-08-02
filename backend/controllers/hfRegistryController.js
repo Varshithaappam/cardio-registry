@@ -16,7 +16,7 @@ const createRecord = async (req, res) => {
   const userId = req.user?.id || req.user?.userId || 1;
   const conn = await db.getConnection();
   try {
-    await conn.beginTransaction();
+    await conn.begin();
 
     const patient_id = req.body.patientId || req.body.patient_id;
     if (!patient_id) {
@@ -26,19 +26,21 @@ const createRecord = async (req, res) => {
     }
 
     // 1. Insert hf_registry with placeholder hf_registry_no and created_by / updated_by
-    const insertQuery = `
-      INSERT INTO hf_registry (patient_id, hf_registry_no, created_by, updated_by, status)
-      VALUES (?, ?, ?, ?, ?)
-    `;
     const initialStatus = req.body.status || 'draft';
-    const [result] = await conn.execute(insertQuery, [patient_id, 'HF00000', userId, userId, initialStatus]);
-    const newRecordId = result.insertId;
+    const result = await db.insert(conn, 'hf_registry', {
+      patient_id,
+      hf_registry_no: 'HF00000',
+      created_by: userId,
+      updated_by: userId,
+      status: initialStatus
+    }, 'hf_id');
+    const newRecordId = result.recordset[0].hf_id;
 
     // 2. Generate and update hf_registry_no
     const hf_registry_no = formatRegistryNumber(newRecordId);
-    await conn.execute(
-      'UPDATE hf_registry SET hf_registry_no = ? WHERE hf_id = ?',
-      [hf_registry_no, newRecordId]
+    await conn.query(
+      'UPDATE [hf_registry] SET [hf_registry_no] = @registryNo WHERE [hf_id] = @hfId;',
+      { registryNo: hf_registry_no, hfId: newRecordId }
     );
 
     await conn.commit();
@@ -83,7 +85,7 @@ const updateRecord = async (req, res) => {
 
   try {
     // 1. Fetch current record before applying changes (previousData)
-    const [rows] = await db.execute('SELECT * FROM hf_registry WHERE hf_id = ?', [recordId]);
+    const { recordset: rows } = await db.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @recordId;', { recordId });
     if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'HF Registry record not found.' });
     }
@@ -91,14 +93,14 @@ const updateRecord = async (req, res) => {
 
     // 2. Update updated_by and updated_at
     const updateQuery = `
-      UPDATE hf_registry 
-      SET updated_by = ?, updated_at = NOW() 
-      WHERE hf_id = ?
+      UPDATE [hf_registry]
+      SET [updated_by] = @userId, [updated_at] = SYSDATETIME()
+      WHERE [hf_id] = @recordId;
     `;
-    await db.execute(updateQuery, [userId, recordId]);
+    await db.query(updateQuery, { userId, recordId });
 
     // 3. Fetch updated record data (updatedData)
-    const [updatedRows] = await db.execute('SELECT * FROM hf_registry WHERE hf_id = ?', [recordId]);
+    const { recordset: updatedRows } = await db.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @recordId;', { recordId });
     const updatedData = {
       ...(updatedRows[0] || {}),
       ...(req.body || {})
@@ -138,7 +140,7 @@ const deleteRecord = async (req, res) => {
 
   try {
     // 1. Fetch current record before soft-deletion
-    const [rows] = await db.execute('SELECT * FROM hf_registry WHERE hf_id = ?', [recordId]);
+    const { recordset: rows } = await db.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @recordId;', { recordId });
     if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'HF Registry record not found.' });
     }
@@ -148,13 +150,13 @@ const deleteRecord = async (req, res) => {
       return res.status(400).json({ success: false, message: 'HF Registry record is already soft-deleted.' });
     }
 
-    // 2. Perform soft-delete: update is_deleted = 1, deleted_at = NOW(), deleted_by = userId
-    await db.execute(
-      'UPDATE hf_registry SET is_deleted = 1, deleted_at = NOW(), deleted_by = ? WHERE hf_id = ?',
-      [userId, recordId]
+    // 2. Perform soft-delete with SQL Server's server-side timestamp.
+    await db.query(
+      'UPDATE [hf_registry] SET [is_deleted] = 1, [deleted_at] = SYSDATETIME(), [deleted_by] = @userId WHERE [hf_id] = @recordId;',
+      { userId, recordId }
     );
 
-    const [updatedRows] = await db.execute('SELECT * FROM hf_registry WHERE hf_id = ?', [recordId]);
+    const { recordset: updatedRows } = await db.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @recordId;', { recordId });
     const softDeletedData = updatedRows[0] || { ...previousData, is_deleted: 1, deleted_by: userId, deleted_at: new Date() };
 
     // 3. Execute non-blocking logAudit entry with action_type = 'DELETE' capturing soft-deleted state
@@ -206,10 +208,10 @@ const getPatientAuditLog = async (req, res) => {
       JOIN users u ON a.user_id = u.user_id 
       JOIN hf_registry hf ON a.hf_id = hf.hf_id 
       JOIN patients p ON hf.patient_id = p.patient_id 
-      WHERE p.patient_id = ? 
+      WHERE p.patient_id = @patientId
       ORDER BY a.timestamp DESC;
     `;
-    const [rows] = await db.execute(query, [patient_id]);
+    const { recordset: rows } = await db.query(query, { patientId: patient_id });
 
     const data = rows.map(row => {
       let prevVal = row.previous_values || null;
@@ -288,10 +290,10 @@ const getAuditLog = async (req, res) => {
       JOIN users u ON a.user_id = u.user_id 
       JOIN hf_registry hf ON a.hf_id = hf.hf_id 
       JOIN patients p ON hf.patient_id = p.patient_id 
-      WHERE p.patient_id = ? 
+      WHERE p.patient_id = @targetId
       ORDER BY a.timestamp DESC;
     `;
-    let [rows] = await db.execute(patientQuery, [targetId]);
+    let { recordset: rows } = await db.query(patientQuery, { targetId });
 
     // Fallback by hf_id if no rows found by patient_id
     if (rows.length === 0) {
@@ -299,10 +301,10 @@ const getAuditLog = async (req, res) => {
         SELECT a.*, u.username, u.email
         FROM hf_registry_audit a
         JOIN users u ON a.user_id = u.user_id
-        WHERE a.hf_id = ?
+        WHERE a.hf_id = @targetId
         ORDER BY a.timestamp DESC
       `;
-      const [hfRows] = await db.execute(hfQuery, [targetId]);
+      const { recordset: hfRows } = await db.query(hfQuery, { targetId });
       rows = hfRows;
     }
 

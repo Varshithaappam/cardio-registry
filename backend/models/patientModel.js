@@ -1,229 +1,86 @@
-const db = require("../config/db");
+const db = require('../config/db');
 
-/**
- * Create a new patient
- */
+const patientFields = [
+  'mr_no', 'ip_no', 'patient_name', 'date_of_birth', 'gender', 'blood_group',
+  'insurance_mode', 'phone_no', 'email', 'hypertension', 'smoking', 'diabetes',
+  'diabetes_control_type', 'renal_failure', 'active_dialysis_status', 'address',
+  'higher_education', 'occupation'
+];
+
+function patientParameters(patientData, includeNumbers = true) {
+  const fields = includeNumbers ? patientFields : patientFields.filter((field) => field !== 'mr_no' && field !== 'ip_no');
+  return Object.fromEntries(fields.map((field) => [
+    field,
+    patientData[field] === undefined ? null : patientData[field]
+  ]));
+}
+
 async function createPatient(patientData) {
-    const {
-        mr_no,
-        ip_no,
-        patient_name,
-        date_of_birth,
-        gender,
-        blood_group,
-        insurance_mode,
-        phone_no,
-        email,
-        hypertension,
-        smoking,
-        diabetes,
-        diabetes_control_type,
-        renal_failure,
-        active_dialysis_status,
-        address,
-        higher_education,
-        occupation
-    } = patientData;
-
-    const query = `
-        INSERT INTO patients (
-            mr_no,
-            ip_no,
-            patient_name,
-            date_of_birth,
-            gender,
-            blood_group,
-            insurance_mode,
-            phone_no,
-            email,
-            hypertension,
-            smoking,
-            diabetes,
-            diabetes_control_type,
-            renal_failure,
-            active_dialysis_status,
-            address,
-            higher_education,
-            occupation
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `;
-
-    const [result] = await db.execute(query, [
-        mr_no,
-        ip_no,
-        patient_name,
-        date_of_birth,
-        gender,
-        blood_group,
-        insurance_mode,
-        phone_no,
-        email,
-        hypertension,
-        smoking,
-        diabetes,
-        diabetes_control_type,
-        renal_failure,
-        active_dialysis_status,
-        address || null,
-        higher_education || 'None',
-        occupation || null
-    ]);
-
-    return result;
+  return db.insert(null, 'patients', patientParameters(patientData), 'patient_id');
 }
 
-/**
- * Update MR Number & IP Number
- */
 async function updatePatientNumbers(patientId, mr_no, ip_no) {
-    const query = `
-        UPDATE patients
-        SET
-            mr_no = ?,
-            ip_no = ?
-        WHERE patient_id = ?
-    `;
-
-    const [result] = await db.execute(query, [
-        mr_no,
-        ip_no,
-        patientId
-    ]);
-
-    return result;
+  return db.query(
+    'UPDATE [patients] SET [mr_no] = @mr_no, [ip_no] = @ip_no WHERE [patient_id] = @patientId;',
+    { patientId, mr_no, ip_no }
+  );
 }
 
-/**
- * Get all patients
- */
 async function getAllPatients() {
-    const [rows] = await db.execute(`
-        SELECT *
-        FROM patients
-        ORDER BY patient_id DESC
-    `);
-
-    return rows;
+  const result = await db.query('SELECT * FROM [patients] ORDER BY [patient_id] DESC;');
+  return result.recordset;
 }
 
-/**
- * Get patient by ID
- */
 async function getPatientById(patientId) {
-    const [rows] = await db.execute(
-        `
-        SELECT *
-        FROM patients
-        WHERE patient_id = ?
-        `,
-        [patientId]
-    );
-
-    return rows[0];
+  const result = await db.query('SELECT * FROM [patients] WHERE [patient_id] = @patientId;', { patientId });
+  return result.recordset[0];
 }
 
-/**
- * Update patient
- */
 async function updatePatient(patientId, patientData) {
-    const {
-        patient_name,
-        date_of_birth,
-        gender,
-        blood_group,
-        insurance_mode,
-        phone_no,
-        email,
-        hypertension,
-        smoking,
-        diabetes,
-        diabetes_control_type,
-        renal_failure,
-        active_dialysis_status,
-        address,
-        higher_education,
-        occupation
-    } = patientData;
-
-    const query = `
-        UPDATE patients
-        SET
-            patient_name = ?,
-            date_of_birth = ?,
-            gender = ?,
-            blood_group = ?,
-            insurance_mode = ?,
-            phone_no = ?,
-            email = ?,
-            hypertension = ?,
-            smoking = ?,
-            diabetes = ?,
-            diabetes_control_type = ?,
-            renal_failure = ?,
-            active_dialysis_status = ?,
-            address = ?,
-            higher_education = ?,
-            occupation = ?
-        WHERE patient_id = ?
-    `;
-
-    const [result] = await db.execute(query, [
-        patient_name,
-        date_of_birth,
-        gender,
-        blood_group,
-        insurance_mode,
-        phone_no,
-        email,
-        hypertension,
-        smoking,
-        diabetes,
-        diabetes_control_type,
-        renal_failure,
-        active_dialysis_status,
-        address || null,
-        higher_education || 'None',
-        occupation || null,
-        patientId
-    ]);
-
-    return result;
+  const parameters = { patientId, ...patientParameters(patientData, false) };
+  return db.query(`
+    UPDATE [patients]
+    SET [patient_name] = @patient_name,
+        [date_of_birth] = @date_of_birth,
+        [gender] = @gender,
+        [blood_group] = @blood_group,
+        [insurance_mode] = @insurance_mode,
+        [phone_no] = @phone_no,
+        [email] = @email,
+        [hypertension] = @hypertension,
+        [smoking] = @smoking,
+        [diabetes] = @diabetes,
+        [diabetes_control_type] = @diabetes_control_type,
+        [renal_failure] = @renal_failure,
+        [active_dialysis_status] = @active_dialysis_status,
+        [address] = @address,
+        [higher_education] = @higher_education,
+        [occupation] = @occupation
+    WHERE [patient_id] = @patientId;
+  `, parameters);
 }
 
-/**
- * Delete patient
- */
 async function deletePatient(patientId) {
-    const [result] = await db.execute(
-        `
-        DELETE FROM patients
-        WHERE patient_id = ?
-        `,
-        [patientId]
-    );
-
-    return result;
+  return db.query('DELETE FROM [patients] WHERE [patient_id] = @patientId;', { patientId });
 }
 
 async function getPatientCounts(patientId) {
-    const query = `
-        SELECT 
-            (SELECT COUNT(*) FROM hf_registry WHERE patient_id = ?) as hfCount,
-            (SELECT COUNT(*) FROM stemi_registry WHERE patient_id = ?) as stemiCount,
-            (SELECT COUNT(*) FROM nstemi_registry WHERE patient_id = ?) as nstemiCount,
-            (SELECT COUNT(*) FROM cabg_registry WHERE patient_id = ?) as cabgCount
-    `;
-    const [rows] = await db.execute(query, [patientId, patientId, patientId, patientId]);
-    return rows[0];
+  const result = await db.query(`
+    SELECT
+      (SELECT COUNT(*) FROM [hf_registry] WHERE [patient_id] = @patientId) AS hfCount,
+      (SELECT COUNT(*) FROM [stemi_registry] WHERE [patient_id] = @patientId) AS stemiCount,
+      (SELECT COUNT(*) FROM [nstemi_registry] WHERE [patient_id] = @patientId) AS nstemiCount,
+      (SELECT COUNT(*) FROM [cabg_registry] WHERE [patient_id] = @patientId) AS cabgCount;
+  `, { patientId });
+  return result.recordset[0];
 }
 
 module.exports = {
-    createPatient,
-    updatePatientNumbers,
-    getAllPatients,
-    getPatientById,
-    updatePatient,
-    deletePatient,
-    getPatientCounts
+  createPatient,
+  updatePatientNumbers,
+  getAllPatients,
+  getPatientById,
+  updatePatient,
+  deletePatient,
+  getPatientCounts
 };
