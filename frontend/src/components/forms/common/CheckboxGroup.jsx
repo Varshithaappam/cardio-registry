@@ -32,17 +32,28 @@ export default function CheckboxGroup({
         {options.map((option) => {
           const optionValue = typeof option === 'string' ? option : option.value;
           const optionLabel = typeof option === 'string' ? option : option.label;
+          const isChecked = values.includes(optionValue);
 
           return (
             <label
               key={optionValue}
-              className={`flex items-center gap-2 p-2.5 bg-white border ${error ? 'border-red-500' : 'border-slate-200'} rounded-lg ${readOnly ? 'pointer-events-none' : 'cursor-pointer hover:border-slate-300'} form-option-label transition-colors`}
+              className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition-all text-xs font-medium ${
+                isChecked
+                  ? readOnly
+                    ? 'bg-slate-100 border-slate-300 text-slate-900 font-bold'
+                    : 'bg-teal-50/70 border-teal-500 text-teal-900 font-semibold shadow-xs'
+                  : readOnly
+                  ? 'bg-slate-100/60 border-slate-200 text-slate-500'
+                  : error
+                  ? 'bg-white border-red-500 text-slate-700'
+                  : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+              } ${readOnly ? 'cursor-not-allowed' : 'cursor-pointer'}`}
             >
               <input
                 type="checkbox"
-                checked={values.includes(optionValue)}
+                checked={isChecked}
                 onChange={() => toggleValue(optionValue)}
-                className="shrink-0 accent-teal-600 disabled:opacity-100 disabled:accent-black"
+                className="shrink-0 accent-teal-600 disabled:opacity-100 disabled:accent-slate-700"
                 disabled={readOnly}
               />
               <span>{optionLabel}</span>

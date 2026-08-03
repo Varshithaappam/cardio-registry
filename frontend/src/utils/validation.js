@@ -1,6 +1,7 @@
 /**
  * Validation Utility for CARE Registry Form fields & MS SQL Database Alignment
  */
+import { formatDateForDatabase } from './dateUtils';
 
 export const validateField = (fieldName, value) => {
   if (value === undefined || value === null || String(value).trim() === '') {
@@ -125,13 +126,19 @@ export const validateField = (fieldName, value) => {
 };
 
 /**
- * Transforms form state payload into clean MS SQL-compatible DB payload by converting empty strings to null.
+ * Transforms form state payload into clean MS SQL-compatible DB payload:
+ * - Converts empty strings to null
+ * - Converts DD/MM/YYYY dates to YYYY-MM-DD for database persistence
  */
 export const mapFormToDBPayload = (formData) => {
   if (formData === null || formData === undefined) return null;
   if (typeof formData !== 'object') {
-    if (typeof formData === 'string' && formData.trim() === '') {
-      return null;
+    if (typeof formData === 'string') {
+      const trimmed = formData.trim();
+      if (trimmed === '') return null;
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(trimmed)) {
+        return formatDateForDatabase(trimmed);
+      }
     }
     return formData;
   }
@@ -145,6 +152,8 @@ export const mapFormToDBPayload = (formData) => {
     const val = formData[key];
     if (val === '' || (typeof val === 'string' && val.trim() === '')) {
       cleaned[key] = null;
+    } else if (typeof val === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(val.trim())) {
+      cleaned[key] = formatDateForDatabase(val.trim());
     } else if (typeof val === 'object' && val !== null && !(val instanceof Date)) {
       cleaned[key] = mapFormToDBPayload(val);
     } else {

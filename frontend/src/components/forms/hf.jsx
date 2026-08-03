@@ -13,6 +13,7 @@ import CheckboxGroup from './common/CheckboxGroup';
 import FormField from './common/FormField';
 import DrugTable from './common/DrugTable';
 import { validateField } from '../../utils/validation';
+import { formatDateForDisplay, formatDateForDatabase } from '../../utils/dateUtils';
 
 function HFFormWizard({ activeSection, onSectionChange, sectionErrors, viewMode, children }) {
   const sections = React.Children.toArray(children).filter(React.isValidElement);
@@ -265,19 +266,20 @@ const DEVICE_TYPES = [
 function normalizeInsuranceModeForForm(val) {
   if (!val) return '';
   const trimmed = String(val).trim();
-  if (trimmed === 'Direct Cash / Self-Pay' || trimmed === 'Direct' || trimmed.startsWith('Direct')) {
-    return 'Direct ';
+  const lower = trimmed.toLowerCase();
+  if (lower === 'direct' || lower === 'direct cash / self-pay' || lower === 'self-pay / direct' || lower.startsWith('direct')) {
+    return 'Direct';
   }
-  if (trimmed === 'Arogyasree Scheme' || trimmed === 'Arogyasree' || trimmed.startsWith('Arogyasree')) {
+  if (lower === 'arogyasree' || lower === 'arogyasree scheme' || lower === 'aarogyasri' || lower.startsWith('arogyasree')) {
     return 'Arogyasree';
   }
-  if (trimmed === 'Government Reimbursement' || trimmed.startsWith('Government')) {
+  if (lower === 'government reimbursement' || lower.startsWith('government') || lower.startsWith('govt')) {
     return 'Government Reimbursement';
   }
-  if (trimmed === 'Private Insurance' || trimmed.startsWith('Private')) {
+  if (lower === 'private insurance' || lower.startsWith('private')) {
     return 'Private Insurance';
   }
-  return val;
+  return trimmed;
 }
 
 const hf = forwardRef(function hf(
@@ -1237,28 +1239,70 @@ const hf = forwardRef(function hf(
   // --- Lab Test State Structure ---
   
   const formatDateToView = (val) => {
-    if (!val) return '';
-    const dateStr = val.split('T')[0];
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-    return val;
+    return formatDateForDisplay(val);
   };
 
-  const renderInlineDate = (val, onChange, className = "border border-slate-300 rounded-lg px-2 py-0.5 text-xs outline-none bg-white text-slate-800 placeholder:text-slate-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500", error = null) => {
+  const renderInlineDate = (val, onChange, className = "border border-slate-300 rounded-lg px-2 py-0.5 text-xs outline-none bg-white text-slate-800 focus:ring-1 focus:ring-blue-500 focus:border-blue-500", error = null) => {
     if (readOnly) {
       return <span className="text-slate-900 font-bold text-xs px-1">{formatDateToView(val) || '—'}</span>;
     }
-    const formattedVal = val ? val.split('T')[0] : '';
-    const finalClassName = error ? "border border-red-500 rounded-lg px-2 py-0.5 text-xs bg-red-50 text-red-700 focus:ring-1 focus:ring-red-500 focus:border-red-500" : className;
+    const displayVal = formatDateForDisplay(val);
+    const isoVal = val ? String(val).split('T')[0] : '';
+
     return (
-      <input
-        type="date"
-        value={formattedVal}
-        onChange={(e) => onChange(e.target.value)}
-        className={finalClassName}
-      />
+      <div className="relative inline-flex items-center">
+        <input
+          type="text"
+          placeholder="dd/mm/yyyy"
+          value={displayVal}
+          onChange={(e) => {
+            const raw = e.target.value;
+            if (!raw.trim()) onChange('');
+            else if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw.trim())) onChange(formatDateForDatabase(raw.trim()));
+            else onChange(raw);
+          }}
+          className={`px-2.5 py-0.5 text-xs border rounded-lg outline-none bg-white text-slate-800 transition-colors pr-7 ${
+            error ? 'border-red-500 bg-red-50 text-red-900' : 'border-slate-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
+          }`}
+        />
+        <input
+          type="date"
+          value={isoVal && /^\d{4}-\d{2}-\d{2}$/.test(isoVal) ? isoVal : ''}
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute right-1 text-slate-400 cursor-pointer w-4 h-4 opacity-70 hover:opacity-100"
+        />
+      </div>
+    );
+  };
+
+  const renderLabDateInput = (val, onChange) => {
+    if (readOnly) {
+      return <span className="text-slate-900 font-bold text-xs text-right w-full block">{formatDateToView(val) || '—'}</span>;
+    }
+    const displayVal = formatDateForDisplay(val);
+    const isoVal = val ? String(val).split('T')[0] : '';
+
+    return (
+      <div className="relative flex items-center w-full">
+        <input
+          type="text"
+          placeholder="dd/mm/yyyy"
+          value={displayVal}
+          onChange={(e) => {
+            const raw = e.target.value;
+            if (!raw.trim()) onChange('');
+            else if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw.trim())) onChange(formatDateForDatabase(raw.trim()));
+            else onChange(raw);
+          }}
+          className="w-full border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 text-right pr-7"
+        />
+        <input
+          type="date"
+          value={isoVal && /^\d{4}-\d{2}-\d{2}$/.test(isoVal) ? isoVal : ''}
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute right-1 text-slate-400 cursor-pointer w-4 h-4 opacity-70 hover:opacity-100"
+        />
+      </div>
     );
   };
 
@@ -5513,11 +5557,7 @@ const hf = forwardRef(function hf(
                         <span className="text-red-500 text-[8px] block font-bold mt-0.5 text-center leading-tight">{displayErr}</span>
                       )}
                     </div>
-                    {readOnly ? (
-                      <span className="text-slate-900 font-bold text-xs text-right w-full block">{formatDateToView(labTests[item.key].date) || '—'}</span>
-                    ) : (
-                      <input type="date" value={labTests[item.key].date ? labTests[item.key].date.split('T')[0] : ''} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 text-right w-full" />
-                    )}
+                    {renderLabDateInput(labTests[item.key].date, (val) => handleLabChange(item.key, 'date', val))}
                   </div>
                 );
               })}
@@ -5582,11 +5622,7 @@ const hf = forwardRef(function hf(
                         <span className="text-red-500 text-[8px] block font-bold mt-0.5 text-center leading-tight">{displayErr}</span>
                       )}
                     </div>
-                    {readOnly ? (
-                      <span className="text-slate-900 font-bold text-xs text-right w-full block">{formatDateToView(labTests[item.key].date) || '—'}</span>
-                    ) : (
-                      <input type="date" value={labTests[item.key].date ? labTests[item.key].date.split('T')[0] : ''} onChange={(e) => handleLabChange(item.key, 'date', e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 text-right w-full" />
-                    )}
+                    {renderLabDateInput(labTests[item.key].date, (val) => handleLabChange(item.key, 'date', val))}
                   </div>
                 );
               })}
@@ -5597,7 +5633,7 @@ const hf = forwardRef(function hf(
                   <input disabled={readOnly} type="text" placeholder="Other:" value={labTests.other.name || ''} onChange={(e) => handleLabChange('other', 'name', e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full" />
                 </div>
                 <input disabled={readOnly} type="text" value={labTests.other.result} onChange={(e) => handleLabChange('other', 'result', e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 text-center w-full" />
-                {readOnly ? <span className="text-slate-900 font-bold text-xs text-right w-full block">{formatDateToView(labTests.other.date) || '—'}</span> : <input type="date" value={labTests.other.date ? labTests.other.date.split('T')[0] : ''} onChange={(e) => handleLabChange('other', 'date', e.target.value)} className="border border-slate-300 rounded-lg px-2.5 py-1 text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-slate-800 placeholder:text-slate-400 text-right w-full" />}
+                {renderLabDateInput(labTests.other.date, (val) => handleLabChange('other', 'date', val))}
               </div>
             </div>
           </div>

@@ -4,7 +4,7 @@ export default function FormField({ label, required = false, error, children, cl
   return (
     <div className={className}>
       {label && (
-        <label className="form-field-label mb-1">
+        <label className="text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5 block">
           {label}{required && <span className="text-red-500 font-bold ml-0.5">*</span>}
         </label>
       )}
