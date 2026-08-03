@@ -16,6 +16,9 @@ import FollowUpForm from './forms/FollowUpForm';
 import LaboratoryForm from './forms/LaboratoryForm';
 import InvestigationForm from './forms/InvestigationForm';
 
+// Feature flag to control dev helper UI (Draft checkbox & Fill Dummy Data button)
+const SHOW_DEV_HELPERS = false;
+
 export default function ClinicalForm({ patientRecord, formType, editingRecord, onCancel, onSave, onBackPatients }) {
   const navigate = useNavigate();
   const formRef = useRef(null);
@@ -277,27 +280,29 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
 
         {/* Draft/Complete controls & save/cancel buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 pt-6">
-          <div className="flex items-center gap-2">
-            <input
-              id="chk-draft"
-              type="checkbox"
-              className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-              checked={isDraft}
-              onChange={(e) => setIsDraft(e.target.checked)}
-            />
-            <div className="text-left">
-              <label htmlFor="chk-draft" className="text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-1">
-                <Bookmark className="w-3.5 h-3.5 text-amber-500" />
-                <span>Save Registry Entry as Draft</span>
-              </label>
-              <span className="text-[10px] text-slate-400 block mt-0.5">
-                Draft entries bypass immediate completeness rules.
-              </span>
+          {SHOW_DEV_HELPERS ? (
+            <div className="flex items-center gap-2">
+              <input
+                id="chk-draft"
+                type="checkbox"
+                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                checked={isDraft}
+                onChange={(e) => setIsDraft(e.target.checked)}
+              />
+              <div className="text-left">
+                <label htmlFor="chk-draft" className="text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-1">
+                  <Bookmark className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Save Registry Entry as Draft</span>
+                </label>
+                <span className="text-[10px] text-slate-400 block mt-0.5">
+                  Draft entries bypass immediate completeness rules.
+                </span>
+              </div>
             </div>
-          </div>
+          ) : <div />}
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            {formType === 'HF' && (
+            {SHOW_DEV_HELPERS && formType === 'HF' && (
               <button
                 id="btn-dummy-form"
                 type="button"

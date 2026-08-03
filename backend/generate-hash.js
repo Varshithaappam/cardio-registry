@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs'); // <-- Changed from 'bcrypt' to 'bcryptjs'
 
-const plainPassword = 'password123';
+const plainPassword = 'Srinivas#2026';
 const saltRounds = 10;
 
 async function generateHash() {
