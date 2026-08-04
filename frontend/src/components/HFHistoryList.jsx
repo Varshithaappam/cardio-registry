@@ -80,7 +80,7 @@ export default function HFHistoryList({ patientId, onEditEventClick }) {
         {history.map((record, index) => {
           const encounterNum = history.length - index;
           const isDeletedRecord = record.is_deleted === 1 || record.is_deleted === true;
-          const isDraftRecord = record.status === 'draft' || record.status === 'DRAFT' || record.hf_registry_no === 'HF00051' || record.hf_registry_no === 'HF00013' || record.hf_id === 51 || record.hf_id === 13;
+          const isDraftRecord = (record.status === 'draft' || record.status === 'DRAFT' || record.is_draft === true) && record.status !== 'final' && record.status !== 'COMPLETED';
           return (
             <div
               key={record.hf_id}

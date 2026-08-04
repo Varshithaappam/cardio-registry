@@ -538,10 +538,7 @@ async function saveHfAssessment(data, userId = 1) {
 async function getHfHistory(patientId) {
     const query = `
         SELECT hf_id, hf_registry_no, created_at, 
-               CASE 
-                   WHEN status = 'draft' OR hf_registry_no IN ('HF00051', 'HF00013') OR hf_id IN (13, 51) THEN 'draft' 
-                   ELSE 'final' 
-               END AS status, 
+               ISNULL(status, 'final') AS status, 
                is_deleted, deleted_at, deleted_by,
                COALESCE(
                    (SELECT TOP 1 assessment_date FROM hf_initial_assessment WHERE hf_initial_assessment.hf_id = hf_registry.hf_id),
@@ -1010,8 +1007,8 @@ async function getHfAssessment(hf_id) {
             deleted_at: registry.deleted_at,
             deleted_by: registry.deleted_by,
             deleted_by_user,
-            status: (registry.status === 'draft' || registry.status === 'DRAFT' || registry.hf_registry_no === 'HF00051' || registry.hf_registry_no === 'HF00013' || registry.hf_id === 51 || registry.hf_id === 13) ? 'draft' : 'final',
-            isDraft: registry.status === 'draft' || registry.status === 'DRAFT' || registry.hf_registry_no === 'HF00051' || registry.hf_registry_no === 'HF00013' || registry.hf_id === 51 || registry.hf_id === 13
+            status: registry.status || 'final',
+            isDraft: registry.status === 'draft' || registry.status === 'DRAFT'
         };
     } finally {
         conn.release();

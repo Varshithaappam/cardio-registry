@@ -3571,11 +3571,8 @@ const hf = forwardRef(function hf(
   const isDraftRecord = !isDeleted && (
     editingRecord?.status === 'draft' ||
     editingRecord?.status === 'DRAFT' ||
-    editingRecord?.hf_registry_no === 'HF00051' ||
-    editingRecord?.hf_registry_no === 'HF00013' ||
-    editingRecord?.hf_id === 13 ||
-    editingRecord?.hf_id === 51
-  ) && editingRecord?.status !== 'final' && editingRecord?.hf_registry_no !== 'HF00050';
+    editingRecord?.isDraft === true
+  ) && editingRecord?.status !== 'final' && editingRecord?.status !== 'COMPLETED';
 
   return (
     <div className="space-y-4">
