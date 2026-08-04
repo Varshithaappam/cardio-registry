@@ -26,16 +26,30 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
   const [completionPercent, setCompletionPercent] = useState(15);
   const [viewMode, setViewMode] = useState('detailed');
 
+  const handleSaveDraft = async (e) => {
+    if (e) e.preventDefault();
+    if (!formRef.current) return;
+
+    const submissionData = formRef.current.getSubmissionData();
+    submissionData.isDraft = true;
+
+    try {
+      await onSave(submissionData, formType);
+    } catch (err) {
+      console.error("Error saving draft:", err);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formRef.current) return;
 
-    if (formRef.current.validateForm && !formRef.current.validateForm(isDraft)) {
+    if (formRef.current.validateForm && !formRef.current.validateForm(false)) {
       return;
     }
 
     const submissionData = formRef.current.getSubmissionData();
-    submissionData.isDraft = isDraft;
+    submissionData.isDraft = false;
 
     onSave(submissionData, formType);
   };
@@ -312,6 +326,15 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
                 Fill Dummy Data (Test)
               </button>
             )}
+            <button
+              id="btn-draft-form"
+              type="button"
+              onClick={handleSaveDraft}
+              className="w-full sm:w-auto px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Bookmark className="w-3.5 h-3.5 text-amber-600" />
+              <span>Save as Draft</span>
+            </button>
             <button
               id="btn-cancel-form"
               type="button"

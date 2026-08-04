@@ -7,12 +7,13 @@ function insertRow(conn, table, data, keys) {
     return db.insert(conn, table, row);
 }
 
-async function insertHfRegistry(conn, { patient_id, hf_registry_no, created_by, updated_by }) {
+async function insertHfRegistry(conn, { patient_id, hf_registry_no, created_by, updated_by, status }) {
     const result = await db.insert(conn, 'hf_registry', {
         patient_id,
         hf_registry_no,
         created_by: created_by || null,
-        updated_by: updated_by || null
+        updated_by: updated_by || null,
+        status: status || 'draft'
     }, 'hf_id');
     return result.recordset[0].hf_id;
 }

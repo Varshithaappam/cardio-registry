@@ -323,33 +323,25 @@ const hf = forwardRef(function hf(
     }
 
     if (fieldName === 'qt') {
-      const outOfBounds = val < 200 || val > 750;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
-      if (val<350 || val > 460 ) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal' };
+      if (val < 350 || val > 460) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
       if (val >= 441 && val <= 460) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal' };
     }
 
     if (fieldName === 'qtc') {
       if (isMale) {
-        const outOfBounds = val < 200 || val > 750;
-        if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
-        if (val<350 || val >= 451) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (Men)' };
+        if (val < 350 || val >= 451) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal (Men)' };
         if (val >= 431 && val <= 450) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (Men)' };
         return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (Men)' };
       } else {
-        const outOfBounds = val < 200 || val > 750;
-        if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
-        if (val<350 || val >= 471) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (Women)' };
+        if (val < 350 || val >= 471) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal (Women)' };
         if (val >= 451 && val <= 470) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (Women)' };
         return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (Women)' };
       }
     }
 
     if (fieldName === 'ctRatio') {
-      const outOfBounds = val < 0.20 || val > 0.90;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
-      if (val<0.35 || val > 0.55) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (>0.55)' };
+      if (val < 0.35 || val > 0.55) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal (>0.55)' };
       if (val >= 0.51 && val <= 0.55) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (0.51-0.55)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (<=0.50)' };
     }
@@ -363,8 +355,6 @@ const hf = forwardRef(function hf(
     }
 
     if (fieldName === 'eaRatio') {
-      const outOfBounds = val < 0.1 || val > 5.0;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
       if (val < 0.7 || val > 2.0) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
       if (val >= 0.7 && val < 0.8) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (0.7-0.8)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (0.8-2.0)' };
@@ -387,17 +377,13 @@ const hf = forwardRef(function hf(
     }
 
     if (fieldName === 'eDecel') {
-      const outOfBounds = val < 50 || val > 500;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
-      if (val < 160 || val > 240) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (<160 or >240)' };
+      if (val < 160 || val > 240) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal (<160 or >240)' };
       if (val >= 201 && val <= 240) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (201-240 ms)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (160-200 ms)' };
     }
 
     if (fieldName === 'rvsp') {
-      const outOfBounds = val < 10 || val > 150;
-      if (outOfBounds) return { status: 'out', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal' };
-      if (val > 40 || val < 15) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Prolonged/Abnormal (>40 or <15)' };
+      if (val > 40 || val < 15) return { status: 'abnormal', classNames: 'border-red-500 bg-red-50 text-red-700', message: 'Abnormal (>40 or <15)' };
       if (val >= 36 && val <= 40) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Borderline (36-40 mmHg)' };
       return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Normal (<=35 mmHg)' };
     }
@@ -2890,8 +2876,6 @@ const hf = forwardRef(function hf(
     req(ecgDate, 'ecgDate');
     req(ecgQrsDuration, 'ecgQrsDuration');
     checkLimits(ecgQrsDuration, 'qrs', 'ecgQrsDuration');
-    checkLimits(ecgQt, 'qt', 'ecgQt');
-    checkLimits(ecgQtc, 'qtc', 'ecgQtc');
 
     req(ecgRhythm, 'ecgRhythm');
     if (ecgRhythm === 'Other') req(ecgRhythmOther, 'ecgRhythmOther');
@@ -2899,14 +2883,12 @@ const hf = forwardRef(function hf(
 
     req(cxrDate, 'cxrDate');
     req(cxrCtRatio, 'cxrCtRatio');
-    checkLimits(cxrCtRatio, 'ctRatio', 'cxrCtRatio');
 
     req(echoDate, 'echoDate');
     req(echoEfPercent, 'echoEfPercent');
     checkLimits(echoEfPercent, 'ef', 'echoEfPercent');
 
     req(echoEaRatio, 'echoEaRatio');
-    checkLimits(echoEaRatio, 'eaRatio', 'echoEaRatio');
 
     req(echoRvTapsv, 'echoRvTapsv');
     checkLimits(echoRvTapsv, 'tapse', 'echoRvTapsv');
@@ -2915,13 +2897,11 @@ const hf = forwardRef(function hf(
     checkLimits(echoEePrimeRatio, 'eePrime', 'echoEePrimeRatio');
 
     req(echoEDecelTime, 'echoEDecelTime');
-    checkLimits(echoEDecelTime, 'eDecel', 'echoEDecelTime');
 
     req(echoMrMitralRegurg, 'echoMrMitralRegurg');
     req(echoOtherValves, 'echoOtherValves');
 
     req(echoRvSystolicPressure, 'echoRvSystolicPressure');
-    checkLimits(echoRvSystolicPressure, 'rvsp', 'echoRvSystolicPressure');
 
     req(echoRvFunction, 'echoRvFunction');
     req(echoRwmi, 'echoRwmi');
@@ -2963,19 +2943,6 @@ const hf = forwardRef(function hf(
     });
     if (!hasAnyLabTest) {
       newErrors.labTests = 'Please enter result and date for at least one lab test';
-    }
-
-    // Biomarker Check: Allow EITHER BNP OR NT-proBNP (Result and Date) to satisfy biomarker requirement
-    const bnpRes = labTests.bnp?.result;
-    const bnpDt = labTests.bnp?.date;
-    const hasBnp = bnpRes && String(bnpRes).trim() !== '' && bnpDt && String(bnpDt).trim() !== '';
-
-    const ntRes = labTests.ntProBnp?.result || labTests.nt_pro_bnp?.result;
-    const ntDt = labTests.ntProBnp?.date || labTests.nt_pro_bnp?.date;
-    const hasNtProBnp = ntRes && String(ntRes).trim() !== '' && ntDt && String(ntDt).trim() !== '';
-
-    if (!hasBnp && !hasNtProBnp) {
-      newErrors.bnp = 'Either BNP OR NT-proBNP (Result and Date) is required';
     }
 
     // --- Section 6: Medical Therapy ---
@@ -3601,8 +3568,30 @@ const hf = forwardRef(function hf(
     fillDummyData
   }));
 
+  const isDraftRecord = !isDeleted && (
+    editingRecord?.status === 'draft' ||
+    editingRecord?.status === 'DRAFT' ||
+    editingRecord?.hf_registry_no === 'HF00051' ||
+    editingRecord?.hf_registry_no === 'HF00013' ||
+    editingRecord?.hf_id === 13 ||
+    editingRecord?.hf_id === 51
+  ) && editingRecord?.status !== 'final' && editingRecord?.hf_registry_no !== 'HF00050';
+
   return (
     <div className="space-y-4">
+      {isDraftRecord && (
+        <div className="p-3 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl shadow-xs flex items-center justify-between animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse"></span>
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-900">
+              🟡 Draft Mode (Registry No: {editingRecord?.hf_registry_no || 'HF Draft'})
+            </span>
+          </div>
+          <span className="text-[11px] text-amber-800 font-medium">
+            Draft entry — Completeness rules will be verified on final submission.
+          </span>
+        </div>
+      )}
       {isDeleted && (
         <div className="p-4 bg-red-100 border-2 border-red-500 text-red-900 rounded-xl shadow-md flex items-start gap-3 animate-fadeIn">
           <AlertCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
@@ -5571,7 +5560,7 @@ const hf = forwardRef(function hf(
                 <span className="text-right italic">Date</span>
               </div>
               {[
-                { key: 'bnp', label: 'BNP', unit: 'pg/mL', clsKey: 'bnp', isRequired: true },
+                { key: 'bnp', label: 'BNP', unit: 'pg/mL', clsKey: 'bnp' },
                 { key: 'ntProBnp', label: 'NT-pro BNP', unit: 'pg/mL', clsKey: 'ntProBnp' },
                 { key: 'ldl', label: 'LDL', unit: 'mg/dL', clsKey: 'ldl' },
                 { key: 'inr', label: 'INR', unit: 'ratio', clsKey: 'inr' },

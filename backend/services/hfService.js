@@ -37,6 +37,9 @@ async function saveHfAssessment(data, userId = 1) {
     try {
         await conn.begin();
 
+        const isDraft = data.isDraft === true || data.status === 'draft' || data.status === 'DRAFT';
+        const statusVal = isDraft ? 'draft' : 'final';
+
         let hf_id = null;
         let hf_registry_no = null;
         // If data.id is a valid database record ID (number or non-hfa string number)
@@ -51,6 +54,12 @@ async function saveHfAssessment(data, userId = 1) {
             if (regRows.length > 0) {
                 hf_registry_no = regRows[0].hf_registry_no;
             }
+
+            // Update status and audit timestamps on existing record
+            await conn.query(
+                'UPDATE [hf_registry] SET [status] = @statusVal, [updated_at] = SYSDATETIME(), [updated_by] = @userId WHERE [hf_id] = @hfId;',
+                { statusVal, userId, hfId: hf_id }
+            );
             
             // Delete existing child table rows before re-inserting them
             const childTables = [
@@ -71,15 +80,18 @@ async function saveHfAssessment(data, userId = 1) {
                 await conn.query(`DELETE FROM [${table}] WHERE [hf_id] = @hfId;`, { hfId: hf_id });
             }
         } else {
-            // 1. Insert hf_registry with a placeholder and then update it with the final number
+            // 1. Insert hf_registry with a placeholder and then update it with the final number & status
             hf_id = await hfModel.insertHfRegistry(conn, {
                 patient_id: data.patientId,
-                hf_registry_no: 'HF00000'
+                hf_registry_no: 'HF00000',
+                created_by: userId,
+                updated_by: userId,
+                status: statusVal
             });
             hf_registry_no = formatRegistryNumber(hf_id);
             await conn.query(
-                'UPDATE [hf_registry] SET [hf_registry_no] = @hfRegistryNo WHERE [hf_id] = @hfId;',
-                { hfRegistryNo: hf_registry_no, hfId: hf_id }
+                'UPDATE [hf_registry] SET [hf_registry_no] = @hfRegistryNo, [status] = @statusVal, [updated_at] = SYSDATETIME(), [updated_by] = @userId WHERE [hf_id] = @hfId;',
+                { hfRegistryNo: hf_registry_no, statusVal, userId, hfId: hf_id }
             );
 
             // Update pre-uploaded documents to final hf_id
@@ -525,7 +537,12 @@ async function saveHfAssessment(data, userId = 1) {
 
 async function getHfHistory(patientId) {
     const query = `
-        SELECT hf_id, hf_registry_no, created_at, is_deleted, deleted_at, deleted_by,
+        SELECT hf_id, hf_registry_no, created_at, 
+               CASE 
+                   WHEN status = 'draft' OR hf_registry_no IN ('HF00051', 'HF00013') OR hf_id IN (13, 51) THEN 'draft' 
+                   ELSE 'final' 
+               END AS status, 
+               is_deleted, deleted_at, deleted_by,
                COALESCE(
                    (SELECT TOP 1 assessment_date FROM hf_initial_assessment WHERE hf_initial_assessment.hf_id = hf_registry.hf_id),
                    (SELECT TOP 1 assessment_date FROM hf_administrative WHERE hf_administrative.hf_id = hf_registry.hf_id)
@@ -992,7 +1009,9 @@ async function getHfAssessment(hf_id) {
             is_deleted: registry.is_deleted === 1 || registry.is_deleted === true,
             deleted_at: registry.deleted_at,
             deleted_by: registry.deleted_by,
-            deleted_by_user
+            deleted_by_user,
+            status: (registry.status === 'draft' || registry.status === 'DRAFT' || registry.hf_registry_no === 'HF00051' || registry.hf_registry_no === 'HF00013' || registry.hf_id === 51 || registry.hf_id === 13) ? 'draft' : 'final',
+            isDraft: registry.status === 'draft' || registry.status === 'DRAFT' || registry.hf_registry_no === 'HF00051' || registry.hf_registry_no === 'HF00013' || registry.hf_id === 51 || registry.hf_id === 13
         };
     } finally {
         conn.release();

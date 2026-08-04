@@ -61,8 +61,28 @@ async function getHfHistory(req, res) {
     }
 }
 
+async function saveHfDraft(req, res) {
+    try {
+        const userId = req.user?.id || req.user?.userId || 1;
+        console.log("Saving HF Assessment Draft for patient_id:", req.body.patientId, "User ID:", userId);
+        const result = await hfService.saveHfAssessment({ ...req.body, isDraft: true }, userId);
+        return res.status(200).json({
+            success: true,
+            message: "Heart Failure Assessment draft saved successfully.",
+            data: result
+        });
+    } catch (error) {
+        console.error("Error saving HF Assessment draft:", error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Failed to save draft."
+        });
+    }
+}
+
 module.exports = {
     saveHfAssessment,
+    saveHfDraft,
     getHfAssessment,
     getHfHistory
 };

@@ -304,8 +304,25 @@ function EditFormPage({ records, loadPatients }) {
         if (type === 'HF') {
           try {
             const sanitizedData = sanitizePayload(eventData);
-            await api.post('/hf-assessment', sanitizedData);
-            alert('Heart Failure Assessment details saved into database successfully.');
+            const isDraft = eventData.isDraft === true;
+            let res;
+            if (isDraft) {
+              try {
+                res = await api.post('/hf-assessment/draft', sanitizedData);
+              } catch (draftErr) {
+                if (draftErr.response?.status === 404) {
+                  // Fallback to root endpoint if backend process has not been restarted yet
+                  res = await api.post('/hf-assessment', { ...sanitizedData, isDraft: true });
+                } else {
+                  throw draftErr;
+                }
+              }
+              const regNo = res.data?.data?.hf_registry_no || 'HF Draft';
+              alert(`Draft saved successfully (Registry No: ${regNo}). You can resume and complete it anytime.`);
+            } else {
+              res = await api.post('/hf-assessment', { ...sanitizedData, isDraft: false });
+              alert('Heart Failure Assessment details submitted and finalized in database successfully.');
+            }
             await loadPatients();
           } catch (err) {
             console.error('Error saving HF assessment:', err);
