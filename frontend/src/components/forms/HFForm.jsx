@@ -612,7 +612,7 @@ const HFForm = forwardRef(function HFForm(
           )}
           <NumberInput id="hf-hr" label="Heart Rate (bpm)" required value={vHr} onChange={setVHr} />
           <NumberInput id="hf-rr" label="Respiratory Rate (bpm)" value={vRr} onChange={setVRr} />
-          <NumberInput id="hf-o2" label="O2 Saturation (%)" max={100} value={vO2} onChange={setVO2} />
+          <NumberInput id="hf-o2" label="O2 Saturation (%)" value={vO2} onChange={setVO2} />
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">BP Sitting (Sys / Dia)</label>
             <div className="flex gap-2">

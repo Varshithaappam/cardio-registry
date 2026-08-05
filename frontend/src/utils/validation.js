@@ -53,7 +53,7 @@ export const validateField = (fieldName, value) => {
   }
 
   // 2. Vitals & Metrics
-  if (fieldName === 'weight') {
+  if (fieldName === 'weight' || fieldName === 'vWeight') {
     const num = parseFloat(strVal);
     if (isNaN(num)) {
       return {
@@ -64,19 +64,10 @@ export const validateField = (fieldName, value) => {
         color: 'text-red-500 font-bold'
       };
     }
-    if (num < 20.0 || num > 300.0) {
-      return {
-        isValid: false,
-        error: 'Please enter a realistic weight between 20kg and 300kg.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
     return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
   }
 
-  if (fieldName === 'height') {
+  if (fieldName === 'height' || fieldName === 'vHeight') {
     const num = parseFloat(strVal);
     if (isNaN(num)) {
       return {
@@ -87,33 +78,15 @@ export const validateField = (fieldName, value) => {
         color: 'text-red-500 font-bold'
       };
     }
-    if (num < 50.0 || num > 250.0) {
-      return {
-        isValid: false,
-        error: 'Please enter a realistic height between 50cm and 250cm.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
     return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
   }
 
-  if (fieldName === 'heartRate') {
-    const num = parseInt(strVal, 10);
-    if (isNaN(num) || !/^\d+$/.test(strVal)) {
+  if (fieldName === 'heartRate' || fieldName === 'vHeartRate') {
+    const num = parseFloat(strVal);
+    if (isNaN(num)) {
       return {
         isValid: false,
         error: 'Please enter valid values like integers or numbers.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    if (num < 30 || num > 250) {
-      return {
-        isValid: false,
-        error: 'Please enter a realistic Heart Rate between 30 and 250.',
         warning: null,
         status: 'Invalid',
         color: 'text-red-500 font-bold'
@@ -217,21 +190,6 @@ export const validateHFForm = (formData = {}, isDraft = false) => {
       errors[`${key}_date`] = `${key.toUpperCase()} Test Date is required when result value is entered.`;
     }
   });
-
-  // Biomarker Check: Allow EITHER BNP OR NT-proBNP (result + date)
-  const bnpTest = labTests.bnp || {};
-  const bnpRes = bnpTest.result ?? formData.bnp_result ?? formData.bnpResult;
-  const bnpDt = bnpTest.date ?? formData.bnp_date ?? formData.bnpDate;
-  const hasBnp = bnpRes && String(bnpRes).trim() !== '' && bnpDt && String(bnpDt).trim() !== '';
-
-  const ntProBnpTest = labTests.ntProBnp || labTests.nt_pro_bnp || {};
-  const ntRes = ntProBnpTest.result ?? formData.nt_pro_bnp_result ?? formData.ntProBnpResult;
-  const ntDt = ntProBnpTest.date ?? formData.nt_pro_bnp_date ?? formData.ntProBnpDate;
-  const hasNtProBnp = ntRes && String(ntRes).trim() !== '' && ntDt && String(ntDt).trim() !== '';
-
-  if (!hasBnp && !hasNtProBnp) {
-    errors.biomarker = 'Either BNP OR NT-proBNP (Result and Date) is required.';
-  }
 
   // 4. MACE Conditional Validation Rules
   if (isYes(formData.maceDeath) || isYes(formData.mace_death)) {
