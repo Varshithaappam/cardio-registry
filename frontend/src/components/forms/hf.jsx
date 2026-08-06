@@ -1,5 +1,5 @@
 import React, { useState, forwardRef, useImperativeHandle, useMemo, useEffect } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import api from '../../../api/axios';
 import { calculateAge } from '../../utils/calculateAge';
 import SectionCard from './common/SectionCard';
@@ -12,6 +12,7 @@ import RadioGroup from './common/RadioGroup';
 import CheckboxGroup from './common/CheckboxGroup';
 import FormField from './common/FormField';
 import DrugTable from './common/DrugTable';
+import FollowupAssessmentForm from './FollowupAssessmentForm';
 import { validateField } from '../../utils/validation';
 import { formatDateForDisplay, formatDateForDatabase } from '../../utils/dateUtils';
 
@@ -20,6 +21,7 @@ function HFFormWizard({ activeSection, onSectionChange, sectionErrors, viewMode,
   const totalSteps = sections.length;
   const activeStep = Math.min(Math.max(activeSection, 0), Math.max(totalSteps - 1, 0));
   const isTabularView = viewMode === 'tabular';
+  const scrollRef = React.useRef(null);
 
   const goToSection = (sectionIndex) => {
     onSectionChange(sectionIndex);
@@ -28,57 +30,122 @@ function HFFormWizard({ activeSection, onSectionChange, sectionErrors, viewMode,
     });
   };
 
+  const scrollStepper = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === 'left' ? -260 : 260;
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    if (scrollRef.current && isTabularView) {
+      const activeEl = scrollRef.current.children[activeStep];
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+  }, [activeStep, isTabularView]);
+
   return (
     <div className="space-y-6">
       {isTabularView && (
-      <div id="hf-wizard-top" className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 md:p-5">
+      <div id="hf-wizard-top" className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 md:p-5 shadow-xs">
+        {/* Header Summary */}
         <div className="mb-4 flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-700">Heart Failure assessment</p>
-            <p className="mt-0.5 text-[11px] text-slate-500">Step {activeStep + 1} of {totalSteps}</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-slate-800">Heart Failure Assessment</p>
+            <p className="mt-0.5 text-[11px] text-slate-500 font-medium">Step {activeStep + 1} of {totalSteps} • {sections[activeStep]?.props?.title?.replace(/^\d+\.\s*/, '') || ''}</p>
           </div>
-          <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[10px] font-bold text-teal-700 ring-1 ring-inset ring-teal-100">
-            {Math.round(((activeStep + 1) / totalSteps) * 100)}% through form
+          <span className="rounded-full bg-teal-50 px-3 py-1 text-[11px] font-bold text-teal-700 ring-1 ring-inset ring-teal-200 shadow-2xs">
+            Step {activeStep + 1} of {totalSteps}
           </span>
         </div>
 
-        <div className="overflow-x-auto pb-1">
-          <div className="flex min-w-max items-start">
+        {/* Stepper Flow Track */}
+        <div className="relative flex items-center">
+          {/* Scroll Left Button */}
+          <button
+            type="button"
+            onClick={() => scrollStepper('left')}
+            className="absolute left-0 z-10 p-1.5 rounded-full bg-white/90 border border-slate-200 text-slate-600 hover:text-teal-700 shadow-sm hover:bg-slate-50 transition-all focus:outline-none"
+            title="Scroll Left"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          {/* Stepper Track Container (Hidden Native Scrollbars) */}
+          <div
+            ref={scrollRef}
+            className="flex items-start w-full overflow-x-auto px-6 py-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden scroll-smooth"
+          >
             {sections.map((section, index) => {
               const hasError = sectionErrors.includes(index);
               const isActive = index === activeStep;
-              const isCompleted = index < activeStep && !hasError;
               const title = String(section.props.title || '').replace(/^\d+\.\s*/, '');
 
               return (
-                <div className="flex min-w-[9.5rem] flex-1 items-start last:min-w-0" key={section.key ?? title}>
+                <div className="flex flex-col items-center flex-1 min-w-[7.5rem] md:min-w-[8.5rem] shrink-0" key={section.key ?? title}>
+                  {/* Top Row: Left Line + Circle + Right Line */}
+                  <div className="flex items-center w-full">
+                    {/* Left Line */}
+                    <div className={`h-0.5 flex-1 transition-colors ${
+                      index === 0 ? 'invisible' : (index <= activeStep ? 'bg-teal-600' : 'bg-slate-200')
+                    }`} />
+
+                    {/* Circle Indicator (No Checkmarks) */}
+                    <button
+                      type="button"
+                      onClick={() => goToSection(index)}
+                      aria-current={isActive ? 'step' : undefined}
+                      className="relative z-10 shrink-0 focus:outline-none rounded-full transition-transform"
+                    >
+                      <span className={`flex h-8 w-8 items-center justify-center rounded-full border-2 text-xs transition-all ${
+                        hasError
+                          ? 'border-red-500 bg-red-50 text-red-600 font-bold shadow-xs'
+                          : isActive
+                          ? 'border-teal-600 bg-teal-600 text-white font-black ring-4 ring-teal-100/80 scale-105 shadow-xs'
+                          : 'border-slate-300 bg-white text-slate-500 font-medium hover:border-slate-400 hover:text-slate-700'
+                      }`}>
+                        {hasError ? '!' : index + 1}
+                      </span>
+                    </button>
+
+                    {/* Right Line */}
+                    <div className={`h-0.5 flex-1 transition-colors ${
+                      index === totalSteps - 1 ? 'invisible' : (index < activeStep ? 'bg-teal-600' : 'bg-slate-200')
+                    }`} />
+                  </div>
+
+                  {/* Bottom Row: Text Label Centered */}
                   <button
                     type="button"
                     onClick={() => goToSection(index)}
-                    aria-current={isActive ? 'step' : undefined}
-                    className="group flex min-w-0 flex-col items-center text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 focus-visible:ring-offset-2 rounded-lg"
+                    className="mt-2 w-full text-center px-1 focus:outline-none"
                   >
-                    <span className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-[11px] font-black transition-colors ${
-                      hasError ? 'border-red-500 bg-red-50 text-red-600' :
-                      isCompleted ? 'border-teal-600 bg-teal-600 text-white' :
-                      isActive ? 'border-teal-600 bg-white text-teal-700 shadow-sm' :
-                      'border-slate-300 bg-white text-slate-500 group-hover:border-slate-400'
-                    }`}>
-                      {isCompleted ? '✓' : index + 1}
-                    </span>
-                    <span className={`mt-2 max-w-[9rem] text-[10px] font-bold leading-tight ${
-                      hasError ? 'text-red-600' : isActive ? 'text-teal-800' : 'text-slate-500'
+                    <span className={`text-[11px] leading-tight block font-medium transition-colors ${
+                      hasError
+                        ? 'text-red-600 font-bold'
+                        : isActive
+                        ? 'text-teal-800 font-extrabold'
+                        : 'text-slate-500 hover:text-slate-700'
                     }`}>
                       {title}
                     </span>
                   </button>
-                  {index < totalSteps - 1 && (
-                    <span className={`mt-3 h-0.5 flex-1 ${isCompleted ? 'bg-teal-600' : hasError ? 'bg-red-200' : 'bg-slate-200'}`} />
-                  )}
                 </div>
               );
             })}
           </div>
+
+          {/* Scroll Right Button */}
+          <button
+            type="button"
+            onClick={() => scrollStepper('right')}
+            className="absolute right-0 z-10 p-1.5 rounded-full bg-white/90 border border-slate-200 text-slate-600 hover:text-teal-700 shadow-sm hover:bg-slate-50 transition-all focus:outline-none"
+            title="Scroll Right"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
       )}
@@ -1119,6 +1186,12 @@ const hf = forwardRef(function hf(
   const [vacInfluenzaDate, setVacInfluenzaDate] = useState(editingRecord?.investigations?.vacInfluenzaDate ?? '');
   const [bloodGroup, setBloodGroup] = useState(editingRecord?.investigations?.bloodGroup ?? '');
 
+  // Section 11: Follow-up Assessment State
+  const followupAssessmentRef = React.useRef(null);
+  const [followupAssessment, setFollowupAssessment] = useState(
+    editingRecord?.followupAssessment || editingRecord?.followup_assessment || null
+  );
+
   // --- Lab Test State Structure ---
   
   const formatDateToView = (val) => {
@@ -1837,6 +1910,16 @@ const hf = forwardRef(function hf(
   // Central validation errors dictionary state
   const [formErrors, setFormErrors] = useState({});
   const [activeSection, setActiveSection] = useState(0);
+  const [visitedSteps, setVisitedSteps] = useState(() => new Set([0]));
+
+  const handleSectionChange = (newIndex) => {
+    setActiveSection(newIndex);
+    setVisitedSteps((prev) => {
+      const next = new Set(prev);
+      next.add(newIndex);
+      return next;
+    });
+  };
   const [sectionErrors, setSectionErrors] = useState([]);
 
   const findValidationElement = (errorKey) => {
@@ -1901,6 +1984,11 @@ const hf = forwardRef(function hf(
 
   useEffect(() => {
     if (editingRecord) {
+      const fa = editingRecord.followupAssessment || editingRecord.followup_assessment || editingRecord.followupReport || editingRecord.followup;
+      if (fa) {
+        setFollowupAssessment(fa);
+      }
+
       // 1. HF Type, Stage, NYHA
       const rawType = editingRecord.typeOfHF || editingRecord.finalAssessment?.finalTypeOfHF;
       if (rawType && (rawType.includes('HFpEF') || rawType.includes('preserved'))) setHfType('HFpEF (HF with preserved EF)');
@@ -2583,7 +2671,8 @@ const hf = forwardRef(function hf(
       procedures_details: recProceduresDetails || null,
       other_recommendation: (recOther === 'Yes' || recOtherDetails) ? 'Yes' : 'No',
       other_recommendation_details: recOtherDetails || null
-    }
+    },
+    followupAssessment: followupAssessmentRef.current?.getAssessmentPayload() || followupAssessment || null
   };
 };
 
@@ -3451,7 +3540,135 @@ const hf = forwardRef(function hf(
     setRecProceduresDetails('');
     setRecOther('No');
     setRecOtherDetails('');
+
+    // Section 11: Follow-up Assessment
+    setFollowupAssessment({
+      is_followup_required: 1,
+      isFollowupRequired: 'Yes',
+      followup_interval: '1-Month',
+      followupInterval: '1-Month',
+      scheduled_followup_date: '2026-09-05',
+      scheduledFollowupDate: '2026-09-05',
+      visit_mode: 'In-Person HF Clinic',
+      visitMode: 'In-Person HF Clinic',
+      primary_followup_reason: 'GDMT Titration & Renal Function Review',
+      primaryFollowupReason: 'GDMT Titration & Renal Function Review',
+      investigation_serum_lytes: 1,
+      investigation_ecg: 1,
+      investigation_echo: 0,
+      investigation_bnp_ntprobnp: 0,
+      investigation_6mw_test: 0,
+      special_instructions: 'Repeat Renal Function Test prior to visit. Monitor weight daily.',
+      specialInstructions: 'Repeat Renal Function Test prior to visit. Monitor weight daily.'
+    });
   };
+  const isSectionComplete = (sectionIndex, customFormData, customVisitedSteps, currentStepIndex) => {
+    // Standardize to 1-indexed step ID (Step 1 to Step 11)
+    const stepId = typeof sectionIndex === 'number' ? (sectionIndex < 11 ? sectionIndex + 1 : sectionIndex) : 1;
+    const currentStep = currentStepIndex !== undefined ? (currentStepIndex < 11 ? currentStepIndex + 1 : currentStepIndex) : (activeSection + 1);
+    const stepsVisited = customVisitedSteps || visitedSteps;
+
+    const isVisited = Array.isArray(stepsVisited) 
+      ? stepsVisited.includes(stepId) || stepsVisited.includes(stepId - 1)
+      : (stepsVisited && (stepsVisited.has(stepId) || stepsVisited.has(stepId - 1)));
+    
+    const isNavigatedAway = currentStep !== stepId;
+
+    switch (stepId) {
+      case 1: { // Section 1: Return true ONLY IF present_diagnosis is entered
+        const diag = customFormData?.present_diagnosis || customFormData?.presentDiagnosis || presentDiagnosis;
+        return !!(diag && String(diag).trim() !== '');
+      }
+
+      case 2: { // Section 2 (No Mandatory Fields): Return true ONLY IF visited AND navigated away
+        return isVisited && isNavigatedAway;
+      }
+
+      case 3: { // Section 3: Return true ONLY IF medical_history has at least 1 option selected
+        const medHistory = customFormData?.medical_history || customFormData?.medicalHistory;
+        if (Array.isArray(medHistory)) return medHistory.length > 0;
+        if (typeof medHistory === 'object' && medHistory !== null) {
+          return Object.values(medHistory).some(v => v === true || v === 'Yes');
+        }
+        return [historyCabg, historyPtca, historyStroke, historyMajorBleed, historyThrombolysis, historyPastMi].some(h => h === 'Yes');
+      }
+
+      case 4: { // Section 4: Return true ONLY IF medical_history / hf_etiology has at least 1 option selected
+        const etiology = customFormData?.hf_etiology || customFormData?.hfEtiology || customFormData?.medical_history || customFormData?.medicalHistory;
+        if (Array.isArray(etiology)) return etiology.length > 0;
+        if (typeof etiology === 'object' && etiology !== null) {
+          return Object.values(etiology).some(v => v === true || v === 'Yes' || (Array.isArray(v) && v.length > 0));
+        }
+        return hfEtiologyCv.length > 0 || hfEtiologyNonCv.length > 0 || hfEtiologyPulm.length > 0 || (etiologyOther === 'Yes' && etiologyOtherDetails.trim() !== '');
+      }
+
+      case 5: { // Section 5: Return true ONLY IF ef_percentage is entered
+        const ef = customFormData?.ef_percentage ?? customFormData?.efPercentage ?? customFormData?.echo_ef_percent ?? customFormData?.echoEfPercent ?? labTests?.echo?.result;
+        return ef !== undefined && ef !== null && String(ef).trim() !== '';
+      }
+
+      case 6: { // Section 6: Return true ONLY IF recommended_consults / medical therapy is entered
+        const consults = customFormData?.recommended_consults || customFormData?.recommendedConsults || customFormData?.medicalTherapy;
+        if (consults) return true;
+        return [carvedilol, bisoprolol, metoprololSuccinate, nebivolol, enalapril, ramipril, lisinopril, perindopril, valsartan, losartan, telmisartan, olmesartan, spironolactone, eplerenone, furosemide].some(d => d === 'Yes');
+      }
+
+      case 7: { // Section 7: Return true ONLY IF current_device_therapy is explicitly selected as Yes or No
+        const device = customFormData?.current_device_therapy ?? customFormData?.currentDeviceTherapy ?? currentDeviceNone;
+        return device !== undefined && device !== null && String(device).trim() !== '';
+      }
+
+      case 8: { // Section 8: Patient Education - Return true ONLY IF at least one topic is checked Yes
+        const eduObj = customFormData?.patientEducation || customFormData;
+        if (typeof eduObj === 'object' && eduObj !== null) {
+          const hasChecked = Object.values(eduObj).some(v => v === 'Yes' || v === true || v === '1');
+          if (hasChecked) return true;
+        }
+        return [eduDiet, eduExercise, eduWeight, eduDisease, eduSmoking, eduAlcohol, eduCompliance, eduWorsened, eduDevice, eduOther].some(e => e === 'Yes');
+      }
+
+      case 9: { // Section 9: Recommendations - Return true ONLY IF at least one recommendation is selected or detailed
+        const recObj = customFormData?.recommendations || customFormData;
+        if (typeof recObj === 'object' && recObj !== null) {
+          const hasRec = Object.values(recObj).some(v => (v === 'Yes' || v === true || v === '1') || (typeof v === 'string' && v.trim() !== '' && v !== 'No'));
+          if (hasRec) return true;
+        }
+        return [recFluidDiet, recExercise, recYoga, recSmokingCessation, recStressManagement, recDrugs, recInvestigations, recProcedures, recOther].some(r => r === 'Yes') ||
+          !!(recFluidDietDetails || recExerciseDetails || recYogaDetails || recSmokingCessationDetails || recStressManagementDetails || recDrugsDetails || recInvestigationsDetails || recProceduresDetails || recOtherDetails);
+      }
+
+      case 10: { // Section 10: Imaging & Document Upload - Return true ONLY IF files are uploaded
+        const docs = customFormData?.uploadedDocs || uploadedDocs;
+        return Array.isArray(docs) && docs.length > 0;
+      }
+
+      case 11: { // Section 11: Follow-up Assessment - Return true ONLY IF mandatory branch fields filled
+        const fa = customFormData?.followupAssessment || followupAssessment;
+        if (!fa) return false;
+        const req = fa.is_followup_required === 1 || fa.is_followup_required === true || fa.isFollowupRequired === 'Yes' || fa.is_followup_required === '1';
+        const noReq = fa.is_followup_required === 0 || fa.is_followup_required === false || fa.isFollowupRequired === 'No' || fa.is_followup_required === '0';
+        if (req) {
+          return !!(
+            (fa.followup_interval || fa.followupInterval) &&
+            (fa.scheduled_followup_date || fa.scheduledFollowupDate) &&
+            (fa.visit_mode || fa.visitMode) &&
+            (fa.primary_followup_reason || fa.primaryFollowupReason)
+          );
+        }
+        if (noReq) {
+          return !!(
+            (fa.primary_no_followup_reason || fa.primaryNoFollowupReason) &&
+            (fa.pcp_transition_summary || fa.pcpTransitionSummary)
+          );
+        }
+        return false;
+      }
+
+      default:
+        return false;
+    }
+  };
+
   useImperativeHandle(ref, () => ({
     getSubmissionData,
     handleSubmit,
@@ -3496,8 +3713,9 @@ const hf = forwardRef(function hf(
       <fieldset disabled={readOnly} className={`contents border-none p-0 m-0 ${isDeleted ? 'opacity-60 pointer-events-none select-none filter grayscale-[30%]' : ''}`}>
       <HFFormWizard
         activeSection={activeSection}
-        onSectionChange={setActiveSection}
+        onSectionChange={handleSectionChange}
         sectionErrors={sectionErrors}
+        isSectionComplete={isSectionComplete}
         viewMode={viewMode}
       >
       {/* 1. Patient Profile */}
@@ -6732,7 +6950,7 @@ const hf = forwardRef(function hf(
         </div>
       </SectionCard>
       {/* 10. Imaging & Document Upload */}
-      <SectionCard title="10. IMAGING & DOCUMENT UPLOAD" subtitle="Upload patient documents such as ECG, ECHO, Lab Reports, etc. (Max 5 files, 5MB limit, PDF or images)">
+      <SectionCard title="10. Imaging & Document Upload" subtitle="Upload patient documents such as ECG, ECHO, Lab Reports, etc. (Max 5 files, 5MB limit, PDF or images)">
         <div className="space-y-4">
           {uploadedDocs.length > 0 ? (
             <div className="space-y-2">
@@ -6836,6 +7054,15 @@ const hf = forwardRef(function hf(
           )}
         </div>
       </SectionCard>
+
+      {/* 11. Follow-up Assessment Section */}
+      <FollowupAssessmentForm
+        title="11. Follow-up Assessment"
+        ref={followupAssessmentRef}
+        initialData={followupAssessment}
+        onChange={(data) => setFollowupAssessment(data)}
+        readOnly={readOnly}
+      />
 
       </HFFormWizard>
     </fieldset>

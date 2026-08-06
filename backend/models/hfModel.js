@@ -202,6 +202,16 @@ async function insertHfAdvancedInvestigations(conn, data) {
     return insertRow(conn, 'hf_advanced_investigations', data, keys);
 }
 
+async function insertHfFollowupAssessment(conn, data) {
+    const keys = [
+        'hf_id', 'patient_id', 'is_followup_required',
+        'followup_interval', 'scheduled_followup_date', 'visit_mode', 'primary_followup_reason',
+        'investigation_serum_lytes', 'investigation_ecg', 'investigation_echo', 'investigation_bnp_ntprobnp', 'investigation_6mw_test',
+        'special_instructions', 'primary_no_followup_reason', 'pcp_transition_summary', 'self_care_instructions'
+    ];
+    return insertRow(conn, 'hf_followup_assessments', data, keys);
+}
+
 module.exports = {
     insertHfRegistry,
     insertHfAdministrative,
@@ -215,5 +225,6 @@ module.exports = {
     insertHfRecommendations,
     insertHfLabTests,
     insertHfCardiacInvestigations,
-    insertHfAdvancedInvestigations
+    insertHfAdvancedInvestigations,
+    insertHfFollowupAssessment
 };

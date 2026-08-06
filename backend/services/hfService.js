@@ -74,7 +74,8 @@ async function saveHfAssessment(data, userId = 1) {
                 'hf_recommendations',
                 'hf_lab_tests',
                 'hf_cardiac_investigations',
-                'hf_advanced_investigations'
+                'hf_advanced_investigations',
+                'hf_followup_assessments'
             ];
             for (const table of childTables) {
                 await conn.query(`DELETE FROM [${table}] WHERE [hf_id] = @hfId;`, { hfId: hf_id });
@@ -515,6 +516,44 @@ async function saveHfAssessment(data, userId = 1) {
             await hfModel.insertHfAdvancedInvestigations(conn, withHfId(advancedData));
         }
 
+        // Section 11: Follow-up Assessment
+        if (data.followupAssessment) {
+            const fa = data.followupAssessment;
+            const isYes = fa.is_followup_required === 1 || fa.is_followup_required === true || fa.isFollowupRequired === 'Yes';
+            const isNo = fa.is_followup_required === 0 || fa.is_followup_required === false || fa.isFollowupRequired === 'No';
+
+            const sanitizeString = (val) => (val && String(val).trim() !== '' ? String(val).trim() : null);
+
+            const followupData = {
+                hf_id,
+                patient_id: data.patientId || data.patient_id,
+                is_followup_required: isYes ? 1 : 0,
+
+                // Branch 1 (Yes)
+                followup_interval: isYes ? sanitizeString(fa.followup_interval || fa.followupInterval) : null,
+                scheduled_followup_date: isYes ? toSqlDate(fa.scheduled_followup_date || fa.scheduledFollowupDate) : null,
+                visit_mode: isYes ? sanitizeString(fa.visit_mode || fa.visitMode) : null,
+                primary_followup_reason: isYes ? sanitizeString(fa.primary_followup_reason || fa.primaryFollowupReason) : null,
+                investigation_serum_lytes: isYes ? (fa.investigation_serum_lytes || fa.investigations?.serumLytes ? 1 : 0) : null,
+                investigation_ecg: isYes ? (fa.investigation_ecg || fa.investigations?.ecg ? 1 : 0) : null,
+                investigation_echo: isYes ? (fa.investigation_echo || fa.investigations?.echo ? 1 : 0) : null,
+                investigation_bnp_ntprobnp: isYes ? (fa.investigation_bnp_ntprobnp || fa.investigations?.bnp ? 1 : 0) : null,
+                investigation_6mw_test: isYes ? (fa.investigation_6mw_test || fa.investigations?.sixMwt ? 1 : 0) : null,
+                special_instructions: isYes ? sanitizeString(fa.special_instructions || fa.specialInstructions) : null,
+
+                // Branch 2 (No)
+                primary_no_followup_reason: isNo ? sanitizeString(fa.primary_no_followup_reason || fa.primaryNoFollowupReason) : null,
+                pcp_transition_summary: isNo ? sanitizeString(fa.pcp_transition_summary || fa.pcpTransitionSummary) : null,
+                self_care_instructions: isNo ? sanitizeString(fa.self_care_instructions || fa.selfCareInstructions) : null
+            };
+
+            try {
+                await hfModel.insertHfFollowupAssessment(conn, followupData);
+            } catch (faErr) {
+                console.error("Error inserting into hf_followup_assessments:", faErr);
+            }
+        }
+
         await conn.commit();
 
         try {
@@ -571,9 +610,9 @@ async function getHfAssessment(hf_id) {
             }
         }
 
-        const tables = ['hf_administrative', 'hf_initial_assessment', 'hf_final_clinical_assessment', 'hf_medical_therapy_part1', 'hf_medical_therapy_part2', 'hf_medical_therapy_part3', 'hf_device_therapy', 'hf_patient_education', 'hf_recommendations', 'hf_lab_tests', 'hf_cardiac_investigations', 'hf_advanced_investigations'];
+        const tables = ['hf_administrative', 'hf_initial_assessment', 'hf_final_clinical_assessment', 'hf_medical_therapy_part1', 'hf_medical_therapy_part2', 'hf_medical_therapy_part3', 'hf_device_therapy', 'hf_patient_education', 'hf_recommendations', 'hf_lab_tests', 'hf_cardiac_investigations', 'hf_advanced_investigations', 'hf_followup_assessments'];
         const detailResults = await Promise.all(tables.map((table) => conn.query(`SELECT * FROM [${table}] WHERE [hf_id] = @hfId;`, { hfId: hf_id })));
-        const [adminRows, initialRows, finalRows, part1Rows, part2Rows, part3Rows, deviceRows, educationRows, recommendationRows, labRows, cardiacRows, advancedRows] = detailResults.map((result) => result.recordset);
+        const [adminRows, initialRows, finalRows, part1Rows, part2Rows, part3Rows, deviceRows, educationRows, recommendationRows, labRows, cardiacRows, advancedRows, followupRows] = detailResults.map((result) => result.recordset);
 
         const admin = adminRows[0] || {};
         const initial = initialRows[0] || {};
@@ -587,6 +626,7 @@ async function getHfAssessment(hf_id) {
         const lab = labRows[0] || {};
         const cardiac = cardiacRows[0] || {};
         const advanced = advancedRows[0] || {};
+        const followup = followupRows[0] || null;
 
         // Merge medical therapy
         const medicalTherapy = { ...part1, ...part2, ...part3 };
@@ -1003,6 +1043,38 @@ async function getHfAssessment(hf_id) {
                 other_recommendation: recommendation.other_recommendation,
                 other_recommendation_details: recommendation.other_recommendation_details
             },
+            followupAssessment: followup ? {
+                is_followup_required: followup.is_followup_required,
+                isFollowupRequired: followup.is_followup_required === 1 ? 'Yes' : 'No',
+                followup_interval: followup.followup_interval,
+                followupInterval: followup.followup_interval,
+                scheduled_followup_date: followup.scheduled_followup_date,
+                scheduledFollowupDate: followup.scheduled_followup_date,
+                visit_mode: followup.visit_mode,
+                visitMode: followup.visit_mode,
+                primary_followup_reason: followup.primary_followup_reason,
+                primaryFollowupReason: followup.primary_followup_reason,
+                investigation_serum_lytes: followup.investigation_serum_lytes,
+                investigation_ecg: followup.investigation_ecg,
+                investigation_echo: followup.investigation_echo,
+                investigation_bnp_ntprobnp: followup.investigation_bnp_ntprobnp,
+                investigation_6mw_test: followup.investigation_6mw_test,
+                investigations: {
+                    serumLytes: followup.investigation_serum_lytes === 1,
+                    ecg: followup.investigation_ecg === 1,
+                    echo: followup.investigation_echo === 1,
+                    bnp: followup.investigation_bnp_ntprobnp === 1,
+                    sixMwt: followup.investigation_6mw_test === 1
+                },
+                special_instructions: followup.special_instructions,
+                specialInstructions: followup.special_instructions,
+                primary_no_followup_reason: followup.primary_no_followup_reason,
+                primaryNoFollowupReason: followup.primary_no_followup_reason,
+                pcp_transition_summary: followup.pcp_transition_summary,
+                pcpTransitionSummary: followup.pcp_transition_summary,
+                self_care_instructions: followup.self_care_instructions,
+                selfCareInstructions: followup.self_care_instructions
+            } : null,
             is_deleted: registry.is_deleted === 1 || registry.is_deleted === true,
             deleted_at: registry.deleted_at,
             deleted_by: registry.deleted_by,
