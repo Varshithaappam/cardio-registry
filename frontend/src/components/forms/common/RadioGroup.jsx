@@ -1,5 +1,12 @@
 import React from 'react';
 import FormField from './FormField';
+import {
+  FORM_STYLES,
+  OPTION_CARD_SELECTED_STYLES,
+  OPTION_CARD_NORMAL_STYLES,
+  OPTION_CARD_ERROR_STYLES,
+  OPTION_CARD_DISABLED_STYLES
+} from './formStyles';
 
 const columnClass = {
   1: 'grid-cols-1',
@@ -50,13 +57,15 @@ export default function RadioGroup({
           return (
             <label
               key={optionValue}
-              className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition-colors text-xs font-medium ${
+              className={
                 isChecked
-                  ? 'bg-blue-50/50 border-blue-500 text-blue-900 font-semibold'
+                  ? FORM_STYLES.optionCardActive
+                  : readOnly
+                  ? OPTION_CARD_DISABLED_STYLES
                   : error
-                  ? 'bg-white border-red-500 text-slate-700'
-                  : 'bg-white border-slate-200 text-slate-700'
-              } ${readOnly ? 'pointer-events-none' : 'cursor-pointer hover:border-slate-300'} transition-all duration-150`}
+                  ? OPTION_CARD_ERROR_STYLES
+                  : FORM_STYLES.optionCardBase
+              }
             >
               <input
                 type="radio"
@@ -64,10 +73,10 @@ export default function RadioGroup({
                 value={optionValue}
                 checked={isChecked}
                 onChange={() => onChange(optionValue)}
-                className="shrink-0 accent-blue-600 disabled:opacity-100 disabled:accent-blue-600"
+                className={`${FORM_STYLES.checkRadioBase} rounded-full shrink-0 accent-teal-600 disabled:opacity-100 disabled:accent-teal-700`}
                 disabled={readOnly}
               />
-              <span>{optionLabel}</span>
+              <span className="truncate">{optionLabel}</span>
             </label>
           );
         })}

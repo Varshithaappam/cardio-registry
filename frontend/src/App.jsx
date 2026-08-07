@@ -52,17 +52,17 @@ function MainLayout({ records, nurse, onLogout }) {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      {/* Header */}
+      {/* Main Top Header */}
       <header className="bg-slate-900 text-white border-b border-slate-800 shrink-0 shadow-sm relative z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex justify-between items-center flex-wrap gap-4">
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center flex-wrap gap-4">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/dashboard')}>
-            <div className="p-2 bg-blue-600 text-white rounded-xl">
-              <Heart className="w-6 h-6 animate-pulse" />
+            <div className="p-2 bg-teal-600 text-white rounded-xl shadow-xs">
+              <Heart className="w-5 h-5 animate-pulse" />
             </div>
             <div>
               <h1 className="text-sm sm:text-base font-black tracking-tight flex items-center gap-1.5 text-slate-100">
                 <span>CARE CARDIOVASCULAR REGISTRY</span>
-                <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-md text-[9px] font-bold border border-blue-500/30">v1.2.0</span>
+                <span className="px-2 py-0.5 bg-teal-500/20 text-teal-400 rounded-md text-[9px] font-bold border border-teal-500/30">v1.2.0</span>
               </h1>
               <p className="text-[10px] text-slate-400 mt-0.5">Comprehensive Longitudinal Clinical Audit Platform</p>
             </div>
@@ -70,12 +70,12 @@ function MainLayout({ records, nurse, onLogout }) {
 
           <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
             <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/60 rounded-xl px-3.5 py-1.5">
-              <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <UserCheck className="w-4 h-4 text-teal-400 shrink-0" />
               <div className="text-left hidden xs:block">
                 <span className="block text-xs font-black text-slate-100 leading-none">{nurse?.name || 'Clinician Admin'}</span>
                 <span className="block text-[9px] text-slate-400 font-semibold mt-0.5">{nurse?.role || 'CLINICIAN'}</span>
               </div>
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shrink-0 ml-1"></span>
+              <span className="w-2 h-2 bg-teal-400 rounded-full animate-pulse shrink-0 ml-1"></span>
             </div>
 
             <button
@@ -91,79 +91,78 @@ function MainLayout({ records, nurse, onLogout }) {
         </div>
       </header>
 
-      {/* Main Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full flex flex-col md:flex-row gap-6">
-        {/* Sidebar Navigation */}
-        <aside className="w-full md:w-64 shrink-0 flex flex-col gap-2">
-          <button
-            id="nav-dash"
-            onClick={() => navigate('/dashboard')}
-            className={`w-full px-4 py-3 rounded-xl text-left text-xs font-bold transition-all flex items-center gap-3 border ${
-              path === '/dashboard' || path === '/'
-                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
-            }`}
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            <span>Clinical Intelligence Dashboard</span>
-          </button>
+      {/* Secondary Top Navigation Bar (Task 1: Relocated from sidebar to top) */}
+      <nav className="bg-white border-b border-slate-200 shadow-2xs sticky top-0 z-30">
+        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-3">
+          {/* Main Navigation Items */}
+          <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-0.5">
+            <button
+              id="nav-dash"
+              onClick={() => navigate('/dashboard')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border ${
+                path === '/dashboard' || path === '/'
+                  ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span>Clinical Intelligence Dashboard</span>
+            </button>
 
-          <button
-            id="nav-patients"
-            onClick={() => navigate('/patients')}
-            className={`w-full px-4 py-3 rounded-xl text-left text-xs font-bold transition-all flex items-center gap-3 border ${
-              path === '/patients' || path.startsWith('/patient/')
-                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Master Patient Registry</span>
-          </button>
+            <button
+              id="nav-patients"
+              onClick={() => navigate('/patients')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border ${
+                path === '/patients' || path.startsWith('/patient/')
+                  ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Master Patient Registry</span>
+            </button>
 
-          <button
-            id="nav-mapping"
-            onClick={() => navigate('/mapping')}
-            className={`w-full px-4 py-3 rounded-xl text-left text-xs font-bold transition-all flex items-center gap-3 border ${
-              path === '/mapping'
-                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            <span>Source Clinical Form Mapping</span>
-          </button>
+            <button
+              id="nav-mapping"
+              onClick={() => navigate('/mapping')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border ${
+                path === '/mapping'
+                  ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+              }`}
+            >
+              <Layers className="w-4 h-4" />
+              <span>Source Clinical Form Mapping</span>
+            </button>
+          </div>
 
+          {/* Active Patient Scope Badge (if patient is selected) */}
           {selectedPatientId && activePatientRecord && (
-            <div className="mt-4 p-4 bg-slate-900 text-white rounded-2xl border border-slate-800 space-y-3.5 animate-fadeIn">
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Active Patient Scope</span>
-              <div>
-                <span className="text-xs font-bold block truncate">{activePatientRecord.patient.name}</span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">MR No: {activePatientRecord.patient.mrNo}</span>
-              </div>
-              <div className="flex flex-col gap-1.5 pt-1 border-t border-slate-800">
-                <button
-                  id="aside-view-portfolio"
-                  onClick={() => navigate(`/patient/${selectedPatientId}`)}
-                  className={`w-full text-left px-2 py-1.5 rounded text-[11px] font-bold transition-colors ${
-                    path === `/patient/${selectedPatientId}` ? 'bg-blue-500 text-white' : 'text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  ✔ View Longitudinal Timeline
-                </button>
-              </div>
+            <div className="flex items-center gap-2.5 bg-slate-900 text-white px-3 py-1.5 rounded-lg border border-slate-800 text-xs shadow-2xs shrink-0">
+              <span className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></span>
+              <span className="font-bold text-slate-200 text-xs">{activePatientRecord.patient.name}</span>
+              <span className="text-[10px] text-slate-400 font-semibold">(MR: {activePatientRecord.patient.mrNo})</span>
+              <button
+                id="aside-view-portfolio"
+                onClick={() => navigate(`/patient/${selectedPatientId}`)}
+                className={`ml-1 px-2.5 py-1 rounded text-[11px] font-bold transition-all ${
+                  path === `/patient/${selectedPatientId}` ? 'bg-teal-600 text-white shadow-2xs' : 'bg-slate-800 text-teal-400 hover:bg-slate-700'
+                }`}
+              >
+                View Timeline
+              </button>
             </div>
           )}
-        </aside>
+        </div>
+      </nav>
 
-        {/* Right Content Panel */}
-        <main className="flex-1 min-w-0">
-          <Outlet />
-        </main>
-      </div>
+      {/* Main Full-Width Content Area */}
+      <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1">
+        <Outlet />
+      </main>
 
-      <footer className="bg-white border-t border-slate-200 py-4 shrink-0 text-center text-slate-400 text-xs">
-        <div className="max-w-7xl mx-auto px-4">
+      <footer className="bg-white border-t border-slate-200 py-3.5 shrink-0 text-center text-slate-400 text-xs">
+        <div className="max-w-[1600px] mx-auto px-4">
           <span>CARE Clinical Registry Portal • Fully verified according to standard guidelines & medical data quality practices.</span>
         </div>
       </footer>

@@ -368,7 +368,7 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
                 required
                 columns={3}
                 options={[
-                  'In-Person HF Clinic',
+                  'In-Person',
                   'Tele-consultation',
                   'Phone Check-in'
                 ]}
@@ -382,7 +382,7 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
                 required
                 value={primaryFollowupReason}
                 onChange={setPrimaryFollowupReason}
-                placeholder="GDMT Titration & Renal Function Review"
+                placeholder="Specify reason..."
                 readOnly={readOnly}
               />
             </div>
@@ -434,16 +434,7 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
                   <span>BNP / NT-proBNP</span>
                 </label>
 
-                <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={investigation6mwTest}
-                    onChange={(e) => setInvestigation6mwTest(e.target.checked)}
-                    disabled={readOnly}
-                    className="rounded text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>6-Minute Walk Test</span>
-                </label>
+                
               </div>
             </FormField>
 
@@ -453,7 +444,7 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
               rows={2}
               value={specialInstructions}
               onChange={setSpecialInstructions}
-              placeholder="Repeat Renal Function Test prior to visit. Monitor weight daily."
+              placeholder="Specify instructions..."
               readOnly={readOnly}
             />
           </div>
@@ -485,12 +476,12 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
               />
 
               <TextArea
-                label="PCP Transition Summary for External Care:"
+                label="PCP Summary for External Care:"
                 required
                 rows={4}
                 value={pcpTransitionSummary}
                 onChange={setPcpTransitionSummary}
-                placeholder="Patient stable on current GDMT. Plan discussed with and care transferred to Dr. [Name] at [Clinic]. Advised on monitoring fluid status. Transition package provided."
+                placeholder="Specify transition details..."
                 readOnly={readOnly}
               />
             </div>
@@ -501,7 +492,7 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
               rows={3}
               value={selfCareInstructions}
               onChange={setSelfCareInstructions}
-              placeholder="Review current medications and fluid restrictions. Regular light exercise as tolerated. Monitor weight and contact local clinic for concerns. Specific signs to watch (Red Flags) included in discharge summary."
+              placeholder="Specify instructions..."
               readOnly={readOnly}
             />
           </div>

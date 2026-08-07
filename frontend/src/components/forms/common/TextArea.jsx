@@ -1,5 +1,6 @@
 import React from 'react';
 import FormField from './FormField';
+import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
 
 export default function TextArea({
   label,
@@ -12,27 +13,30 @@ export default function TextArea({
   className = '',
   readOnly = false,
   disabled = false,
+  maxLength = 1500,
   error = null
 }) {
   const isDisabled = disabled || readOnly;
+  const currentLength = (value ?? '').length;
+
   return (
     <FormField label={label} required={required} error={error} className={className}>
-      <textarea
-        id={id}
-        rows={rows}
-        value={value ?? ''}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={isDisabled}
-        readOnly={readOnly}
-        className={`w-full px-3 py-1.5 border rounded-lg text-xs font-medium outline-none transition-colors ${
-          error
-            ? 'border-red-500 bg-red-50 text-red-900 focus:ring-1 focus:ring-red-500'
-            : isDisabled
-            ? 'bg-slate-100 text-slate-900 font-semibold border-slate-200 cursor-not-allowed'
-            : 'bg-white text-slate-800 border-slate-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
-        }`}
-      />
+      <div className="relative w-full">
+        <textarea
+          id={id}
+          rows={rows}
+          value={value ?? ''}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={isDisabled}
+          readOnly={readOnly}
+          className={`${error ? INPUT_ERROR_STYLES : isDisabled ? INPUT_DISABLED_STYLES : INPUT_NORMAL_STYLES} pb-6`}
+        />
+        <div className="absolute bottom-2 right-2.5 text-[10px] font-medium text-slate-400 select-none pointer-events-none bg-white/90 px-1 rounded">
+          {currentLength}/{maxLength}
+        </div>
+      </div>
     </FormField>
   );
 }

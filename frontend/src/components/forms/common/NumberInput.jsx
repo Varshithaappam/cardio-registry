@@ -1,5 +1,6 @@
 import React from 'react';
 import FormField from './FormField';
+import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
 
 export default function NumberInput({
   label,
@@ -11,6 +12,7 @@ export default function NumberInput({
   min,
   max,
   step,
+  maxLength,
   disabled = false,
   className = '',
   readOnly = false,
@@ -18,6 +20,7 @@ export default function NumberInput({
 }) {
   const isDisabled = disabled || readOnly;
   const handleChange = (val) => {
+    if (maxLength && val.length > maxLength) return;
     if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
       onChange(val);
     } else {
@@ -35,14 +38,9 @@ export default function NumberInput({
         required={required}
         value={value ?? ''}
         placeholder={placeholder}
+        maxLength={maxLength}
         onChange={(e) => handleChange(e.target.value)}
-        className={`w-full px-3 py-1.5 border rounded-lg text-xs font-medium outline-none transition-colors ${
-          error
-            ? 'border-red-500 bg-red-50 text-red-900 focus:ring-1 focus:ring-red-500'
-            : isDisabled
-            ? 'bg-slate-100 text-slate-900 font-semibold border-slate-200 cursor-not-allowed'
-            : 'bg-white text-slate-800 border-slate-300 focus:ring-1 focus:ring-blue-500 focus:border-blue-500'
-        }`}
+        className={error ? INPUT_ERROR_STYLES : isDisabled ? INPUT_DISABLED_STYLES : INPUT_NORMAL_STYLES}
       />
     </FormField>
   );
