@@ -13,6 +13,7 @@ const documentRoutes = require("./routes/documentRoutes");
 const hfFilesRoutes = require("./routes/hfFilesRoutes");
 const authRoutes = require("./routes/authRoutes");
 const hfRegistryRoutes = require("./routes/hfRegistryRoutes");
+const nurseDashboardRoutes = require("./routes/nurseDashboardRoutes");
 const hfController = require('./controllers/hfController');
 
 // Middleware
@@ -31,10 +32,16 @@ app.get("/", (req, res) => {
     });
 });
 
+const hfFormRoutes = require("./routes/hfFormRoutes");
+const nurseFollowUpReportRoutes = require("./routes/nurseFollowUpReportRoutes");
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/hf-registry", hfRegistryRoutes);
 app.use("/api/patients", patientRoutes);
+app.use("/api/nurse-dashboard", nurseFollowUpReportRoutes);
+app.use("/api/nurse-followup-report", nurseFollowUpReportRoutes);
+app.use("/api/hf-form", hfFormRoutes);
 app.use("/api/hf-assessment", hfRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/hf-files", hfFilesRoutes);

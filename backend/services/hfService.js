@@ -549,6 +549,56 @@ async function saveHfAssessment(data, userId = 1) {
 
             try {
                 await hfModel.insertHfFollowupAssessment(conn, followupData);
+
+                // Also sync with patient_followup_tasks table so Nurse Follow-Up Report is updated
+                const targetPatientId = data.patientId || data.patient_id;
+                const targetDateVal = followupData.scheduled_followup_date;
+                const visitModeVal = followupData.visit_mode;
+                const timeframeVal = followupData.followup_interval;
+                const instructionsVal = followupData.special_instructions || followupData.self_care_instructions;
+                const statusVal = isYes ? 'Required' : 'No Follow-Up Needed';
+
+                const { recordset: existingTasks } = await conn.query(
+                    `SELECT task_id FROM patient_followup_tasks WHERE patient_id = @patientId;`,
+                    { patientId: targetPatientId }
+                );
+
+                if (existingTasks && existingTasks.length > 0) {
+                    await conn.query(
+                        `UPDATE patient_followup_tasks
+                         SET source_registry = 'Heart Failure Registry',
+                             status = @statusVal,
+                             target_date = @targetDateVal,
+                             timeframe = @timeframeVal,
+                             visit_mode = @visitModeVal,
+                             special_instructions = @instructionsVal
+                         WHERE patient_id = @patientId;`,
+                        {
+                            patientId: targetPatientId,
+                            statusVal,
+                            targetDateVal,
+                            timeframeVal,
+                            visitModeVal,
+                            instructionsVal
+                        }
+                    );
+                } else {
+                    await conn.query(
+                        `INSERT INTO patient_followup_tasks (
+                            patient_id, source_registry, status, target_date, timeframe, clinic_location, visit_mode, special_instructions
+                         ) VALUES (
+                            @patientId, 'Heart Failure Registry', @statusVal, @targetDateVal, @timeframeVal, 'CARE Heart Institute', @visitModeVal, @instructionsVal
+                         );`,
+                        {
+                            patientId: targetPatientId,
+                            statusVal,
+                            targetDateVal,
+                            timeframeVal,
+                            visitModeVal,
+                            instructionsVal
+                        }
+                    );
+                }
             } catch (faErr) {
                 console.error("Error inserting into hf_followup_assessments:", faErr);
             }

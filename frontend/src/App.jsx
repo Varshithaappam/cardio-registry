@@ -16,6 +16,7 @@ import MappingMatrix from "./components/MappingMatrix";
 import PatientTimeline from "./components/PatientTimeline";
 import ClinicalForm from "./components/ClinicalForm";
 import NurseLogin from "./components/NurseLogin";
+import NurseFollowUpReport from "./components/NurseFollowUpReport";
 import { sanitizePayload } from "./utils/payloadSanitizer";
 
 import {
@@ -25,6 +26,7 @@ import {
   LayoutDashboard,
   LogOut,
   UserCheck,
+  PhoneCall,
 } from "lucide-react";
 
 // Protected Route Guard
@@ -120,6 +122,19 @@ function MainLayout({ records, nurse, onLogout }) {
             >
               <Users className="w-4 h-4" />
               <span>Master Patient Registry</span>
+            </button>
+
+            <button
+              id="nav-nurse-followup"
+              onClick={() => navigate('/nurse-followup')}
+              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border ${
+                path === '/nurse-followup'
+                  ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
+                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+              }`}
+            >
+              <PhoneCall className="w-4 h-4" />
+              <span>Nurse Follow-Up Report</span>
             </button>
 
             <button
@@ -409,6 +424,7 @@ export default function App() {
             <Route path="/hf-form/view/:recordId" element={<HFFormView />} />
 
             <Route path="/mapping" element={<MappingMatrixPage />} />
+            <Route path="/nurse-followup" element={<NurseFollowUpReport />} />
           </Route>
         </Route>
 
