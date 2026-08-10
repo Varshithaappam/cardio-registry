@@ -3,27 +3,49 @@ const router = express.Router();
 const db = require('../config/db');
 
 /**
- * GET /api/nurse-followup-report/tasks AND /api/nurse-dashboard/tasks
- * Task-Centric Route: Displays ALL follow-up assessments registered in the database,
- * allowing multiple follow-up rows per patient if multiple forms are registered.
+ * Task 1: GET /api/nurse-dashboard/tasks AND /api/nurse-followup-report/tasks
+ * Patient-Centric CTE Query: Returns strictly ONE active row per patient (the latest task where rn = 1).
  */
-const getTasks = async (req, res) => {
+const getPatientCentricTasks = async (req, res) => {
   try {
     const queryStr = `
+      WITH RankedTasks AS (
+        SELECT 
+          t.task_id,
+          t.patient_id,
+          t.source_registry,
+          t.source_record_id,
+          t.is_followup_required,
+          t.timeframe,
+          t.target_date,
+          t.visit_mode,
+          t.clinic_location,
+          t.special_instructions,
+          t.status,
+          t.assigned_nurse,
+          t.nurse_notes,
+          t.last_contact_date,
+          ROW_NUMBER() OVER (
+            PARTITION BY t.patient_id 
+            ORDER BY t.task_id DESC
+          ) AS rn
+        FROM patient_followup_tasks t
+      )
       SELECT 
-        ISNULL(t.task_id, fa.followup_id) AS task_id,
-        fa.followup_id,
-        COALESCE(fa.patient_id, t.patient_id) AS patient_id,
-        ISNULL(t.source_registry, 'Heart Failure Registry') AS source_registry,
-        ISNULL(t.status, CASE WHEN fa.is_followup_required = 1 OR fa.is_followup_required = '1' THEN 'Required' ELSE 'No Follow-Up Needed' END) AS status,
-        COALESCE(fa.scheduled_followup_date, t.target_date) AS target_date,
-        COALESCE(fa.followup_interval, t.timeframe) AS timeframe,
-        ISNULL(t.clinic_location, 'CARE Heart Institute') AS clinic_location,
-        COALESCE(fa.visit_mode, t.visit_mode, 'In-Person Clinic Visit') AS visit_mode,
-        COALESCE(fa.special_instructions, t.special_instructions) AS special_instructions,
-        t.assigned_nurse,
-        t.nurse_notes,
-        t.last_contact_date,
+        rt.task_id,
+        rt.patient_id,
+        rt.source_registry,
+        rt.source_record_id,
+        rt.is_followup_required,
+        rt.timeframe,
+        rt.target_date,
+        rt.visit_mode,
+        rt.clinic_location,
+        rt.special_instructions,
+        rt.status,
+        rt.assigned_nurse,
+        rt.nurse_notes,
+        rt.last_contact_date,
         p.patient_name,
         p.mr_no,
         p.gender,
@@ -40,44 +62,11 @@ const getTasks = async (req, res) => {
         fa.investigation_echo,
         fa.investigation_bnp_ntprobnp,
         fa.investigation_6mw_test
-      FROM hf_followup_assessments fa
-      INNER JOIN patients p ON fa.patient_id = p.patient_id
-      LEFT JOIN patient_followup_tasks t ON fa.patient_id = t.patient_id
-      UNION
-      SELECT 
-        t.task_id,
-        NULL AS followup_id,
-        t.patient_id,
-        t.source_registry,
-        t.status,
-        t.target_date,
-        t.timeframe,
-        t.clinic_location,
-        t.visit_mode,
-        t.special_instructions,
-        t.assigned_nurse,
-        t.nurse_notes,
-        t.last_contact_date,
-        p.patient_name,
-        p.mr_no,
-        p.gender,
-        p.phone_no,
-        p.date_of_birth,
-        DATEDIFF(YEAR, p.date_of_birth, GETDATE()) - 
-          CASE WHEN DATEADD(YEAR, DATEDIFF(YEAR, p.date_of_birth, GETDATE()), p.date_of_birth) > GETDATE() THEN 1 ELSE 0 END AS age,
-        NULL AS primary_followup_reason,
-        NULL AS primary_no_followup_reason,
-        NULL AS pcp_transition_summary,
-        NULL AS self_care_instructions,
-        NULL AS investigation_serum_lytes,
-        NULL AS investigation_ecg,
-        NULL AS investigation_echo,
-        NULL AS investigation_bnp_ntprobnp,
-        NULL AS investigation_6mw_test
-      FROM patient_followup_tasks t
-      INNER JOIN patients p ON t.patient_id = p.patient_id
-      WHERE t.patient_id NOT IN (SELECT patient_id FROM hf_followup_assessments WHERE patient_id IS NOT NULL)
-      ORDER BY target_date ASC, task_id DESC;
+      FROM RankedTasks rt
+      INNER JOIN patients p ON rt.patient_id = p.patient_id
+      LEFT JOIN hf_followup_assessments fa ON (rt.source_record_id = fa.followup_id OR (rt.patient_id = fa.patient_id AND fa.followup_id = (SELECT MAX(followup_id) FROM hf_followup_assessments WHERE patient_id = rt.patient_id)))
+      WHERE rt.rn = 1
+      ORDER BY rt.target_date ASC, rt.task_id DESC;
     `;
 
     const result = await db.query(queryStr);
@@ -89,26 +78,26 @@ const getTasks = async (req, res) => {
       data: tasks
     });
   } catch (error) {
-    console.error('Error fetching nurse follow-up tasks:', error);
+    console.error('Error fetching patient-centric tasks:', error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to fetch follow-up tasks.',
+      message: 'Failed to fetch patient-centric follow-up tasks.',
       error: error.message
     });
   }
 };
 
-router.get('/tasks', getTasks);
-router.get('/', getTasks);
+router.get('/tasks', getPatientCentricTasks);
+router.get('/', getPatientCentricTasks);
 
 /**
- * GET /api/nurse-followup-report/tasks/:taskId/logs AND /api/nurse-followup-report/:taskId/logs
- * Fetches outreach history timeline from nurse_outreach_logs for a specific task.
+ * Task 2: GET /api/nurse-dashboard/:patientId/logs AND /api/nurse-followup-report/:patientId/logs
+ * UNION ALL Query: Merges manual nurse outreach logs with older/superseded tasks for the patient.
  */
-const getTaskLogs = async (req, res) => {
+const getPatientTimelineLogs = async (req, res) => {
   try {
-    const { taskId } = req.params;
-    const tid = parseInt(taskId, 10);
+    const { patientId } = req.params;
+    const pid = parseInt(patientId, 10);
 
     const queryStr = `
       SELECT 
@@ -121,13 +110,34 @@ const getTaskLogs = async (req, res) => {
         outcome,
         symptoms_status,
         medication_adherence,
-        notes
+        notes,
+        'Manual Outreach Log' AS log_type
       FROM nurse_outreach_logs
-      WHERE task_id = @tid OR patient_id = @tid
-      ORDER BY contact_date DESC, log_id DESC;
+      WHERE patient_id = @pid
+
+      UNION ALL
+
+      SELECT 
+        t.task_id AS log_id,
+        t.task_id,
+        t.patient_id,
+        COALESCE(t.last_contact_date, t.target_date, GETDATE()) AS contact_date,
+        'Clinical System' AS nurse_name,
+        'System Generated Form' AS contact_mode,
+        CONCAT('Historical Task Status: ', t.status) AS outcome,
+        'N/A' AS symptoms_status,
+        'N/A' AS medication_adherence,
+        CONCAT('Target Date: ', ISNULL(CONVERT(VARCHAR(10), t.target_date, 120), 'N/A'), ' | Visit Mode: ', ISNULL(t.visit_mode, 'N/A'), ' | Special Instructions: ', ISNULL(t.special_instructions, 'Standard post-discharge monitoring.')) AS notes,
+        'System Generated Form' AS log_type
+      FROM patient_followup_tasks t
+      WHERE t.patient_id = @pid AND t.task_id NOT IN (
+        SELECT TOP 1 task_id FROM patient_followup_tasks WHERE patient_id = @pid ORDER BY task_id DESC
+      )
+
+      ORDER BY contact_date DESC;
     `;
 
-    const result = await db.query(queryStr, { tid });
+    const result = await db.query(queryStr, { pid });
     const logs = result.recordset || [];
 
     return res.status(200).json({
@@ -135,21 +145,21 @@ const getTaskLogs = async (req, res) => {
       data: logs
     });
   } catch (error) {
-    console.error(`Error fetching outreach logs for task ${req.params.taskId}:`, error);
+    console.error(`Error fetching timeline logs for patient ${req.params.patientId}:`, error);
     return res.status(500).json({
       success: false,
-      message: 'Failed to fetch outreach logs.',
+      message: 'Failed to fetch patient timeline logs.',
       error: error.message
     });
   }
 };
 
-router.get('/tasks/:taskId/logs', getTaskLogs);
-router.get('/:taskId/logs', getTaskLogs);
+router.get('/:patientId/logs', getPatientTimelineLogs);
+router.get('/tasks/:patientId/logs', getPatientTimelineLogs);
 
 /**
- * POST /api/nurse-followup-report/tasks/:taskId/log AND /api/nurse-followup-report/:taskId/log
- * Submits a new nurse outreach log entry and updates the task record.
+ * POST /api/nurse-dashboard/tasks/:taskId/log
+ * Submits a new nurse outreach log entry and updates the active task record.
  */
 const postLog = async (req, res) => {
   const connection = await db.getConnection();
@@ -180,7 +190,7 @@ const postLog = async (req, res) => {
         target_date = @target_date,
         nurse_notes = @notes,
         last_contact_date = GETDATE()
-      WHERE task_id = @finalTaskId OR patient_id = @pid;
+      WHERE task_id = @finalTaskId OR (patient_id = @pid AND status != 'Completed');
     `;
     await connection.query(updateTaskSql, {
       finalTaskId,
@@ -230,7 +240,7 @@ const postLog = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Outreach log saved and task updated successfully.'
+      message: 'Outreach log saved and patient task updated successfully.'
     });
   } catch (error) {
     await connection.rollback();

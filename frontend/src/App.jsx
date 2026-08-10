@@ -64,7 +64,6 @@ function MainLayout({ records, nurse, onLogout }) {
             <div>
               <h1 className="text-sm sm:text-base font-black tracking-tight flex items-center gap-1.5 text-slate-100">
                 <span>CARE CARDIOVASCULAR REGISTRY</span>
-                <span className="px-2 py-0.5 bg-teal-500/20 text-teal-400 rounded-md text-[9px] font-bold border border-teal-500/30">v1.2.0</span>
               </h1>
               <p className="text-[10px] text-slate-400 mt-0.5">Comprehensive Longitudinal Clinical Audit Platform</p>
             </div>
@@ -137,18 +136,7 @@ function MainLayout({ records, nurse, onLogout }) {
               <span>Nurse Follow-Up Report</span>
             </button>
 
-            <button
-              id="nav-mapping"
-              onClick={() => navigate('/mapping')}
-              className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 border ${
-                path === '/mapping'
-                  ? 'bg-teal-700 text-white border-teal-700 shadow-xs'
-                  : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-              }`}
-            >
-              <Layers className="w-4 h-4" />
-              <span>Source Clinical Form Mapping</span>
-            </button>
+            
           </div>
 
           {/* Active Patient Scope Badge (if patient is selected) */}

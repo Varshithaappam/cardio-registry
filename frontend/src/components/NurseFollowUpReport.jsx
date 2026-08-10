@@ -15,7 +15,10 @@ import {
   Send,
   Stethoscope,
   ClipboardList,
-  RefreshCw
+  RefreshCw,
+  Activity,
+  ArrowUpDown,
+  Calendar
 } from 'lucide-react';
 
 export default function NurseFollowUpReport() {
@@ -25,12 +28,111 @@ export default function NurseFollowUpReport() {
 
   // Search and Filter State
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
-  // Expanded Row State (Task ID)
-  const [expandedTaskId, setExpandedTaskId] = useState(null);
-  const [taskLogs, setTaskLogs] = useState({});
+  // Column Sorting State (Default: Follow-Up Interval Ascending)
+  const [sortConfig, setSortConfig] = useState({ key: 'timeframe', direction: 'asc' });
+
+  // Toggle Sort Direction
+  const handleSort = (key) => {
+    setSortConfig((prev) => {
+      if (prev.key !== key) {
+        return { key, direction: 'asc' };
+      }
+      if (prev.direction === 'asc') {
+        return { key, direction: 'desc' };
+      }
+      return { key: null, direction: 'asc' };
+    });
+  };
+
+  // Convert YYYY-MM-DD to DD-MM-YYYY (for input display)
+  const toDDMMYYYY = (isoStr) => {
+    if (!isoStr) return '';
+    const clean = String(isoStr).split('T')[0];
+    const parts = clean.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return isoStr;
+  };
+
+  // Convert DD-MM-YYYY or YYYY-MM-DD to YYYY-MM-DD (for comparison)
+  const toYYYYMMDD = (dateStr) => {
+    if (!dateStr) return '';
+    const clean = String(dateStr).trim();
+    if (clean.includes('-') || clean.includes('/')) {
+      const sep = clean.includes('-') ? '-' : '/';
+      const parts = clean.split(sep);
+      if (parts.length === 3) {
+        if (parts[0].length === 2 && parts[2].length === 4) {
+          // DD-MM-YYYY -> YYYY-MM-DD
+          const day = parts[0].padStart(2, '0');
+          const month = parts[1].padStart(2, '0');
+          const year = parts[2];
+          return `${year}-${month}-${day}`;
+        } else if (parts[0].length === 4) {
+          // YYYY-MM-DD
+          return clean;
+        }
+      }
+    }
+    return clean;
+  };
+
+  // Date Formatting Utility (DD-MM-YYYY)
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return toDDMMYYYY(dateString);
+  };
+
+  // Custom sort weight mapping for Follow-Up Intervals (lowercase & trimmed)
+  const intervalWeights = {
+    '1-week': 1,
+    '2-weeks': 2,
+    '1-month': 3,
+    '3-months': 4,
+    '6-months': 5,
+    '1-year': 6,
+    'no follow-up needed': 99
+  };
+
+  const getIntervalWeight = (timeframe) => {
+    // Safely normalize null, undefined, or empty string to '1-month' (matching the table cell UI fallback)
+    const normalized = (timeframe || '1-month').toString().toLowerCase().trim();
+
+    if (intervalWeights[normalized] !== undefined) {
+      return intervalWeights[normalized];
+    }
+
+    // Fuzzy matching for spaces, alternate hyphens, or extra characters
+    if (normalized.includes('1-week') || normalized.includes('1 week')) return 1;
+    if (normalized.includes('2-week') || normalized.includes('2 week')) return 2;
+    if (normalized.includes('1-month') || normalized.includes('1 month')) return 3;
+    if (normalized.includes('3-month') || normalized.includes('3 month')) return 4;
+    if (normalized.includes('6-month') || normalized.includes('6 month')) return 5;
+    if (normalized.includes('1-year') || normalized.includes('1 year')) return 6;
+    if (normalized.includes('no follow-up') || normalized.includes('none')) return 99;
+
+    return 999;
+  };
+
+  // Helper to render active sort indicator icons
+  const renderSortIcon = (key) => {
+    if (sortConfig.key !== key) {
+      return <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-60 group-hover:opacity-100 transition-opacity ml-1.5 inline-block shrink-0" />;
+    }
+    if (sortConfig.direction === 'asc') {
+      return <ChevronUp className="w-3.5 h-3.5 text-blue-600 font-bold ml-1.5 inline-block shrink-0" />;
+    }
+    return <ChevronDown className="w-3.5 h-3.5 text-blue-600 font-bold ml-1.5 inline-block shrink-0" />;
+  };
+
+  // Expanded Row State (Patient ID)
+  const [expandedPatientId, setExpandedPatientId] = useState(null);
+  const [patientLogs, setPatientLogs] = useState({});
   const [logsLoading, setLogsLoading] = useState(false);
 
   // Modal State
@@ -50,7 +152,7 @@ export default function NurseFollowUpReport() {
     notes: ''
   });
 
-  // 1. Fetch Tasks strictly from SQL Database (No Mock Fallback)
+  // 1. Fetch Patient-Centric Tasks strictly from SQL Database
   const fetchTasks = async () => {
     setLoading(true);
     setError(null);
@@ -79,36 +181,37 @@ export default function NurseFollowUpReport() {
     fetchTasks();
   }, []);
 
-  // 2. Fetch Task Logs on Expand strictly from SQL Database
-  const fetchTaskLogs = async (taskId) => {
+  // 2. Fetch Consolidated Patient Timeline Logs using patientId
+  const fetchPatientLogs = async (patientId) => {
     setLogsLoading(true);
     try {
       let response;
       try {
-        response = await api.get(`/nurse-dashboard/tasks/${taskId}/logs`);
+        response = await api.get(`/nurse-dashboard/${patientId}/logs`);
       } catch (e1) {
-        response = await api.get(`/nurse-followup-report/tasks/${taskId}/logs`);
+        response = await api.get(`/nurse-followup-report/${patientId}/logs`);
       }
       if (response.data && response.data.success) {
-        setTaskLogs((prev) => ({ ...prev, [taskId]: response.data.data || [] }));
+        setPatientLogs((prev) => ({ ...prev, [patientId]: response.data.data || [] }));
       } else {
-        setTaskLogs((prev) => ({ ...prev, [taskId]: [] }));
+        setPatientLogs((prev) => ({ ...prev, [patientId]: [] }));
       }
     } catch (err) {
-      console.error(`Error fetching logs for task ${taskId}:`, err);
-      setTaskLogs((prev) => ({ ...prev, [taskId]: [] }));
+      console.error(`Error fetching timeline logs for patient ${patientId}:`, err);
+      setPatientLogs((prev) => ({ ...prev, [patientId]: [] }));
     } finally {
       setLogsLoading(false);
     }
   };
 
-  const toggleExpandRow = (taskId) => {
-    if (expandedTaskId === taskId) {
-      setExpandedTaskId(null);
+  const toggleExpandRow = (task) => {
+    const pid = task.patient_id;
+    if (expandedPatientId === pid) {
+      setExpandedPatientId(null);
     } else {
-      setExpandedTaskId(taskId);
-      if (!taskLogs[taskId]) {
-        fetchTaskLogs(taskId);
+      setExpandedPatientId(pid);
+      if (!patientLogs[pid]) {
+        fetchPatientLogs(pid);
       }
     }
   };
@@ -127,26 +230,74 @@ export default function NurseFollowUpReport() {
     return { total, required, percentage, pending, overdue, completed };
   }, [tasks]);
 
-  // 4. Filtered Tasks
+  // 4. Filtered & Sorted Tasks
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
+    let result = tasks.filter((task) => {
+      // 1. Search Query Filter
       const q = searchQuery.toLowerCase().trim();
       const nameMatch = task.patient_name?.toLowerCase().includes(q);
       const mrnMatch = task.mr_no?.toLowerCase().includes(q);
       const phoneMatch = task.phone_no?.includes(q);
       const matchesSearch = !q || nameMatch || mrnMatch || phoneMatch;
 
-      let matchesDate = true;
-      if (fromDate && task.target_date) {
-        matchesDate = matchesDate && task.target_date >= fromDate;
-      }
-      if (toDate && task.target_date) {
-        matchesDate = matchesDate && task.target_date <= toDate;
+      // 2. Overall Registry Status Filter
+      let matchesStatus = true;
+      if (statusFilter !== 'All') {
+        if (statusFilter === 'Required') {
+          matchesStatus = task.status === 'Required' || task.status === 'Follow-Up Scheduled';
+        } else {
+          matchesStatus = task.status === statusFilter;
+        }
       }
 
-      return matchesSearch && matchesDate;
+      // 3. Follow-Up Date Range Filter
+      let matchesDate = true;
+      const targetIso = task.target_date ? String(task.target_date).split('T')[0] : '';
+      if (fromDate && targetIso) {
+        const fromIso = toYYYYMMDD(fromDate);
+        if (fromIso) {
+          matchesDate = matchesDate && targetIso >= fromIso;
+        }
+      }
+      if (toDate && targetIso) {
+        const toIso = toYYYYMMDD(toDate);
+        if (toIso) {
+          matchesDate = matchesDate && targetIso <= toIso;
+        }
+      }
+
+      return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [tasks, searchQuery, fromDate, toDate]);
+
+    // 4. Column Sorting Logic
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        if (sortConfig.key === 'patient_name') {
+          const aName = (a.patient_name || '').toLowerCase();
+          const bName = (b.patient_name || '').toLowerCase();
+          return sortConfig.direction === 'asc'
+            ? aName.localeCompare(bName)
+            : bName.localeCompare(aName);
+        }
+
+        if (sortConfig.key === 'timeframe') {
+          const aWeight = getIntervalWeight(a.timeframe);
+          const bWeight = getIntervalWeight(b.timeframe);
+          return sortConfig.direction === 'asc' ? aWeight - bWeight : bWeight - aWeight;
+        }
+
+        if (sortConfig.key === 'target_date') {
+          const aTime = a.target_date ? new Date(a.target_date).getTime() : 0;
+          const bTime = b.target_date ? new Date(b.target_date).getTime() : 0;
+          return sortConfig.direction === 'asc' ? aTime - bTime : bTime - aTime;
+        }
+
+        return 0;
+      });
+    }
+
+    return result;
+  }, [tasks, searchQuery, statusFilter, fromDate, toDate, sortConfig]);
 
   // 5. Open Log Outreach Modal
   const handleOpenModal = (task) => {
@@ -187,8 +338,8 @@ export default function NurseFollowUpReport() {
       if (response.data && response.data.success) {
         setIsModalOpen(false);
         await fetchTasks();
-        if (expandedTaskId === selectedTask.task_id) {
-          await fetchTaskLogs(selectedTask.task_id);
+        if (expandedPatientId === selectedTask.patient_id) {
+          await fetchPatientLogs(selectedTask.patient_id);
         }
       }
     } catch (err) {
@@ -226,6 +377,67 @@ export default function NurseFollowUpReport() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'Completed':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 font-extrabold rounded-lg text-[11px] border border-emerald-200 shadow-2xs">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Completed</span>
+          </span>
+        );
+      case 'Patient Unreachable':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 font-extrabold rounded-lg text-[11px] border border-blue-200 shadow-2xs">
+            <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+            <span>Patient Unreachable</span>
+          </span>
+        );
+      case 'Escalated to Cardiologist':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-700 font-extrabold rounded-lg text-[11px] border border-rose-200 shadow-2xs">
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+            <span>Escalated to Cardiologist</span>
+          </span>
+        );
+      case 'Missed / Overdue':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 font-extrabold rounded-lg text-[11px] border border-amber-200 shadow-2xs">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+            <span>Missed / Overdue</span>
+          </span>
+        );
+      case 'Scheduled':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 font-extrabold rounded-lg text-[11px] border border-indigo-200 shadow-2xs">
+            <Clock className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Scheduled</span>
+          </span>
+        );
+      case 'Required':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 font-extrabold rounded-lg text-[11px] border border-blue-200 shadow-2xs">
+            <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+            <span>Required</span>
+          </span>
+        );
+      case 'No Follow-Up Needed':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-700 font-extrabold rounded-lg text-[11px] border border-slate-200 shadow-2xs">
+            <CheckCircle2 className="w-3.5 h-3.5 text-slate-500" />
+            <span>No Follow-Up Needed</span>
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 font-extrabold rounded-lg text-[11px] border border-blue-200 shadow-2xs">
+            <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+            <span>{status || 'Pending Nurse Outreach'}</span>
+          </span>
+        );
+    }
   };
 
   return (
@@ -332,9 +544,9 @@ export default function NurseFollowUpReport() {
 
       {/* Filter and Search Bar Card */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
           {/* Search Patient Name or MRN */}
-          <div className="space-y-1.5 md:col-span-1">
+          <div className="space-y-1.5">
             <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wide">
               SEARCH PATIENT NAME OR MRN
             </label>
@@ -350,17 +562,56 @@ export default function NurseFollowUpReport() {
             </div>
           </div>
 
+          {/* Overall Registry Status Filter */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wide">
+              OVERALL REGISTRY STATUS
+            </label>
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all cursor-pointer appearance-none pr-8"
+              >
+                <option value="All">All (Default)</option>
+                <option value="Pending Nurse Outreach">Pending Nurse Outreach</option>
+                <option value="Required">Required</option>
+                <option value="Scheduled">Scheduled</option>
+                <option value="Completed">Completed</option>
+                <option value="Missed / Overdue">Missed / Overdue</option>
+                <option value="Patient Unreachable">Patient Unreachable</option>
+                <option value="Escalated to Cardiologist">Escalated to Cardiologist</option>
+                <option value="No Follow-Up Needed">No Follow-Up Needed</option>
+              </select>
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+
           {/* Follow-up From Date */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wide">
               FOLLOW-UP FROM DATE
             </label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-            />
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                placeholder="dd-mm-yyyy"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all pr-9"
+              />
+              <input
+                type="date"
+                id="from-date-picker"
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setFromDate(toDDMMYYYY(e.target.value));
+                  }
+                }}
+                className="absolute right-2.5 opacity-0 w-5 h-5 cursor-pointer z-10"
+              />
+              <Calendar className="w-4 h-4 text-slate-400 absolute right-3 pointer-events-none" />
+            </div>
           </div>
 
           {/* Follow-up To Date */}
@@ -368,12 +619,26 @@ export default function NurseFollowUpReport() {
             <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wide">
               FOLLOW-UP TO DATE
             </label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-            />
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                placeholder="dd-mm-yyyy"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all pr-9"
+              />
+              <input
+                type="date"
+                id="to-date-picker"
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setToDate(toDDMMYYYY(e.target.value));
+                  }
+                }}
+                className="absolute right-2.5 opacity-0 w-5 h-5 cursor-pointer z-10"
+              />
+              <Calendar className="w-4 h-4 text-slate-400 absolute right-3 pointer-events-none" />
+            </div>
           </div>
         </div>
 
@@ -382,12 +647,14 @@ export default function NurseFollowUpReport() {
             Showing <strong className="text-slate-900">{filteredTasks.length}</strong> of{' '}
             <strong className="text-slate-900">{tasks.length}</strong> patient records
           </span>
-          {(searchQuery || fromDate || toDate) && (
+          {(searchQuery || statusFilter !== 'All' || fromDate || toDate || sortConfig.key) && (
             <button
               onClick={() => {
                 setSearchQuery('');
+                setStatusFilter('All');
                 setFromDate('');
                 setToDate('');
+                setSortConfig({ key: null, direction: 'asc' });
               }}
               className="text-blue-600 hover:text-blue-800 font-bold text-xs cursor-pointer"
             >
@@ -418,19 +685,46 @@ export default function NurseFollowUpReport() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[1000px]">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-black text-slate-600 uppercase tracking-wider">
-                  <th className="py-3.5 px-4">PATIENT & DEMOGRAPHICS</th>
-                  <th className="py-3.5 px-4">FOLLOW-UP</th>
-                  <th className="py-3.5 px-4">TARGET DATE & VISIT MODE</th>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-black text-slate-600 uppercase tracking-wider select-none">
+                  <th
+                    onClick={() => handleSort('patient_name')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group"
+                    title="Click to sort by Patient Name"
+                  >
+                    <div className="flex items-center">
+                      <span>PATIENT & DEMOGRAPHICS</span>
+                      {renderSortIcon('patient_name')}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleSort('timeframe')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group"
+                    title="Click to sort by Follow-Up Interval"
+                  >
+                    <div className="flex items-center">
+                      <span>FOLLOW-UP</span>
+                      {renderSortIcon('timeframe')}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => handleSort('target_date')}
+                    className="py-3.5 px-4 cursor-pointer hover:bg-slate-100/80 transition-colors group"
+                    title="Click to sort by Target Date"
+                  >
+                    <div className="flex items-center">
+                      <span>TARGET DATE & VISIT MODE</span>
+                      {renderSortIcon('target_date')}
+                    </div>
+                  </th>
                   <th className="py-3.5 px-4">PRE-VISIT DIAGNOSTICS</th>
                   <th className="py-3.5 px-4">INSTRUCTIONS TO PATIENT/CAREGIVER</th>
                   <th className="py-3.5 px-4 text-right">NURSE ACTIONS</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200/80 text-xs">
+              <tbody className="divide-y divide-slate-200 text-xs">
                 {filteredTasks.map((task) => {
-                  const isExpanded = expandedTaskId === task.task_id;
-                  const formattedDate = task.target_date ? String(task.target_date).split('T')[0] : 'N/A';
+                  const isExpanded = expandedPatientId === task.patient_id;
+                  const formattedDate = formatDate(task.target_date);
 
                   // Flexible boolean/bit evaluator for SQL fields
                   const isTrue = (val) => val === 1 || val === '1' || val === true || val === 'true' || val === 'Yes';
@@ -443,43 +737,39 @@ export default function NurseFollowUpReport() {
                   if (isTrue(task.investigation_bnp_ntprobnp) || isTrue(task.investigation_bnp)) {
                     diagnostics.push('NT-proBNP / BNP');
                   }
-                  if (isTrue(task.investigation_echo) || isTrue(task.investigation_echocardiogram)) {
+                  if (isTrue(task.investigation_echo) || isTrue(task.investigation_repeat_echo)) {
                     diagnostics.push('Repeat Echo');
                   }
-                  if (isTrue(task.investigation_ecg)) {
+                  if (isTrue(task.investigation_ecg) || isTrue(task.investigation_12lead_ecg)) {
                     diagnostics.push('12-Lead ECG');
                   }
                   if (isTrue(task.investigation_6mw_test) || isTrue(task.investigation_6mwt)) {
                     diagnostics.push('6-MWT');
                   }
 
-                  if (Array.isArray(task.pre_visit_diagnostics)) {
-                    task.pre_visit_diagnostics.forEach(d => {
-                      if (!diagnostics.includes(d)) diagnostics.push(d);
-                    });
-                  }
+                  const rowKey = task.task_id ? `task-row-${task.task_id}` : `patient-row-${task.patient_id || task.mr_no}`;
 
                   return (
-                    <React.Fragment key={task.task_id}>
-                      <tr className={`hover:bg-slate-50/60 transition-colors ${isExpanded ? 'bg-slate-50/90' : ''}`}>
+                    <React.Fragment key={`frag-${rowKey}`}>
+                      <tr key={rowKey} className="border-b border-slate-200 hover:bg-slate-50/80 transition-colors">
                         {/* 1. Patient & Demographics */}
                         <td className="py-4 px-4 align-top">
                           <div className="space-y-1">
-                            <h4 className="font-black text-slate-900 text-sm leading-snug">
-                              {task.patient_name || 'N/A'}
-                            </h4>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-500 flex-wrap font-semibold">
+                            <div className="font-black text-slate-900 text-sm">
+                              {task.patient_name || 'Unknown Patient'}
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-500 font-bold text-[11px]">
                               <span>{task.gender || 'N/A'}</span>
                               <span>•</span>
-                              <span>{task.age !== null && task.age !== undefined ? `${task.age} Yrs` : 'N/A'}</span>
+                              <span>{task.age ? `${task.age} Yrs` : 'N/A'}</span>
                               <span>•</span>
-                              <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded font-black text-[10px] border border-blue-200">
+                              <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 font-extrabold rounded border border-blue-200">
                                 MRN: {task.mr_no || 'N/A'}
                               </span>
                             </div>
                             {task.phone_no && (
-                              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold pt-0.5">
-                                <Phone className="w-3 h-3 text-slate-400 shrink-0" />
+                              <div className="flex items-center gap-1 text-slate-500 font-bold text-[11px] pt-0.5">
+                                <PhoneCall className="w-3 h-3 text-slate-400" />
                                 <span>{task.phone_no}</span>
                               </div>
                             )}
@@ -489,53 +779,48 @@ export default function NurseFollowUpReport() {
                         {/* 2. Follow-Up Status */}
                         <td className="py-4 px-4 align-top">
                           <div className="space-y-1.5">
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 font-black rounded-lg text-[11px] border border-blue-200">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
-                              <span>{task.status || 'Required'}</span>
-                            </span>
-                            {task.timeframe && (
-                              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded w-fit">
-                                <Clock className="w-3 h-3 text-slate-400" />
-                                <span>{task.timeframe}</span>
-                              </div>
-                            )}
+                            {getStatusBadge(task.status)}
+                            <div className="flex items-center gap-1 text-slate-500 font-bold text-[11px]">
+                              <Clock className="w-3 h-3 text-slate-400" />
+                              <span>{task.timeframe || '1-Month'}</span>
+                            </div>
                           </div>
                         </td>
 
                         {/* 3. Target Date & Visit Mode */}
                         <td className="py-4 px-4 align-top">
-                          <div className="space-y-1">
-                            <span className="font-black text-slate-900 text-xs block">
+                          <div className="space-y-0.5">
+                            <div className="font-extrabold text-slate-900 text-xs">
                               {formattedDate}
-                            </span>
-                            <span className="text-[11px] font-semibold text-slate-500 block">
+                            </div>
+                            <div className="text-slate-600 font-bold text-[11px]">
                               {task.visit_mode || 'In-Person Clinic Visit'}
-                            </span>
-                            {task.clinic_location && (
-                              <span className="text-[10px] text-slate-400 block font-medium">
-                                {task.clinic_location}
-                              </span>
-                            )}
+                            </div>
+                            <div className="text-slate-400 font-semibold text-[10px]">
+                              {task.clinic_location || 'CARE Heart Institute'}
+                            </div>
                           </div>
                         </td>
 
                         {/* 4. Pre-Visit Diagnostics */}
                         <td className="py-4 px-4 align-top">
-                          <div className="flex flex-col gap-1 max-w-[220px]">
-                            {diagnostics.length > 0 ? (
-                              diagnostics.map((diag, i) => (
+                          {diagnostics.length === 0 ? (
+                            <span className="text-slate-400 font-semibold italic text-[11px]">
+                              None Requested
+                            </span>
+                          ) : (
+                            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                              {diagnostics.map((diag, i) => (
                                 <span
                                   key={i}
-                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-left truncate"
+                                  className="px-2 py-0.5 bg-slate-100 text-slate-700 font-extrabold rounded text-[10px] border border-slate-200 flex items-center gap-1 shadow-2xs"
                                 >
-                                  <Stethoscope className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                                  <span className="truncate">{diag}</span>
+                                  <Activity className="w-2.5 h-2.5 text-blue-600" />
+                                  {diag}
                                 </span>
-                              ))
-                            ) : (
-                              <span className="text-[11px] text-slate-400 font-semibold italic">None specified</span>
-                            )}
-                          </div>
+                              ))}
+                            </div>
+                          )}
                         </td>
 
                         {/* 5. Instructions to Patient/Caregiver */}
@@ -563,7 +848,7 @@ export default function NurseFollowUpReport() {
                               <span>Log Outreach</span>
                             </button>
                             <button
-                              onClick={() => toggleExpandRow(task.task_id)}
+                              onClick={() => toggleExpandRow(task)}
                               className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all cursor-pointer"
                               title={isExpanded ? 'Collapse Details' : 'Expand Details'}
                             >
@@ -587,11 +872,11 @@ export default function NurseFollowUpReport() {
                                 <div className="flex items-center gap-2">
                                   <ClipboardList className="w-5 h-5 text-blue-600" />
                                   <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                                    SECTION 11: COMPLETE FOLLOW-UP ASSESSMENT AUDIT RECORD
+                                    SECTION 11: PATIENT FOLLOW-UP & CONSOLIDATED HISTORY AUDIT
                                   </h3>
                                 </div>
                                 <span className="text-[11px] font-bold text-slate-400">
-                                  Task ID: #{task.task_id} • Patient ID: {task.patient_id}
+                                  Patient ID: #{task.patient_id} • Latest Task ID: #{task.task_id}
                                 </span>
                               </div>
 
@@ -658,7 +943,7 @@ export default function NurseFollowUpReport() {
                                   </div>
                                 </div>
 
-                                {/* Right Sub-Card: Outreach History Timeline Logs */}
+                                {/* Right Sub-Card: Consolidated Patient History & Outreach Timeline */}
                                 <div className="lg:col-span-6 space-y-4 border-l border-slate-200 pl-0 lg:pl-6">
                                   <div>
                                     <span className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-1">
@@ -675,27 +960,56 @@ export default function NurseFollowUpReport() {
                                     </div>
                                   </div>
 
-                                  {/* Outreach History Logs List */}
+                                  {/* Consolidated Patient Timeline Logs List */}
                                   <div className="pt-2 border-t border-slate-200 space-y-2">
                                     <span className="block text-[10px] font-black uppercase tracking-wider text-slate-500">
-                                      PREVIOUS OUTREACH TIMELINE LOGS
+                                      CONSOLIDATED PATIENT HISTORY & OUTREACH TIMELINE
                                     </span>
                                     {logsLoading ? (
-                                      <p className="text-[11px] text-slate-400 animate-pulse">Loading outreach timeline logs...</p>
-                                    ) : (taskLogs[task.task_id] || []).length === 0 ? (
-                                      <p className="text-[11px] text-slate-400 italic">No prior outreach logs recorded in database.</p>
+                                      <p className="text-[11px] text-slate-400 animate-pulse">Loading patient timeline history...</p>
+                                    ) : (patientLogs[task.patient_id] || []).length === 0 ? (
+                                      <p className="text-[11px] text-slate-400 italic">No prior outreach logs or historical forms recorded.</p>
                                     ) : (
-                                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                                        {(taskLogs[task.task_id] || []).map((log) => (
-                                          <div key={log.log_id} className="p-2.5 bg-white border border-slate-200 rounded-lg text-[11px] space-y-1">
-                                            <div className="flex justify-between font-bold text-slate-800">
-                                              <span>{log.contact_mode} • {log.nurse_name}</span>
-                                              <span className="text-slate-400">{log.contact_date ? String(log.contact_date).split('T')[0] : ''}</span>
+                                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                        {(patientLogs[task.patient_id] || []).map((log, index) => {
+                                          const isSystem = log.contact_mode === 'System Generated Form' || log.log_type === 'System Generated Form';
+                                          return (
+                                            <div
+                                              key={log.log_id || index}
+                                              className={`p-3 rounded-xl border text-[11px] space-y-1.5 transition-all ${
+                                                isSystem
+                                                  ? 'bg-purple-50/60 border-purple-200'
+                                                  : 'bg-white border-slate-200 shadow-2xs'
+                                              }`}
+                                            >
+                                              <div className="flex items-center justify-between font-bold text-slate-800">
+                                                <div className="flex items-center gap-1.5">
+                                                  <span
+                                                    className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                                      isSystem
+                                                        ? 'bg-purple-100 text-purple-800 border border-purple-300'
+                                                        : 'bg-blue-100 text-blue-800 border border-blue-300'
+                                                    }`}
+                                                  >
+                                                    {isSystem ? 'System Generated Form' : 'Nurse Outreach'}
+                                                  </span>
+                                                  <span>{log.contact_mode} • {log.nurse_name}</span>
+                                                </div>
+                                                <span className="text-slate-400 font-semibold">
+                                                  {log.contact_date ? String(log.contact_date).split('T')[0] : ''}
+                                                </span>
+                                              </div>
+                                              <div className={`font-black ${isSystem ? 'text-purple-900' : 'text-blue-700'}`}>
+                                                {log.outcome}
+                                              </div>
+                                              {log.notes && (
+                                                <div className="text-slate-600 text-[11px] leading-relaxed">
+                                                  {log.notes}
+                                                </div>
+                                              )}
                                             </div>
-                                            <div className="text-blue-700 font-semibold">{log.outcome}</div>
-                                            {log.notes && <div className="text-slate-600 text-[10px]">{log.notes}</div>}
-                                          </div>
-                                        ))}
+                                          );
+                                        })}
                                       </div>
                                     )}
                                   </div>

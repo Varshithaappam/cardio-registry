@@ -14,7 +14,7 @@ import {
   IndianRupee,
   Clock,
   Award,
-
+  Scissors,
   CheckCircle2,
   AlertTriangle } from
 'lucide-react';
@@ -171,12 +171,12 @@ export default function Dashboard({ patients, onSelectPatient }) {
         {/* Stat 3 */}
         <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
           <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
-            <Award className="w-6 h-6" />
+            <Scissors className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider block">CABG / Surgery Records</span>
+            <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider block">STS CABG Procedures</span>
             <span className="text-2xl font-extrabold text-slate-800">{totalCABG}</span>
-            <span className="text-xs text-slate-500 block mt-0.5">STS Version 2.52.1 audits</span>
+            <span className="text-xs text-slate-500 block mt-0.5">Surgical revascularizations</span>
           </div>
         </div>
 
