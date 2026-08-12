@@ -20,15 +20,6 @@ export default function EditHfModal({ isOpen, fileData, onClose, onSaveSuccess }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!facilityCode.trim()) {
-      setError('Facility Code is required.');
-      return;
-    }
-    if (!facilityName.trim()) {
-      setError('Facility Name is required.');
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);

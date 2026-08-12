@@ -1,7 +1,31 @@
 const hfService = require("../services/hfService");
 
+function isFilled(val) {
+    if (val === null || val === undefined) return false;
+    if (typeof val === 'string') return val.trim() !== '';
+    if (typeof val === 'boolean') return val;
+    if (typeof val === 'number') return !isNaN(val);
+    if (Array.isArray(val)) return val.some(isFilled);
+    if (typeof val === 'object') return Object.values(val).some(isFilled);
+    return false;
+}
+
+function hasAtLeastOneFilledField(body) {
+    if (!body || typeof body !== 'object' || Object.keys(body).length === 0) {
+        return false;
+    }
+    const { patientId, patient_id, hf_id, created_by, updated_by, isDraft, ...formFields } = body;
+    return Object.values(formFields).some(isFilled);
+}
+
 async function saveHfAssessment(req, res) {
     try {
+        if (!hasAtLeastOneFilledField(req.body)) {
+            return res.status(400).json({
+                success: false,
+                message: "At least one field must be provided"
+            });
+        }
         const userId = req.user?.id || req.user?.userId || 1;
         console.log("Saving HF Assessment for patient_id:", req.body.patientId, "User ID:", userId);
         const result = await hfService.saveHfAssessment(req.body, userId);
@@ -63,6 +87,12 @@ async function getHfHistory(req, res) {
 
 async function saveHfDraft(req, res) {
     try {
+        if (!hasAtLeastOneFilledField(req.body)) {
+            return res.status(400).json({
+                success: false,
+                message: "At least one field must be provided"
+            });
+        }
         const userId = req.user?.id || req.user?.userId || 1;
         console.log("Saving HF Assessment Draft for patient_id:", req.body.patientId, "User ID:", userId);
         const result = await hfService.saveHfAssessment({ ...req.body, isDraft: true }, userId);

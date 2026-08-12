@@ -180,23 +180,9 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
     }
   };
 
-  // Check form completeness for current branch
+  // Check form completeness (All fields optional for testing)
   const isBranchValid = () => {
-    if (isFollowupRequired === 'Yes') {
-      return (
-        followupInterval.trim() !== '' &&
-        scheduledFollowupDate.trim() !== '' &&
-        visitMode.trim() !== '' &&
-        primaryFollowupReason.trim() !== ''
-      );
-    }
-    if (isFollowupRequired === 'No') {
-      return (
-        primaryNoFollowupReason.trim() !== '' &&
-        pcpTransitionSummary.trim() !== ''
-      );
-    }
-    return false;
+    return true;
   };
 
   // Sanitization helper ensuring strict MS SQL CHECK constraint compatibility
@@ -316,7 +302,6 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
         <RadioGroup
           label="Is Follow-up Required for this Patient?"
           name="isFollowupRequiredToggle"
-          required
           options={[
             { label: 'Yes', value: 'Yes' },
             { label: 'No', value: 'No' }
@@ -337,7 +322,6 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select
                 label="Follow-up Interval"
-                required
                 value={followupInterval}
                 onChange={setFollowupInterval}
                 readOnly={readOnly}
@@ -353,7 +337,6 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
 
               <DateInput
                 label="Scheduled Follow-up Date"
-                required
                 value={formatToIsoDate(scheduledFollowupDate)}
                 onChange={setScheduledFollowupDate}
                 readOnly={readOnly}
@@ -365,7 +348,6 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
               <RadioGroup
                 label="Visit Mode"
                 name="visitModeGroup"
-                required
                 columns={3}
                 options={[
                   'In-Person',
@@ -379,7 +361,6 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
 
               <TextInput
                 label="Primary Clinical Reason for Follow-up"
-                required
                 value={primaryFollowupReason}
                 onChange={setPrimaryFollowupReason}
                 placeholder="Specify reason..."
@@ -462,7 +443,6 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
               <RadioGroup
                 label="Primary Clinical Reason for No Follow-up Required:"
                 name="primaryNoFollowupReasonGroup"
-                required
                 columns={1}
                 options={[
                   'Fully stabilized and optimized',
@@ -477,7 +457,6 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
 
               <TextArea
                 label="PCP Summary for External Care:"
-                required
                 rows={4}
                 value={pcpTransitionSummary}
                 onChange={setPcpTransitionSummary}
@@ -502,19 +481,9 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
         {onSubmit && (
           <div className="flex items-center justify-between pt-3 border-t border-slate-200">
             <div className="text-xs">
-              {!isFollowupRequired ? (
-                <span className="text-amber-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" /> Please select whether follow-up is required.
-                </span>
-              ) : !isBranchValid() ? (
-                <span className="text-rose-600 font-medium flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" /> Fill all mandatory fields (*) for {isFollowupRequired === 'Yes' ? 'Follow-up' : 'No Follow-up'} assessment.
-                </span>
-              ) : (
-                <span className="text-emerald-600 font-medium flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> All mandatory fields completed. Ready to submit.
-                </span>
-              )}
+              <span className="text-emerald-600 font-medium flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Assessment ready to submit.
+              </span>
             </div>
 
             <button

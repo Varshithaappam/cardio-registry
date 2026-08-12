@@ -540,7 +540,7 @@ const HFForm = forwardRef(function HFForm(
       {/* 2. Inpatient & Visit Details */}
       <SectionCard title="2. Inpatient & Visit Details" subtitle="Encounter context and responsible clinicians">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <DateInput id="hf-date" label="Assessment Date" value={assessmentDate} onChange={setAssessmentDate} required />
+          <DateInput id="hf-date" label="Assessment Date" value={assessmentDate} onChange={setAssessmentDate} />
           <TextInput
             id="hf-encounter-id"
             label="Encounter / IP Number"
@@ -563,7 +563,6 @@ const HFForm = forwardRef(function HFForm(
             value={treatingCardiologist}
             onChange={setTreatingCardiologist}
             options={CARDIOLOGISTS}
-            required
           />
           <Select
             id="hf-referring-doctor"
@@ -578,7 +577,6 @@ const HFForm = forwardRef(function HFForm(
           name="hf-visit-type"
           value={visitType}
           onChange={setVisitType}
-          required
           columns={4}
           options={['Inpatient', 'Outpatient', 'Emergency', 'Telehealth']}
         />
@@ -595,7 +593,6 @@ const HFForm = forwardRef(function HFForm(
               disabled={vUnableToWeigh}
               value={vWeight}
               onChange={setVWeight}
-              required={!vUnableToWeigh}
             />
             <label className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 cursor-pointer">
               <input id="hf-unweight" type="checkbox" checked={vUnableToWeigh} onChange={(e) => setVUnableToWeigh(e.target.checked)} />
@@ -610,7 +607,7 @@ const HFForm = forwardRef(function HFForm(
               onChange={setVUnableToWeighReason}
             />
           )}
-          <NumberInput id="hf-hr" label="Heart Rate (bpm)" required value={vHr} onChange={setVHr} />
+          <NumberInput id="hf-hr" label="Heart Rate (bpm)" value={vHr} onChange={setVHr} />
           <NumberInput id="hf-rr" label="Respiratory Rate (bpm)" value={vRr} onChange={setVRr} />
           <NumberInput id="hf-o2" label="O2 Saturation (%)" value={vO2} onChange={setVO2} />
           <div>
@@ -643,7 +640,6 @@ const HFForm = forwardRef(function HFForm(
             value={vHrVar}
             onChange={setVHrVar}
             options={['Regular', 'Irregular']}
-            required
             columns={2}
           />
           <RadioGroup
@@ -652,7 +648,6 @@ const HFForm = forwardRef(function HFForm(
             value={vMental}
             onChange={setVMental}
             options={['Alert/Oriented', 'Confused', 'Drowsy']}
-            required
             columns={3}
           />
         </div>
@@ -664,10 +659,10 @@ const HFForm = forwardRef(function HFForm(
         <CheckboxGroup label="Comorbidities" options={COMORBIDITY_OPTIONS} values={assessmentComorbidities} onChange={setAssessmentComorbidities} columns={3} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <RadioGroup label="Type of Heart Failure" name="hf-type" value={hfType} onChange={setHfType} required columns={2} options={['HFrEF', 'HFpEF', 'HFmrEF', 'Unknown']} />
-          <RadioGroup label="HF Stage (ACC/AHA)" name="hf-stage" value={hfStage} onChange={setHfStage} required columns={2} options={['Stage A', 'Stage B', 'Stage C', 'Stage D']} />
-          <RadioGroup label="NYHA Functional Class" name="hf-nyha" value={hfNyha} onChange={setHfNyha} required columns={2} options={['NYHA Class I', 'NYHA Class II', 'NYHA Class III', 'NYHA Class IV']} />
-          <RadioGroup label="Atrial Fibrillation (AF) Status" name="hf-af" value={hfAf} onChange={setHfAf} required columns={2} options={['NSR', 'Paroxysmal', 'Persistent', 'Permanent']} />
+          <RadioGroup label="Type of Heart Failure" name="hf-type" value={hfType} onChange={setHfType} columns={2} options={['HFrEF', 'HFpEF', 'HFmrEF', 'Unknown']} />
+          <RadioGroup label="HF Stage (ACC/AHA)" name="hf-stage" value={hfStage} onChange={setHfStage} columns={2} options={['Stage A', 'Stage B', 'Stage C', 'Stage D']} />
+          <RadioGroup label="NYHA Functional Class" name="hf-nyha" value={hfNyha} onChange={setHfNyha} columns={2} options={['NYHA Class I', 'NYHA Class II', 'NYHA Class III', 'NYHA Class IV']} />
+          <RadioGroup label="Atrial Fibrillation (AF) Status" name="hf-af" value={hfAf} onChange={setHfAf} columns={2} options={['NSR', 'Paroxysmal', 'Persistent', 'Permanent']} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -684,7 +679,7 @@ const HFForm = forwardRef(function HFForm(
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <RadioGroup label="Final Type of HF" name="hf-final-type" value={finalHfType} onChange={setFinalHfType} columns={2} options={['HFrEF', 'HFpEF', 'HFmrEF', 'Unknown']} />
           <RadioGroup label="Final HF Stage (ACC/AHA)" name="hf-final-stage" value={finalStage} onChange={setFinalStage} columns={2} options={['Stage A', 'Stage B', 'Stage C', 'Stage D']} />
-          <RadioGroup label="Final NYHA Class" name="hf-final-nyha" value={finalNyha} onChange={setFinalNyha} required columns={2} options={['NYHA Class I', 'NYHA Class II', 'NYHA Class III', 'NYHA Class IV']} />
+          <RadioGroup label="Final NYHA Class" name="hf-final-nyha" value={finalNyha} onChange={setFinalNyha} columns={2} options={['NYHA Class I', 'NYHA Class II', 'NYHA Class III', 'NYHA Class IV']} />
         </div>
 
         <CheckboxGroup label="MACE (Major Adverse Cardiovascular Events)" options={MACE_OPTIONS} values={maceEvents} onChange={setMaceEvents} columns={3} />
@@ -737,10 +732,10 @@ const HFForm = forwardRef(function HFForm(
 
       {/* 7. Device Therapy */}
       <SectionCard title="7. Device Therapy" subtitle="Current implanted devices and eligibility assessment">
-        <RadioGroup label="Has Implanted Device?" name="hf-dev-has" value={hfDevHas} onChange={setHfDevHas} required columns={2} options={['No', 'Yes']} />
+        <RadioGroup label="Has Implanted Device?" name="hf-dev-has" value={hfDevHas} onChange={setHfDevHas} columns={2} options={['No', 'Yes']} />
         {hfDevHas === 'Yes' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <RadioGroup label="Current Device Type" name="hf-dev-type" value={hfDevType} onChange={setHfDevType} required columns={2} options={DEVICE_TYPES} />
+            <RadioGroup label="Current Device Type" name="hf-dev-type" value={hfDevType} onChange={setHfDevType} columns={2} options={DEVICE_TYPES} />
             <TextInput id="hf-dev-brand" label="Device Brand / Model" value={hfDevBrand} onChange={setHfDevBrand} placeholder="E.g. Medtronic, Boston Scientific" />
           </div>
         )}
