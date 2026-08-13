@@ -31,7 +31,7 @@ import {
 
 // Protected Route Guard
 function ProtectedRoute() {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
   const location = useLocation();
 
   if (!token) {
@@ -346,7 +346,7 @@ export default function App() {
   const [records, setRecords] = useState([]);
   const [nurse, setNurse] = useState(() => {
     try {
-      const uStr = localStorage.getItem('user');
+      const uStr = sessionStorage.getItem('user');
       return uStr ? JSON.parse(uStr) : null;
     } catch (e) {
       return null;
@@ -372,8 +372,9 @@ export default function App() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    sessionStorage.clear();
     setNurse(null);
     window.location.href = '/login';
   };

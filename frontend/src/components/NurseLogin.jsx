@@ -36,9 +36,9 @@ export default function NurseLogin({ onLogin, onLoginSuccess }) {
 
       const data = response.data;
       if (data && data.token) {
-        // Save token and user details to localStorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Save token and user details to sessionStorage
+        sessionStorage.setItem('token', data.token);
+        sessionStorage.setItem('user', JSON.stringify(data.user));
 
         // Call parent callbacks
         if (typeof onLoginSuccess === 'function') {

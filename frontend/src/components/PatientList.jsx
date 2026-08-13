@@ -385,12 +385,10 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                               + STEMI
                             </button>
                             <button
-                            disabled={true}
                             id={`tbl-add-nstemi-${record.patient.id}`}
                             onClick={() => onAddEventClick(record.patient.id, 'NSTEMI')}
-                            className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-black cursor-not-allowed opacity-50 pointer-events-none transition-colors"
-                            title="NSTEMI registry under development">
-                            
+                            className="px-2 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-[10px] font-black cursor-pointer transition-colors shadow-xs"
+                            title="Add NSTEMI Registry Entry">
                               + NSTEMI
                             </button>
                             <button
@@ -541,11 +539,10 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       + STEMI
                     </button>
                     <button
-                    disabled={true}
                     id={`btn-add-nstemi-${record.patient.id}`}
                     onClick={() => onAddEventClick(record.patient.id, 'NSTEMI')}
-                    className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[10px] font-bold shrink-0 cursor-not-allowed opacity-50 pointer-events-none transition-colors">
-                    
+                    className="px-2 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-md text-[10px] font-bold shrink-0 cursor-pointer transition-colors"
+                    title="Add NSTEMI Registry Entry">
                       + NSTEMI
                     </button>
                     <button

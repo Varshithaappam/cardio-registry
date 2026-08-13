@@ -9,7 +9,7 @@ export default function HFHistoryList({ patientId, onEditEventClick }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const currentUserRole = (localStorage.getItem('userRole') || 'CLINICIAN').toUpperCase();
+  const currentUserRole = (sessionStorage.getItem('userRole') || 'CLINICIAN').toUpperCase();
   const canDelete = ['ADMIN', 'CLINICIAN'].includes(currentUserRole);
 
   const fetchHistory = async () => {

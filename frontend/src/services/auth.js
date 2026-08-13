@@ -1,39 +1,40 @@
 import api from '../api/axiosInstance';
 
 /**
- * Login user and store authentication details in localStorage
+ * Login user and store authentication details in sessionStorage
  */
 export const login = async (username, password) => {
   const response = await api.post('/auth/login', { username, password });
   
   if (response.data && response.data.token) {
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
+    sessionStorage.setItem('token', response.data.token);
+    sessionStorage.setItem('user', JSON.stringify(response.data.user));
   }
   
   return response.data;
 };
 
 /**
- * Clear authentication state from localStorage
+ * Clear authentication state from sessionStorage
  */
 export const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
+  sessionStorage.removeItem('token');
+  sessionStorage.removeItem('user');
+  sessionStorage.clear();
 };
 
 /**
  * Retrieve stored JWT token
  */
 export const getToken = () => {
-  return localStorage.getItem('token');
+  return sessionStorage.getItem('token');
 };
 
 /**
  * Retrieve stored user object
  */
 export const getCurrentUser = () => {
-  const userStr = localStorage.getItem('user');
+  const userStr = sessionStorage.getItem('user');
   if (!userStr) return null;
   try {
     return JSON.parse(userStr);

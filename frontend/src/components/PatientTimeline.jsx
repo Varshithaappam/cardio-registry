@@ -45,7 +45,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
 
   const currentUser = (() => {
     try {
-      return JSON.parse(localStorage.getItem('user'));
+      return JSON.parse(sessionStorage.getItem('user'));
     } catch (e) {
       return null;
     }

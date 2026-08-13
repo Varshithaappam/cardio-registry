@@ -22,6 +22,7 @@ const SHOW_DEV_HELPERS = true;
 export default function ClinicalForm({ patientRecord, formType, editingRecord, onCancel, onSave, onBackPatients }) {
   const navigate = useNavigate();
   const formRef = useRef(null);
+  const isHfForm = String(formType || '').toUpperCase() === 'HF';
   const [isDraft, setIsDraft] = useState(editingRecord?.isDraft ?? false);
   const [completionPercent, setCompletionPercent] = useState(15);
   const [viewMode, setViewMode] = useState('detailed');
@@ -294,7 +295,7 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
 
         {/* Draft/Complete controls & save/cancel buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 pt-6">
-          {SHOW_DEV_HELPERS ? (
+          {SHOW_DEV_HELPERS && !isHfForm ? (
             <div className="flex items-center gap-2">
               <input
                 id="chk-draft"
@@ -316,7 +317,7 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
           ) : <div />}
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            {SHOW_DEV_HELPERS && formType === 'HF' && (
+            {SHOW_DEV_HELPERS && isHfForm && (
               <button
                 id="btn-dummy-form"
                 type="button"

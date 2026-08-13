@@ -327,13 +327,13 @@ const HFForm = forwardRef(function HFForm(
   const getSubmissionData = () => {
     let activeUserId = undefined;
     try {
-      const userStr = localStorage.getItem('user');
+      const userStr = sessionStorage.getItem('user');
       if (userStr) {
         const uObj = JSON.parse(userStr);
         activeUserId = uObj?.user_id || uObj?.id || uObj?.userId;
       }
     } catch (e) {
-      console.error('Error getting user_id from localStorage:', e);
+      console.error('Error getting user_id from sessionStorage:', e);
     }
 
     const activeMrNo = patient.mrNo || patient.mr_no || editingRecord?.care_mr_no || editingRecord?.encounterId || undefined;
