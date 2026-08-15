@@ -114,12 +114,12 @@ async function saveHfAssessment(data, userId = 1) {
         if ((!care_mr_no || care_mr_no === 'Unknown') && (data.patientId || data.patient_id)) {
             const pid = data.patientId || data.patient_id;
             try {
-                const { recordset: pRows } = await conn.query('SELECT [mr_no] FROM [patients] WHERE [patient_id] = @patientId;', { patientId: pid });
+                const { recordset: pRows } = await conn.query('SELECT [mr_no] FROM [patient_demographics] WHERE [patient_id] = @patientId;', { patientId: pid });
                 if (pRows.length > 0 && pRows[0].mr_no) {
                     care_mr_no = pRows[0].mr_no;
                 }
             } catch (dbErr) {
-                console.error("Failed to fetch mr_no from patients table:", dbErr);
+                console.error("Failed to fetch mr_no from patient_demographics table:", dbErr);
             }
         }
 
@@ -138,6 +138,7 @@ async function saveHfAssessment(data, userId = 1) {
         // 2. Insert hf_administrative
         const adminData = {
             assessed_by: assessed_by,
+            visit_id: data.visitId || data.visit_id || null,
             assessment_date: toSqlDate(data.assessmentDate),
             care_mr_no: care_mr_no,
             visit_type: data.visitType || 'Outpatient',
@@ -841,6 +842,8 @@ async function getHfAssessment(hf_id) {
 
         return {
             id: registry.hf_id,
+            visitId: admin.visit_id,
+            visit_id: admin.visit_id,
             hfRegistryNo: registry.hf_registry_no,
             hf_registry_no: registry.hf_registry_no,
             patientId: registry.patient_id,

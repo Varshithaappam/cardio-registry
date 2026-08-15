@@ -63,7 +63,7 @@ const getPatientCentricTasks = async (req, res) => {
         fa.investigation_bnp_ntprobnp,
         fa.investigation_6mw_test
       FROM RankedTasks rt
-      INNER JOIN patients p ON rt.patient_id = p.patient_id
+      INNER JOIN patient_demographics p ON rt.patient_id = p.patient_id
       LEFT JOIN hf_followup_assessments fa ON (rt.source_record_id = fa.followup_id OR (rt.patient_id = fa.patient_id AND fa.followup_id = (SELECT MAX(followup_id) FROM hf_followup_assessments WHERE patient_id = rt.patient_id)))
       WHERE rt.rn = 1
       ORDER BY rt.target_date ASC, rt.task_id DESC;

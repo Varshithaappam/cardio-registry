@@ -207,7 +207,7 @@ const getPatientAuditLog = async (req, res) => {
       FROM hf_registry_audit a 
       JOIN users u ON a.user_id = u.user_id 
       JOIN hf_registry hf ON a.hf_id = hf.hf_id 
-      JOIN patients p ON hf.patient_id = p.patient_id 
+      JOIN patient_demographics p ON hf.patient_id = p.patient_id 
       WHERE p.patient_id = @patientId
       ORDER BY a.timestamp DESC;
     `;
@@ -289,7 +289,7 @@ const getAuditLog = async (req, res) => {
       FROM hf_registry_audit a 
       JOIN users u ON a.user_id = u.user_id 
       JOIN hf_registry hf ON a.hf_id = hf.hf_id 
-      JOIN patients p ON hf.patient_id = p.patient_id 
+      JOIN patient_demographics p ON hf.patient_id = p.patient_id 
       WHERE p.patient_id = @targetId
       ORDER BY a.timestamp DESC;
     `;

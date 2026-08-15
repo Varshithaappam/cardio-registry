@@ -16,30 +16,30 @@ function patientParameters(patientData, includeNumbers = true) {
 }
 
 async function createPatient(patientData) {
-  return db.insert(null, 'patients', patientParameters(patientData), 'patient_id');
+  return db.insert(null, 'patient_demographics', patientParameters(patientData), 'patient_id');
 }
 
 async function updatePatientNumbers(patientId, mr_no, ip_no) {
   return db.query(
-    'UPDATE [patients] SET [mr_no] = @mr_no, [ip_no] = @ip_no WHERE [patient_id] = @patientId;',
+    'UPDATE [patient_demographics] SET [mr_no] = @mr_no, [ip_no] = @ip_no WHERE [patient_id] = @patientId;',
     { patientId, mr_no, ip_no }
   );
 }
 
 async function getAllPatients() {
-  const result = await db.query('SELECT * FROM [patients] ORDER BY [patient_id] DESC;');
+  const result = await db.query('SELECT * FROM [patient_demographics] ORDER BY [patient_id] DESC;');
   return result.recordset;
 }
 
 async function getPatientById(patientId) {
-  const result = await db.query('SELECT * FROM [patients] WHERE [patient_id] = @patientId;', { patientId });
+  const result = await db.query('SELECT * FROM [patient_demographics] WHERE [patient_id] = @patientId;', { patientId });
   return result.recordset[0];
 }
 
 async function updatePatient(patientId, patientData) {
   const parameters = { patientId, ...patientParameters(patientData, false) };
   return db.query(`
-    UPDATE [patients]
+    UPDATE [patient_demographics]
     SET [patient_name] = @patient_name,
         [date_of_birth] = @date_of_birth,
         [gender] = @gender,
@@ -61,7 +61,7 @@ async function updatePatient(patientId, patientData) {
 }
 
 async function deletePatient(patientId) {
-  return db.query('DELETE FROM [patients] WHERE [patient_id] = @patientId;', { patientId });
+  return db.query('DELETE FROM [patient_demographics] WHERE [patient_id] = @patientId;', { patientId });
 }
 
 async function getPatientCounts(patientId) {

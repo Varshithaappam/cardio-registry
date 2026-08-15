@@ -1045,6 +1045,7 @@ const hf = forwardRef(function hf(
   );
   const [dischargeDate, setDischargeDate] = useState(editingRecord?.inpatientDetails?.dischargeDate ?? '');
   const [encounterId, setEncounterId] = useState(editingRecord?.inpatientDetails?.encounterId ?? editingRecord?.encounterId ?? '');
+  const [visitId, setVisitId] = useState(editingRecord?.visitId ?? editingRecord?.visit_id ?? '');
 
   // 3. Initial Clinical Assessment States
   const [previousDiagnosis, setPreviousDiagnosis] = useState(editingRecord?.previousDiagnosis ?? '');
@@ -2250,6 +2251,8 @@ const hf = forwardRef(function hf(
     id: editingRecord?.id ?? `hfa-${Date.now()}`,
     tempHfId: !editingRecord?.id ? tempHfId : undefined,
     patientId: patient.id || patient.patient_id,
+    visitId: visitId || undefined,
+    visit_id: visitId || undefined,
     encounterId: encounterId || editingRecord?.encounterId || activeMrNo,
     care_mr_no: activeMrNo,
     mr_no: activeMrNo,
@@ -2711,7 +2714,7 @@ const hf = forwardRef(function hf(
 
     try {
       const userStateValues = [
-        caregiverName, caregiverRelationship, caregiverPhone, highestEducation,
+        visitId, caregiverName, caregiverRelationship, caregiverPhone, highestEducation,
         monthlyIncome, occupation, address, insuranceMode, referredFrom,
         presentDiagnosis, precipitatingFactors, otherPrecipitatingFactor,
         nonHfAdmissionReason, daysHospitalized, dischargeDate, encounterId,
@@ -3286,6 +3289,18 @@ const hf = forwardRef(function hf(
               options={['Inpatient', 'Outpatient', 'Home']}
               columns={3}
               error={formErrors.visitType}
+            />
+          </div>
+
+          {/* Visit ID */}
+          <div>
+            <TextInput readOnly={readOnly}
+              id="visitId"
+              label="Visit ID"
+              value={visitId}
+              onChange={setVisitId}
+              placeholder="E.g. IP00001, OP00001, HM00001"
+              error={formErrors.visitId}
             />
           </div>
 

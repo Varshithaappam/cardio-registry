@@ -20,7 +20,7 @@ async function insertHfRegistry(conn, { patient_id, hf_registry_no, created_by, 
 
 async function insertHfAdministrative(conn, data) {
     const keys = [
-        'hf_id', 'assessed_by', 'assessment_date', 'care_mr_no', 'visit_type',
+        'hf_id', 'visit_id', 'assessed_by', 'assessment_date', 'care_mr_no', 'visit_type',
         'address', 'education_level', 'monthly_income', 'occupation', 'caregiver_name',
         'caregiver_relationship', 'caregiver_phone', 'insurance_mode', 'visit_date', 'discharge_date',
         'treating_cardiologist', 'referring_doctor', 'referred_from', 'present_diagnosis', 'myocardial_ischemia',
