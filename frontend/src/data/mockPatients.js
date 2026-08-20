@@ -62,7 +62,7 @@ export const MOCK_PATIENTS = [
   hospitalizations: [
   {
     id: 'hosp-1',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     admissionDate: '2026-01-12',
     dischargeDate: '2026-01-18',
     hospitalName: 'CARE Heart Institute',
@@ -97,7 +97,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'hosp-2',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     admissionDate: '2026-03-15',
     dischargeDate: '2026-03-22',
     hospitalName: 'CARE Heart Institute',
@@ -131,7 +131,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'hosp-3',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     admissionDate: '2026-06-15',
     dischargeDate: '2026-06-24',
     hospitalName: 'CARE Heart Institute',
@@ -167,7 +167,7 @@ export const MOCK_PATIENTS = [
   hfAssessments: [
   {
     id: 'hfa-1',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-1',
     assessmentDate: '2026-01-12',
     visitType: 'Inpatient',
@@ -246,7 +246,7 @@ export const MOCK_PATIENTS = [
   acsEvents: [
   {
     id: 'acs-1',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-2',
     eventDate: '2026-03-15',
     type: 'STEMI',
@@ -319,7 +319,7 @@ export const MOCK_PATIENTS = [
   cabgProcedures: [
   {
     id: 'cabg-1',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-3',
     procedureDate: '2026-06-18',
     surgeonName: 'Dr. Gopala Krishna',
@@ -389,7 +389,7 @@ export const MOCK_PATIENTS = [
   investigations: [
   {
     id: 'inv-1',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-1',
     investigationDate: '2026-01-12',
     testType: 'ECG',
@@ -408,7 +408,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'inv-2',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-1',
     investigationDate: '2026-01-13',
     testType: 'ECHO',
@@ -431,7 +431,7 @@ export const MOCK_PATIENTS = [
   labResults: [
   {
     id: 'lab-1',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-1',
     resultDate: '2026-01-12',
     potassium: 3.8,
@@ -449,7 +449,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'lab-2',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-2',
     resultDate: '2026-03-15',
     potassium: 4.1,
@@ -465,7 +465,7 @@ export const MOCK_PATIENTS = [
   medications: [
   {
     id: 'med-1',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-1',
     datePrescribed: '2026-01-18',
     drugClass: 'Beta-Blocker',
@@ -476,7 +476,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'med-2',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-1',
     datePrescribed: '2026-01-18',
     drugClass: 'ACE-Inhibitor',
@@ -487,7 +487,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'med-3',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-1',
     datePrescribed: '2026-01-18',
     drugClass: 'Aldosterone-Antagonist',
@@ -498,7 +498,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'med-4',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-1',
     datePrescribed: '2026-01-18',
     drugClass: 'Diuretic',
@@ -509,7 +509,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'med-5',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-2',
     datePrescribed: '2026-03-22',
     drugClass: 'Anti-platelet',
@@ -520,7 +520,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'med-6',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-2',
     datePrescribed: '2026-03-22',
     drugClass: 'Anti-platelet',
@@ -531,7 +531,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'med-7',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     encounterId: 'hosp-2',
     datePrescribed: '2026-03-22',
     drugClass: 'Statin',
@@ -544,7 +544,7 @@ export const MOCK_PATIENTS = [
   followUps: [
   {
     id: 'fol-1',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     followUpInterval: '1-month',
     dateOfVisit: '2026-02-15',
     symptoms: {
@@ -572,7 +572,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'fol-2',
-    patientId: 'pat-1',
+    regPatientId: 'pat-1',
     followUpInterval: '3-month',
     dateOfVisit: '2026-04-18',
     symptoms: {
@@ -657,7 +657,7 @@ export const MOCK_PATIENTS = [
   hospitalizations: [
   {
     id: 'hosp-4',
-    patientId: 'pat-2',
+    regPatientId: 'pat-2',
     admissionDate: '2026-02-18',
     dischargeDate: '2026-02-22',
     hospitalName: 'Apollo Cardio Centre',
@@ -694,7 +694,7 @@ export const MOCK_PATIENTS = [
   acsEvents: [
   {
     id: 'acs-2',
-    patientId: 'pat-2',
+    regPatientId: 'pat-2',
     encounterId: 'hosp-4',
     eventDate: '2026-02-18',
     type: 'NSTEMI',
@@ -754,7 +754,7 @@ export const MOCK_PATIENTS = [
   investigations: [
   {
     id: 'inv-3',
-    patientId: 'pat-2',
+    regPatientId: 'pat-2',
     encounterId: 'hosp-4',
     investigationDate: '2026-02-18',
     testType: 'ECG',
@@ -772,7 +772,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'inv-4',
-    patientId: 'pat-2',
+    regPatientId: 'pat-2',
     encounterId: 'hosp-4',
     investigationDate: '2026-02-19',
     testType: 'ECHO',
@@ -788,7 +788,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'inv-5',
-    patientId: 'pat-2',
+    regPatientId: 'pat-2',
     encounterId: 'hosp-4',
     investigationDate: '2026-02-19',
     testType: 'Angiogram',
@@ -802,7 +802,7 @@ export const MOCK_PATIENTS = [
   labResults: [
   {
     id: 'lab-3',
-    patientId: 'pat-2',
+    regPatientId: 'pat-2',
     encounterId: 'hosp-4',
     resultDate: '2026-02-18',
     potassium: 4.4,
@@ -819,7 +819,7 @@ export const MOCK_PATIENTS = [
   medications: [
   {
     id: 'med-8',
-    patientId: 'pat-2',
+    regPatientId: 'pat-2',
     encounterId: 'hosp-4',
     datePrescribed: '2026-02-22',
     drugClass: 'Beta-Blocker',
@@ -830,7 +830,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'med-9',
-    patientId: 'pat-2',
+    regPatientId: 'pat-2',
     encounterId: 'hosp-4',
     datePrescribed: '2026-02-22',
     drugClass: 'ACE-Inhibitor',
@@ -841,7 +841,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'med-10',
-    patientId: 'pat-2',
+    regPatientId: 'pat-2',
     encounterId: 'hosp-4',
     datePrescribed: '2026-02-22',
     drugClass: 'Anti-platelet',
@@ -852,7 +852,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'med-11',
-    patientId: 'pat-2',
+    regPatientId: 'pat-2',
     encounterId: 'hosp-4',
     datePrescribed: '2026-02-22',
     drugClass: 'Anti-platelet',
@@ -863,7 +863,7 @@ export const MOCK_PATIENTS = [
   },
   {
     id: 'med-12',
-    patientId: 'pat-2',
+    regPatientId: 'pat-2',
     encounterId: 'hosp-4',
     datePrescribed: '2026-02-22',
     drugClass: 'Statin',

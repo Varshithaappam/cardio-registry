@@ -104,7 +104,7 @@ const CABGForm = forwardRef(function CABGForm(
 
   const getSubmissionData = () => ({
     id: editingRecord?.id ?? `cabg-${Date.now()}`,
-    patientId: patientRecord.patient.id,
+    regPatientId: patientRecord.patient.id,
     procedureDate: date,
     surgeonName: surgeon,
     surgeonId,

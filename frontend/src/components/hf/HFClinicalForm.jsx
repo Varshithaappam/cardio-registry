@@ -303,7 +303,7 @@ const HFClinicalForm = forwardRef(function HFClinicalForm(
 
   const getSubmissionData = () => ({
     id: editingRecord?.id ?? `hfa-${Date.now()}`,
-    patientId: patient.id,
+    regPatientId: patient.id,
     encounterId: encounterId || editingRecord?.encounterId,
     assessmentDate,
     visitType,

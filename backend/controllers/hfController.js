@@ -14,7 +14,7 @@ function hasAtLeastOneFilledField(body) {
     if (!body || typeof body !== 'object' || Object.keys(body).length === 0) {
         return false;
     }
-    const { patientId, patient_id, hf_id, created_by, updated_by, isDraft, ...formFields } = body;
+    const { regPatientId, reg_patient_id, hf_id, created_by, updated_by, isDraft, ...formFields } = body;
     return Object.values(formFields).some(isFilled);
 }
 
@@ -27,7 +27,7 @@ async function saveHfAssessment(req, res) {
             });
         }
         const userId = req.user?.id || req.user?.userId || 1;
-        console.log("Saving HF Assessment for patient_id:", req.body.patientId, "User ID:", userId);
+        console.log("Saving HF Assessment for reg_patient_id:", req.body.regPatientId, "User ID:", userId);
         const result = await hfService.saveHfAssessment(req.body, userId);
         return res.status(201).json({
             success: true,
@@ -69,9 +69,9 @@ async function getHfAssessment(req, res) {
 
 async function getHfHistory(req, res) {
     try {
-        const patientId = req.params.patientId;
-        console.log("Retrieving HF history for patientId:", patientId);
-        const result = await hfService.getHfHistory(patientId);
+        const regPatientId = req.params.regPatientId;
+        console.log("Retrieving HF history for regPatientId:", regPatientId);
+        const result = await hfService.getHfHistory(regPatientId);
         return res.status(200).json({
             success: true,
             data: result
@@ -94,7 +94,7 @@ async function saveHfDraft(req, res) {
             });
         }
         const userId = req.user?.id || req.user?.userId || 1;
-        console.log("Saving HF Assessment Draft for patient_id:", req.body.patientId, "User ID:", userId);
+        console.log("Saving HF Assessment Draft for reg_patient_id:", req.body.regPatientId, "User ID:", userId);
         const result = await hfService.saveHfAssessment({ ...req.body, isDraft: true }, userId);
         return res.status(200).json({
             success: true,

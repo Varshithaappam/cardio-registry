@@ -52,7 +52,7 @@ const HospitalizationForm = forwardRef(function HospitalizationForm(
 
   const getSubmissionData = () => ({
     id: editingRecord?.id ?? `hosp-${Date.now()}`,
-    patientId: patientRecord.patient.id,
+    regPatientId: patientRecord.patient.id,
     admissionDate,
     dischargeDate,
     hospitalName,
@@ -78,7 +78,14 @@ const HospitalizationForm = forwardRef(function HospitalizationForm(
   });
 
   useImperativeHandle(ref, () => ({
-    getSubmissionData
+    getSubmissionData,
+    validateForm: () => {
+      if (admissionDate && dischargeDate && new Date(dischargeDate) < new Date(admissionDate)) {
+        alert('Date of Discharge cannot be earlier than Date of Admission.');
+        return false;
+      }
+      return true;
+    }
   }));
 
   return (
@@ -88,14 +95,24 @@ const HospitalizationForm = forwardRef(function HospitalizationForm(
           id="hosp-admdt"
           label="Date of Admission"
           value={admissionDate}
-          onChange={setAdmissionDate}
+          onChange={(val) => {
+            setAdmissionDate(val);
+            if (dischargeDate && val && new Date(dischargeDate) < new Date(val)) {
+              alert('Date of Discharge cannot be earlier than Date of Admission.');
+            }
+          }}
           required
         />
         <DateInput
           id="hosp-dischdt"
           label="Date of Discharge"
           value={dischargeDate}
-          onChange={setDischargeDate}
+          onChange={(val) => {
+            setDischargeDate(val);
+            if (admissionDate && val && new Date(val) < new Date(admissionDate)) {
+              alert('Date of Discharge cannot be earlier than Date of Admission.');
+            }
+          }}
         />
         <TextInput
           id="hosp-site"

@@ -63,8 +63,8 @@ async function getAllPatients(req, res) {
  */
 async function getPatientById(req, res) {
     try {
-        const patientId = req.params.id;
-        const patient = await patientService.getPatientById(patientId);
+        const regPatientId = req.params.id;
+        const patient = await patientService.getPatientById(regPatientId);
 
         if (!patient) {
             return res.status(404).json({
@@ -87,10 +87,10 @@ async function getPatientById(req, res) {
  */
 async function updatePatient(req, res) {
     try {
-        const patientId = req.params.id;
+        const regPatientId = req.params.id;
         const userId = req.user?.id || req.user?.userId || 1;
         const patient = await patientService.updatePatient(
-            patientId,
+            regPatientId,
             req.body,
             userId
         );
@@ -117,9 +117,9 @@ async function updatePatient(req, res) {
  */
 async function deletePatient(req, res) {
     try {
-        const patientId = req.params.id;
+        const regPatientId = req.params.id;
         const userId = req.user?.id || req.user?.userId || 1;
-        const result = await patientService.deletePatient(patientId, userId);
+        const result = await patientService.deletePatient(regPatientId, userId);
 
         if ((result.rowsAffected?.[0] || 0) === 0) {
             return res.status(404).json({
@@ -140,8 +140,8 @@ async function deletePatient(req, res) {
 
 async function getPatientCounts(req, res) {
     try {
-        const patientId = req.params.patientId;
-        const counts = await patientService.getPatientCounts(patientId);
+        const regPatientId = req.params.regPatientId;
+        const counts = await patientService.getPatientCounts(regPatientId);
         return res.status(200).json({
             success: true,
             data: counts

@@ -7,16 +7,16 @@ const { logAudit } = require("../utils/auditLogger");
  * Generate MR Number
  * Format: MR00001
  */
-function generateMRNumber(patientId) {
-    return `MR${String(patientId).padStart(5, "0")}`;
+function generateMRNumber(regPatientId) {
+    return `MR${String(regPatientId).padStart(5, "0")}`;
 }
 
 /**
  * Generate IP Number
  * Format: IP00001
  */
-function generateIPNumber(patientId) {
-    return `IP${String(patientId).padStart(5, "0")}`;
+function generateIPNumber(regPatientId) {
+    return `IP${String(regPatientId).padStart(5, "0")}`;
 }
 
 /**
@@ -25,7 +25,23 @@ function generateIPNumber(patientId) {
 async function registerPatient(patientData, userId = 1) {
     const normalizedData = normalizePatientInput(patientData);
 
+    let mr_no = normalizedData.mr_no;
+    if (mr_no) {
+        // Validate uniqueness of user-entered MR No
+        const { recordset: existingMr } = await db.query(
+            'SELECT [reg_patient_id] FROM [patient_demographics] WHERE [mr_no] = @mr_no;',
+            { mr_no }
+        );
+        if (existingMr.length > 0) {
+            const error = new Error(`A patient with MR Number "${mr_no}" already exists.`);
+            error.status = 409;
+            error.code = 2627;
+            throw error;
+        }
+    }
+
     console.log("Registering patient:", {
+        mr_no: mr_no,
         patient_name: normalizedData.patient_name,
         date_of_birth: normalizedData.date_of_birth,
         gender: normalizedData.gender,
@@ -34,24 +50,26 @@ async function registerPatient(patientData, userId = 1) {
 
     const result = await patientModel.createPatient({
         ...normalizedData,
-        mr_no: null,
-        ip_no: null
+        mr_no: mr_no || null,
+        ip_no: normalizedData.ip_no || null
     });
 
-    const patientId = result.recordset[0].patient_id;
-    const mr_no = generateMRNumber(patientId);
-    const ip_no = generateIPNumber(patientId);
+    const regPatientId = result.recordset[0].reg_patient_id;
+    if (!mr_no) {
+        mr_no = generateMRNumber(regPatientId);
+    }
+    const ip_no = normalizedData.ip_no || generateIPNumber(regPatientId);
 
     await patientModel.updatePatientNumbers(
-        patientId,
+        regPatientId,
         mr_no,
         ip_no
     );
 
-    const registeredPatient = await patientModel.getPatientById(patientId);
+    const registeredPatient = await patientModel.getPatientById(regPatientId);
 
     try {
-        const { recordset: regRows } = await db.query('SELECT [hf_id] FROM [hf_registry] WHERE [patient_id] = @patientId;', { patientId });
+        const { recordset: regRows } = await db.query('SELECT [hf_id] FROM [hf_registry] WHERE [reg_patient_id] = @regPatientId;', { regPatientId });
         for (const reg of regRows) {
             await logAudit(reg.hf_id, userId, 'CREATE', null, registeredPatient);
         }
@@ -72,26 +90,40 @@ async function getAllPatients() {
 /**
  * Get Patient By ID
  */
-async function getPatientById(patientId) {
-    return await patientModel.getPatientById(patientId);
+async function getPatientById(regPatientId) {
+    return await patientModel.getPatientById(regPatientId);
 }
 
 /**
  * Update Patient
  */
-async function updatePatient(patientId, patientData, userId = 1) {
+async function updatePatient(regPatientId, patientData, userId = 1) {
     const normalizedData = normalizePatientInput(patientData);
 
-    console.log(`Updating patient_id=${patientId}`);
+    const mr_no = normalizedData.mr_no;
+    if (mr_no) {
+        const { recordset: existingMr } = await db.query(
+            'SELECT [reg_patient_id] FROM [patient_demographics] WHERE [mr_no] = @mr_no AND [reg_patient_id] != @regPatientId;',
+            { mr_no, regPatientId }
+        );
+        if (existingMr.length > 0) {
+            const error = new Error(`A patient with MR Number "${mr_no}" already exists.`);
+            error.status = 409;
+            error.code = 2627;
+            throw error;
+        }
+    }
 
-    const previousPatient = await patientModel.getPatientById(patientId);
+    console.log(`Updating reg_patient_id=${regPatientId}`);
 
-    await patientModel.updatePatient(patientId, normalizedData);
+    const previousPatient = await patientModel.getPatientById(regPatientId);
 
-    const updatedPatient = await patientModel.getPatientById(patientId);
+    await patientModel.updatePatient(regPatientId, normalizedData);
+
+    const updatedPatient = await patientModel.getPatientById(regPatientId);
 
     try {
-        const { recordset: regRows } = await db.query('SELECT [hf_id] FROM [hf_registry] WHERE [patient_id] = @patientId;', { patientId });
+        const { recordset: regRows } = await db.query('SELECT [hf_id] FROM [hf_registry] WHERE [reg_patient_id] = @regPatientId;', { regPatientId });
         for (const reg of regRows) {
             await logAudit(reg.hf_id, userId, 'UPDATE', previousPatient, updatedPatient);
         }
@@ -105,22 +137,22 @@ async function updatePatient(patientId, patientData, userId = 1) {
 /**
  * Delete Patient
  */
-async function deletePatient(patientId, userId = 1) {
-    console.log(`Deleting patient_id=${patientId}`);
-    const previousPatient = await patientModel.getPatientById(patientId);
+async function deletePatient(regPatientId, userId = 1) {
+    console.log(`Deleting reg_patient_id=${regPatientId}`);
+    const previousPatient = await patientModel.getPatientById(regPatientId);
     try {
-        const { recordset: regRows } = await db.query('SELECT [hf_id] FROM [hf_registry] WHERE [patient_id] = @patientId;', { patientId });
+        const { recordset: regRows } = await db.query('SELECT [hf_id] FROM [hf_registry] WHERE [reg_patient_id] = @regPatientId;', { regPatientId });
         for (const reg of regRows) {
             await logAudit(reg.hf_id, userId, 'DELETE', previousPatient, null);
         }
     } catch (auditErr) {
         console.error("Failed to log audit for patient deletion:", auditErr);
     }
-    return await patientModel.deletePatient(patientId);
+    return await patientModel.deletePatient(regPatientId);
 }
 
-async function getPatientCounts(patientId) {
-    return await patientModel.getPatientCounts(patientId);
+async function getPatientCounts(regPatientId) {
+    return await patientModel.getPatientCounts(regPatientId);
 }
 
 module.exports = {

@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Printer, Loader2, FileText } from 'lucide-react';
 import api from '../../../api/axios';
 import { mapPatientRecord } from '../../utils/patientMapper';
 import hf from './hf';
+import NSTEMIForm from './NSTEMIForm';
 
 export default function HFFormView() {
   const { recordId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const formType = searchParams.get('formType') || 'HF';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [assessmentData, setAssessmentData] = useState(null);
@@ -22,13 +25,13 @@ export default function HFFormView() {
     }
 
     // 2. Resolve patient ID and navigate to Master Patient Clinical Portfolio
-    const patientId = patientRecord?.patient?.id || 
-                      patientRecord?.patient?.patient_id || 
-                      assessmentData?.patientId || 
-                      assessmentData?.patient_id;
+    const regPatientId = patientRecord?.patient?.id || 
+                      patientRecord?.patient?.reg_patient_id || 
+                      assessmentData?.regPatientId || 
+                      assessmentData?.reg_patient_id;
 
-    if (patientId) {
-      navigate(`/patient/${patientId}`);
+    if (regPatientId) {
+      navigate(`/patient/${regPatientId}`);
     } else if (window.history.length > 1) {
       navigate(-1);
     } else {
@@ -40,8 +43,9 @@ export default function HFFormView() {
     async function fetchData() {
       try {
         setLoading(true);
-        // 1. Fetch HF Assessment details (without '/api' prefix)
-        const resAssessment = await api.get(`/hf-assessment/${recordId}`);
+        // 1. Fetch Assessment details (without '/api' prefix)
+        const endpoint = formType === 'NSTEMI' ? `/nstemi/${recordId}` : `/hf-assessment/${recordId}`;
+        const resAssessment = await api.get(endpoint);
         if (!resAssessment.data || !resAssessment.data.success) {
           throw new Error(resAssessment.data?.message || 'Failed to load assessment data.');
         }
@@ -49,14 +53,15 @@ export default function HFFormView() {
         setAssessmentData(assessment);
 
         // 2. Fetch Patient details (without '/api' prefix)
-        const resPatient = await api.get(`/patients/${assessment.patientId}`);
+        const regPatientId = assessment.regPatientId || assessment.reg_patient_id;
+        const resPatient = await api.get(`/patients/${regPatientId}`);
         if (!resPatient.data || !resPatient.data.success) {
           throw new Error(resPatient.data?.message || 'Failed to load patient data.');
         }
         const normalized = mapPatientRecord(resPatient.data.data);
         setPatientRecord(normalized);
       } catch (err) {
-        console.error('Error fetching HF Form View data:', err);
+        console.error(`Error fetching ${formType} Form View data:`, err);
         setError(err.message || 'An error occurred while loading the record.');
       } finally {
         setLoading(false);
@@ -66,7 +71,7 @@ export default function HFFormView() {
     if (recordId) {
       fetchData();
     }
-  }, [recordId]);
+  }, [recordId, formType]);
 
   const handlePrint = () => {
     window.print();
@@ -169,7 +174,7 @@ export default function HFFormView() {
       `}} />
 
       {/* Top bar (Hidden when printing) */}
-      <header className="no-print bg-teal-950 text-white border-b border-teal-900 shrink-0 shadow-sm relative z-20 px-4 py-3.5 sm:px-6 lg:px-8">
+      <header className={`no-print ${formType === 'NSTEMI' ? 'bg-orange-950 border-orange-900' : 'bg-teal-950 border-teal-900'} text-white border-b shrink-0 shadow-sm relative z-20 px-4 py-3.5 sm:px-6 lg:px-8`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <button
@@ -179,15 +184,15 @@ export default function HFFormView() {
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div className="p-2 bg-teal-500/20 text-teal-400 rounded-lg">
+            <div className={`p-2 ${formType === 'NSTEMI' ? 'bg-orange-500/20 text-orange-400' : 'bg-teal-500/20 text-teal-400'} rounded-lg`}>
               <FileText className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-1.5">
-                <span>View Existing Entry: Heart Failure (HF) Clinical Form</span>
+                <span>View Existing Entry: {formType === 'NSTEMI' ? 'NSTEMI Clinical Event Form' : 'Heart Failure (HF) Clinical Form'}</span>
               </h1>
-              <p className="text-[10px] text-teal-300 mt-0.5">
-                Patient Reference: {patientRecord?.patient?.name} ({patientRecord?.patient?.mrNo}) • CARE CHF Assessment & Cohort Tracking
+              <p className="text-[10px] text-slate-300 mt-0.5">
+                Patient Reference: {patientRecord?.patient?.name} ({patientRecord?.patient?.mrNo}) • {formType === 'NSTEMI' ? 'NSTEMI Registry' : 'CARE CHF Assessment & Cohort Tracking'}
               </p>
             </div>
           </div>
@@ -205,13 +210,22 @@ export default function HFFormView() {
       <div className="print-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 text-black">
           {patientRecord && assessmentData && (
-            <HFForm
-              patientRecord={patientRecord}
-              editingRecord={assessmentData}
-              onCompletionChange={() => {}}
-              readOnly={true}
-              viewMode="detailed"
-            />
+            formType === 'NSTEMI' ? (
+              <div className="pointer-events-none select-none opacity-95">
+                <NSTEMIForm
+                  patient={patientRecord.patient}
+                  editingRecord={assessmentData}
+                />
+              </div>
+            ) : (
+              <HFForm
+                patientRecord={patientRecord}
+                editingRecord={assessmentData}
+                onCompletionChange={() => {}}
+                readOnly={true}
+                viewMode="detailed"
+              />
+            )
           )}
         </div>
       </div>

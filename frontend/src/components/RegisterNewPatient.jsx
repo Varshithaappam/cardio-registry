@@ -53,11 +53,14 @@ export default function RegisterNewPatient({
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState(null);
   const [phoneError, setPhoneError] = useState(null);
+  const [mrNo, setMrNo] = useState('');
   const [dob, setDob] = useState('1966-01-01');
   const [gender, setGender] = useState('Male');
   const [bloodGroup, setBloodGroup] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [uhid, setUhid] = useState('');
+  const [abhaNumber, setAbhaNumber] = useState('');
 
   // Address, Higher Education, Occupation
   const [address, setAddress] = useState('');
@@ -79,11 +82,14 @@ export default function RegisterNewPatient({
     if (initialData) {
       const p = initialData.patient || initialData;
       setName(p.name || p.patient_name || '');
+      setMrNo(p.mrNo || p.mr_no || '');
       setDob(formatDateForInput(p.dob || p.date_of_birth));
       setGender(p.gender || 'Male');
       setBloodGroup(p.bloodGroup || p.blood_group || '');
       setPhone(p.phone || p.phone_no || '');
       setEmail(p.email || '');
+      setUhid(p.uhi || p.uhid || '');
+      setAbhaNumber(p.abha_number || p.abhaNumber || '');
       setAddress(p.address || '');
       setHigherEducation(p.higherEducation || p.higher_education || 'None');
       setOccupation(p.occupation || '');
@@ -160,6 +166,7 @@ export default function RegisterNewPatient({
 
     const payload = buildPatientPayload({
       name,
+      mrNo,
       dob,
       gender,
       bloodGroup,
@@ -173,7 +180,9 @@ export default function RegisterNewPatient({
       diabetes,
       diabetesControl,
       renalFailure,
-      dialysisStatus
+      dialysisStatus,
+      uhid,
+      abhaNumber
     });
 
     setLoading(true);
@@ -181,8 +190,8 @@ export default function RegisterNewPatient({
     try {
       let response;
       if (isEditMode && (initialData?.patient?.id || initialData?.id)) {
-        const patientId = initialData?.patient?.id || initialData?.id;
-        response = await updatePatient(patientId, payload);
+        const regPatientId = initialData?.patient?.id || initialData?.id;
+        response = await updatePatient(regPatientId, payload);
       } else {
         response = await createPatient(payload);
       }
@@ -235,7 +244,23 @@ export default function RegisterNewPatient({
             <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Demographics & Profile</h4>
           </div>
 
-          {/* 1. Full Name */}
+          {/* 1. MR No (Medical Record Number) */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-0.5">
+              MR No (Medical Record Number)
+            </label>
+            <input
+              id="reg-mr-no"
+              type="text"
+              maxLength={10}
+              className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-slate-900"
+              value={mrNo}
+              onChange={(e) => setMrNo(e.target.value)}
+              placeholder="E.g. MR00001 (or leave blank to auto-generate)"
+            />
+          </div>
+
+          {/* 2. Full Name */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-0.5">Full Name <span className="text-red-500 font-bold ml-0.5">*</span></label>
             <input
@@ -400,6 +425,32 @@ export default function RegisterNewPatient({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
+            </div>
+
+            {/* UHID & ABHA Number (Optional) */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">UHID </label>
+                <input
+                  id="reg-uhid"
+                  type="text"
+                  placeholder="E.g. UHI12345"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  value={uhid}
+                  onChange={(e) => setUhid(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">ABHA Number </label>
+                <input
+                  id="reg-abha"
+                  type="text"
+                  placeholder="14-digit ABHA"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  value={abhaNumber}
+                  onChange={(e) => setAbhaNumber(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 

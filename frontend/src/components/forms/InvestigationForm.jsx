@@ -31,7 +31,7 @@ const InvestigationForm = forwardRef(function InvestigationForm(
 
   const getSubmissionData = () => ({
     id: editingRecord?.id ?? `inv-${Date.now()}`,
-    patientId: patientRecord.patient.id,
+    regPatientId: patientRecord.patient.id,
     investigationDate: date,
     testType: type,
     results: type === 'ECG' ? {

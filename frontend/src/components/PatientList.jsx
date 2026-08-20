@@ -36,7 +36,7 @@ import {
 
 
 
-function EncounterCounter({ patientId }) {
+function EncounterCounter({ regPatientId }) {
   const [counts, setCounts] = useState({ hfCount: 0, stemiCount: 0, nstemiCount: 0, cabgCount: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -44,7 +44,7 @@ function EncounterCounter({ patientId }) {
     let active = true;
     async function fetchCounts() {
       try {
-        const res = await api.get(`/patients/counts/${patientId}`);
+        const res = await api.get(`/patients/counts/${regPatientId}`);
         if (active && res.data && res.data.success) {
           setCounts(res.data.data);
         }
@@ -56,7 +56,7 @@ function EncounterCounter({ patientId }) {
     }
     fetchCounts();
     return () => { active = false; };
-  }, [patientId]);
+  }, [regPatientId]);
 
   return (
     <>
@@ -312,11 +312,16 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                           <span className="inline-block text-slate-800 font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] border border-blue-100/50">
                             MRN: {record.patient.mrNo}
                           </span>
-                          {record.patient.ipNo &&
-                        <span className="block text-[10px] text-slate-400 font-semibold px-2">
-                              IPN: {record.patient.ipNo}
+                          {record.patient.uhid &&
+                            <span className="block text-[10px] text-teal-600 font-bold px-2">
+                              UHID: {record.patient.uhid}
                             </span>
-                        }
+                          }
+                          {record.patient.abhaNumber &&
+                            <span className="block text-[10px] text-slate-500 font-semibold px-2 font-mono">
+                              ABHA: {record.patient.abhaNumber}
+                            </span>
+                          }
                         </div>
                       </td>
 
@@ -350,7 +355,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       </td>
 
                       {/* Encounter Counts */}
-                      <EncounterCounter patientId={record.patient.id} />
+                      <EncounterCounter regPatientId={record.patient.id} />
 
                       {/* Quality Score */}
                       

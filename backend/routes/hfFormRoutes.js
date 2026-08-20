@@ -5,7 +5,7 @@ const db = require('../config/db');
 /**
  * Task 3: POST /api/hf-form/submit (Auto-Supersede Integration)
  * Uses an mssql Transaction to:
- * 1. Mark existing active tasks for patient_id as 'Superseded by new assessment'.
+ * 1. Mark existing active tasks for reg_patient_id as 'Superseded by new assessment'.
  * 2. Insert form assessment into hf_followup_assessments and capture followup_id.
  * 3. Insert new active task into patient_followup_tasks if is_followup_required is true.
  */
@@ -13,7 +13,7 @@ router.post('/submit', async (req, res) => {
   const connection = await db.getConnection();
   try {
     const {
-      patient_id,
+      reg_patient_id,
       is_followup_required,
       followup_interval,
       scheduled_followup_date,
@@ -21,17 +21,17 @@ router.post('/submit', async (req, res) => {
       special_instructions
     } = req.body;
 
-    const pid = parseInt(patient_id, 10);
+    const pid = parseInt(reg_patient_id, 10);
     const isRequired = is_followup_required === 1 || is_followup_required === true || is_followup_required === 'Yes';
 
     // Begin SQL Transaction
     await connection.begin();
 
-    // Step 1: Auto-Supersede existing active tasks for this patient_id
+    // Step 1: Auto-Supersede existing active tasks for this reg_patient_id
     const supersedeSql = `
       UPDATE patient_followup_tasks
       SET status = 'Superseded by new assessment'
-      WHERE patient_id = @pid 
+      WHERE reg_patient_id = @pid 
         AND status != 'Completed' 
         AND status != 'Superseded by new assessment';
     `;
@@ -40,7 +40,7 @@ router.post('/submit', async (req, res) => {
     // Step 2: Insert into hf_followup_assessments using OUTPUT INSERTED.followup_id
     const insertHfSql = `
       INSERT INTO hf_followup_assessments (
-        patient_id,
+        reg_patient_id,
         is_followup_required,
         followup_interval,
         scheduled_followup_date,
@@ -73,7 +73,7 @@ router.post('/submit', async (req, res) => {
     if (isRequired) {
       const insertTaskSql = `
         INSERT INTO patient_followup_tasks (
-          patient_id,
+          reg_patient_id,
           source_registry,
           source_record_id,
           is_followup_required,

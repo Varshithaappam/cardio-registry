@@ -48,6 +48,8 @@ export function buildPatientPayload({
   name,
   dob,
   gender,
+  mrNo,
+  ipNo,
   bloodGroup,
   insuranceMode,
   phone,
@@ -60,9 +62,13 @@ export function buildPatientPayload({
   dialysisStatus,
   address,
   higherEducation,
-  occupation
+  occupation,
+  uhid,
+  abhaNumber
 }) {
   return {
+    mr_no: mrNo ? String(mrNo).trim() : null,
+    ip_no: ipNo ? String(ipNo).trim() : null,
     patient_name: name,
     date_of_birth: dob,
     gender,
@@ -78,7 +84,9 @@ export function buildPatientPayload({
     active_dialysis_status: renalFailure === "Yes" ? mapDialysisStatusToDb(dialysisStatus) : "Unknown",
     address: address ? String(address).trim() : null,
     higher_education: higherEducation || "None",
-    occupation: occupation ? String(occupation).trim() : null
+    occupation: occupation ? String(occupation).trim() : null,
+    uhid: uhid ? String(uhid).trim() : null,
+    abha_number: abhaNumber ? String(abhaNumber).trim() : null
   };
 }
 
@@ -88,7 +96,7 @@ const normalizeRecord = (dbPatient) => {
   const { age: _dbAge, ...dbPatientWithoutAge } = dbPatient || {};
 
   const patientName = patient.patient_name || patient.name || "";
-  const patientId = patient.patient_id || patient.id || patient.patientId || "";
+  const regPatientId = patient.reg_patient_id || patient.id || patient.regPatientId || "";
   const dob = patient.date_of_birth || patient.dob || "";
   const bloodGroup = patient.blood_group || patient.bloodGroup || "Unknown";
   const insuranceMode = patient.insurance_mode || patient.insuranceMode || "Unknown";
@@ -110,12 +118,14 @@ const normalizeRecord = (dbPatient) => {
   const occupation = patient.occupation || "";
   const mrNo = patient.mr_no || patient.mrNo || "";
   const ipNo = patient.ip_no || patient.ipNo || "";
+  const uhid = patient.uhid || patient.uhi || "";
+  const abhaNumber = patient.abha_number || patient.abhaNumber || "";
   const createdAt = patient.created_at || patient.createdAt || new Date().toISOString();
   const updatedAt = patient.updated_at || patient.updatedAt || createdAt;
 
   return {
     patient: {
-      id: String(patientId),
+      id: String(regPatientId),
       name: patientName,
       dob,
       gender,
@@ -128,6 +138,10 @@ const normalizeRecord = (dbPatient) => {
       address,
       higherEducation,
       occupation,
+      uhid,
+      uhi: uhid,
+      abhaNumber,
+      abha_number: abhaNumber,
       primaryConsultant: patient.primaryConsultant || "Dr. K. Sridhar",
       createdAt,
       updatedAt,

@@ -24,7 +24,7 @@ const LaboratoryForm = forwardRef(function LaboratoryForm(
 
   const getSubmissionData = () => ({
     id: editingRecord?.id ?? `lab-${Date.now()}`,
-    patientId: patientRecord.patient.id,
+    regPatientId: patientRecord.patient.id,
     resultDate: date,
     potassium: k,
     creatinine: creat,

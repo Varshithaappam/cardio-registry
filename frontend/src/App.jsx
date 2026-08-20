@@ -190,7 +190,7 @@ function PatientListPage({ records, loadPatients }) {
         if (pid) navigate(`/patient/${pid}`);
       }}
       onSelectPatient={(id) => navigate(`/patient/${id}`)}
-      onAddEventClick={(patientId, formType) => navigate(`/patient/${patientId}/edit?formType=${formType}`)}
+      onAddEventClick={(regPatientId, formType) => navigate(`/patient/${regPatientId}/edit?formType=${formType}`)}
       onBack={() => navigate('/dashboard')}
     />
   );
@@ -198,16 +198,16 @@ function PatientListPage({ records, loadPatients }) {
 
 function PatientTimelinePage({ records, loadPatients }) {
   const params = useParams();
-  const patientId = params.id || params.patientId;
+  const regPatientId = params.id || params.regPatientId;
   const navigate = useNavigate();
 
-  const record = records.find((r) => String(r?.patient?.id) === String(patientId)) || null;
+  const record = records.find((r) => String(r?.patient?.id) === String(regPatientId)) || null;
 
   if (!record) {
     return (
       <div className="p-8 text-center bg-white rounded-xl border border-slate-200">
         <h3 className="text-lg font-bold text-slate-800">Patient Portfolio Not Found</h3>
-        <p className="text-slate-500 text-sm mt-2 mb-4">Patient record ID #{patientId} could not be located.</p>
+        <p className="text-slate-500 text-sm mt-2 mb-4">Patient record ID #{regPatientId} could not be located.</p>
         <button onClick={() => navigate('/patients')} className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs">
           Return to Master Patient Registry
         </button>
@@ -238,11 +238,11 @@ function PatientTimelinePage({ records, loadPatients }) {
     <PatientTimeline
       record={record}
       onBack={() => navigate('/patients')}
-      onAddEventClick={(formType) => navigate(`/patient/${patientId}/edit?formType=${formType}`)}
-      onEditEventClick={(hfId) => navigate(`/patient/${patientId}/edit/${hfId}`)}
+      onAddEventClick={(formType) => navigate(`/patient/${regPatientId}/edit?formType=${formType}`)}
+      onEditEventClick={(hfId) => navigate(`/patient/${regPatientId}/edit/${hfId}`)}
       onViewEventDetails={(evt, type) => {
         const targetHfId = evt.hf_id || evt.hfId || evt.id;
-        navigate(`/patient/${patientId}/view/${targetHfId}`, { state: { from: `/patient/${patientId}` } });
+        navigate(`/patient/${regPatientId}/view/${targetHfId}`, { state: { from: `/patient/${regPatientId}` } });
       }}
       onDeleteEvent={handleDeleteClinicalEvent}
       onRefreshPatient={loadPatients}
@@ -252,7 +252,7 @@ function PatientTimelinePage({ records, loadPatients }) {
 
 function EditFormPage({ records, loadPatients }) {
   const params = useParams();
-  const patientId = params.id || params.patientId;
+  const regPatientId = params.id || params.regPatientId;
   const hfId = params.hfId;
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -260,26 +260,27 @@ function EditFormPage({ records, loadPatients }) {
   const [editingRecord, setEditingRecord] = useState(null);
   const [loading, setLoading] = useState(!!hfId);
 
-  const activePatientRecord = records.find((r) => String(r?.patient?.id) === String(patientId)) || null;
+  const activePatientRecord = records.find((r) => String(r?.patient?.id) === String(regPatientId)) || null;
 
   useEffect(() => {
     if (hfId) {
       async function fetchEditData() {
         try {
           setLoading(true);
-          const response = await api.get(`/hf-assessment/${hfId}`);
+          const endpoint = formType === 'NSTEMI' ? `/nstemi/${hfId}` : `/hf-assessment/${hfId}`;
+          const response = await api.get(endpoint);
           if (response.data && response.data.success) {
             setEditingRecord(response.data.data);
           }
         } catch (err) {
-          console.error('Error fetching HF assessment for editing:', err);
+          console.error(`Error fetching ${formType} assessment for editing:`, err);
         } finally {
           setLoading(false);
         }
       }
       fetchEditData();
     }
-  }, [hfId]);
+  }, [hfId, formType]);
 
   if (loading) {
     return <div className="p-8 text-center text-slate-500">Loading form details...</div>;
@@ -330,10 +331,48 @@ function EditFormPage({ records, loadPatients }) {
             console.error('Error saving HF assessment:', err);
             alert(err.response?.data?.message || 'Failed to save Heart Failure Assessment details.');
           }
+        } else if (type === 'NSTEMI') {
+          try {
+            const isDraft = eventData.isDraft === true;
+            const payload = { ...eventData, status: isDraft ? 'draft' : 'final' };
+            let response;
+            if (hfId) {
+              response = await api.put(`/nstemi/${hfId}`, payload);
+            } else {
+              response = await api.post('/nstemi', payload);
+            }
+            if (response.data && response.data.success) {
+              const regNo = response.data?.data?.acs_no || eventData.acs_no || 'NSTEMI Draft';
+              if (isDraft) {
+                alert(`Draft saved successfully (Registry No: ${regNo}). You can resume and complete it anytime.`);
+              } else {
+                alert('NSTEMI Registry record submitted and finalized in database successfully.');
+              }
+              await loadPatients();
+            } else {
+              alert(response.data?.message || 'Failed to save NSTEMI record.');
+            }
+          } catch (err) {
+            console.error('Error saving NSTEMI:', err);
+            alert(err.response?.data?.message || 'Error saving NSTEMI record. Please check backend connection.');
+          }
+        } else if (type === 'STEMI') {
+          try {
+            const response = await api.post('/stemi', eventData);
+            if (response.data && response.data.success) {
+              alert(response.data.message || 'STEMI Registry record submitted successfully.');
+              await loadPatients();
+            } else {
+              alert(response.data?.message || 'Failed to submit STEMI record.');
+            }
+          } catch (err) {
+            console.error('Error saving STEMI:', err);
+            alert(err.response?.data?.message || 'Error submitting STEMI record. Please check backend connection.');
+          }
         }
-        navigate(`/patient/${patientId}`);
+        navigate(`/patient/${regPatientId}`);
       }}
-      onBackPatients={() => navigate(`/patient/${patientId}`)}
+      onBackPatients={() => navigate(`/patient/${regPatientId}`)}
     />
   );
 }
@@ -404,7 +443,7 @@ export default function App() {
             <Route path="/patients" element={<PatientListPage records={records} loadPatients={loadPatients} />} />
             <Route path="/master-registry" element={<Navigate to="/patients" replace />} />
 
-            {/* Support both :id and :patientId parameter names */}
+            {/* Support both :id and :regPatientId parameter names */}
             <Route path="/patient/:id" element={<PatientTimelinePage records={records} loadPatients={loadPatients} />} />
             <Route path="/patient/:id/edit" element={<EditFormPage records={records} loadPatients={loadPatients} />} />
             <Route path="/patient/:id/edit/:hfId" element={<EditFormPage records={records} loadPatients={loadPatients} />} />

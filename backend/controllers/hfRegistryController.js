@@ -18,8 +18,8 @@ const createRecord = async (req, res) => {
   try {
     await conn.begin();
 
-    const patient_id = req.body.patientId || req.body.patient_id;
-    if (!patient_id) {
+    const reg_patient_id = req.body.regPatientId || req.body.reg_patient_id;
+    if (!reg_patient_id) {
       await conn.rollback();
       conn.release();
       return res.status(400).json({ success: false, message: 'Patient ID is required.' });
@@ -28,7 +28,7 @@ const createRecord = async (req, res) => {
     // 1. Insert hf_registry with placeholder hf_registry_no and created_by / updated_by
     const initialStatus = req.body.status || 'draft';
     const result = await db.insert(conn, 'hf_registry', {
-      patient_id,
+      reg_patient_id,
       hf_registry_no: 'HF00000',
       created_by: userId,
       updated_by: userId,
@@ -55,7 +55,7 @@ const createRecord = async (req, res) => {
       data: {
         hf_id: newRecordId,
         hf_registry_no,
-        patient_id,
+        reg_patient_id,
         created_by: userId,
         updated_by: userId
       }
@@ -179,13 +179,13 @@ const deleteRecord = async (req, res) => {
 };
 
 /**
- * Expose Patient Audit Logs Endpoint (GET /api/hf-registry/patient/:patientId/audit)
- * Queries all hf_registry_audit records for a given patient_id across all registries.
+ * Expose Patient Audit Logs Endpoint (GET /api/hf-registry/patient/:regPatientId/audit)
+ * Queries all hf_registry_audit records for a given reg_patient_id across all registries.
  */
 const getPatientAuditLog = async (req, res) => {
-  const patient_id = Number(req.params.patientId || req.params.id);
+  const reg_patient_id = Number(req.params.regPatientId || req.params.id);
 
-  if (!patient_id || isNaN(patient_id)) {
+  if (!reg_patient_id || isNaN(reg_patient_id)) {
     return res.status(400).json({ success: false, message: 'Invalid Patient ID.' });
   }
 
@@ -201,17 +201,17 @@ const getPatientAuditLog = async (req, res) => {
         a.timestamp, 
         u.username, 
         u.email, 
-        p.patient_id, 
+        p.reg_patient_id, 
         p.patient_name, 
         p.mr_no 
       FROM hf_registry_audit a 
       JOIN users u ON a.user_id = u.user_id 
       JOIN hf_registry hf ON a.hf_id = hf.hf_id 
-      JOIN patient_demographics p ON hf.patient_id = p.patient_id 
-      WHERE p.patient_id = @patientId
+      JOIN patient_demographics p ON hf.reg_patient_id = p.reg_patient_id 
+      WHERE p.reg_patient_id = @regPatientId
       ORDER BY a.timestamp DESC;
     `;
-    const { recordset: rows } = await db.query(query, { patientId: patient_id });
+    const { recordset: rows } = await db.query(query, { regPatientId: reg_patient_id });
 
     const data = rows.map(row => {
       let prevVal = row.previous_values || null;
@@ -234,7 +234,7 @@ const getPatientAuditLog = async (req, res) => {
       return {
         audit_id: row.audit_id,
         hf_id: row.hf_id,
-        patient_id: row.patient_id,
+        reg_patient_id: row.reg_patient_id,
         patient_name: row.patient_name,
         mr_no: row.mr_no,
         username: row.username,
@@ -271,8 +271,7 @@ const getAuditLog = async (req, res) => {
   }
 
   try {
-    // Attempt by patient_id first to get all patient records
-    const patientQuery = `
+    const hfQuery = `
       SELECT 
         a.audit_id, 
         a.hf_id, 
@@ -283,29 +282,29 @@ const getAuditLog = async (req, res) => {
         a.timestamp, 
         u.username, 
         u.email, 
-        p.patient_id, 
+        p.reg_patient_id, 
         p.patient_name, 
         p.mr_no 
       FROM hf_registry_audit a 
       JOIN users u ON a.user_id = u.user_id 
       JOIN hf_registry hf ON a.hf_id = hf.hf_id 
-      JOIN patient_demographics p ON hf.patient_id = p.patient_id 
-      WHERE p.patient_id = @targetId
+      JOIN patient_demographics p ON hf.reg_patient_id = p.reg_patient_id 
+      WHERE a.hf_id = @targetId
       ORDER BY a.timestamp DESC;
     `;
-    let { recordset: rows } = await db.query(patientQuery, { targetId });
+    let { recordset: rows } = await db.query(hfQuery, { targetId });
 
-    // Fallback by hf_id if no rows found by patient_id
+    // Fallback if no rows found by JOINs
     if (rows.length === 0) {
-      const hfQuery = `
+      const fallbackQuery = `
         SELECT a.*, u.username, u.email
         FROM hf_registry_audit a
         JOIN users u ON a.user_id = u.user_id
         WHERE a.hf_id = @targetId
         ORDER BY a.timestamp DESC
       `;
-      const { recordset: hfRows } = await db.query(hfQuery, { targetId });
-      rows = hfRows;
+      const { recordset: fallbackRows } = await db.query(fallbackQuery, { targetId });
+      rows = fallbackRows;
     }
 
     const data = rows.map(row => {

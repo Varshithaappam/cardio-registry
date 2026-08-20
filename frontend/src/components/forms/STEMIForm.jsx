@@ -5,6 +5,7 @@ import TextInput from './common/TextInput';
 import NumberInput from './common/NumberInput';
 import DateInput from './common/DateInput';
 import Select from './common/Select';
+import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
 
 const STEMIForm = forwardRef(function STEMIForm(
   { patientRecord, editingRecord, onCompletionChange },
@@ -24,8 +25,11 @@ const STEMIForm = forwardRef(function STEMIForm(
   }, [patient.dob]);
 
   // States
-  const [eventDate, setEventDate] = useState(editingRecord?.eventDate ?? new Date().toISOString().split('T')[0]);
-  const [acsNo, setAcsNo] = useState(editingRecord?.acsNo ?? '');
+  const [eventDate, setEventDate] = useState(editingRecord?.admission_date || editingRecord?.admissionDate || editingRecord?.eventDate || new Date().toISOString().split('T')[0]);
+  const [acsNo, setAcsNo] = useState(editingRecord?.acs_no || editingRecord?.acsNo || '');
+  const [ipNo, setIpNo] = useState(editingRecord?.ip_no || editingRecord?.ipNo || '');
+  const [primaryConsultant, setPrimaryConsultant] = useState(editingRecord?.primary_consultant || editingRecord?.primaryConsultant || 'Dr. K. Sridhar (Cardiologist)');
+  const [dischargeDate, setDischargeDate] = useState(editingRecord?.discharge_date || editingRecord?.dischargeDate || '');
   
   // Presentation
   const [typical, setTypical] = useState(editingRecord?.presentation?.typicalAngina ?? true);
@@ -110,73 +114,217 @@ const STEMIForm = forwardRef(function STEMIForm(
   }, [completionPercent, onCompletionChange]);
 
   const getSubmissionData = () => ({
-    id: editingRecord?.id ?? `acs-${Date.now()}`,
-    patientId: patientRecord.patient.id,
-    eventDate,
-    type: 'STEMI',
-    acsNo,
-    presentation: {
-      typicalAngina: typical,
-      atypicalChestPain: atypical,
-      breathlessness: dysp,
-      syncopeOrPreSyncope: syncope,
-      pulseRate: hr,
-      sbp,
-      dbp
-    },
-    timiCalculatedScore: timiScore,
-    timiDetails: {
-      age75OrOver: tAge75,
-      age65To74: tAge65_74,
-      historyDM_HTN_Angina: tHistory,
-      sbpLessThan100: tSbp100,
-      hrGreaterThan100: tHr100,
-      killipClass2To4: tKillip,
-      anteriorMI_LBBB: tAntMI,
-      weightLessThan67: tWeight67,
-      timeToReperfusionGreaterThan4h: tReperfusion4h
-    },
-    otherRiskFactors: {
-      lvf: rfLvf,
-      vt_vf: rfVtvf,
-      bbb_chb: rfBbb,
-      elevatedBNP: rfBnpe,
-      elevatedCRP: rfCrpe
-    },
-    treatmentStrategy: strategy,
-    pamiDetails: strategy === 'PAMI' ? {
-      doorToBalloonTime: pamiD2b,
-      vessels: pamiVessels,
-      segment: pamiSegment,
-      thrombosuction: pamiThrombosuction,
-      stentType: pamiStent,
-      stentDiameter: pamiDia,
-      stentLength: pamiLen,
-      proceduralSuccess: pamiSuccess,
-      postProcedureTIMIFlow: pamiTimi,
-      majorComplications: []
-    } : undefined,
-    thrombolysisDetails: strategy === 'Thrombolysis' ? {
-      doorToNeedleTime: tbD2n,
-      drug: tbDrug,
-      dose: tbDose
-    } : undefined,
-    heparinStrategy: heparin,
-    gp2b3a,
-    bivalirudin,
-    appropriateness: { procedures: {}, investigations: {}, drugs: {} }
+    reg_patient_id: patient.id || patient.reg_patient_id || 1,
+    acs_no: acsNo,
+    ip_no: ipNo,
+    admission_date: eventDate,
+    discharge_date: dischargeDate,
+    primary_consultant: primaryConsultant,
+
+    typical_angina: typical,
+    atypical_chest_pain: atypical,
+    breathlessness: dysp,
+    syncope_presyncope: syncope,
+    pulse_rate: hr,
+    systolic_bp: sbp,
+    diastolic_bp: dbp,
+
+    age_gt_75: tAge75,
+    age_65_to_74: tAge65_74,
+    history_dm_htn_angina: tHistory,
+    sbp_lt_100: tSbp100,
+    heart_rate_gt_100: tHr100,
+    killip_class_ii_to_iv: tKillip,
+    anterior_mi_or_lbbb: tAntMI,
+    weight_lt_67kg: tWeight67,
+    reperfusion_gt_4hrs: tReperfusion4h,
+
+    lvf: rfLvf,
+    vt_vf: rfVtvf,
+    bbb_chb: rfBbb,
+    elevated_bnp: rfBnpe,
+    elevated_crp: rfCrpe,
+
+    treatment_strategy: strategy,
+    pami: strategy === 'PAMI',
+    door_to_balloon_time: strategy === 'PAMI' ? pamiD2b : null,
+    culprit_segment: strategy === 'PAMI' ? pamiSegment : '',
+    stent_type: strategy === 'PAMI' ? pamiStent : 'None',
+    stent_diameter: strategy === 'PAMI' ? pamiDia : null,
+    stent_length: strategy === 'PAMI' ? pamiLen : null,
+    thrombosuction: strategy === 'PAMI' ? pamiThrombosuction : 'Not done',
+    procedural_success: strategy === 'PAMI' ? pamiSuccess : 'Yes',
+    post_procedure_timi_flow: strategy === 'PAMI' ? pamiTimi : '3',
+
+    thrombolysis: strategy === 'Thrombolysis',
+    door_to_needle_time: strategy === 'Thrombolysis' ? tbD2n : null,
+    thrombolytic_drug: strategy === 'Thrombolysis' ? tbDrug : 'None',
+    thrombolytic_dose: strategy === 'Thrombolysis' ? tbDose : '',
+
+    conservative: strategy === 'Conservative',
+    heparin_strategy: heparin,
+    gp2b3a_inhibitor: gp2b3a,
+    bivalirudin: bivalirudin,
+
+    timi_total_score: timiScore,
+    hypertension: false,
+    diabetes: false,
+    smoking: false,
+    renal_failure: false,
+    copd: false,
+    cva: false,
+    prior_acs: false,
+    prior_ptca: false,
+    prior_cabg: false,
+    other_background: ''
   });
 
   useImperativeHandle(ref, () => ({
-    getSubmissionData
+    getSubmissionData,
+    validateForm: () => {
+      if (eventDate && dischargeDate && new Date(dischargeDate) < new Date(eventDate)) {
+        alert('Discharge date cannot be earlier than Admission date.');
+        return false;
+      }
+      return true;
+    }
   }));
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <DateInput id="acs-date" label="ACS Log Event Date" value={eventDate} onChange={setEventDate} required />
-        <TextInput id="acs-id" label="ACS Number / ID" value={acsNo} onChange={setAcsNo} required />
-      </div>
+      {/* Patient Demographic Information (Read-only) */}
+      <SectionCard title="Patient Demographic Information (Read-Only)">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+          <div>
+            <label className={LABEL_STYLES}>Patient Name</label>
+            <input
+              type="text"
+              readOnly
+              disabled
+              value={patient.name || patient.patient_name || '—'}
+              className={INPUT_DISABLED_STYLES}
+            />
+          </div>
+          <div>
+            <label className={LABEL_STYLES}>Age</label>
+            <input
+              type="text"
+              readOnly
+              disabled
+              value={patientAge ? `${patientAge} Years` : '—'}
+              className={INPUT_DISABLED_STYLES}
+            />
+          </div>
+          <div>
+            <label className={LABEL_STYLES}>Gender</label>
+            <input
+              type="text"
+              readOnly
+              disabled
+              value={patient.gender || '—'}
+              className={INPUT_DISABLED_STYLES}
+            />
+          </div>
+          <div>
+            <label className={LABEL_STYLES}>MR Number</label>
+            <input
+              type="text"
+              readOnly
+              disabled
+              value={patient.mrNo || patient.mr_no || '—'}
+              className={INPUT_DISABLED_STYLES}
+            />
+          </div>
+          <div>
+            <label className={LABEL_STYLES}>Contact Phone</label>
+            <input
+              type="text"
+              readOnly
+              disabled
+              value={patient.phone || patient.phone_no || '—'}
+              className={INPUT_DISABLED_STYLES}
+            />
+          </div>
+          <div>
+            <label className={LABEL_STYLES}>Email Address</label>
+            <input
+              type="text"
+              readOnly
+              disabled
+              value={patient.email || '—'}
+              className={INPUT_DISABLED_STYLES}
+            />
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* 1. Demographics & Registry Details */}
+      <SectionCard title="1. STEMI Registry Header" subtitle="Table: stemi_registry">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">ACS Number</label>
+            <input
+              type="text"
+              readOnly
+              disabled
+              value={acsNo || 'Auto-generated upon save'}
+              className={INPUT_DISABLED_STYLES + " font-mono text-teal-600 bg-teal-50/20"}
+            />
+          </div>
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">IP / Admission No.</label>
+            <input
+              type="text"
+              readOnly
+              disabled
+              value={ipNo || 'Auto-generated upon save'}
+              className={INPUT_DISABLED_STYLES + " font-mono text-teal-600 bg-teal-50/20"}
+            />
+          </div>
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">Primary Consultant</label>
+            <select
+              value={primaryConsultant}
+              onChange={(e) => setPrimaryConsultant(e.target.value)}
+              className="w-full p-2 border border-slate-300 rounded-md bg-white font-medium text-slate-900"
+            >
+              <option value="Dr. K. Sridhar (Cardiologist)">Dr. K. Sridhar (Cardiologist)</option>
+              <option value="Dr. Ananth Rao">Dr. Ananth Rao</option>
+              <option value="Dr. M. Sharma">Dr. M. Sharma</option>
+            </select>
+          </div>
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">Admission Date</label>
+            <input
+              type="date"
+              value={eventDate}
+              onChange={(e) => {
+                const val = e.target.value;
+                setEventDate(val);
+                if (dischargeDate && val && new Date(dischargeDate) < new Date(val)) {
+                  alert('Discharge date cannot be earlier than Admission date.');
+                }
+              }}
+              className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900"
+            />
+          </div>
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">Discharge Date</label>
+            <input
+              type="date"
+              value={dischargeDate}
+              onChange={(e) => {
+                const val = e.target.value;
+                setDischargeDate(val);
+                if (eventDate && val && new Date(val) < new Date(eventDate)) {
+                  alert('Discharge date cannot be earlier than Admission date.');
+                }
+              }}
+              className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900"
+            />
+          </div>
+        </div>
+      </SectionCard>
 
       {/* Presentation and Vital Signs */}
       <SectionCard title="Clinical Presentation & Vital Signs (On Admission)">

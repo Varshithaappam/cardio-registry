@@ -181,31 +181,31 @@ export default function NurseFollowUpReport() {
     fetchTasks();
   }, []);
 
-  // 2. Fetch Consolidated Patient Timeline Logs using patientId
-  const fetchPatientLogs = async (patientId) => {
+  // 2. Fetch Consolidated Patient Timeline Logs using regPatientId
+  const fetchPatientLogs = async (regPatientId) => {
     setLogsLoading(true);
     try {
       let response;
       try {
-        response = await api.get(`/nurse-dashboard/${patientId}/logs`);
+        response = await api.get(`/nurse-dashboard/${regPatientId}/logs`);
       } catch (e1) {
-        response = await api.get(`/nurse-followup-report/${patientId}/logs`);
+        response = await api.get(`/nurse-followup-report/${regPatientId}/logs`);
       }
       if (response.data && response.data.success) {
-        setPatientLogs((prev) => ({ ...prev, [patientId]: response.data.data || [] }));
+        setPatientLogs((prev) => ({ ...prev, [regPatientId]: response.data.data || [] }));
       } else {
-        setPatientLogs((prev) => ({ ...prev, [patientId]: [] }));
+        setPatientLogs((prev) => ({ ...prev, [regPatientId]: [] }));
       }
     } catch (err) {
-      console.error(`Error fetching timeline logs for patient ${patientId}:`, err);
-      setPatientLogs((prev) => ({ ...prev, [patientId]: [] }));
+      console.error(`Error fetching timeline logs for patient ${regPatientId}:`, err);
+      setPatientLogs((prev) => ({ ...prev, [regPatientId]: [] }));
     } finally {
       setLogsLoading(false);
     }
   };
 
   const toggleExpandRow = (task) => {
-    const pid = task.patient_id;
+    const pid = task.reg_patient_id;
     if (expandedPatientId === pid) {
       setExpandedPatientId(null);
     } else {
@@ -325,12 +325,12 @@ export default function NurseFollowUpReport() {
       let response;
       try {
         response = await api.post(`/nurse-dashboard/tasks/${selectedTask.task_id}/log`, {
-          patient_id: selectedTask.patient_id,
+          reg_patient_id: selectedTask.reg_patient_id,
           ...formData
         });
       } catch (e1) {
         response = await api.post(`/nurse-followup-report/tasks/${selectedTask.task_id}/log`, {
-          patient_id: selectedTask.patient_id,
+          reg_patient_id: selectedTask.reg_patient_id,
           ...formData
         });
       }
@@ -338,8 +338,8 @@ export default function NurseFollowUpReport() {
       if (response.data && response.data.success) {
         setIsModalOpen(false);
         await fetchTasks();
-        if (expandedPatientId === selectedTask.patient_id) {
-          await fetchPatientLogs(selectedTask.patient_id);
+        if (expandedPatientId === selectedTask.reg_patient_id) {
+          await fetchPatientLogs(selectedTask.reg_patient_id);
         }
       }
     } catch (err) {
@@ -723,7 +723,7 @@ export default function NurseFollowUpReport() {
               </thead>
               <tbody className="divide-y divide-slate-200 text-xs">
                 {filteredTasks.map((task) => {
-                  const isExpanded = expandedPatientId === task.patient_id;
+                  const isExpanded = expandedPatientId === task.reg_patient_id;
                   const formattedDate = formatDate(task.target_date);
 
                   // Flexible boolean/bit evaluator for SQL fields
@@ -747,7 +747,7 @@ export default function NurseFollowUpReport() {
                     diagnostics.push('6-MWT');
                   }
 
-                  const rowKey = task.task_id ? `task-row-${task.task_id}` : `patient-row-${task.patient_id || task.mr_no}`;
+                  const rowKey = task.task_id ? `task-row-${task.task_id}` : `patient-row-${task.reg_patient_id || task.mr_no}`;
 
                   return (
                     <React.Fragment key={`frag-${rowKey}`}>
@@ -876,7 +876,7 @@ export default function NurseFollowUpReport() {
                                   </h3>
                                 </div>
                                 <span className="text-[11px] font-bold text-slate-400">
-                                  Patient ID: #{task.patient_id} • Latest Task ID: #{task.task_id}
+                                  Patient ID: #{task.reg_patient_id} • Latest Task ID: #{task.task_id}
                                 </span>
                               </div>
 
@@ -967,11 +967,11 @@ export default function NurseFollowUpReport() {
                                     </span>
                                     {logsLoading ? (
                                       <p className="text-[11px] text-slate-400 animate-pulse">Loading patient timeline history...</p>
-                                    ) : (patientLogs[task.patient_id] || []).length === 0 ? (
+                                    ) : (patientLogs[task.reg_patient_id] || []).length === 0 ? (
                                       <p className="text-[11px] text-slate-400 italic">No prior outreach logs or historical forms recorded.</p>
                                     ) : (
                                       <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                                        {(patientLogs[task.patient_id] || []).map((log, index) => {
+                                        {(patientLogs[task.reg_patient_id] || []).map((log, index) => {
                                           const isSystem = log.contact_mode === 'System Generated Form' || log.log_type === 'System Generated Form';
                                           return (
                                             <div

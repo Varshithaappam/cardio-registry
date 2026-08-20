@@ -23,7 +23,10 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
   const navigate = useNavigate();
   const formRef = useRef(null);
   const isHfForm = String(formType || '').toUpperCase() === 'HF';
-  const [isDraft, setIsDraft] = useState(editingRecord?.isDraft ?? false);
+  const isNstemiForm = String(formType || '').toUpperCase() === 'NSTEMI';
+  const [isDraft, setIsDraft] = useState(
+    editingRecord?.isDraft ?? (editingRecord?.status === 'draft' || editingRecord?.status === 2)
+  );
   const [completionPercent, setCompletionPercent] = useState(15);
   const [viewMode, setViewMode] = useState('detailed');
 
@@ -232,7 +235,7 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
               if (onCancel) {
                 onCancel();
               } else {
-                const pid = patientRecord?.patient?.id || patientRecord?.patient?.patient_id;
+                const pid = patientRecord?.patient?.id || patientRecord?.patient?.reg_patient_id;
                 if (pid) {
                   navigate(`/patient/${pid}`);
                 } else if (onBackPatients) {
@@ -295,29 +298,10 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
 
         {/* Draft/Complete controls & save/cancel buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 pt-6">
-          {SHOW_DEV_HELPERS && !isHfForm ? (
-            <div className="flex items-center gap-2">
-              <input
-                id="chk-draft"
-                type="checkbox"
-                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                checked={isDraft}
-                onChange={(e) => setIsDraft(e.target.checked)}
-              />
-              <div className="text-left">
-                <label htmlFor="chk-draft" className="text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-1">
-                  <Bookmark className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Save Registry Entry as Draft</span>
-                </label>
-                <span className="text-[10px] text-slate-400 block mt-0.5">
-                  Draft entries bypass immediate completeness rules.
-                </span>
-              </div>
-            </div>
-          ) : <div />}
+          <div />
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            {SHOW_DEV_HELPERS && isHfForm && (
+            {SHOW_DEV_HELPERS && (isHfForm || isNstemiForm) && (
               <button
                 id="btn-dummy-form"
                 type="button"

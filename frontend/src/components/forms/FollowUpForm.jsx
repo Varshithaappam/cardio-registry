@@ -24,7 +24,7 @@ const FollowUpForm = forwardRef(function FollowUpForm(
 
   const getSubmissionData = () => ({
     id: editingRecord?.id ?? `fol-${Date.now()}`,
-    patientId: patientRecord.patient.id,
+    regPatientId: patientRecord.patient.id,
     followUpInterval: interval,
     dateOfVisit: date,
     symptoms: {

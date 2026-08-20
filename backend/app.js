@@ -35,6 +35,7 @@ app.get("/", (req, res) => {
 const hfFormRoutes = require("./routes/hfFormRoutes");
 const nurseFollowUpReportRoutes = require("./routes/nurseFollowUpReportRoutes");
 const nstemiRoutes = require("./routes/nstemiRoutes");
+const stemiRoutes = require("./routes/stemiRoutes");
 
 // API Routes
 app.use("/api/auth", authRoutes);
@@ -45,10 +46,11 @@ app.use("/api/nurse-followup-report", nurseFollowUpReportRoutes);
 app.use("/api/hf-form", hfFormRoutes);
 app.use("/api/hf-assessment", hfRoutes);
 app.use("/api/nstemi", nstemiRoutes);
+app.use("/api/stemi", stemiRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/hf-files", hfFilesRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.get('/api/hf/history/:patientId', hfController.getHfHistory);
+app.get('/api/hf/history/:regPatientId', hfController.getHfHistory);
 
 // Handle Unknown Routes
 app.use((req, res) => {

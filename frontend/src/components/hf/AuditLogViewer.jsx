@@ -1,19 +1,277 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Clock, User, FileText, X, RefreshCw, AlertCircle, Mail } from 'lucide-react';
+import { Shield, Clock, User, FileText, X, RefreshCw, AlertCircle, Mail, CheckCircle } from 'lucide-react';
 import api from '../../api/axiosInstance';
 
-export default function AuditLogViewer({ hfId, patientId, isOpen = true, onClose, isInline = false }) {
+export default function AuditLogViewer({ hfId, regPatientId, isOpen = true, onClose, isInline = false }) {
   const [auditLogs, setAuditLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const FRIENDLY_LABELS = {
+    'care_mr_no': 'MR Number',
+    'encounterId': 'MR Number',
+    'visit_id': 'Visit ID',
+    'visitId': 'Visit ID',
+    'visit_type': 'Visit Type',
+    'visitType': 'Visit Type',
+    'assessment_date': 'Assessment Date',
+    'assessmentDate': 'Assessment Date',
+    'treating_cardiologist': 'Treating Cardiologist',
+    'treatingCardiologist': 'Treating Cardiologist',
+    'referring_doctor': 'Referring Doctor',
+    'referringDoctor': 'Referring Doctor',
+    'referred_from': 'Referred From',
+    'referredFrom': 'Referred From',
+    'present_diagnosis': 'Present Diagnosis',
+    'presentDiagnosis': 'Present Diagnosis',
+    'discharge_date': 'Discharge Date',
+    'dischargeDate': 'Discharge Date',
+    'hospitalization_days': 'Days Hospitalized',
+    'daysHospitalized': 'Days Hospitalized',
+    'address': 'Address',
+    'patient.address': 'Address',
+    'education_level': 'Highest Education',
+    'highestEducation': 'Highest Education',
+    'monthly_income': 'Monthly Income',
+    'monthlyIncome': 'Monthly Income',
+    'occupation': 'Occupation',
+    'caregiver_name': 'Caregiver Name',
+    'caregiverName': 'Caregiver Name',
+    'caregiver_relationship': 'Relationship to Patient',
+    'caregiverRelationship': 'Relationship to Patient',
+    'caregiver_phone': 'Caregiver Phone No.',
+    'caregiverPhone': 'Caregiver Phone No.',
+    'insurance_mode': 'Insurance Mode',
+    'insuranceMode': 'Insurance Mode',
+    'previous_diagnosis': 'Previous HF Diagnosis',
+    'previousDiagnosis': 'Previous HF Diagnosis',
+    'history_cabg': 'History of CABG',
+    'history_ptca': 'History of PTCA',
+    'history_stroke': 'History of Stroke',
+    'history_major_bleed': 'History of Major Bleed',
+    'history_thrombolysis': 'History of Thrombolysis',
+    'history_past_mi': 'History of Past MI',
+    'past_mi_years_ago': 'Years Since Past MI',
+    'past_mi_location': 'Location of Past MI',
+    'history_other': 'Other Medical History',
+    'previous_hf_hospitalization': 'Previous HF Hospitalizations',
+    'recent_hospitalization_dates': 'Recent Hospitalization Dates',
+    'recent_hospitalization_reasons': 'Recent Hospitalization Reasons',
+    'documented_vt_vf': 'Documented VT/VF',
+    'complaints_syncope': 'Complaints of Syncope',
+    'syncope_frequency': 'Syncope Frequency',
+    'documented_pvcs': 'Documented PVCs',
+    'pvc_count': 'PVC Count',
+    'pvc_frequency': 'PVC Frequency',
+    'documented_nsvt': 'Documented NSVT',
+    'nsvt_frequency': 'NSVT Frequency',
+    'weight': 'Weight (kg)',
+    'unable_to_weigh': 'Unable to Weigh',
+    'unable_to_weigh_reason': 'Reason for Not Weighing',
+    'height': 'Height (cm)',
+    'bmi': 'BMI',
+    'heart_rate': 'Heart Rate (Bpm)',
+    'heart_rate_regular': 'Regular Heart Rate',
+    'heart_rate_irregular': 'Irregular Heart Rate',
+    'respiratory_rate': 'Respiratory Rate',
+    'oxygen_saturation': 'Oxygen Saturation (%)',
+    'systolic_bp_sitting': 'Sitting BP (Systolic)',
+    'diastolic_bp_sitting': 'Sitting BP (Diastolic)',
+    'systolic_bp_standing': 'Standing BP (Systolic)',
+    'diastolic_bp_standing': 'Standing BP (Diastolic)',
+    'mental_status_alert_oriented': 'Alert & Oriented',
+    'mental_status_confused': 'Confused Mental Status',
+    'mental_status_drowsy': 'Drowsy Mental Status',
+    'dyspnea_at_rest': 'Dyspnea at Rest',
+    'dyspnea_with_exertion': 'Dyspnea with Exertion',
+    'fatigue': 'Fatigue',
+    'orthopnea': 'Orthopnea',
+    'loss_of_appetite_bloating': 'Loss of Appetite / Bloating',
+    'decreased_exercise_tolerance': 'Decreased Exercise Tolerance',
+    'weight_gain': 'Weight Gain',
+    'weight_loss': 'Weight Loss',
+    'syncope': 'Syncope',
+    'pnd': 'Paroxysmal Nocturnal Dyspnea',
+    'muscle_cramps': 'Muscle Cramps',
+    'wheeze': 'Wheeze',
+    'giddiness': 'Giddiness',
+    'symptom_other': 'Other Symptoms Present',
+    'symptom_other_details': 'Other Symptoms Details',
+    'peripheral_edema': 'Peripheral Edema',
+    'ascites': 'Ascites',
+    'rales': 'Rales',
+    'jugular_venous_pressure': 'Elevated JVP',
+    'hepatomegaly': 'Hepatomegaly',
+    'clinical_sign_other': 'Other Signs Present',
+    'clinical_sign_other_details': 'Other Signs Details',
+    'nyhaClass': 'NYHA Functional Class',
+    'nyha_class': 'NYHA Functional Class',
+    'initial_nyha_class': 'NYHA Functional Class',
+    'lvef': 'LVEF (%)'
+  };
+
+  const getFriendlyLabel = (key) => {
+    if (FRIENDLY_LABELS[key]) return FRIENDLY_LABELS[key];
+    const cleanKey = key.split('.').pop();
+    const words = cleanKey.replace(/_/g, ' ').replace(/([A-Z])/g, ' $1').trim().split(/\s+/);
+    return words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+  };
+
+  const flattenObject = (obj, prefix = '') => {
+    const result = {};
+    if (!obj || typeof obj !== 'object') return result;
+    
+    Object.keys(obj).forEach((key) => {
+      const val = obj[key];
+      const newKey = prefix ? `${prefix}.${key}` : key;
+      
+      // Ignore internal system fields
+      if ([
+        'updated_at', 'created_at', 'id', 'hf_id', 'hfId', 'regPatientId', 'reg_patient_id', 
+        'encounterId', 'created_by', 'updated_by', 'tempHfId', 'createdAt', 'updatedAt',
+        'status', 'hfRegistryNo', 'hf_registry_no'
+      ].includes(key)) {
+        return;
+      }
+      
+      if (val && typeof val === 'object' && !Array.isArray(val) && !(val instanceof Date)) {
+        Object.assign(result, flattenObject(val, newKey));
+      } else {
+        result[newKey] = val;
+      }
+    });
+    
+    return result;
+  };
+
+  const getFieldDiffClient = (oldData = {}, newData = {}) => {
+    const diff = {};
+    const prev = flattenObject(oldData || {});
+    const curr = flattenObject(newData || {});
+    const allKeys = new Set([...Object.keys(prev), ...Object.keys(curr)]);
+
+    const normalize = (val) => {
+      if (val === null || val === undefined || val === '') return null;
+      if (Array.isArray(val) && val.length === 0) return null;
+      return val;
+    };
+
+    allKeys.forEach((key) => {
+      const oldValue = normalize(prev[key]);
+      const newValue = normalize(curr[key]);
+
+      if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+        diff[key] = {
+          from: oldValue,
+          to: newValue
+        };
+      }
+    });
+
+    return diff;
+  };
+
+  const renderPreCalculatedDiff = (diffObj) => {
+    const entries = Object.entries(diffObj);
+    if (entries.length === 0) {
+      return <div className="text-slate-400 italic bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-xs">No fields were modified.</div>;
+    }
+
+    return (
+      <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
+        <table className="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-200 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+              <th className="px-4 py-2">Field / Metric</th>
+              <th className="px-4 py-2 text-rose-700">Previous Value</th>
+              <th className="px-4 py-2 text-emerald-700">New Value</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+            {entries.map(([fieldName, change]) => {
+              const fromValue = change?.from !== undefined && change?.from !== null ? String(change.from) : 'None';
+              const toValue = change?.to !== undefined && change?.to !== null ? String(change.to) : 'None';
+              const label = getFriendlyLabel(fieldName);
+
+              return (
+                <tr key={fieldName} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-4 py-2.5 font-semibold text-slate-800">{label}</td>
+                  <td className="px-4 py-2.5 text-rose-700 bg-rose-50/5 font-mono text-[11px]">{fromValue}</td>
+                  <td className="px-4 py-2.5 text-emerald-700 bg-emerald-50/5 font-mono text-[11px]">{toValue}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderAuditDiff = (log) => {
+    let oldData = {};
+    let newData = {};
+
+    // 1. Try extracting from log.previous_values and log.new_values
+    if (log.previous_values) {
+      try {
+        oldData = typeof log.previous_values === 'string' ? JSON.parse(log.previous_values) : log.previous_values;
+      } catch (e) {
+        oldData = log.previous_values || {};
+      }
+    }
+    if (log.new_values) {
+      try {
+        newData = typeof log.new_values === 'string' ? JSON.parse(log.new_values) : log.new_values;
+      } catch (e) {
+        newData = log.new_values || {};
+      }
+    }
+
+    // 2. Fallback to parse changed_fields payload if oldData/newData are empty
+    if (Object.keys(oldData).length === 0 && Object.keys(newData).length === 0 && log.changed_fields) {
+      try {
+        const parsed = typeof log.changed_fields === 'string' ? JSON.parse(log.changed_fields) : log.changed_fields;
+        
+        if (parsed) {
+          if (parsed.previous !== undefined || parsed.new !== undefined) {
+            oldData = parsed.previous || {};
+            newData = parsed.new || {};
+          } else if (parsed.previous_values !== undefined || parsed.new_values !== undefined) {
+            oldData = parsed.previous_values || {};
+            newData = parsed.new_values || {};
+          } else if (parsed.old_data !== undefined || parsed.new_data !== undefined) {
+            oldData = parsed.old_data || {};
+            newData = parsed.new_data || {};
+          } else {
+            // Check if it's a pre-calculated diff like { field: { from: X, to: Y } }
+            const firstKey = Object.keys(parsed)[0];
+            if (firstKey && (parsed[firstKey]?.from !== undefined || parsed[firstKey]?.to !== undefined)) {
+              return renderPreCalculatedDiff(parsed);
+            }
+            newData = parsed;
+          }
+        }
+      } catch (e) {
+        return <span className="text-slate-700 font-mono text-xs">{String(log.changed_fields)}</span>;
+      }
+    }
+
+    // If both oldData and newData are empty, return placeholder
+    if (Object.keys(oldData).length === 0 && Object.keys(newData).length === 0) {
+      return <span className="text-slate-500 italic text-xs">No details available</span>;
+    }
+
+    const diff = getFieldDiffClient(oldData, newData);
+    return renderPreCalculatedDiff(diff);
+  };
+
   const fetchAuditLogs = async () => {
-    const targetId = patientId || hfId;
+    const targetId = regPatientId || hfId;
     if (!targetId) return;
     setLoading(true);
     setError('');
     try {
-      const endpoint = patientId ? `/hf-registry/patient/${patientId}/audit` : `/hf-registry/${hfId}/audit`;
+      const endpoint = regPatientId ? `/hf-registry/patient/${regPatientId}/audit` : `/hf-registry/${hfId}/audit`;
       const response = await api.get(endpoint);
       if (response.data && response.data.success) {
         setAuditLogs(response.data.data || []);
@@ -29,10 +287,10 @@ export default function AuditLogViewer({ hfId, patientId, isOpen = true, onClose
   };
 
   useEffect(() => {
-    if ((isOpen || isInline) && (patientId || hfId)) {
+    if ((isOpen || isInline) && (regPatientId || hfId)) {
       fetchAuditLogs();
     }
-  }, [isOpen, isInline, hfId, patientId]);
+  }, [isOpen, isInline, hfId, regPatientId]);
 
   if (!isOpen && !isInline) return null;
 
@@ -70,6 +328,19 @@ export default function AuditLogViewer({ hfId, patientId, isOpen = true, onClose
     }
   };
 
+  const getActionLabel = (actionType) => {
+    switch (actionType) {
+      case 'CREATE':
+        return 'Form Submitted';
+      case 'UPDATE':
+        return 'Form Updated';
+      case 'DELETE':
+        return 'Form Deleted';
+      default:
+        return actionType;
+    }
+  };
+
   const content = (
     <div className="space-y-4">
       {error && (
@@ -98,7 +369,7 @@ export default function AuditLogViewer({ hfId, patientId, isOpen = true, onClose
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-200/80">
                 <div className="flex items-center gap-2">
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider border ${getBadgeColor(log.action_type)}`}>
-                    {log.action_type}
+                    {getActionLabel(log.action_type)}
                   </span>
                   <span className="text-xs font-semibold text-slate-800 flex items-center gap-1">
                     <User className="w-3.5 h-3.5 text-slate-500" />
@@ -120,40 +391,34 @@ export default function AuditLogViewer({ hfId, patientId, isOpen = true, onClose
 
               <div className="mt-2 space-y-2">
                 {log.action_type === 'DELETE' && (
-                  <div className="p-2.5 bg-red-100 border border-red-300 text-red-900 rounded-lg text-xs font-semibold flex items-center gap-2 mb-2">
-                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                    <span>
-                      Soft-Deleted HF Record #{log.hf_id} on {new Date(log.timestamp).toLocaleString()} by {log.username} ({log.email || 'N/A'})
-                    </span>
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-900 rounded-xl text-xs flex flex-col gap-1.5 mb-2 shadow-xs">
+                    <div className="flex items-center gap-2 font-bold">
+                      <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                      <span>Form Deleted</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600">
+                      Heart Failure registry entry #{log.hf_id} was removed from the database by {log.username} ({log.email || 'N/A'}).
+                    </p>
                   </div>
                 )}
-                {log.previous_values && (
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 mb-1">
-                      <FileText className="w-3 h-3 text-red-500" />
-                      Previous Values
+                {log.action_type === 'CREATE' && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs flex flex-col gap-1.5 mb-2 shadow-xs">
+                    <div className="flex items-center gap-2 font-bold">
+                      <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Form Submitted</span>
                     </div>
-                    {renderDataBlock(log.previous_values)}
+                    <p className="text-[11px] text-slate-600">
+                      Initial clinical Heart Failure assessment form for patient {log.patient_name || 'N/A'} (MRN: {log.mr_no || 'N/A'}) was submitted by {log.username} ({log.email || 'N/A'}).
+                    </p>
                   </div>
                 )}
-
-                {log.new_values && (
+                {log.action_type === 'UPDATE' && (
                   <div>
-                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 mb-1">
-                      <FileText className="w-3 h-3 text-emerald-500" />
-                      New Values
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 mb-2">
+                      <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      Modified Fields Difference Log
                     </div>
-                    {renderDataBlock(log.new_values)}
-                  </div>
-                )}
-
-                {!log.previous_values && !log.new_values && log.changed_fields && (
-                  <div>
-                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 mb-1">
-                      <FileText className="w-3 h-3" />
-                      Changed Fields / Payload
-                    </div>
-                    {renderDataBlock(log.changed_fields)}
+                    {renderAuditDiff(log)}
                   </div>
                 )}
               </div>

@@ -27,9 +27,9 @@ router.delete(
   hfRegistryController.deleteRecord
 );
 
-// Patient Audit Log Route (GET /api/hf-registry/patient/:patientId/audit)
+// Patient Audit Log Route (GET /api/hf-registry/patient/:regPatientId/audit)
 router.get(
-  '/patient/:patientId/audit',
+  '/patient/:regPatientId/audit',
   authenticateToken,
   requireRole('ADMIN', 'CLINICIAN'),
   hfRegistryController.getPatientAuditLog

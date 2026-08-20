@@ -85,6 +85,10 @@ function normalizePatientInput(body = {}) {
     const address = body.address ? String(body.address).trim().substring(0, 500) : null;
     const higher_education = body.higher_education || "None";
     const occupation = body.occupation ? String(body.occupation).trim().substring(0, 255) : null;
+    const mr_no = body.mr_no || body.mrNo ? String(body.mr_no || body.mrNo).trim().substring(0, 10) : null;
+    const ip_no = body.ip_no || body.ipNo ? String(body.ip_no || body.ipNo).trim().substring(0, 10) : null;
+    const uhid = body.uhid || body.uhi ? String(body.uhid || body.uhi).trim() : null;
+    const abha_number = body.abha_number ? String(body.abha_number).trim() : null;
 
     if (!patient_name) {
         throw new Error("Patient name is required.");
@@ -106,6 +110,8 @@ function normalizePatientInput(body = {}) {
     validateEnum(higher_education, VALID_HIGHER_EDUCATION, "higher_education");
 
     return {
+        mr_no,
+        ip_no,
         patient_name,
         date_of_birth,
         gender,
@@ -121,7 +127,9 @@ function normalizePatientInput(body = {}) {
         active_dialysis_status,
         address,
         higher_education,
-        occupation
+        occupation,
+        uhid,
+        abha_number
     };
 }
 

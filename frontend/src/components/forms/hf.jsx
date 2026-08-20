@@ -2250,7 +2250,7 @@ const hf = forwardRef(function hf(
     return {
     id: editingRecord?.id ?? `hfa-${Date.now()}`,
     tempHfId: !editingRecord?.id ? tempHfId : undefined,
-    patientId: patient.id || patient.patient_id,
+    regPatientId: patient.id || patient.reg_patient_id,
     visitId: visitId || undefined,
     visit_id: visitId || undefined,
     encounterId: encounterId || editingRecord?.encounterId || activeMrNo,
@@ -2766,6 +2766,11 @@ const hf = forwardRef(function hf(
 
   const validateForm = (isDraft = false) => {
     setFormErrors({});
+    if (assessmentDate && dischargeDate && new Date(dischargeDate) < new Date(assessmentDate)) {
+      alert('Date of Discharge cannot be earlier than Date of Visit / Admission.');
+      setFormErrors(prev => ({ ...prev, dischargeDate: 'Discharge date cannot be earlier than admission date.' }));
+      return false;
+    }
     if (!isDraft && isFormCompletelyEmpty()) {
       alert("Please fill out at least one field to submit.");
       return false;
@@ -3294,13 +3299,14 @@ const hf = forwardRef(function hf(
 
           {/* Visit ID */}
           <div>
-            <TextInput readOnly={readOnly}
-              id="visitId"
-              label="Visit ID"
-              value={visitId}
-              onChange={setVisitId}
-              placeholder="E.g. IP00001, OP00001, HM00001"
-              error={formErrors.visitId}
+            <label className={LABEL_STYLES}>Visit ID / IP No</label>
+            <input
+              type="text"
+              readOnly={readOnly}
+              value={visitId || ''}
+              onChange={(e) => setVisitId(e.target.value)}
+              placeholder="E.g. IP00001 or OP00001"
+              className="w-full p-2 border border-slate-300 rounded-md text-xs font-medium text-slate-900 font-mono focus:ring-teal-500 focus:border-teal-500"
             />
           </div>
 
@@ -3385,7 +3391,7 @@ const hf = forwardRef(function hf(
               label="Monthly Income"
               value={monthlyIncome}
               onChange={(val) => handleFieldChange('monthlyIncome', val, setMonthlyIncome, setMonthlyIncomeError)}
-              placeholder="E.g. 40000"
+              placeholder=""
               error={monthlyIncomeError}
             />
           </div>
@@ -3420,7 +3426,7 @@ const hf = forwardRef(function hf(
               label="Relationship to Patient"
               value={caregiverRelationship}
               onChange={setCaregiverRelationship}
-              placeholder="E.g. Son / Spouse"
+              placeholder=""
               error={formErrors.caregiverRelationship}
             />
           </div>
@@ -3455,14 +3461,30 @@ const hf = forwardRef(function hf(
             id="assessmentDate"
             label="Date of Visit / Hospitalization"
             value={assessmentDate}
-            onChange={setAssessmentDate}
+            onChange={(val) => {
+              setAssessmentDate(val);
+              if (dischargeDate && val && new Date(dischargeDate) < new Date(val)) {
+                alert('Date of Discharge cannot be earlier than Date of Visit / Admission.');
+                setFormErrors(prev => ({ ...prev, dischargeDate: 'Discharge date cannot be earlier than admission date.' }));
+              } else {
+                setFormErrors(prev => ({ ...prev, dischargeDate: undefined }));
+              }
+            }}
             error={formErrors.assessmentDate}
           />
           <DateInput readOnly={readOnly}
             id="dischargeDate"
             label="Date of Discharge"
             value={dischargeDate}
-            onChange={setDischargeDate}
+            onChange={(val) => {
+              setDischargeDate(val);
+              if (assessmentDate && val && new Date(val) < new Date(assessmentDate)) {
+                alert('Date of Discharge cannot be earlier than Date of Visit / Admission.');
+                setFormErrors(prev => ({ ...prev, dischargeDate: 'Discharge date cannot be earlier than admission date.' }));
+              } else {
+                setFormErrors(prev => ({ ...prev, dischargeDate: undefined }));
+              }
+            }}
             error={formErrors.dischargeDate}
           />
         </div>
@@ -3491,7 +3513,7 @@ const hf = forwardRef(function hf(
             label="Referred From (Department / Practice)"
             value={referredFrom}
             onChange={setReferredFrom}
-            placeholder="E.g. Cardiology Department / Community Clinic"
+            placeholder=""
           />
         </div>
 
@@ -3543,7 +3565,7 @@ const hf = forwardRef(function hf(
                 label="If admission for reasons other than heart failure, please specify reason(s):"
                 value={nonHfAdmissionReason}
                 onChange={setNonHfAdmissionReason}
-                placeholder="E.g., Elective procedure, trauma, etc."
+                placeholder=""
                 error={formErrors.nonHfAdmissionReason}
               />
             </div>
@@ -3639,7 +3661,7 @@ const hf = forwardRef(function hf(
             />
             <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${previousHfHospitalization === 'Yes' ? '' : 'opacity-60'}`}>
               <TextInput readOnly={readOnly} disabled={previousHfHospitalization !== 'Yes'} id="recentHospitalizationDates" label="Date(s)" value={recentHospitalizationDates} onChange={setRecentHospitalizationDates} placeholder="E.g. March 2026, Dec 2025" error={formErrors.recentHospitalizationDates} />
-              <TextInput readOnly={readOnly} disabled={previousHfHospitalization !== 'Yes'} id="recentHospitalizationReasons" label="Reason(s)" value={recentHospitalizationReasons} onChange={setRecentHospitalizationReasons} placeholder="E.g. Decompensated HF secondary to infection" error={formErrors.recentHospitalizationReasons} />
+              <TextInput readOnly={readOnly} disabled={previousHfHospitalization !== 'Yes'} id="recentHospitalizationReasons" label="Reason(s)" value={recentHospitalizationReasons} onChange={setRecentHospitalizationReasons} placeholder="" error={formErrors.recentHospitalizationReasons} />
             </div>
           </div>
 
@@ -3662,7 +3684,7 @@ const hf = forwardRef(function hf(
                     <span>Complaints of Syncope / Pre-syncope</span>
                   </label>
                   <div className={`${complaintsSyncope === 'Yes' ? '' : 'opacity-60'}`}>
-                    <TextInput readOnly={readOnly} disabled={complaintsSyncope !== 'Yes'} id="syncopeFrequency" label="Frequency of episodes" value={syncopeFrequency} onChange={setSyncopeFrequency} placeholder="E.g. Twice in last month" error={formErrors.syncopeFrequency} />
+                    <TextInput readOnly={readOnly} disabled={complaintsSyncope !== 'Yes'} id="syncopeFrequency" label="Frequency of episodes" value={syncopeFrequency} onChange={setSyncopeFrequency} placeholder="" error={formErrors.syncopeFrequency} />
                   </div>
                 </div>
               </div>
@@ -4668,7 +4690,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={echoEfPercent}
                             onChange={(e) => handleFieldChange('echoEfPercent', e.target.value, setEchoEfPercent, setEchoEfPercentError)}
-                            placeholder="E.g. 45"
+                            placeholder=""
                             className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
                               formErrors.echoEfPercent || echoEfPercentError ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
                               efCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
@@ -5190,18 +5212,18 @@ const hf = forwardRef(function hf(
                 <span className="col-span-3 text-right">Test Date</span>
               </div>
               {[
-                { key: 'potassium', label: 'Potassium', unit: 'mmol/L', clsKey: 'potassium', placeholder: 'e.g. 4.2' },
-                { key: 'creatinine', label: 'Creatinine', unit: 'mg/dL', clsKey: 'creatinine', placeholder: 'e.g. 1.1' },
-                { key: 'hb', label: 'Hb', unit: 'g/dL', clsKey: 'hb', placeholder: 'e.g. 13.5' },
-                { key: 'calcium', label: 'Calcium', unit: 'mg/dL', clsKey: 'calcium', placeholder: 'e.g. 9.4' },
-                { key: 'bun', label: 'BUN', unit: 'mg/dL', clsKey: 'bun', placeholder: 'e.g. 18' },
-                { key: 'glucose', label: 'Glucose', unit: 'mg/dL', clsKey: 'glucose', placeholder: 'e.g. 105' },
-                { key: 'hba1c', label: 'HBa1c', unit: '%', clsKey: 'hba1c', placeholder: 'e.g. 6.2' },
-                { key: 'magnesium', label: 'Magnesium', unit: 'mg/dL', clsKey: 'magnesium', placeholder: 'e.g. 2.1' },
-                { key: 'sodium', label: 'Sodium', unit: 'mEq/L', clsKey: 'sodium', placeholder: 'e.g. 138' },
-                { key: 'tsh', label: 'TSH', unit: 'µIU/mL', clsKey: 'tsh', placeholder: 'e.g. 2.5' },
-                { key: 't3', label: 'T3', unit: 'ng/dL', clsKey: 't3', placeholder: 'e.g. 120' },
-                { key: 't4', label: 'T4', unit: 'µg/dL', clsKey: 't4', placeholder: 'e.g. 8.5' }
+                { key: 'potassium', label: 'Potassium', unit: 'mmol/L', clsKey: 'potassium', placeholder: '' },
+                { key: 'creatinine', label: 'Creatinine', unit: 'mg/dL', clsKey: 'creatinine', placeholder: '' },
+                { key: 'hb', label: 'Hb', unit: 'g/dL', clsKey: 'hb', placeholder: '' },
+                { key: 'calcium', label: 'Calcium', unit: 'mg/dL', clsKey: 'calcium', placeholder: '' },
+                { key: 'bun', label: 'BUN', unit: 'mg/dL', clsKey: 'bun', placeholder: '' },
+                { key: 'glucose', label: 'Glucose', unit: 'mg/dL', clsKey: 'glucose', placeholder: '' },
+                { key: 'hba1c', label: 'HBa1c', unit: '%', clsKey: 'hba1c', placeholder: '' },
+                { key: 'magnesium', label: 'Magnesium', unit: 'mg/dL', clsKey: 'magnesium', placeholder: '' },
+                { key: 'sodium', label: 'Sodium', unit: 'mEq/L', clsKey: 'sodium', placeholder: '' },
+                { key: 'tsh', label: 'TSH', unit: 'µIU/mL', clsKey: 'tsh', placeholder: '' },
+                { key: 't3', label: 'T3', unit: 'ng/dL', clsKey: 't3', placeholder: '' },
+                { key: 't4', label: 'T4', unit: 'µg/dL', clsKey: 't4', placeholder: '' }
               ].map((item) => {
                 const valStr = labTests[item.key].result;
                 const cls = item.clsKey ? getClassification(item.clsKey, valStr) : { status: '', classNames: '', message: '' };
@@ -5268,11 +5290,11 @@ const hf = forwardRef(function hf(
                 <span className="col-span-3 text-right">Test Date</span>
               </div>
               {[
-                { key: 'bnp', label: 'BNP', unit: 'pg/mL', clsKey: 'bnp', placeholder: 'e.g. 450' },
-                { key: 'ntProBnp', label: 'NT-pro BNP', unit: 'pg/mL', clsKey: 'ntProBnp', placeholder: 'e.g. 1200' },
-                { key: 'ldl', label: 'LDL', unit: 'mg/dL', clsKey: 'ldl', placeholder: 'e.g. 95' },
-                { key: 'inr', label: 'INR', unit: 'ratio', clsKey: 'inr', placeholder: 'e.g. 2.1' },
-                { key: 'st2', label: 'ST2', unit: 'ng/mL', clsKey: 'st2', placeholder: 'e.g. 35' }
+                { key: 'bnp', label: 'BNP', unit: 'pg/mL', clsKey: 'bnp', placeholder: '' },
+                { key: 'ntProBnp', label: 'NT-pro BNP', unit: 'pg/mL', clsKey: 'ntProBnp', placeholder: '' },
+                { key: 'ldl', label: 'LDL', unit: 'mg/dL', clsKey: 'ldl', placeholder: '' },
+                { key: 'inr', label: 'INR', unit: 'ratio', clsKey: 'inr', placeholder: '' },
+                { key: 'st2', label: 'ST2', unit: 'ng/mL', clsKey: 'st2', placeholder: '' }
               ].map((item) => {
                 const valStr = labTests[item.key].result;
                 const cls = item.clsKey ? getClassification(item.clsKey, valStr) : { status: '', classNames: '', message: '' };

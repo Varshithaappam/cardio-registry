@@ -83,7 +83,7 @@ async function saveHfAssessment(data, userId = 1) {
         } else {
             // 1. Insert hf_registry with a placeholder and then update it with the final number & status
             hf_id = await hfModel.insertHfRegistry(conn, {
-                patient_id: data.patientId,
+                reg_patient_id: data.regPatientId,
                 hf_registry_no: 'HF00000',
                 created_by: userId,
                 updated_by: userId,
@@ -111,10 +111,10 @@ async function saveHfAssessment(data, userId = 1) {
                          data.patient?.mr_no || data.patient?.mrNo || 
                          data.patientRecord?.patient?.mr_no || data.patientRecord?.patient?.mrNo;
 
-        if ((!care_mr_no || care_mr_no === 'Unknown') && (data.patientId || data.patient_id)) {
-            const pid = data.patientId || data.patient_id;
+        if ((!care_mr_no || care_mr_no === 'Unknown') && (data.regPatientId || data.reg_patient_id)) {
+            const pid = data.regPatientId || data.reg_patient_id;
             try {
-                const { recordset: pRows } = await conn.query('SELECT [mr_no] FROM [patient_demographics] WHERE [patient_id] = @patientId;', { patientId: pid });
+                const { recordset: pRows } = await conn.query('SELECT [mr_no] FROM [patient_demographics] WHERE [reg_patient_id] = @regPatientId;', { regPatientId: pid });
                 if (pRows.length > 0 && pRows[0].mr_no) {
                     care_mr_no = pRows[0].mr_no;
                 }
@@ -135,13 +135,67 @@ async function saveHfAssessment(data, userId = 1) {
             assessed_by = Number(assessed_by);
         }
 
+        // Validate dates (discharge_date >= assessment_date / admission_date)
+        const assessment_date = toSqlDate(data.assessmentDate);
+        const discharge_date = toSqlDate(data.inpatientDetails?.dischargeDate || data.dischargeDate);
+        if (assessment_date && discharge_date && new Date(discharge_date) < new Date(assessment_date)) {
+            throw new Error('Discharge date cannot be earlier than Admission/Assessment date.');
+        }
+
+        // Automated or manual visit_id logic
+        const vt = data.visitType || 'Outpatient';
+        let prefix = 'OP';
+        if (vt.toLowerCase().includes('inpatient')) {
+            prefix = 'IP';
+        } else if (vt.toLowerCase().includes('home')) {
+            prefix = 'HM';
+        }
+
+        let finalVisitId = data.visitId || data.visit_id || data.inpatientDetails?.visitId || data.encounterId || data.inpatientDetails?.encounterId;
+        if (finalVisitId && typeof finalVisitId === 'string') {
+            finalVisitId = finalVisitId.trim();
+        }
+        if (!finalVisitId || finalVisitId === 'Auto-generated upon save') {
+            finalVisitId = null;
+        }
+
+        if (!finalVisitId && isEdit && previousAssessment) {
+            // Reuse previous visit_id if visitType has not changed
+            const prevVisitType = previousAssessment.visitType || previousAssessment.visit_type;
+            if (prevVisitType && prevVisitType.toLowerCase() === vt.toLowerCase() && (previousAssessment.visitId || previousAssessment.visit_id)) {
+                finalVisitId = previousAssessment.visitId || previousAssessment.visit_id;
+            }
+        }
+
+        if (!finalVisitId) {
+            // Generate next sequence: IPXXXXX, OPXXXXX, HMXMXXX
+            const prefixPattern = `${prefix}%`;
+            const { recordset: maxVisitRows } = await conn.query(
+                `SELECT TOP 1 [visit_id] 
+                 FROM [hf_administrative] 
+                 WHERE [visit_id] LIKE @prefixPattern 
+                 ORDER BY [visit_id] DESC;`,
+                { prefixPattern }
+            );
+
+            let nextNum = 1;
+            if (maxVisitRows.length > 0 && maxVisitRows[0].visit_id) {
+                const lastVisitId = maxVisitRows[0].visit_id;
+                const numMatch = lastVisitId.match(/\d+/);
+                if (numMatch) {
+                    nextNum = parseInt(numMatch[0], 10) + 1;
+                }
+            }
+            finalVisitId = `${prefix}${String(nextNum).padStart(5, '0')}`;
+        }
+
         // 2. Insert hf_administrative
         const adminData = {
             assessed_by: assessed_by,
-            visit_id: data.visitId || data.visit_id || null,
+            visit_id: finalVisitId,
             assessment_date: toSqlDate(data.assessmentDate),
             care_mr_no: care_mr_no,
-            visit_type: data.visitType || 'Outpatient',
+            visit_type: vt,
             address: data.patient?.address,
             education_level: data.patient?.highestEducation,
             monthly_income: data.patient?.monthlyIncome ? Number(data.patient.monthlyIncome) : null,
@@ -527,7 +581,7 @@ async function saveHfAssessment(data, userId = 1) {
 
             const followupData = {
                 hf_id,
-                patient_id: data.patientId || data.patient_id,
+                reg_patient_id: data.regPatientId || data.reg_patient_id,
                 is_followup_required: isYes ? 1 : 0,
 
                 // Branch 1 (Yes)
@@ -552,7 +606,7 @@ async function saveHfAssessment(data, userId = 1) {
                 await hfModel.insertHfFollowupAssessment(conn, followupData);
 
                 // Also sync with patient_followup_tasks table so Nurse Follow-Up Report is updated
-                const targetPatientId = data.patientId || data.patient_id;
+                const targetPatientId = data.regPatientId || data.reg_patient_id;
                 const targetDateVal = followupData.scheduled_followup_date;
                 const visitModeVal = followupData.visit_mode;
                 const timeframeVal = followupData.followup_interval;
@@ -560,8 +614,8 @@ async function saveHfAssessment(data, userId = 1) {
                 const statusVal = isYes ? 'Required' : 'No Follow-Up Needed';
 
                 const { recordset: existingTasks } = await conn.query(
-                    `SELECT task_id FROM patient_followup_tasks WHERE patient_id = @patientId;`,
-                    { patientId: targetPatientId }
+                    `SELECT task_id FROM patient_followup_tasks WHERE reg_patient_id = @regPatientId;`,
+                    { regPatientId: targetPatientId }
                 );
 
                 if (existingTasks && existingTasks.length > 0) {
@@ -573,9 +627,9 @@ async function saveHfAssessment(data, userId = 1) {
                              timeframe = @timeframeVal,
                              visit_mode = @visitModeVal,
                              special_instructions = @instructionsVal
-                         WHERE patient_id = @patientId;`,
+                         WHERE reg_patient_id = @regPatientId;`,
                         {
-                            patientId: targetPatientId,
+                            regPatientId: targetPatientId,
                             statusVal,
                             targetDateVal,
                             timeframeVal,
@@ -586,12 +640,12 @@ async function saveHfAssessment(data, userId = 1) {
                 } else {
                     await conn.query(
                         `INSERT INTO patient_followup_tasks (
-                            patient_id, source_registry, status, target_date, timeframe, clinic_location, visit_mode, special_instructions
+                            reg_patient_id, source_registry, status, target_date, timeframe, clinic_location, visit_mode, special_instructions
                          ) VALUES (
-                            @patientId, 'Heart Failure Registry', @statusVal, @targetDateVal, @timeframeVal, 'CARE Heart Institute', @visitModeVal, @instructionsVal
+                            @regPatientId, 'Heart Failure Registry', @statusVal, @targetDateVal, @timeframeVal, 'CARE Heart Institute', @visitModeVal, @instructionsVal
                          );`,
                         {
-                            patientId: targetPatientId,
+                            regPatientId: targetPatientId,
                             statusVal,
                             targetDateVal,
                             timeframeVal,
@@ -625,7 +679,7 @@ async function saveHfAssessment(data, userId = 1) {
 }
 
 
-async function getHfHistory(patientId) {
+async function getHfHistory(regPatientId) {
     const query = `
         SELECT hf_id, hf_registry_no, created_at, 
                ISNULL(status, 'final') AS status, 
@@ -635,10 +689,10 @@ async function getHfHistory(patientId) {
                    (SELECT TOP 1 assessment_date FROM hf_administrative WHERE hf_administrative.hf_id = hf_registry.hf_id)
                ) as assessment_date
         FROM hf_registry
-        WHERE patient_id = @patientId
+        WHERE reg_patient_id = @regPatientId
         ORDER BY created_at DESC
     `;
-    const { recordset } = await db.query(query, { patientId });
+    const { recordset } = await db.query(query, { regPatientId });
     return recordset;
 }
 
@@ -846,7 +900,7 @@ async function getHfAssessment(hf_id) {
             visit_id: admin.visit_id,
             hfRegistryNo: registry.hf_registry_no,
             hf_registry_no: registry.hf_registry_no,
-            patientId: registry.patient_id,
+            regPatientId: registry.reg_patient_id,
             encounterId: admin.care_mr_no,
             assessmentDate: admin.assessment_date,
             visitType: admin.visit_type,

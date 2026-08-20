@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, Plus, Activity, Heart, Stethoscope, Scissors, FileText, 
   Clock, ShieldAlert, CheckCircle, ChevronRight, RefreshCw, Calendar, 
@@ -6,8 +6,10 @@ import {
 } from 'lucide-react';
 import { calculateDataQualityScore } from '../data/mockPatients';
 import HFHistoryList from './HFHistoryList';
+import NSTEMIHistoryList from './NSTEMIHistoryList';
 import RegisterNewPatient from './RegisterNewPatient';
 import AuditLogViewer from './hf/AuditLogViewer';
+import api from '../../api/axios';
 
 // Age calculator helper
 function calculateAge(dobString) {
@@ -42,6 +44,22 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
   const [activeTab, setActiveTab] = useState('timeline');
   const [isEditingPatient, setIsEditingPatient] = useState(false);
   const [isAuditViewerExpanded, setIsAuditViewerExpanded] = useState(false);
+  const [counts, setCounts] = useState({ hfCount: 0, nstemiCount: 0 });
+
+  useEffect(() => {
+    if (record?.patient?.id) {
+      api.get(`/patients/counts/${record.patient.id}`)
+        .then(res => {
+          if (res.data && res.data.success) {
+            setCounts({
+              hfCount: res.data.data.hfCount || 0,
+              nstemiCount: res.data.data.nstemiCount || 0
+            });
+          }
+        })
+        .catch(err => console.error("Error fetching timeline counts:", err));
+    }
+  }, [record]);
 
   const currentUser = (() => {
     try {
@@ -215,7 +233,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
         </div>
 
         {/* Detailed Demographics Subgrid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 py-4 border-y border-slate-100 text-xs">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 py-4 border-y border-slate-100 text-xs">
           <div>
             <span className="text-slate-400 font-semibold block uppercase">Age / Gender</span>
             <span className="text-slate-700 font-bold block mt-1">{calculateAge(record.patient.dob) ?? '—'} yrs / {record.patient.gender}</span>
@@ -223,6 +241,14 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
           <div>
             <span className="text-slate-400 font-semibold block uppercase">MR Number</span>
             <span className="text-slate-700 font-bold block mt-1">{record.patient.mrNo}</span>
+          </div>
+          <div>
+            <span className="text-slate-400 font-semibold block uppercase">UHID</span>
+            <span className="text-slate-700 font-bold block mt-1">{record.patient.uhid || '—'}</span>
+          </div>
+          <div>
+            <span className="text-slate-400 font-semibold block uppercase">ABHA Number</span>
+            <span className="text-slate-700 font-bold block mt-1">{record.patient.abhaNumber || '—'}</span>
           </div>
           <div>
             <span className="text-slate-400 font-semibold block uppercase">Contact Phone</span>
@@ -236,7 +262,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
             <span className="text-slate-400 font-semibold block uppercase">Occupation</span>
             <span className="text-slate-700 font-bold block mt-1">{record.patient.occupation || 'N/A'}</span>
           </div>
-          <div className="col-span-2 md:col-span-1">
+          <div>
             <span className="text-slate-400 font-semibold block uppercase">Insurance Mode</span>
             <span className="text-slate-700 font-bold block mt-1 truncate">{record.patient.insuranceMode || 'Self-Pay'}</span>
           </div>
@@ -304,7 +330,18 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
           }`}
         >
           <Activity className="w-4 h-4" />
-          <span>Heart Failure Registry ({record.hfAssessments?.length || 0})</span>
+          <span>Heart Failure Registry ({counts.hfCount || record.hfAssessments?.length || 0})</span>
+        </button>
+        <button
+          onClick={() => setActiveTab('nstemi')}
+          className={`py-3 px-1 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'nstemi'
+              ? 'border-orange-600 text-orange-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Activity className="w-4 h-4 text-orange-500" />
+          <span>NSTEMI Registry ({counts.nstemiCount || 0})</span>
         </button>
         {isAuthorizedForAudit && (
           <button
@@ -397,7 +434,12 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
 
         {/* Tab Content 2: HF Registry Assessment List */}
         <div className={activeTab === 'hf' ? 'block space-y-6' : 'hidden'}>
-          <HFHistoryList patientId={record.patient.id} onEditEventClick={onEditEventClick} />
+          <HFHistoryList regPatientId={record.patient.id} onEditEventClick={onEditEventClick} />
+        </div>
+
+        {/* Tab Content: NSTEMI Registry History List */}
+        <div className={activeTab === 'nstemi' ? 'block space-y-6' : 'hidden'}>
+          <NSTEMIHistoryList regPatientId={record.patient.id} onEditEventClick={onEditEventClick} />
         </div>
 
         {/* Tab Content 3: Audit Log Tab */}
@@ -418,7 +460,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
             </div>
 
             {/* Inline Audit Viewer (Queried by Patient ID) */}
-            <AuditLogViewer patientId={record.patient.id} hfId={targetHfId} isInline={true} />
+            <AuditLogViewer regPatientId={record.patient.id} hfId={targetHfId} isInline={true} />
           </div>
         )}
       </div>

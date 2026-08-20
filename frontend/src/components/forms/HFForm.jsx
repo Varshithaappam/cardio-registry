@@ -340,7 +340,7 @@ const HFForm = forwardRef(function HFForm(
 
     return {
       id: editingRecord?.id ?? `hfa-${Date.now()}`,
-      patientId: patient.id || patient.patient_id,
+      regPatientId: patient.id || patient.reg_patient_id,
       encounterId: encounterId || editingRecord?.encounterId || activeMrNo,
       care_mr_no: activeMrNo,
       mr_no: activeMrNo,
@@ -448,7 +448,15 @@ const HFForm = forwardRef(function HFForm(
   };
 
   useImperativeHandle(ref, () => ({
-    getSubmissionData
+    getSubmissionData,
+    validateForm: () => {
+      const adm = admissionDate || assessmentDate;
+      if (adm && dischargeDate && new Date(dischargeDate) < new Date(adm)) {
+        alert('Date of Discharge cannot be earlier than Admission / Assessment date.');
+        return false;
+      }
+      return true;
+    }
   }));
 
   return (
@@ -519,13 +527,11 @@ const HFForm = forwardRef(function HFForm(
             options={HIGHEST_EDUCATION_OPTIONS}
             columns={3}
           />
-          <RadioGroup
-            label="Insurance Mode / Payment Method"
-            name="hf-insurance"
+          <Select
+            label="Insurance / Mode of Payment"
             value={insuranceMode}
             onChange={setInsuranceMode}
             options={INSURANCE_OPTIONS}
-            columns={2}
           />
         </div>
 
@@ -555,8 +561,29 @@ const HFForm = forwardRef(function HFForm(
             onChange={setWardUnit}
             placeholder="E.g. CCU / Ward 4B"
           />
-          <DateInput id="hf-admission-date" label="Admission Date" value={admissionDate} onChange={setAdmissionDate} />
-          <DateInput id="hf-discharge-date" label="Discharge Date" value={dischargeDate} onChange={setDischargeDate} />
+          <DateInput
+            id="hf-admission-date"
+            label="Admission Date"
+            value={admissionDate}
+            onChange={(val) => {
+              setAdmissionDate(val);
+              if (dischargeDate && val && new Date(dischargeDate) < new Date(val)) {
+                alert('Date of Discharge cannot be earlier than Admission date.');
+              }
+            }}
+          />
+          <DateInput
+            id="hf-discharge-date"
+            label="Discharge Date"
+            value={dischargeDate}
+            onChange={(val) => {
+              setDischargeDate(val);
+              const adm = admissionDate || assessmentDate;
+              if (adm && val && new Date(val) < new Date(adm)) {
+                alert('Date of Discharge cannot be earlier than Admission date.');
+              }
+            }}
+          />
           <Select
             id="hf-treating-cardiologist"
             label="Treating Cardiologist"

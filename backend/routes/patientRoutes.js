@@ -23,6 +23,6 @@ router.put("/:id", patientController.updatePatient);
 router.delete("/:id", patientController.deletePatient);
 
 // Get Patient Counts
-router.get("/counts/:patientId", patientController.getPatientCounts);
+router.get("/counts/:regPatientId", patientController.getPatientCounts);
 
 module.exports = router;

@@ -12,7 +12,7 @@ const getPatientCentricTasks = async (req, res) => {
       WITH RankedTasks AS (
         SELECT 
           t.task_id,
-          t.patient_id,
+          t.reg_patient_id,
           t.source_registry,
           t.source_record_id,
           t.is_followup_required,
@@ -26,14 +26,14 @@ const getPatientCentricTasks = async (req, res) => {
           t.nurse_notes,
           t.last_contact_date,
           ROW_NUMBER() OVER (
-            PARTITION BY t.patient_id 
+            PARTITION BY t.reg_patient_id 
             ORDER BY t.task_id DESC
           ) AS rn
         FROM patient_followup_tasks t
       )
       SELECT 
         rt.task_id,
-        rt.patient_id,
+        rt.reg_patient_id,
         rt.source_registry,
         rt.source_record_id,
         rt.is_followup_required,
@@ -63,8 +63,8 @@ const getPatientCentricTasks = async (req, res) => {
         fa.investigation_bnp_ntprobnp,
         fa.investigation_6mw_test
       FROM RankedTasks rt
-      INNER JOIN patient_demographics p ON rt.patient_id = p.patient_id
-      LEFT JOIN hf_followup_assessments fa ON (rt.source_record_id = fa.followup_id OR (rt.patient_id = fa.patient_id AND fa.followup_id = (SELECT MAX(followup_id) FROM hf_followup_assessments WHERE patient_id = rt.patient_id)))
+      INNER JOIN patient_demographics p ON rt.reg_patient_id = p.reg_patient_id
+      LEFT JOIN hf_followup_assessments fa ON (rt.source_record_id = fa.followup_id OR (rt.reg_patient_id = fa.reg_patient_id AND fa.followup_id = (SELECT MAX(followup_id) FROM hf_followup_assessments WHERE reg_patient_id = rt.reg_patient_id)))
       WHERE rt.rn = 1
       ORDER BY rt.target_date ASC, rt.task_id DESC;
     `;
@@ -91,19 +91,19 @@ router.get('/tasks', getPatientCentricTasks);
 router.get('/', getPatientCentricTasks);
 
 /**
- * Task 2: GET /api/nurse-dashboard/:patientId/logs AND /api/nurse-followup-report/:patientId/logs
+ * Task 2: GET /api/nurse-dashboard/:regPatientId/logs AND /api/nurse-followup-report/:regPatientId/logs
  * UNION ALL Query: Merges manual nurse outreach logs with older/superseded tasks for the patient.
  */
 const getPatientTimelineLogs = async (req, res) => {
   try {
-    const { patientId } = req.params;
-    const pid = parseInt(patientId, 10);
+    const { regPatientId } = req.params;
+    const pid = parseInt(regPatientId, 10);
 
     const queryStr = `
       SELECT 
         log_id,
         task_id,
-        patient_id,
+        reg_patient_id,
         contact_date,
         nurse_name,
         contact_mode,
@@ -113,14 +113,14 @@ const getPatientTimelineLogs = async (req, res) => {
         notes,
         'Manual Outreach Log' AS log_type
       FROM nurse_outreach_logs
-      WHERE patient_id = @pid
+      WHERE reg_patient_id = @pid
 
       UNION ALL
 
       SELECT 
         t.task_id AS log_id,
         t.task_id,
-        t.patient_id,
+        t.reg_patient_id,
         COALESCE(t.last_contact_date, t.target_date, GETDATE()) AS contact_date,
         'Clinical System' AS nurse_name,
         'System Generated Form' AS contact_mode,
@@ -130,8 +130,8 @@ const getPatientTimelineLogs = async (req, res) => {
         CONCAT('Target Date: ', ISNULL(CONVERT(VARCHAR(10), t.target_date, 120), 'N/A'), ' | Visit Mode: ', ISNULL(t.visit_mode, 'N/A'), ' | Special Instructions: ', ISNULL(t.special_instructions, 'Standard post-discharge monitoring.')) AS notes,
         'System Generated Form' AS log_type
       FROM patient_followup_tasks t
-      WHERE t.patient_id = @pid AND t.task_id NOT IN (
-        SELECT TOP 1 task_id FROM patient_followup_tasks WHERE patient_id = @pid ORDER BY task_id DESC
+      WHERE t.reg_patient_id = @pid AND t.task_id NOT IN (
+        SELECT TOP 1 task_id FROM patient_followup_tasks WHERE reg_patient_id = @pid ORDER BY task_id DESC
       )
 
       ORDER BY contact_date DESC;
@@ -145,7 +145,7 @@ const getPatientTimelineLogs = async (req, res) => {
       data: logs
     });
   } catch (error) {
-    console.error(`Error fetching timeline logs for patient ${req.params.patientId}:`, error);
+    console.error(`Error fetching timeline logs for patient ${req.params.regPatientId}:`, error);
     return res.status(500).json({
       success: false,
       message: 'Failed to fetch patient timeline logs.',
@@ -154,8 +154,8 @@ const getPatientTimelineLogs = async (req, res) => {
   }
 };
 
-router.get('/:patientId/logs', getPatientTimelineLogs);
-router.get('/tasks/:patientId/logs', getPatientTimelineLogs);
+router.get('/:regPatientId/logs', getPatientTimelineLogs);
+router.get('/tasks/:regPatientId/logs', getPatientTimelineLogs);
 
 /**
  * POST /api/nurse-dashboard/tasks/:taskId/log
@@ -166,7 +166,7 @@ const postLog = async (req, res) => {
   try {
     const { taskId } = req.params;
     const {
-      patient_id,
+      reg_patient_id,
       contact_mode,
       outcome,
       status,
@@ -179,7 +179,7 @@ const postLog = async (req, res) => {
 
     await connection.begin();
 
-    const pid = patient_id ? parseInt(patient_id, 10) : null;
+    const pid = reg_patient_id ? parseInt(reg_patient_id, 10) : null;
     let finalTaskId = parseInt(taskId, 10);
 
     const updateTaskSql = `
@@ -190,7 +190,7 @@ const postLog = async (req, res) => {
         target_date = @target_date,
         nurse_notes = @notes,
         last_contact_date = GETDATE()
-      WHERE task_id = @finalTaskId OR (patient_id = @pid AND status != 'Completed');
+      WHERE task_id = @finalTaskId OR (reg_patient_id = @pid AND status != 'Completed');
     `;
     await connection.query(updateTaskSql, {
       finalTaskId,
@@ -204,7 +204,7 @@ const postLog = async (req, res) => {
     const insertLogSql = `
       INSERT INTO nurse_outreach_logs (
         task_id,
-        patient_id,
+        reg_patient_id,
         contact_date,
         nurse_name,
         contact_mode,

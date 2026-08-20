@@ -7,9 +7,9 @@ function insertRow(conn, table, data, keys) {
     return db.insert(conn, table, row);
 }
 
-async function insertHfRegistry(conn, { patient_id, hf_registry_no, created_by, updated_by, status }) {
+async function insertHfRegistry(conn, { reg_patient_id, hf_registry_no, created_by, updated_by, status }) {
     const result = await db.insert(conn, 'hf_registry', {
-        patient_id,
+        reg_patient_id,
         hf_registry_no,
         created_by: created_by || null,
         updated_by: updated_by || null,
@@ -204,7 +204,7 @@ async function insertHfAdvancedInvestigations(conn, data) {
 
 async function insertHfFollowupAssessment(conn, data) {
     const keys = [
-        'hf_id', 'patient_id', 'is_followup_required',
+        'hf_id', 'reg_patient_id', 'is_followup_required',
         'followup_interval', 'scheduled_followup_date', 'visit_mode', 'primary_followup_reason',
         'investigation_serum_lytes', 'investigation_ecg', 'investigation_echo', 'investigation_bnp_ntprobnp', 'investigation_6mw_test',
         'special_instructions', 'primary_no_followup_reason', 'pcp_transition_summary', 'self_care_instructions'
