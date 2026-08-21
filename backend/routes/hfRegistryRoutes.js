@@ -27,6 +27,20 @@ router.delete(
   hfRegistryController.deleteRecord
 );
 
+// Undelete / Restore Record (PATCH /api/hf-registry/:id/undelete)
+router.patch(
+  '/:id/undelete',
+  authenticateToken,
+  requireRole('ADMIN', 'CLINICIAN'),
+  hfRegistryController.undeleteRecord
+);
+router.put(
+  '/:id/undelete',
+  authenticateToken,
+  requireRole('ADMIN', 'CLINICIAN'),
+  hfRegistryController.undeleteRecord
+);
+
 // Patient Audit Log Route (GET /api/hf-registry/patient/:regPatientId/audit)
 router.get(
   '/patient/:regPatientId/audit',

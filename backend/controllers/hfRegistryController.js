@@ -179,6 +179,58 @@ const deleteRecord = async (req, res) => {
 };
 
 /**
+ * Restore / Undelete Record (PATCH /api/hf-registry/:id/undelete)
+ * Protected by authenticateToken + requireRole('ADMIN', 'CLINICIAN')
+ */
+const undeleteRecord = async (req, res) => {
+  const userId = req.user?.id || req.user?.userId || 1;
+  const recordId = Number(req.params.id);
+
+  if (!recordId || isNaN(recordId)) {
+    return res.status(400).json({ success: false, message: 'Invalid HF Registry ID.' });
+  }
+
+  try {
+    // 1. Fetch current record before restoring
+    const { recordset: rows } = await db.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @recordId;', { recordId });
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'HF Registry record not found.' });
+    }
+    const previousData = rows[0];
+
+    if (previousData.is_deleted === 0 || previousData.is_deleted === false) {
+      return res.status(400).json({ success: false, message: 'HF Registry record is already active.' });
+    }
+
+    // 2. Perform restore: clear deleted_at, deleted_by, and set is_deleted = 0
+    await db.query(
+      'UPDATE [hf_registry] SET [is_deleted] = 0, [deleted_at] = NULL, [deleted_by] = NULL, [updated_at] = SYSDATETIME(), [updated_by] = @userId WHERE [hf_id] = @recordId;',
+      { userId, recordId }
+    );
+
+    const { recordset: updatedRows } = await db.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @recordId;', { recordId });
+    const restoredData = updatedRows[0] || { ...previousData, is_deleted: 0, deleted_by: null, deleted_at: null };
+
+    // 3. Execute audit log with action_type = 'UPDATE'
+    logAudit(recordId, userId, 'UPDATE', previousData, restoredData).catch(err => {
+      console.error('Audit Logging Error on undelete:', err);
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'HF Registry record restored successfully.',
+      data: restoredData
+    });
+  } catch (error) {
+    console.error('Error restoring HF Registry record:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to restore HF Registry record.'
+    });
+  }
+};
+
+/**
  * Expose Patient Audit Logs Endpoint (GET /api/hf-registry/patient/:regPatientId/audit)
  * Queries all hf_registry_audit records for a given reg_patient_id across all registries.
  */
@@ -356,6 +408,7 @@ module.exports = {
   createRecord,
   updateRecord,
   deleteRecord,
+  undeleteRecord,
   softDeleteRegistryRecord: deleteRecord,
   getAuditLog,
   getPatientAuditLog

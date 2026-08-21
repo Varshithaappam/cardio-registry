@@ -5,7 +5,8 @@ const {
   getNstemiHistory, 
   getNstemiRecord, 
   updateNstemiRecord, 
-  deleteNstemiRecord 
+  deleteNstemiRecord,
+  undeleteNstemiRecord
 } = require('../controllers/nstemiController');
 const { authenticateToken } = require('../middleware/authMiddleware');
 
@@ -21,7 +22,11 @@ router.get('/:id', authenticateToken, getNstemiRecord);
 // PUT /api/nstemi/:id - Update existing NSTEMI record
 router.put('/:id', authenticateToken, updateNstemiRecord);
 
-// DELETE /api/nstemi/:id - Hard delete NSTEMI record
+// DELETE /api/nstemi/:id - Soft delete NSTEMI record
 router.delete('/:id', authenticateToken, deleteNstemiRecord);
+
+// PATCH / PUT /api/nstemi/:id/undelete - Restore / Undelete NSTEMI record
+router.patch('/:id/undelete', authenticateToken, undeleteNstemiRecord);
+router.put('/:id/undelete', authenticateToken, undeleteNstemiRecord);
 
 module.exports = router;

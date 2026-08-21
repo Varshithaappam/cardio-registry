@@ -681,16 +681,18 @@ async function saveHfAssessment(data, userId = 1) {
 
 async function getHfHistory(regPatientId) {
     const query = `
-        SELECT hf_id, hf_registry_no, created_at, 
-               ISNULL(status, 'final') AS status, 
-               is_deleted, deleted_at, deleted_by,
+        SELECT hf_registry.hf_id, hf_registry.hf_registry_no, hf_registry.created_at, 
+               ISNULL(hf_registry.status, 'final') AS status, 
+               hf_registry.is_deleted, hf_registry.deleted_at, hf_registry.deleted_by,
+               p.patient_name,
                COALESCE(
                    (SELECT TOP 1 assessment_date FROM hf_initial_assessment WHERE hf_initial_assessment.hf_id = hf_registry.hf_id),
                    (SELECT TOP 1 assessment_date FROM hf_administrative WHERE hf_administrative.hf_id = hf_registry.hf_id)
                ) as assessment_date
         FROM hf_registry
-        WHERE reg_patient_id = @regPatientId
-        ORDER BY created_at DESC
+        LEFT JOIN patient_demographics p ON p.reg_patient_id = hf_registry.reg_patient_id
+        WHERE hf_registry.reg_patient_id = @regPatientId
+        ORDER BY hf_registry.created_at DESC
     `;
     const { recordset } = await db.query(query, { regPatientId });
     return recordset;

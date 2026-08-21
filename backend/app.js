@@ -51,6 +51,8 @@ app.use("/api/documents", documentRoutes);
 app.use("/api/hf-files", hfFilesRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.get('/api/hf/history/:regPatientId', hfController.getHfHistory);
+app.patch('/api/hf/:id/undelete', hfRegistryRoutes);
+app.put('/api/hf/:id/undelete', hfRegistryRoutes);
 
 // Handle Unknown Routes
 app.use((req, res) => {

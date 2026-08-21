@@ -627,17 +627,19 @@ async function getNstemiHistory(req, res) {
     const result = await pool.request()
       .input('regPatientId', sql.Int, regPatientId)
       .query(`
-        SELECT nstemi_id, acs_no, ip_no, admission_date, discharge_date, created_at,
-               [status]
-        FROM nstemi_registry
-        WHERE reg_patient_id = @regPatientId
-        ORDER BY created_at DESC
+        SELECT n.nstemi_id, n.acs_no, n.ip_no, n.admission_date, n.discharge_date, n.created_at,
+               n.[status],
+               p.patient_name
+        FROM nstemi_registry n
+        LEFT JOIN patient_demographics p ON p.reg_patient_id = n.reg_patient_id
+        WHERE n.reg_patient_id = @regPatientId
+        ORDER BY n.created_at DESC
       `);
     const historyData = result.recordset.map(row => {
       let statusStr = 'final';
       if (row.status === 2) statusStr = 'draft';
       else if (row.status === 1) statusStr = 'deleted';
-      return { ...row, status: statusStr };
+      return { ...row, status: statusStr, is_deleted: row.status === 1 };
     });
     return res.status(200).json({
       success: true,
@@ -778,6 +780,26 @@ async function deleteNstemiRecord(req, res) {
     return res.status(500).json({
       success: false,
       message: error.message || 'Internal server error while soft-deleting NSTEMI record.'
+    });
+  }
+}
+
+async function undeleteNstemiRecord(req, res) {
+  try {
+    const nstemi_id = req.params.id;
+    const pool = await getPool();
+    await pool.request()
+      .input('nstemi_id', sql.Int, nstemi_id)
+      .query('UPDATE [nstemi_registry] SET [status] = 0, [updated_at] = GETDATE() WHERE [nstemi_id] = @nstemi_id');
+    return res.status(200).json({
+      success: true,
+      message: 'NSTEMI record restored successfully.'
+    });
+  } catch (error) {
+    console.error('Error restoring NSTEMI record:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error while restoring NSTEMI record.'
     });
   }
 }
@@ -1348,5 +1370,6 @@ module.exports = {
   getNstemiHistory,
   getNstemiRecord,
   updateNstemiRecord,
-  deleteNstemiRecord
+  deleteNstemiRecord,
+  undeleteNstemiRecord
 };
