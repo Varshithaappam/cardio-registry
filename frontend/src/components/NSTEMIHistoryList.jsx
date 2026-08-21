@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Loader2, ArrowUpRight, Trash2, Play } from 'lucide-react';
+import { Calendar, Loader2, ArrowUpRight, Trash2, Play, RotateCcw } from 'lucide-react';
 import api from '../../api/axios';
 
-export default function NSTEMIHistoryList({ regPatientId, onEditEventClick }) {
+export default function NSTEMIHistoryList({ regPatientId, patientName, onEditEventClick }) {
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +52,24 @@ export default function NSTEMIHistoryList({ regPatientId, onEditEventClick }) {
     }
   };
 
+  const handleUndeleteRecord = async (nstemiId, registryNo) => {
+    if (!window.confirm(`Are you sure you want to restore NSTEMI Registry Record ${registryNo || '#' + nstemiId}? It will be reactivated for editing.`)) {
+      return;
+    }
+    try {
+      const res = await api.patch(`/nstemi/${nstemiId}/undelete`);
+      if (res.data && res.data.success) {
+        alert('NSTEMI Registry record restored successfully.');
+        fetchHistory();
+      } else {
+        alert(res.data?.message || 'Failed to restore record.');
+      }
+    } catch (err) {
+      console.error('Undelete error:', err);
+      alert(err.response?.data?.message || 'Failed to restore NSTEMI Registry record.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col items-center justify-center min-h-[200px]">
@@ -79,8 +97,8 @@ export default function NSTEMIHistoryList({ regPatientId, onEditEventClick }) {
       <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
         {history.map((record, index) => {
           const encounterNum = history.length - index;
-          const isDeletedRecord = record.status === 1 || record.status === 'deleted';
-          const isDraftRecord = record.status === 2 || record.status === 'draft';
+          const isDeletedRecord = record.status === 1 || record.status === 'deleted' || record.is_deleted === 1 || record.is_deleted === true;
+          const isDraftRecord = (record.status === 2 || record.status === 'draft') && !isDeletedRecord;
           
           return (
             <div
@@ -99,25 +117,24 @@ export default function NSTEMIHistoryList({ regPatientId, onEditEventClick }) {
                       day: 'numeric'
                     }) : 'N/A'}
                   </span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-800">
                       {record.acs_no || record.ip_no || `ID: ${record.nstemi_id}`}
                     </span>
+                    {(record.patient_name || patientName) && (
+                      <span className="text-xs font-semibold text-slate-600">
+                        • {record.patient_name || patientName}
+                      </span>
+                    )}
                     {isDraftRecord && !isDeletedRecord && (
                       <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold rounded-md uppercase flex items-center gap-1 shadow-xs animate-pulse">
                         <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
                         <span>Draft</span>
                       </span>
                     )}
-                    {!isDraftRecord && !isDeletedRecord && (
-                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold rounded-md uppercase flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                        <span>Final</span>
-                      </span>
-                    )}
                     {isDeletedRecord && (
                       <span className="px-2 py-0.5 bg-red-100 text-red-800 border border-red-200 text-[10px] font-extrabold rounded-md uppercase">
-                        DELETED (READ-ONLY)
+                        Deleted
                       </span>
                     )}
                   </div>
@@ -133,35 +150,60 @@ export default function NSTEMIHistoryList({ regPatientId, onEditEventClick }) {
                   <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
                 </button>
  
-                {isDraftRecord && !isDeletedRecord && (
-                  <button
-                    onClick={() => navigate(`/patient/${regPatientId}/edit/${record.nstemi_id}?formType=NSTEMI`)}
-                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-amber-600"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-current" />
-                    <span>Resume Form Filling</span>
-                  </button>
-                )}
- 
-                {!isDraftRecord && !isDeletedRecord && (
-                  <button
-                    onClick={() => navigate(`/patient/${regPatientId}/edit/${record.nstemi_id}?formType=NSTEMI`)}
-                    className="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                  >
-                    <span>Edit Form</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-                )}
- 
-                {canDelete && !isDeletedRecord && (
-                  <button
-                    onClick={() => handleDeleteRecord(record.nstemi_id, record.acs_no)}
-                    className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                    title="Delete NSTEMI Record"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                    <span>Delete</span>
-                  </button>
+                {isDeletedRecord ? (
+                  <>
+                    <button
+                      disabled
+                      className="px-2.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-not-allowed opacity-60"
+                      title="Cannot edit a deleted record. Restore it first."
+                    >
+                      <span>Edit Form</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+                    {canDelete && (
+                      <button
+                        onClick={() => handleUndeleteRecord(record.nstemi_id, record.acs_no || record.ip_no)}
+                        className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
+                        title="Restore / Undelete NSTEMI Record"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Undelete</span>
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {isDraftRecord && (
+                      <button
+                        onClick={() => navigate(`/patient/${regPatientId}/edit/${record.nstemi_id}?formType=NSTEMI`)}
+                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-amber-600"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>Resume Form Filling</span>
+                      </button>
+                    )}
+     
+                    {!isDraftRecord && (
+                      <button
+                        onClick={() => navigate(`/patient/${regPatientId}/edit/${record.nstemi_id}?formType=NSTEMI`)}
+                        className="px-2.5 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <span>Edit Form</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+     
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDeleteRecord(record.nstemi_id, record.acs_no)}
+                        className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Delete NSTEMI Record"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                        <span>Delete</span>
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>

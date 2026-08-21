@@ -434,12 +434,12 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
 
         {/* Tab Content 2: HF Registry Assessment List */}
         <div className={activeTab === 'hf' ? 'block space-y-6' : 'hidden'}>
-          <HFHistoryList regPatientId={record.patient.id} onEditEventClick={onEditEventClick} />
+          <HFHistoryList regPatientId={record.patient.id} patientName={record.patient.name} onEditEventClick={onEditEventClick} />
         </div>
 
         {/* Tab Content: NSTEMI Registry History List */}
         <div className={activeTab === 'nstemi' ? 'block space-y-6' : 'hidden'}>
-          <NSTEMIHistoryList regPatientId={record.patient.id} onEditEventClick={onEditEventClick} />
+          <NSTEMIHistoryList regPatientId={record.patient.id} patientName={record.patient.name} onEditEventClick={onEditEventClick} />
         </div>
 
         {/* Tab Content 3: Audit Log Tab */}

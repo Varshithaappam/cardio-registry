@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, FileText, Loader2, ArrowUpRight, Trash2, Play } from 'lucide-react';
+import { Calendar, FileText, Loader2, ArrowUpRight, Trash2, Play, RotateCcw } from 'lucide-react';
 import api from '../../api/axios';
 
-export default function HFHistoryList({ regPatientId, onEditEventClick }) {
+export default function HFHistoryList({ regPatientId, patientName, onEditEventClick }) {
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,6 +49,24 @@ export default function HFHistoryList({ regPatientId, onEditEventClick }) {
     } catch (err) {
       console.error('Soft delete error:', err);
       alert(err.response?.data?.message || 'Failed to soft-delete HF Registry record.');
+    }
+  };
+
+  const handleUndeleteRecord = async (hfId, registryNo) => {
+    if (!window.confirm(`Are you sure you want to restore HF Registry Record ${registryNo || '#' + hfId}? It will be reactivated for editing.`)) {
+      return;
+    }
+    try {
+      const res = await api.patch(`/hf-registry/${hfId}/undelete`);
+      if (res.data && res.data.success) {
+        alert('HF Registry record restored successfully.');
+        fetchHistory();
+      } else {
+        alert(res.data?.message || 'Failed to restore record.');
+      }
+    } catch (err) {
+      console.error('Undelete error:', err);
+      alert(err.response?.data?.message || 'Failed to restore HF Registry record.');
     }
   };
 
@@ -98,25 +116,24 @@ export default function HFHistoryList({ regPatientId, onEditEventClick }) {
                       day: 'numeric'
                     }) : 'N/A'}
                   </span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-800">
                       {record.hf_registry_no}
                     </span>
+                    {(record.patient_name || patientName) && (
+                      <span className="text-xs font-semibold text-slate-600">
+                        • {record.patient_name || patientName}
+                      </span>
+                    )}
                     {isDraftRecord && !isDeletedRecord && (
                       <span className="px-2 py-0.5 bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-extrabold rounded-md uppercase flex items-center gap-1 shadow-xs">
                         <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping"></span>
                         <span>Draft</span>
                       </span>
                     )}
-                    {!isDraftRecord && !isDeletedRecord && (
-                      <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-bold rounded-md uppercase flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                        <span>Final</span>
-                      </span>
-                    )}
                     {isDeletedRecord && (
                       <span className="px-2 py-0.5 bg-red-100 text-red-800 border border-red-200 text-[10px] font-extrabold rounded-md uppercase">
-                        Deleted (Read-Only)
+                        Deleted
                       </span>
                     )}
                   </div>
@@ -132,34 +149,59 @@ export default function HFHistoryList({ regPatientId, onEditEventClick }) {
                   <ArrowUpRight className="w-3.5 h-3.5 text-slate-500" />
                 </button>
 
-                {isDraftRecord && !isDeletedRecord && (
-                  <button
-                    onClick={() => onEditEventClick ? onEditEventClick(record.hf_id) : navigate(`/patient/${regPatientId}/edit?formType=HF&hf_id=${record.hf_id}`)}
-                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-amber-600"
-                  >
-                    <Play className="w-3.5 h-3.5 fill-current" />
-                    <span>Resume Form Filling</span>
-                  </button>
-                )}
+                {isDeletedRecord ? (
+                  <>
+                    <button
+                      disabled
+                      className="px-2.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-not-allowed opacity-60"
+                      title="Cannot edit a deleted record. Restore it first."
+                    >
+                      <span>Edit Form</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
+                    </button>
+                    {canDelete && (
+                      <button
+                        onClick={() => handleUndeleteRecord(record.hf_id, record.hf_registry_no)}
+                        className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer shadow-xs"
+                        title="Restore / Undelete HF Record"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Undelete</span>
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {isDraftRecord && (
+                      <button
+                        onClick={() => onEditEventClick ? onEditEventClick(record.hf_id) : navigate(`/patient/${regPatientId}/edit?formType=HF&hf_id=${record.hf_id}`)}
+                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-amber-600"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>Resume Form Filling</span>
+                      </button>
+                    )}
 
-                {!isDraftRecord && onEditEventClick && !isDeletedRecord && (
-                  <button
-                    onClick={() => onEditEventClick(record.hf_id)}
-                    className="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                  >
-                    <span>Edit Form</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-                )}
-                {canDelete && !isDeletedRecord && (
-                  <button
-                    onClick={() => handleDeleteRecord(record.hf_id, record.hf_registry_no)}
-                    className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                    title="Soft Delete HF Record"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                    <span>Delete</span>
-                  </button>
+                    {!isDraftRecord && onEditEventClick && (
+                      <button
+                        onClick={() => onEditEventClick(record.hf_id)}
+                        className="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <span>Edit Form</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDeleteRecord(record.hf_id, record.hf_registry_no)}
+                        className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Soft Delete HF Record"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                        <span>Delete</span>
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
