@@ -3261,7 +3261,7 @@ const hf = forwardRef(function hf(
           
           {/* HF ID */}
           <div>
-            <label className={LABEL_STYLES}>HF ID</label>
+            <label className={LABEL_STYLES}>HF Registry ID</label>
             <input
               type="text"
               readOnly
