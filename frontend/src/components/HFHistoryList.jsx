@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, FileText, Loader2, ArrowUpRight, Trash2, Play, RotateCcw } from 'lucide-react';
 import api from '../../api/axios';
 
+import { formatDateForDisplay, formatDateTimeForDisplay } from '../utils/dateUtils';
+
 export default function HFHistoryList({ regPatientId, patientName, onEditEventClick }) {
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
@@ -110,11 +112,7 @@ export default function HFHistoryList({ regPatientId, patientName, onEditEventCl
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-mono uppercase block">
-                    {record.assessment_date ? new Date(record.assessment_date).toLocaleDateString(undefined, {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    }) : 'N/A'}
+                    {record.assessment_date ? formatDateForDisplay(record.assessment_date) : 'N/A'}
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-800">

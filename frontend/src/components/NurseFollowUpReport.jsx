@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../api/axios';
 import {
+  formatDateForDisplay,
+  formatDateTimeForDisplay,
+  formatTimeForDisplay,
+  formatDateForDatabase
+} from '../utils/dateUtils';
+import {
   PhoneCall,
   Users,
   Clock,
@@ -50,42 +56,24 @@ export default function NurseFollowUpReport() {
 
   // Convert YYYY-MM-DD to DD-MM-YYYY (for input display)
   const toDDMMYYYY = (isoStr) => {
-    if (!isoStr) return '';
-    const clean = String(isoStr).split('T')[0];
-    const parts = clean.split('-');
-    if (parts.length === 3 && parts[0].length === 4) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-    return isoStr;
+    return formatDateForDisplay(isoStr);
   };
 
   // Convert DD-MM-YYYY or YYYY-MM-DD to YYYY-MM-DD (for comparison)
   const toYYYYMMDD = (dateStr) => {
-    if (!dateStr) return '';
-    const clean = String(dateStr).trim();
-    if (clean.includes('-') || clean.includes('/')) {
-      const sep = clean.includes('-') ? '-' : '/';
-      const parts = clean.split(sep);
-      if (parts.length === 3) {
-        if (parts[0].length === 2 && parts[2].length === 4) {
-          // DD-MM-YYYY -> YYYY-MM-DD
-          const day = parts[0].padStart(2, '0');
-          const month = parts[1].padStart(2, '0');
-          const year = parts[2];
-          return `${year}-${month}-${day}`;
-        } else if (parts[0].length === 4) {
-          // YYYY-MM-DD
-          return clean;
-        }
-      }
-    }
-    return clean;
+    return formatDateForDatabase(dateStr) || dateStr;
   };
 
   // Date Formatting Utility (DD-MM-YYYY)
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return toDDMMYYYY(dateString);
+    return formatDateForDisplay(dateString);
+  };
+
+  // Date & Time Formatting Utility (DD-MM-YYYY, HH:mm in Indian Format)
+  const formatDateTime = (dateString) => {
+    if (!dateString) return 'None Recorded';
+    return formatDateTimeForDisplay(dateString);
   };
 
   // Custom sort weight mapping for Follow-Up Intervals (lowercase & trimmed)
@@ -130,10 +118,60 @@ export default function NurseFollowUpReport() {
     return <ChevronDown className="w-3.5 h-3.5 text-blue-600 font-bold ml-1.5 inline-block shrink-0" />;
   };
 
-  // Expanded Row State (Patient ID)
-  const [expandedPatientId, setExpandedPatientId] = useState(null);
+  // Unique composite key generator for multi-registry rows
+  const getUniqueKey = (task) =>
+    `${task.reg_patient_id}-${task.registry_type || (task.source_registry?.includes('NSTEMI') ? 'NSTEMI' : 'HF')}`;
+
+  // Expanded Row State (Composite Unique Key: `${patient_id}-${registry_type}`)
+  const [expandedRowKey, setExpandedRowKey] = useState(null);
+  const [expandedHistoryKeys, setExpandedHistoryKeys] = useState({});
   const [patientLogs, setPatientLogs] = useState({});
   const [logsLoading, setLogsLoading] = useState(false);
+
+  // Toggle collapsible historical admissions
+  const toggleHistoricalLogs = (key) => {
+    setExpandedHistoryKeys((prev) => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  // Group logs into Current Episode vs Previous Historical Episodes
+  const groupLogsByEpisode = (logs) => {
+    if (!logs || logs.length === 0) return { currentEpisode: null, historicalEpisodes: [] };
+
+    const groups = {};
+
+    logs.forEach((log) => {
+      const epKey = log.episode_id 
+        || (log.registry_id ? `${log.registry_type || 'HF'}-${String(log.registry_id).padStart(2, '0')}` : 'Episode-Log');
+
+      if (!groups[epKey]) {
+        groups[epKey] = {
+          key: epKey,
+          episodeId: log.episode_id || epKey,
+          registryId: log.registry_id,
+          registryType: log.registry_type || 'HF',
+          status: log.episode_status || 'Completed',
+          isCurrent: Boolean(log.is_current_episode === 1 || log.is_current_episode === true),
+          logs: []
+        };
+      }
+      groups[epKey].logs.push(log);
+    });
+
+    const allGroups = Object.values(groups);
+
+    // Pick the current episode (explicitly flagged, or the first/latest group)
+    let currentEpisode = allGroups.find((g) => g.isCurrent);
+    if (!currentEpisode && allGroups.length > 0) {
+      currentEpisode = allGroups[0];
+    }
+
+    const historicalEpisodes = allGroups.filter((g) => g !== currentEpisode);
+
+    return { currentEpisode, historicalEpisodes };
+  };
 
   // Modal State
   const [selectedTask, setSelectedTask] = useState(null);
@@ -181,37 +219,39 @@ export default function NurseFollowUpReport() {
     fetchTasks();
   }, []);
 
-  // 2. Fetch Consolidated Patient Timeline Logs using regPatientId
-  const fetchPatientLogs = async (regPatientId) => {
+  // 2. Fetch Consolidated Patient Timeline Logs filtered by regPatientId and registryType
+  const fetchPatientLogs = async (regPatientId, registryType = 'HF') => {
     setLogsLoading(true);
+    const key = `${regPatientId}-${registryType}`;
     try {
       let response;
       try {
-        response = await api.get(`/nurse-dashboard/${regPatientId}/logs`);
+        response = await api.get(`/nurse-dashboard/${regPatientId}/logs?registry=${registryType}&registry_type=${registryType}`);
       } catch (e1) {
-        response = await api.get(`/nurse-followup-report/${regPatientId}/logs`);
+        response = await api.get(`/nurse-followup-report/${regPatientId}/logs?registry=${registryType}&registry_type=${registryType}`);
       }
       if (response.data && response.data.success) {
-        setPatientLogs((prev) => ({ ...prev, [regPatientId]: response.data.data || [] }));
+        setPatientLogs((prev) => ({ ...prev, [key]: response.data.data || [] }));
       } else {
-        setPatientLogs((prev) => ({ ...prev, [regPatientId]: [] }));
+        setPatientLogs((prev) => ({ ...prev, [key]: [] }));
       }
     } catch (err) {
-      console.error(`Error fetching timeline logs for patient ${regPatientId}:`, err);
-      setPatientLogs((prev) => ({ ...prev, [regPatientId]: [] }));
+      console.error(`Error fetching timeline logs for patient ${regPatientId} (${registryType}):`, err);
+      setPatientLogs((prev) => ({ ...prev, [key]: [] }));
     } finally {
       setLogsLoading(false);
     }
   };
 
   const toggleExpandRow = (task) => {
-    const pid = task.reg_patient_id;
-    if (expandedPatientId === pid) {
-      setExpandedPatientId(null);
+    const key = getUniqueKey(task);
+    const registryType = task.registry_type || (task.source_registry?.includes('NSTEMI') ? 'NSTEMI' : 'HF');
+    if (expandedRowKey === key) {
+      setExpandedRowKey(null);
     } else {
-      setExpandedPatientId(pid);
-      if (!patientLogs[pid]) {
-        fetchPatientLogs(pid);
+      setExpandedRowKey(key);
+      if (!patientLogs[key]) {
+        fetchPatientLogs(task.reg_patient_id, registryType);
       }
     }
   };
@@ -321,30 +361,40 @@ export default function NurseFollowUpReport() {
     if (!selectedTask) return;
 
     setSubmitting(true);
+    const payload = {
+      reg_patient_id: selectedTask.reg_patient_id,
+      task_id: selectedTask.task_id,
+      registry_type: selectedTask.registry_type || (selectedTask.source_registry?.includes('NSTEMI') ? 'NSTEMI' : 'HF'),
+      source_registry: selectedTask.source_registry,
+      source_record_id: selectedTask.source_record_id,
+      timeframe: selectedTask.timeframe,
+      visit_mode: selectedTask.visit_mode,
+      ...formData
+    };
+
     try {
       let response;
       try {
-        response = await api.post(`/nurse-dashboard/tasks/${selectedTask.task_id}/log`, {
-          reg_patient_id: selectedTask.reg_patient_id,
-          ...formData
-        });
+        response = await api.post(`/nurse-dashboard/tasks/${selectedTask.task_id}/log`, payload);
       } catch (e1) {
-        response = await api.post(`/nurse-followup-report/tasks/${selectedTask.task_id}/log`, {
-          reg_patient_id: selectedTask.reg_patient_id,
-          ...formData
-        });
+        response = await api.post(`/nurse-followup-report/tasks/${selectedTask.task_id}/log`, payload);
       }
 
       if (response.data && response.data.success) {
         setIsModalOpen(false);
         await fetchTasks();
-        if (expandedPatientId === selectedTask.reg_patient_id) {
-          await fetchPatientLogs(selectedTask.reg_patient_id);
+        const key = getUniqueKey(selectedTask);
+        const regType = selectedTask.registry_type || (selectedTask.source_registry?.includes('NSTEMI') ? 'NSTEMI' : 'HF');
+        if (expandedRowKey === key) {
+          await fetchPatientLogs(selectedTask.reg_patient_id, regType);
         }
+      } else {
+        throw new Error(response.data?.message || response.data?.error || 'Failed to save outreach record.');
       }
     } catch (err) {
-      console.error('Error submitting outreach log:', err);
-      alert(err.response?.data?.message || 'Failed to submit outreach log.');
+      console.error('Error submitting outreach log for', selectedTask, err);
+      const detailedError = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to record outreach log.';
+      alert(`Outreach Save Error: ${detailedError}`);
     } finally {
       setSubmitting(false);
     }
@@ -723,28 +773,31 @@ export default function NurseFollowUpReport() {
               </thead>
               <tbody className="divide-y divide-slate-200 text-xs">
                 {filteredTasks.map((task) => {
-                  const isExpanded = expandedPatientId === task.reg_patient_id;
+                  const uniqueKey = getUniqueKey(task);
+                  const isExpanded = expandedRowKey === uniqueKey;
                   const formattedDate = formatDate(task.target_date);
 
                   // Flexible boolean/bit evaluator for SQL fields
                   const isTrue = (val) => val === 1 || val === '1' || val === true || val === 'true' || val === 'Yes';
 
-                  // Dynamic extraction of pre-visit diagnostics from DB fields
+                  // Dynamic extraction of pre-visit diagnostics from DB fields (only for HF / registries with pre-visit investigations)
                   const diagnostics = [];
-                  if (isTrue(task.investigation_serum_lytes) || isTrue(task.investigation_electrolytes_creatinine)) {
-                    diagnostics.push('Serum Potassium & Creatinine');
-                  }
-                  if (isTrue(task.investigation_bnp_ntprobnp) || isTrue(task.investigation_bnp)) {
-                    diagnostics.push('NT-proBNP / BNP');
-                  }
-                  if (isTrue(task.investigation_echo) || isTrue(task.investigation_repeat_echo)) {
-                    diagnostics.push('Repeat Echo');
-                  }
-                  if (isTrue(task.investigation_ecg) || isTrue(task.investigation_12lead_ecg)) {
-                    diagnostics.push('12-Lead ECG');
-                  }
-                  if (isTrue(task.investigation_6mw_test) || isTrue(task.investigation_6mwt)) {
-                    diagnostics.push('6-MWT');
+                  if (task.registry_type !== 'NSTEMI') {
+                    if (isTrue(task.investigation_serum_lytes) || isTrue(task.investigation_electrolytes_creatinine)) {
+                      diagnostics.push('Serum Potassium & Creatinine');
+                    }
+                    if (isTrue(task.investigation_bnp_ntprobnp) || isTrue(task.investigation_bnp)) {
+                      diagnostics.push('NT-proBNP / BNP');
+                    }
+                    if (isTrue(task.investigation_echo) || isTrue(task.investigation_repeat_echo)) {
+                      diagnostics.push('Repeat Echo');
+                    }
+                    if (isTrue(task.investigation_ecg) || isTrue(task.investigation_12lead_ecg)) {
+                      diagnostics.push('12-Lead ECG');
+                    }
+                    if (isTrue(task.investigation_6mw_test) || isTrue(task.investigation_6mwt)) {
+                      diagnostics.push('6-MWT');
+                    }
                   }
 
                   const rowKey = task.task_id ? `task-row-${task.task_id}` : `patient-row-${task.reg_patient_id || task.mr_no}`;
@@ -789,15 +842,23 @@ export default function NurseFollowUpReport() {
 
                         {/* 3. Target Date & Visit Mode */}
                         <td className="py-4 px-4 align-top">
-                          <div className="space-y-0.5">
+                          <div className="space-y-1">
                             <div className="font-extrabold text-slate-900 text-xs">
                               {formattedDate}
                             </div>
                             <div className="text-slate-600 font-bold text-[11px]">
                               {task.visit_mode || 'In-Person Clinic Visit'}
                             </div>
-                            <div className="text-slate-400 font-semibold text-[10px]">
-                              {task.clinic_location || 'CARE Heart Institute'}
+                            <div className="pt-0.5">
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border tracking-wide uppercase ${
+                                (task.registry_type || task.source_registry) === 'NSTEMI'
+                                  ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                  : (task.registry_type || task.source_registry) === 'STEMI'
+                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                  : 'bg-blue-50 text-blue-700 border-blue-200'
+                              }`}>
+                                {task.registry_type || task.source_registry || 'HF'}
+                              </span>
                             </div>
                           </div>
                         </td>
@@ -872,7 +933,7 @@ export default function NurseFollowUpReport() {
                                 <div className="flex items-center gap-2">
                                   <ClipboardList className="w-5 h-5 text-blue-600" />
                                   <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                                    SECTION 11: PATIENT FOLLOW-UP & CONSOLIDATED HISTORY AUDIT
+                                     PATIENT FOLLOW-UP & CONSOLIDATED HISTORY AUDIT
                                   </h3>
                                 </div>
                                 <span className="text-[11px] font-bold text-slate-400">
@@ -952,7 +1013,7 @@ export default function NurseFollowUpReport() {
                                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
                                       <div className="flex justify-between items-center text-slate-600 font-semibold">
                                         <span>Assigned Nurse: <strong className="text-slate-800">{task.assigned_nurse || 'Unassigned'}</strong></span>
-                                        <span>Last Contact: {task.last_contact_date ? String(task.last_contact_date).split('T')[0] : 'None Recorded'}</span>
+                                        <span>Last Contact: {task.last_contact_date ? formatDateTime(task.last_contact_date) : 'None Recorded'}</span>
                                       </div>
                                       <div className="text-slate-700 italic bg-white p-2.5 rounded-lg border border-slate-200">
                                         "{task.nurse_notes || 'No outreach notes recorded yet.'}"
@@ -960,58 +1021,167 @@ export default function NurseFollowUpReport() {
                                     </div>
                                   </div>
 
-                                  {/* Consolidated Patient Timeline Logs List */}
-                                  <div className="pt-2 border-t border-slate-200 space-y-2">
-                                    <span className="block text-[10px] font-black uppercase tracking-wider text-slate-500">
-                                      CONSOLIDATED PATIENT HISTORY & OUTREACH TIMELINE
-                                    </span>
+                                  {/* Consolidated Patient Outreach Timeline Logs List */}
+                                  <div className="pt-2 border-t border-slate-200 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <span className="block text-[10px] font-black uppercase tracking-wider text-slate-500">
+                                        NURSE OUTREACH TIMELINE & CALL HISTORY
+                                      </span>
+                                      {(patientLogs[uniqueKey] || []).length > 0 && (
+                                        <span className="text-[10px] font-bold text-slate-400">
+                                          {(patientLogs[uniqueKey] || []).length} Total Log{(patientLogs[uniqueKey] || []).length !== 1 ? 's' : ''}
+                                        </span>
+                                      )}
+                                    </div>
+
                                     {logsLoading ? (
-                                      <p className="text-[11px] text-slate-400 animate-pulse">Loading patient timeline history...</p>
-                                    ) : (patientLogs[task.reg_patient_id] || []).length === 0 ? (
-                                      <p className="text-[11px] text-slate-400 italic">No prior outreach logs or historical forms recorded.</p>
-                                    ) : (
-                                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                                        {(patientLogs[task.reg_patient_id] || []).map((log, index) => {
-                                          const isSystem = log.contact_mode === 'System Generated Form' || log.log_type === 'System Generated Form';
-                                          return (
-                                            <div
-                                              key={log.log_id || index}
-                                              className={`p-3 rounded-xl border text-[11px] space-y-1.5 transition-all ${
-                                                isSystem
-                                                  ? 'bg-purple-50/60 border-purple-200'
-                                                  : 'bg-white border-slate-200 shadow-2xs'
-                                              }`}
-                                            >
-                                              <div className="flex items-center justify-between font-bold text-slate-800">
-                                                <div className="flex items-center gap-1.5">
-                                                  <span
-                                                    className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
-                                                      isSystem
-                                                        ? 'bg-purple-100 text-purple-800 border border-purple-300'
-                                                        : 'bg-blue-100 text-blue-800 border border-blue-300'
-                                                    }`}
-                                                  >
-                                                    {isSystem ? 'System Generated Form' : 'Nurse Outreach'}
+                                      <p className="text-[11px] text-slate-400 animate-pulse">Loading patient outreach logs...</p>
+                                    ) : (patientLogs[uniqueKey] || []).length === 0 ? (
+                                      <p className="text-[11px] text-slate-400 italic">No prior nurse outreach logs recorded for this registry pathway.</p>
+                                    ) : (() => {
+                                      const { currentEpisode, historicalEpisodes } = groupLogsByEpisode(patientLogs[uniqueKey] || []);
+                                      const isHistoryOpen = expandedHistoryKeys[uniqueKey] ?? false;
+                                      const totalHistoricalLogs = historicalEpisodes.reduce((acc, ep) => acc + ep.logs.length, 0);
+
+                                      const renderLogCard = (log, index, isCurrent) => {
+                                        const episodeTag = log.episode_id || (log.registry_id ? `${log.registry_type || 'HF'}-${String(log.registry_id).padStart(2, '0')}` : 'Episode');
+                                        const statusText = log.episode_status || 'Completed';
+
+                                        return (
+                                          <div
+                                            key={log.log_id || index}
+                                            className={`p-3 rounded-xl border text-[11px] space-y-1.5 transition-all ${
+                                              isCurrent
+                                                ? 'bg-white border-blue-200/90 shadow-2xs hover:border-blue-300'
+                                                : 'bg-slate-50/90 border-slate-200 text-slate-700 hover:border-slate-300'
+                                            }`}
+                                          >
+                                            <div className="flex items-center justify-between font-bold text-slate-800 flex-wrap gap-1">
+                                              <div className="flex items-center gap-1.5 flex-wrap">
+                                                {/* Contact Mode Badge */}
+                                                <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-300">
+                                                  {log.contact_mode || 'Phone Call'}
+                                                </span>
+
+                                                {/* Episode ID & Status Badge */}
+                                                <span
+                                                  className={`px-2 py-0.5 rounded text-[9px] font-bold tracking-wider border flex items-center gap-1 ${
+                                                    isCurrent
+                                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                                      : 'bg-slate-200 text-slate-700 border-slate-300'
+                                                  }`}
+                                                >
+                                                  <span>{episodeTag} | {statusText}</span>
+                                                </span>
+
+                                                <span className="text-slate-700 font-semibold">{log.nurse_name || 'Staff Nurse'}</span>
+                                              </div>
+
+                                              {/* Timestamp in Indian Format */}
+                                              <span className="text-slate-400 font-semibold text-[10px] font-mono">
+                                                {log.contact_date ? formatDateTime(log.created_at || log.contact_date) : ''}
+                                              </span>
+                                            </div>
+
+                                            <div className={`font-black text-xs ${isCurrent ? 'text-blue-700' : 'text-slate-800'}`}>
+                                              {log.outcome}
+                                            </div>
+
+                                            {log.symptoms_status && log.symptoms_status !== 'N/A' && (
+                                              <div className="text-slate-600 text-[10px] flex items-center gap-1">
+                                                <span className="font-bold text-slate-500">Symptoms:</span> {log.symptoms_status}
+                                              </div>
+                                            )}
+
+                                            {log.notes && (
+                                              <div className={`text-slate-600 text-[11px] leading-relaxed p-2 rounded-lg border ${
+                                                isCurrent ? 'bg-slate-50/80 border-slate-100' : 'bg-white/80 border-slate-200/80'
+                                              }`}>
+                                                {log.notes}
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      };
+
+                                      return (
+                                        <div className="space-y-3">
+                                          {/* Section 1: Current Episode (Active Admission) */}
+                                          {currentEpisode && (
+                                            <div className="border-2 border-blue-400/80 bg-blue-50/20 rounded-xl p-3 space-y-2.5 shadow-2xs">
+                                              <div className="flex items-center justify-between pb-1.5 border-b border-blue-200/60">
+                                                <div className="flex items-center gap-2">
+                                                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                  <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                                                    Current Episode: {currentEpisode.episodeId}
                                                   </span>
-                                                  <span>{log.contact_mode} • {log.nurse_name}</span>
+                                                  <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                                    {currentEpisode.status || 'Active'}
+                                                  </span>
                                                 </div>
-                                                <span className="text-slate-400 font-semibold">
-                                                  {log.contact_date ? String(log.contact_date).split('T')[0] : ''}
+                                                <span className="text-[10px] font-bold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-full border border-blue-200">
+                                                  {currentEpisode.logs.length} Recent Log{currentEpisode.logs.length !== 1 ? 's' : ''}
                                                 </span>
                                               </div>
-                                              <div className={`font-black ${isSystem ? 'text-purple-900' : 'text-blue-700'}`}>
-                                                {log.outcome}
+
+                                              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                                                {currentEpisode.logs.map((log, index) => renderLogCard(log, index, true))}
                                               </div>
-                                              {log.notes && (
-                                                <div className="text-slate-600 text-[11px] leading-relaxed">
-                                                  {log.notes}
+                                            </div>
+                                          )}
+
+                                          {/* Section 2: Previous Episodes (Collapsible Muted Accordion) */}
+                                          {historicalEpisodes.length > 0 && (
+                                            <div className="border border-slate-200/90 bg-slate-50/80 rounded-xl overflow-hidden shadow-2xs">
+                                              <button
+                                                type="button"
+                                                onClick={() => toggleHistoricalLogs(uniqueKey)}
+                                                className="w-full flex items-center justify-between p-2.5 bg-slate-100/90 hover:bg-slate-200/80 text-left transition-colors cursor-pointer"
+                                              >
+                                                <div className="flex items-center gap-2">
+                                                  <Clock className="w-3.5 h-3.5 text-slate-500" />
+                                                  <span className="text-xs font-bold text-slate-700">
+                                                    Previous Admission Logs
+                                                  </span>
+                                                  <span className="px-2 py-0.5 bg-slate-200 text-slate-700 border border-slate-300 text-[9px] font-extrabold rounded-full">
+                                                    {totalHistoricalLogs} Log{totalHistoricalLogs !== 1 ? 's' : ''} across {historicalEpisodes.length} Past Episode{historicalEpisodes.length !== 1 ? 's' : ''}
+                                                  </span>
+                                                </div>
+                                                <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-500">
+                                                  <span>{isHistoryOpen ? 'Hide Past Episodes' : 'Show Past Episodes'}</span>
+                                                  {isHistoryOpen ? <ChevronUp className="w-4 h-4 text-slate-600" /> : <ChevronDown className="w-4 h-4 text-slate-600" />}
+                                                </div>
+                                              </button>
+
+                                              {isHistoryOpen && (
+                                                <div className="p-3 space-y-3 max-h-60 overflow-y-auto border-t border-slate-200 divide-y divide-slate-200/60">
+                                                  {historicalEpisodes.map((episodeGroup) => (
+                                                    <div key={episodeGroup.key} className="pt-2.5 first:pt-0 space-y-2">
+                                                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 px-0.5">
+                                                        <div className="flex items-center gap-1.5">
+                                                          <span className="text-slate-400 font-normal">📁</span>
+                                                          <span className="text-slate-800 font-extrabold">Episode {episodeGroup.episodeId}</span>
+                                                          <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase bg-slate-200 text-slate-700 border border-slate-300">
+                                                            {episodeGroup.status || 'Completed'}
+                                                          </span>
+                                                        </div>
+                                                        <span className="text-[10px] text-slate-400 font-mono">
+                                                          {episodeGroup.logs.length} Log{episodeGroup.logs.length !== 1 ? 's' : ''}
+                                                        </span>
+                                                      </div>
+
+                                                      <div className="space-y-1.5 pl-2 border-l-2 border-slate-300/70">
+                                                        {episodeGroup.logs.map((log, index) => renderLogCard(log, index, false))}
+                                                      </div>
+                                                    </div>
+                                                  ))}
                                                 </div>
                                               )}
                                             </div>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
+                                          )}
+                                        </div>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
                               </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Loader2, ArrowUpRight, Trash2, Play, RotateCcw } from 'lucide-react';
 import api from '../../api/axios';
+import { formatDateForDisplay, formatDateTimeForDisplay } from '../utils/dateUtils';
 
 export default function NSTEMIHistoryList({ regPatientId, patientName, onEditEventClick }) {
   const navigate = useNavigate();
@@ -111,11 +112,7 @@ export default function NSTEMIHistoryList({ regPatientId, patientName, onEditEve
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-mono uppercase block">
-                    {record.admission_date ? new Date(record.admission_date).toLocaleDateString(undefined, {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    }) : 'N/A'}
+                    {record.admission_date ? formatDateForDisplay(record.admission_date) : 'N/A'}
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-800">

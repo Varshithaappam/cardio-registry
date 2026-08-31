@@ -25,19 +25,23 @@ function generateIPNumber(regPatientId) {
 async function registerPatient(patientData, userId = 1) {
     const normalizedData = normalizePatientInput(patientData);
 
-    let mr_no = normalizedData.mr_no;
-    if (mr_no) {
-        // Validate uniqueness of user-entered MR No
-        const { recordset: existingMr } = await db.query(
-            'SELECT [reg_patient_id] FROM [patient_demographics] WHERE [mr_no] = @mr_no;',
-            { mr_no }
-        );
-        if (existingMr.length > 0) {
-            const error = new Error(`A patient with MR Number "${mr_no}" already exists.`);
-            error.status = 409;
-            error.code = 2627;
-            throw error;
-        }
+    const mr_no = normalizedData.mr_no;
+    if (!mr_no) {
+        const error = new Error("MR Number (mr_no) is required.");
+        error.status = 400;
+        throw error;
+    }
+
+    // Validate uniqueness of user-entered MR No
+    const { recordset: existingMr } = await db.query(
+        'SELECT [reg_patient_id] FROM [patient_demographics] WHERE [mr_no] = @mr_no;',
+        { mr_no }
+    );
+    if (existingMr.length > 0) {
+        const error = new Error(`A patient with MR Number "${mr_no}" already exists.`);
+        error.status = 409;
+        error.code = 2627;
+        throw error;
     }
 
     console.log("Registering patient:", {
@@ -50,14 +54,11 @@ async function registerPatient(patientData, userId = 1) {
 
     const result = await patientModel.createPatient({
         ...normalizedData,
-        mr_no: mr_no || null,
+        mr_no: mr_no,
         ip_no: normalizedData.ip_no || null
     });
 
     const regPatientId = result.recordset[0].reg_patient_id;
-    if (!mr_no) {
-        mr_no = generateMRNumber(regPatientId);
-    }
     const ip_no = normalizedData.ip_no || generateIPNumber(regPatientId);
 
     await patientModel.updatePatientNumbers(

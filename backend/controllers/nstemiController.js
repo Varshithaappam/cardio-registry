@@ -557,14 +557,67 @@ async function createNstemiRecord(req, res) {
     // ==========================================
     // TABLE 8: nstemi_followup (4 rows)
     // ==========================================
-    const followupRows = req.body.followup || [];
-    for (const row of followupRows) {
+    const visitMode = val('visit_mode', null) || (req.body.followup?.[0]?.visit_mode ?? 'In-Person');
+    const specialInstructions = val('special_instructions', null) || val('special_clinical_instructions', null) || (req.body.followup?.[0]?.special_instructions ?? '');
+    const baseDate = val('discharge_date', null) || val('admission_date', null);
+
+    const monthMap = {
+      '1-Month': 1, '1-month': 1, '1m': 1,
+      '3-Month': 3, '3-month': 3, '3m': 3,
+      '6-Month': 6, '6-month': 6, '6m': 6,
+      '12-Month': 12, '12-month': 12, '12m': 12
+    };
+
+    const calculateBackendExpectedDate = (baseDateStr, months) => {
+      if (!baseDateStr || !months) return null;
+      try {
+        const d = new Date(baseDateStr);
+        if (isNaN(d.getTime())) return null;
+        d.setMonth(d.getMonth() + months);
+        if (d.getDay() === 0) d.setDate(d.getDate() + 1);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const STANDARD_TIMEFRAMES = [
+      { key: '1m', label: '1-Month', months: 1 },
+      { key: '3m', label: '3-Month', months: 3 },
+      { key: '6m', label: '6-Month', months: 6 },
+      { key: '12m', label: '12-Month', months: 12 }
+    ];
+
+    const rawFollowupRows = Array.isArray(req.body.followup)
+      ? req.body.followup
+      : typeof req.body.followup === 'object' && req.body.followup !== null
+      ? Object.values(req.body.followup)
+      : [];
+
+    const followupMap = {};
+    rawFollowupRows.forEach(r => {
+      if (r && r.followup_month) {
+        followupMap[r.followup_month] = r;
+      }
+    });
+
+    const regPid = parseInt(val('reg_patient_id', 1), 10);
+    const baseFollowupDate = discharge_date || admission_date;
+
+    for (const tf of STANDARD_TIMEFRAMES) {
+      const row = followupMap[tf.label] || {};
+      const followupMonth = tf.label;
+
       const reqFollowup = new sql.Request(transaction);
       reqFollowup.input('nstemi_id', sql.Int, nstemi_id);
-      reqFollowup.input('followup_month', sql.NVarChar(50), row.followup_month);
+      reqFollowup.input('reg_patient_id', sql.Int, regPid);
+      reqFollowup.input('followup_month', sql.NVarChar(50), followupMonth);
       reqFollowup.input('angina', sql.VarChar(50), row.angina || 'No');
-      reqFollowup.input('functional_class', sql.VarChar(50), row.functional_class || 'I');
-      reqFollowup.input('number_of_antianginals', sql.Int, row.number_of_antianginals !== undefined && row.number_of_antianginals !== null && row.number_of_antianginals !== '' ? parseInt(row.number_of_antianginals) : null);
+      reqFollowup.input('functional_class', sql.VarChar(50), row.functional_class || 'None');
+      reqFollowup.input('number_of_antianginals', sql.Int, row.number_of_antianginals !== undefined && row.number_of_antianginals !== null && row.number_of_antianginals !== '' ? parseInt(row.number_of_antianginals, 10) : null);
       reqFollowup.input('dual_antiplatelets', sql.NVarChar(50), row.dual_antiplatelets || 'No');
       reqFollowup.input('statins', sql.NVarChar(50), row.statins || 'No');
       reqFollowup.input('beta_blocker', sql.NVarChar(50), row.beta_blocker || 'No');
@@ -575,17 +628,99 @@ async function createNstemiRecord(req, res) {
       reqFollowup.input('cabg', sql.NVarChar(50), row.cabg || 'No');
       reqFollowup.input('death', sql.NVarChar(50), row.death || 'No');
       reqFollowup.input('other_event', sql.NVarChar(255), row.other_event || '');
+      reqFollowup.input('visit_mode', sql.VarChar(50), row.visit_mode || val('visit_mode', null) || 'In-Person');
+      reqFollowup.input('special_instructions', sql.NVarChar(500), row.special_instructions !== undefined && row.special_instructions !== null && row.special_instructions !== '' ? row.special_instructions : (val('special_instructions', null) || val('special_clinical_instructions', null) || 'Follow-up in cardiology OPD with repeat lipid profile and ECG.'));
+
+      let finalFollowupDate = row.followup_date;
+      if (!finalFollowupDate && baseFollowupDate) {
+        finalFollowupDate = calculateBackendExpectedDate(baseFollowupDate, tf.months);
+      }
+      if (typeof finalFollowupDate === 'string') {
+        finalFollowupDate = finalFollowupDate.trim();
+        if (finalFollowupDate.includes('T')) finalFollowupDate = finalFollowupDate.split('T')[0];
+        if (finalFollowupDate === '' || finalFollowupDate === 'null' || finalFollowupDate === 'undefined') {
+          finalFollowupDate = null;
+        }
+      }
+      reqFollowup.input('followup_date', sql.Date, finalFollowupDate ? new Date(finalFollowupDate) : null);
 
       await reqFollowup.query(`
-        INSERT INTO [nstemi_followup] (
-          [nstemi_id], [followup_month], [angina], [functional_class], [number_of_antianginals],
-          [dual_antiplatelets], [statins], [beta_blocker], [acei_arb], [aldosterone_antagonist],
-          [acs_hospitalization], [ptca], [cabg], [death], [other_event]
-        ) VALUES (
-          @nstemi_id, @followup_month, @angina, @functional_class, @number_of_antianginals,
-          @dual_antiplatelets, @statins, @beta_blocker, @acei_arb, @aldosterone_antagonist,
-          @acs_hospitalization, @ptca, @cabg, @death, @other_event
-        );
+        -- 1. UPSERT into nstemi_followup
+        IF EXISTS (
+          SELECT 1 FROM [nstemi_followup] 
+          WHERE [nstemi_id] = @nstemi_id AND [followup_month] = @followup_month
+        )
+        BEGIN
+          UPDATE [nstemi_followup]
+          SET
+            [followup_date] = @followup_date,
+            [angina] = @angina,
+            [functional_class] = @functional_class,
+            [number_of_antianginals] = @number_of_antianginals,
+            [dual_antiplatelets] = @dual_antiplatelets,
+            [statins] = @statins,
+            [beta_blocker] = @beta_blocker,
+            [acei_arb] = @acei_arb,
+            [aldosterone_antagonist] = @aldosterone_antagonist,
+            [acs_hospitalization] = @acs_hospitalization,
+            [ptca] = @ptca,
+            [cabg] = @cabg,
+            [death] = @death,
+            [other_event] = @other_event,
+            [visit_mode] = @visit_mode,
+            [special_instructions] = @special_instructions,
+            [updated_at] = GETDATE()
+          WHERE [nstemi_id] = @nstemi_id AND [followup_month] = @followup_month;
+        END
+        ELSE
+        BEGIN
+          INSERT INTO [nstemi_followup] (
+            [nstemi_id], [followup_month], [followup_date], [angina], [functional_class], [number_of_antianginals],
+            [dual_antiplatelets], [statins], [beta_blocker], [acei_arb], [aldosterone_antagonist],
+            [acs_hospitalization], [ptca], [cabg], [death], [other_event],
+            [visit_mode], [special_instructions], [created_at], [updated_at]
+          ) VALUES (
+            @nstemi_id, @followup_month, @followup_date, @angina, @functional_class, @number_of_antianginals,
+            @dual_antiplatelets, @statins, @beta_blocker, @acei_arb, @aldosterone_antagonist,
+            @acs_hospitalization, @ptca, @cabg, @death, @other_event,
+            @visit_mode, @special_instructions, GETDATE(), GETDATE()
+          );
+        END
+
+        -- 2. Synchronize into patient_followup_tasks checking both patientId and timeframe
+        IF EXISTS (
+          SELECT 1 FROM [patient_followup_tasks]
+          WHERE [reg_patient_id] = @reg_patient_id AND [timeframe] = @followup_month AND [source_registry] = 'NSTEMI Registry'
+        )
+        BEGIN
+          UPDATE [patient_followup_tasks]
+          SET
+            [target_date] = @followup_date,
+            [visit_mode] = @visit_mode,
+            [special_instructions] = @special_instructions,
+            [source_record_id] = @nstemi_id,
+            [updated_at] = GETDATE()
+          WHERE [reg_patient_id] = @reg_patient_id AND [timeframe] = @followup_month AND [source_registry] = 'NSTEMI Registry';
+        END
+        ELSE
+        BEGIN
+          SET IDENTITY_INSERT [patient_followup_tasks] ON;
+
+          DECLARE @nextTaskId INT;
+          SELECT @nextTaskId = ISNULL(MAX(task_id), 0) + 1 FROM [patient_followup_tasks] WITH (TABLOCKX, HOLDLOCK);
+
+          INSERT INTO [patient_followup_tasks] (
+            [task_id], [reg_patient_id], [source_registry], [source_record_id], [is_followup_required],
+            [timeframe], [target_date], [clinic_location], [visit_mode], [special_instructions],
+            [status], [created_at], [updated_at]
+          ) VALUES (
+            @nextTaskId, @reg_patient_id, 'NSTEMI Registry', @nstemi_id, 'Yes',
+            @followup_month, @followup_date, 'CARE Heart Institute', @visit_mode, @special_instructions,
+            'Required', GETDATE(), GETDATE()
+          );
+
+          SET IDENTITY_INSERT [patient_followup_tasks] OFF;
+        END
       `);
     }
 
@@ -748,8 +883,37 @@ async function getNstemiRecord(req, res) {
     // Query follow-up matrix rows separately
     const resultFollowup = await pool.request()
       .input('nstemi_id', sql.Int, nstemi_id)
-      .query(`SELECT * FROM [nstemi_followup] WHERE [nstemi_id] = @nstemi_id`);
-    merged.followup = resultFollowup.recordset;
+      .query(`SELECT * FROM [nstemi_followup] WHERE [nstemi_id] = @nstemi_id ORDER BY [followup_id] ASC`);
+    
+    merged.followup = (resultFollowup.recordset || []).map(r => {
+      const formatDate = (val) => {
+        if (!val) return null;
+        if (val instanceof Date) {
+          const year = val.getUTCFullYear();
+          const month = String(val.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(val.getUTCDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        }
+        if (typeof val === 'string') {
+          if (val.includes('T')) return val.split('T')[0];
+          const match = val.match(/^(\d{4}-\d{2}-\d{2})/);
+          if (match) return match[1];
+        }
+        return val;
+      };
+      return {
+        ...r,
+        followup_date: formatDate(r.followup_date)
+      };
+    });
+
+    // Attach latest visit_mode and special_instructions from nstemi_followup rows
+    if (merged.followup && merged.followup.length > 0) {
+      const rowWithVisitMode = merged.followup.find(r => r.visit_mode) || merged.followup[0];
+      const rowWithInstructions = merged.followup.find(r => r.special_instructions) || merged.followup[0];
+      merged.visit_mode = rowWithVisitMode?.visit_mode || 'In-Person';
+      merged.special_instructions = rowWithInstructions?.special_instructions || '';
+    }
 
     return res.status(200).json({
       success: true,
@@ -805,7 +969,14 @@ async function undeleteNstemiRecord(req, res) {
 }
 
 async function updateNstemiRecord(req, res) {
-  const nstemi_id = req.params.id;
+  const nstemi_id = Number(req.params.id || req.body.nstemi_id || req.body.id);
+  if (!nstemi_id || isNaN(nstemi_id)) {
+    return res.status(400).json({
+      success: false,
+      message: 'A valid NSTEMI ID is required to update the record.'
+    });
+  }
+
   let transaction;
   try {
     const payload = req.body || {};
@@ -844,6 +1015,19 @@ async function updateNstemiRecord(req, res) {
     const pool = await getPool();
     transaction = new sql.Transaction(pool);
     await transaction.begin(sql.ISOLATION_LEVEL.READ_COMMITTED);
+
+    // Verify record exists before modifying
+    const checkResult = await transaction.request()
+      .input('nstemi_id', sql.Int, nstemi_id)
+      .query(`SELECT [nstemi_id] FROM [nstemi_registry] WHERE [nstemi_id] = @nstemi_id;`);
+
+    if (checkResult.recordset.length === 0) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        message: `NSTEMI record with ID ${nstemi_id} was not found.`
+      });
+    }
 
     // 1. UPDATE nstemi_registry
     const reqRegistry = new sql.Request(transaction);
@@ -1309,19 +1493,68 @@ async function updateNstemiRecord(req, res) {
       WHERE [nstemi_id] = @nstemi_id;
     `);
 
-    // 8. UPDATE nstemi_followup (DELETE and RE-INSERT)
-    const reqDelFollowup = new sql.Request(transaction);
-    reqDelFollowup.input('nstemi_id', sql.Int, nstemi_id);
-    await reqDelFollowup.query(`DELETE FROM [nstemi_followup] WHERE [nstemi_id] = @nstemi_id`);
+    // 8. UPDATE nstemi_followup (UPSERT: Update existing interval rows or Insert new ones without deleting)
+    const visitMode = val('visit_mode', null) || (req.body.followup?.[0]?.visit_mode ?? 'In-Person');
+    const specialInstructions = val('special_instructions', null) || val('special_clinical_instructions', null) || (req.body.followup?.[0]?.special_instructions ?? '');
+    const baseDate = val('discharge_date', null) || val('admission_date', null);
 
-    const followupRows = req.body.followup || [];
-    for (const row of followupRows) {
+    const monthMap = {
+      '1-Month': 1, '1-month': 1, '1m': 1,
+      '3-Month': 3, '3-month': 3, '3m': 3,
+      '6-Month': 6, '6-month': 6, '6m': 6,
+      '12-Month': 12, '12-month': 12, '12m': 12
+    };
+
+    const calculateBackendExpectedDate = (baseDateStr, months) => {
+      if (!baseDateStr || !months) return null;
+      try {
+        const d = new Date(baseDateStr);
+        if (isNaN(d.getTime())) return null;
+        d.setMonth(d.getMonth() + months);
+        if (d.getDay() === 0) d.setDate(d.getDate() + 1);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const STANDARD_TIMEFRAMES = [
+      { key: '1m', label: '1-Month', months: 1 },
+      { key: '3m', label: '3-Month', months: 3 },
+      { key: '6m', label: '6-Month', months: 6 },
+      { key: '12m', label: '12-Month', months: 12 }
+    ];
+
+    const rawFollowupRows = Array.isArray(req.body.followup)
+      ? req.body.followup
+      : typeof req.body.followup === 'object' && req.body.followup !== null
+      ? Object.values(req.body.followup)
+      : [];
+
+    const followupMap = {};
+    rawFollowupRows.forEach(r => {
+      if (r && r.followup_month) {
+        followupMap[r.followup_month] = r;
+      }
+    });
+
+    const regPid = parseInt(val('reg_patient_id', 1), 10);
+    const baseFollowupDate = discharge_date || admission_date;
+
+    for (const tf of STANDARD_TIMEFRAMES) {
+      const row = followupMap[tf.label] || {};
+      const followupMonth = tf.label;
+
       const reqFollowup = new sql.Request(transaction);
       reqFollowup.input('nstemi_id', sql.Int, nstemi_id);
-      reqFollowup.input('followup_month', sql.NVarChar(50), row.followup_month);
+      reqFollowup.input('reg_patient_id', sql.Int, regPid);
+      reqFollowup.input('followup_month', sql.NVarChar(50), followupMonth);
       reqFollowup.input('angina', sql.VarChar(50), row.angina || 'No');
-      reqFollowup.input('functional_class', sql.VarChar(50), row.functional_class || 'I');
-      reqFollowup.input('number_of_antianginals', sql.Int, row.number_of_antianginals !== undefined && row.number_of_antianginals !== null && row.number_of_antianginals !== '' ? parseInt(row.number_of_antianginals) : null);
+      reqFollowup.input('functional_class', sql.VarChar(50), row.functional_class || 'None');
+      reqFollowup.input('number_of_antianginals', sql.Int, row.number_of_antianginals !== undefined && row.number_of_antianginals !== null && row.number_of_antianginals !== '' ? parseInt(row.number_of_antianginals, 10) : null);
       reqFollowup.input('dual_antiplatelets', sql.NVarChar(50), row.dual_antiplatelets || 'No');
       reqFollowup.input('statins', sql.NVarChar(50), row.statins || 'No');
       reqFollowup.input('beta_blocker', sql.NVarChar(50), row.beta_blocker || 'No');
@@ -1332,17 +1565,99 @@ async function updateNstemiRecord(req, res) {
       reqFollowup.input('cabg', sql.NVarChar(50), row.cabg || 'No');
       reqFollowup.input('death', sql.NVarChar(50), row.death || 'No');
       reqFollowup.input('other_event', sql.NVarChar(255), row.other_event || '');
+      reqFollowup.input('visit_mode', sql.VarChar(50), row.visit_mode || val('visit_mode', null) || 'In-Person');
+      reqFollowup.input('special_instructions', sql.NVarChar(500), row.special_instructions !== undefined && row.special_instructions !== null && row.special_instructions !== '' ? row.special_instructions : (val('special_instructions', null) || val('special_clinical_instructions', null) || 'Follow-up in cardiology OPD with repeat lipid profile and ECG.'));
+
+      let finalFollowupDate = row.followup_date;
+      if (!finalFollowupDate && baseFollowupDate) {
+        finalFollowupDate = calculateBackendExpectedDate(baseFollowupDate, tf.months);
+      }
+      if (typeof finalFollowupDate === 'string') {
+        finalFollowupDate = finalFollowupDate.trim();
+        if (finalFollowupDate.includes('T')) finalFollowupDate = finalFollowupDate.split('T')[0];
+        if (finalFollowupDate === '' || finalFollowupDate === 'null' || finalFollowupDate === 'undefined') {
+          finalFollowupDate = null;
+        }
+      }
+      reqFollowup.input('followup_date', sql.Date, finalFollowupDate ? new Date(finalFollowupDate) : null);
 
       await reqFollowup.query(`
-        INSERT INTO [nstemi_followup] (
-          [nstemi_id], [followup_month], [angina], [functional_class], [number_of_antianginals],
-          [dual_antiplatelets], [statins], [beta_blocker], [acei_arb], [aldosterone_antagonist],
-          [acs_hospitalization], [ptca], [cabg], [death], [other_event]
-        ) VALUES (
-          @nstemi_id, @followup_month, @angina, @functional_class, @number_of_antianginals,
-          @dual_antiplatelets, @statins, @beta_blocker, @acei_arb, @aldosterone_antagonist,
-          @acs_hospitalization, @ptca, @cabg, @death, @other_event
-        );
+        -- 1. UPSERT into nstemi_followup
+        IF EXISTS (
+          SELECT 1 FROM [nstemi_followup] 
+          WHERE [nstemi_id] = @nstemi_id AND [followup_month] = @followup_month
+        )
+        BEGIN
+          UPDATE [nstemi_followup]
+          SET
+            [followup_date] = @followup_date,
+            [angina] = @angina,
+            [functional_class] = @functional_class,
+            [number_of_antianginals] = @number_of_antianginals,
+            [dual_antiplatelets] = @dual_antiplatelets,
+            [statins] = @statins,
+            [beta_blocker] = @beta_blocker,
+            [acei_arb] = @acei_arb,
+            [aldosterone_antagonist] = @aldosterone_antagonist,
+            [acs_hospitalization] = @acs_hospitalization,
+            [ptca] = @ptca,
+            [cabg] = @cabg,
+            [death] = @death,
+            [other_event] = @other_event,
+            [visit_mode] = @visit_mode,
+            [special_instructions] = @special_instructions,
+            [updated_at] = GETDATE()
+          WHERE [nstemi_id] = @nstemi_id AND [followup_month] = @followup_month;
+        END
+        ELSE
+        BEGIN
+          INSERT INTO [nstemi_followup] (
+            [nstemi_id], [followup_month], [followup_date], [angina], [functional_class], [number_of_antianginals],
+            [dual_antiplatelets], [statins], [beta_blocker], [acei_arb], [aldosterone_antagonist],
+            [acs_hospitalization], [ptca], [cabg], [death], [other_event],
+            [visit_mode], [special_instructions], [created_at], [updated_at]
+          ) VALUES (
+            @nstemi_id, @followup_month, @followup_date, @angina, @functional_class, @number_of_antianginals,
+            @dual_antiplatelets, @statins, @beta_blocker, @acei_arb, @aldosterone_antagonist,
+            @acs_hospitalization, @ptca, @cabg, @death, @other_event,
+            @visit_mode, @special_instructions, GETDATE(), GETDATE()
+          );
+        END
+
+        -- 2. Synchronize into patient_followup_tasks checking both patientId and timeframe
+        IF EXISTS (
+          SELECT 1 FROM [patient_followup_tasks]
+          WHERE [reg_patient_id] = @reg_patient_id AND [timeframe] = @followup_month AND [source_registry] = 'NSTEMI Registry'
+        )
+        BEGIN
+          UPDATE [patient_followup_tasks]
+          SET
+            [target_date] = @followup_date,
+            [visit_mode] = @visit_mode,
+            [special_instructions] = @special_instructions,
+            [source_record_id] = @nstemi_id,
+            [updated_at] = GETDATE()
+          WHERE [reg_patient_id] = @reg_patient_id AND [timeframe] = @followup_month AND [source_registry] = 'NSTEMI Registry';
+        END
+        ELSE
+        BEGIN
+          SET IDENTITY_INSERT [patient_followup_tasks] ON;
+
+          DECLARE @nextTaskId INT;
+          SELECT @nextTaskId = ISNULL(MAX(task_id), 0) + 1 FROM [patient_followup_tasks] WITH (TABLOCKX, HOLDLOCK);
+
+          INSERT INTO [patient_followup_tasks] (
+            [task_id], [reg_patient_id], [source_registry], [source_record_id], [is_followup_required],
+            [timeframe], [target_date], [clinic_location], [visit_mode], [special_instructions],
+            [status], [created_at], [updated_at]
+          ) VALUES (
+            @nextTaskId, @reg_patient_id, 'NSTEMI Registry', @nstemi_id, 'Yes',
+            @followup_month, @followup_date, 'CARE Heart Institute', @visit_mode, @special_instructions,
+            'Required', GETDATE(), GETDATE()
+          );
+
+          SET IDENTITY_INSERT [patient_followup_tasks] OFF;
+        END
       `);
     }
 

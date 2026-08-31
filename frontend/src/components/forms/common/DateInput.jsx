@@ -14,7 +14,7 @@ export default function DateInput({
   readOnly = false,
   disabled = false,
   error = null,
-  placeholder = 'dd/mm/yyyy'
+  placeholder = 'dd-mm-yyyy'
 }) {
   const hiddenDateRef = useRef(null);
   const isDisabled = disabled || readOnly;
@@ -43,7 +43,7 @@ export default function DateInput({
       onChange('');
       return;
     }
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw.trim())) {
+    if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(raw.trim())) {
       onChange(formatDateForDatabase(raw.trim()));
     } else {
       onChange(raw);

@@ -14,7 +14,7 @@ import FormField from './common/FormField';
 import DrugTable from './common/DrugTable';
 import FollowupAssessmentForm from './FollowupAssessmentForm';
 import { validateField } from '../../utils/validation';
-import { formatDateForDisplay, formatDateForDatabase } from '../../utils/dateUtils';
+import { formatDateForDisplay, formatDateTimeForDisplay, formatDateForDatabase } from '../../utils/dateUtils';
 import {
   FORM_STYLES,
   INPUT_NORMAL_STYLES,
@@ -1233,12 +1233,12 @@ const hf = forwardRef(function hf(
       <div className="relative inline-flex items-center">
         <input
           type="text"
-          placeholder="dd/mm/yyyy"
+          placeholder="dd-mm-yyyy"
           value={displayVal}
           onChange={(e) => {
             const raw = e.target.value;
             if (!raw.trim()) onChange('');
-            else if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw.trim())) onChange(formatDateForDatabase(raw.trim()));
+            else if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(raw.trim())) onChange(formatDateForDatabase(raw.trim()));
             else onChange(raw);
           }}
           className={`${error ? INPUT_ERROR_STYLES : baseClass} pr-7`}
@@ -1264,12 +1264,12 @@ const hf = forwardRef(function hf(
       <div className="relative flex items-center w-full">
         <input
           type="text"
-          placeholder="dd/mm/yyyy"
+          placeholder="dd-mm-yyyy"
           value={displayVal}
           onChange={(e) => {
             const raw = e.target.value;
             if (!raw.trim()) onChange('');
-            else if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw.trim())) onChange(formatDateForDatabase(raw.trim()));
+            else if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(raw.trim())) onChange(formatDateForDatabase(raw.trim()));
             else onChange(raw);
           }}
           className={`${error ? INPUT_ERROR_STYLES : INPUT_NORMAL_STYLES} text-right pr-7`}
@@ -3240,7 +3240,7 @@ const hf = forwardRef(function hf(
               ⚠️ THIS HF REGISTRY RECORD HAS BEEN DELETED
             </h4>
             <p className="text-xs font-semibold mt-1">
-              Archived on {editingRecord?.deleted_at ? new Date(editingRecord.deleted_at).toLocaleString() : 'N/A'} by {editingRecord?.deleted_by_user || editingRecord?.deleted_by || 'Admin/User'}. THIS RECORD IS READ-ONLY AND CANNOT BE EDITED.
+              Archived on {editingRecord?.deleted_at ? formatDateTimeForDisplay(editingRecord.deleted_at) : 'N/A'} by {editingRecord?.deleted_by_user || editingRecord?.deleted_by || 'Admin/User'}. THIS RECORD IS READ-ONLY AND CANNOT BE EDITED.
             </p>
           </div>
         </div>
@@ -3341,9 +3341,7 @@ const hf = forwardRef(function hf(
               type="text"
               readOnly
               disabled
-              value={`${patientAge ?? '—'} yrs / ${patient.dob 
-                ? new Date(patient.dob).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-') 
-                : '—'}`}
+              value={`${patientAge ?? '—'} yrs / ${patient.dob ? formatDateForDisplay(patient.dob) : '—'}`}
               className={INPUT_DISABLED_STYLES}
             />
           </div>

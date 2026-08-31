@@ -10,6 +10,7 @@ import NSTEMIHistoryList from './NSTEMIHistoryList';
 import RegisterNewPatient from './RegisterNewPatient';
 import AuditLogViewer from './hf/AuditLogViewer';
 import api from '../../api/axios';
+import { formatDateForDisplay, formatDateTimeForDisplay } from '../utils/dateUtils';
 
 // Age calculator helper
 function calculateAge(dobString) {
@@ -214,7 +215,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
             <div>
               <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider block">Longitudinal Clinical Portfolio</span>
               <h2 className="text-xl font-bold text-slate-800 mt-0.5">{record.patient.name}</h2>
-              <span className="text-xs text-slate-400 font-mono">ID: {record.patient.id} • Registered {new Date(record.patient.createdAt).toLocaleDateString()}</span>
+              <span className="text-xs text-slate-400 font-mono">ID: {record.patient.id} • Registered {formatDateForDisplay(record.patient.createdAt)}</span>
             </div>
           </div>
 
@@ -402,7 +403,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
                       <p className="text-xs text-slate-500 mt-1">{evt.details}</p>
                       <div className="flex items-center gap-1 text-[10px] text-slate-400 mt-2 font-mono">
                         <Calendar className="w-3 h-3" />
-                        <span>{new Date(evt.date).toLocaleDateString()}</span>
+                        <span>{formatDateForDisplay(evt.date)}</span>
                       </div>
                     </div>
 

@@ -38,10 +38,45 @@ const drugsList = [
   { label: 'Any other', key: 'appr_other_drug_appropriateness', specifyKey: 'appr_other_drug_name' }
 ];
 
+/**
+ * Calculates the expected follow-up date by adding months to a base date.
+ * If the resulting date falls on a Sunday (day 0), it shifts it forward to Monday (+1 day).
+ */
+export const calculateExpectedDate = (baseDate, monthsToAdd) => {
+  if (!baseDate) return null;
+  const d = new Date(baseDate);
+  if (isNaN(d.getTime())) return null;
+
+  d.setMonth(d.getMonth() + monthsToAdd);
+
+  // If Sunday (0), shift to Monday (+1 day)
+  if (d.getDay() === 0) {
+    d.setDate(d.getDate() + 1);
+  }
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * Formats an ISO date string (YYYY-MM-DD) into user-friendly 'DD-MM-YYYY' format.
+ */
+export const formatDisplayDate = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+};
+
 const getFollowupInitialState = (followupArray) => {
   const state = {
     angina_1m: 'No', angina_3m: 'No', angina_6m: 'No', angina_12m: 'No',
-    func_1m: 'I', func_3m: 'I', func_6m: 'I', func_12m: 'I',
+    func_1m: 'None', func_3m: 'None', func_6m: 'None', func_12m: 'None',
     antiang_1m: '', antiang_3m: '', antiang_6m: '', antiang_12m: '',
     dapt_1m: 'No', dapt_3m: 'No', dapt_6m: 'No', dapt_12m: 'No',
     statin_1m: 'No', statin_3m: 'No', statin_6m: 'No', statin_12m: 'No',
@@ -68,7 +103,7 @@ const getFollowupInitialState = (followupArray) => {
     const key = mapping[row.followup_month];
     if (key) {
       state[`angina_${key}`] = row.angina || 'No';
-      state[`func_${key}`] = row.functional_class || 'I';
+      state[`func_${key}`] = row.functional_class || 'None';
       state[`antiang_${key}`] = row.number_of_antianginals !== null && row.number_of_antianginals !== undefined ? String(row.number_of_antianginals) : '';
       state[`dapt_${key}`] = row.dual_antiplatelets || 'No';
       state[`statin_${key}`] = row.statins || 'No';
@@ -80,6 +115,12 @@ const getFollowupInitialState = (followupArray) => {
       state[`cabg_${key}`] = row.cabg || 'No';
       state[`death_${key}`] = row.death || 'No';
       state[`other_${key}`] = row.other_event || '';
+    }
+    if (row.visit_mode && !state.visit_mode) {
+      state.visit_mode = row.visit_mode;
+    }
+    if (row.special_instructions && !state.special_instructions) {
+      state.special_instructions = row.special_instructions;
     }
   });
 
@@ -344,6 +385,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
     // Follow-up grid states from database followup array
     ...getFollowupInitialState(editingRecord?.followup),
+    visit_mode: editingRecord?.visit_mode || editingRecord?.followup?.[0]?.visit_mode || 'In-Person',
+    special_instructions: editingRecord?.special_instructions || editingRecord?.followup?.[0]?.special_instructions || editingRecord?.special_clinical_instructions || '',
 
     // Appropriateness Assessment -> Procedures:
     appr_iccu_admission: editingRecord?.appr_iccu_admission ?? editingRecord?.appropriateness?.iccu_admission ?? editingRecord?.iccu_admission ?? '',
@@ -407,15 +450,26 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       // Recompute TIMI Risk Score dynamically
       updated.timi_total_score = calculateTimiScore(updated);
 
-      // Recompute stay duration
-      if (field === 'discharge_date' && val) {
-        if (updated.admission_date && new Date(val) < new Date(updated.admission_date)) {
-          alert('Date of Discharge cannot be earlier than Date of Admission.');
+      // Safe date helper
+      const isValidDateStr = (dStr) => {
+        if (!dStr || typeof dStr !== 'string' || dStr.trim() === '') return false;
+        const d = new Date(dStr);
+        return !isNaN(d.getTime());
+      };
+
+      // Recompute stay duration & validate chronological order
+      if (field === 'discharge_date' && value) {
+        if (isValidDateStr(value) && isValidDateStr(updated.admission_date) && value.length >= 10 && updated.admission_date.length >= 10) {
+          if (new Date(value) < new Date(updated.admission_date)) {
+            alert('Date of Discharge cannot be earlier than Date of Admission.');
+          }
         }
       }
-      if (field === 'admission_date' && val) {
-        if (updated.discharge_date && new Date(updated.discharge_date) < new Date(val)) {
-          alert('Date of Discharge cannot be earlier than Date of Admission.');
+      if (field === 'admission_date' && value) {
+        if (isValidDateStr(value) && isValidDateStr(updated.discharge_date) && value.length >= 10 && updated.discharge_date.length >= 10) {
+          if (new Date(updated.discharge_date) < new Date(value)) {
+            alert('Date of Discharge cannot be earlier than Date of Admission.');
+          }
         }
       }
 
@@ -502,30 +556,53 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     payload.mr_moderate = formData.mr === 'Mod' ? 'Yes' : 'No';
     payload.mr_severe = formData.mr === 'Severe' ? 'Yes' : 'No';
 
-    // Follow-up mapper to handle table columns (array of 4 timeframes)
+    // Follow-up mapper to handle table columns with filtering of untouched intervals
     const timeframes = [
-      { key: '1m', label: '1-Month' },
-      { key: '3m', label: '3-Month' },
-      { key: '6m', label: '6-Month' },
-      { key: '12m', label: '12-Month' }
+      { key: '1m', label: '1-Month', months: 1 },
+      { key: '3m', label: '3-Month', months: 3 },
+      { key: '6m', label: '6-Month', months: 6 },
+      { key: '12m', label: '12-Month', months: 12 }
     ];
 
-    payload.followup = timeframes.map(tf => ({
-      followup_month: tf.label,
-      angina: formData[`angina_${tf.key}`] || 'No',
-      functional_class: formData[`func_${tf.key}`] || 'I',
-      number_of_antianginals: formData[`antiang_${tf.key}`] !== '' && formData[`antiang_${tf.key}`] !== undefined && formData[`antiang_${tf.key}`] !== null ? parseInt(formData[`antiang_${tf.key}`]) : null,
-      dual_antiplatelets: formData[`dapt_${tf.key}`] || 'No',
-      statins: formData[`statin_${tf.key}`] || 'No',
-      beta_blocker: formData[`beta_${tf.key}`] || 'No',
-      acei_arb: formData[`ace_${tf.key}`] || 'No',
-      aldosterone_antagonist: formData[`aldo_${tf.key}`] || 'No',
-      acs_hospitalization: formData[`acs_${tf.key}`] || 'No',
-      ptca: formData[`ptca_${tf.key}`] || 'No',
-      cabg: formData[`cabg_${tf.key}`] || 'No',
-      death: formData[`death_${tf.key}`] || 'No',
-      other_event: formData[`other_${tf.key}`] || ''
-    }));
+    const baseFollowupDate = formData.discharge_date || formData.admission_date;
+
+    payload.followup = timeframes
+      .map(tf => {
+        const angina = formData[`angina_${tf.key}`] || 'No';
+        const funcClass = formData[`func_${tf.key}`] || 'None';
+        const antiangRaw = formData[`antiang_${tf.key}`];
+        const antianginals = antiangRaw !== '' && antiangRaw !== null && antiangRaw !== undefined ? parseInt(antiangRaw, 10) : null;
+        const dapt = formData[`dapt_${tf.key}`] || 'No';
+        const statin = formData[`statin_${tf.key}`] || 'No';
+        const beta = formData[`beta_${tf.key}`] || 'No';
+        const ace = formData[`ace_${tf.key}`] || 'No';
+        const aldo = formData[`aldo_${tf.key}`] || 'No';
+        const acs = formData[`acs_${tf.key}`] || 'No';
+        const ptca = formData[`ptca_${tf.key}`] || 'No';
+        const cabg = formData[`cabg_${tf.key}`] || 'No';
+        const death = formData[`death_${tf.key}`] || 'No';
+        const other = (formData[`other_${tf.key}`] || '').trim();
+
+        return {
+          followup_month: tf.label,
+          followup_date: calculateExpectedDate(baseFollowupDate, tf.months),
+          angina,
+          functional_class: funcClass,
+          number_of_antianginals: antianginals,
+          dual_antiplatelets: dapt,
+          statins: statin,
+          beta_blocker: beta,
+          acei_arb: ace,
+          aldosterone_antagonist: aldo,
+          acs_hospitalization: acs,
+          ptca,
+          cabg,
+          death,
+          other_event: other,
+          visit_mode: formData.visit_mode || 'In-Person',
+          special_instructions: formData.special_instructions || 'Follow-up in cardiology OPD with repeat lipid profile and ECG.'
+        };
+      });
 
 
     // Map heparin strategy
@@ -566,6 +643,10 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     payload.appr_amiodarone = formData.appr_amiodarone;
     payload.appr_other_drug_name = formData.appr_other_drug_name;
     payload.appr_other_drug_appropriateness = formData.appr_other_drug_appropriateness;
+
+    // Follow-up visit mode & special instructions
+    payload.visit_mode = formData.visit_mode || 'In-Person';
+    payload.special_instructions = formData.special_instructions || '';
 
     return payload;
   };
@@ -803,6 +884,9 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       death_1m: 'No', death_3m: 'No', death_6m: 'No', death_12m: 'No',
       other_1m: '', other_3m: '', other_6m: '', other_12m: '',
 
+      visit_mode: 'In-Person',
+      special_instructions: 'Follow-up in cardiology OPD with repeat lipid profile and ECG.',
+
       appr_iccu_admission: 'Appropriate',
       appr_iccu_transfer_out: 'Appropriate',
       appr_thrombolysis_indication: 'Inappropriate',
@@ -957,7 +1041,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <label className="font-bold text-slate-700 block mb-1">Date of Admission:</label>
             <input
               type="date"
-              value={formData.admission_date}
+              value={formData.admission_date || ''}
               onChange={(e) => handleChange('admission_date', e.target.value)}
               className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900"
             />
@@ -966,7 +1050,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <label className="font-bold text-slate-700 block mb-1">Date of Discharge:</label>
             <input
               type="date"
-              value={formData.discharge_date}
+              value={formData.discharge_date || ''}
               onChange={(e) => handleChange('discharge_date', e.target.value)}
               className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900"
             />
@@ -2250,11 +2334,26 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
           <table className="w-full text-left border-collapse border border-slate-200 min-w-[700px]">
             <thead>
               <tr className="bg-slate-100 text-slate-900">
-                <th className="p-2 border border-slate-200 font-bold w-[250px]">Parameter</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">1-month</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">3-month</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">6-month</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">12-month</th>
+                <th className="p-2.5 border border-slate-200 font-bold w-[240px]">Parameter</th>
+                {[
+                  { label: '1-month', months: 1 },
+                  { label: '3-month', months: 3 },
+                  { label: '6-month', months: 6 },
+                  { label: '12-month', months: 12 }
+                ].map(({ label, months }) => {
+                  const baseDate = formData.discharge_date || formData.admission_date;
+                  const expDate = calculateExpectedDate(baseDate, months);
+                  return (
+                    <th key={label} className="p-2 border border-slate-200 text-center font-bold">
+                      <div className="text-slate-900 font-semibold">{label}</div>
+                      {expDate && (
+                        <div className="text-[10px] font-mono text-orange-700 bg-orange-50/90 border border-orange-200 rounded px-1.5 py-0.5 mt-1 inline-block whitespace-nowrap shadow-2xs">
+                          📅 {formatDisplayDate(expDate)}
+                        </div>
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -2281,10 +2380,11 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 {['1m', '3m', '6m', '12m'].map(t => (
                   <td key={t} className="p-2 border border-slate-200 text-center">
                     <select
-                      value={formData[`func_${t}`]}
+                      value={formData[`func_${t}`] || 'None'}
                       onChange={(e) => handleChange(`func_${t}`, e.target.value)}
                       className="p-1 border rounded w-20 text-center bg-white"
                     >
+                      <option value="None">None</option>
                       <option value="I">Class I</option>
                       <option value="II">Class II</option>
                       <option value="III">Class III</option>
@@ -2386,6 +2486,64 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </tr>
             </tbody>
           </table>
+
+          {/* Follow-up Parameters & Instructions (Visit Mode & Special Instructions) */}
+          <div className="mt-6 pt-4 border-t border-slate-200 space-y-4">
+            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              Follow-Up Parameters & Instructions
+            </h4>
+
+            {/* Visit Mode Radio Buttons */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                Visit Mode
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {['In-Person', 'Tele-consultation', 'Phone Check-in'].map((mode) => (
+                  <label
+                    key={mode}
+                    className={`flex items-center gap-2.5 p-3 rounded-lg border text-xs font-medium cursor-pointer transition-all ${
+                      formData.visit_mode === mode
+                        ? 'bg-orange-50 border-orange-500 text-orange-950 font-semibold shadow-xs'
+                        : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="visit_mode"
+                      value={mode}
+                      checked={formData.visit_mode === mode}
+                      onChange={(e) => handleChange('visit_mode', e.target.value)}
+                      className="text-orange-600 focus:ring-orange-500 w-4 h-4"
+                    />
+                    <span>{mode}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Special Clinical Instructions Textarea with Live Counter */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Special Clinical Instructions For Patient/Caregiver
+                </label>
+                <span className="text-[11px] font-mono text-slate-400">
+                  {(formData.special_instructions?.length || 0)}/500
+                </span>
+              </div>
+              <div className="relative">
+                <textarea
+                  rows={3}
+                  maxLength={500}
+                  value={formData.special_instructions || ''}
+                  onChange={(e) => handleChange('special_instructions', e.target.value)}
+                  placeholder="Specify instructions..."
+                  className="w-full p-3 border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all placeholder:text-slate-400 resize-y"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </SectionCard>
 

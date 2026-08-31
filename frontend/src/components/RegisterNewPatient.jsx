@@ -105,6 +105,11 @@ export default function RegisterNewPatient({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!mrNo.trim()) {
+      alert('MR No (Medical Record Number) is required.');
+      return;
+    }
+
     if (!name.trim()) {
       alert('Patient Full Name is required.');
       return;
@@ -139,14 +144,12 @@ export default function RegisterNewPatient({
       return;
     }
 
-    if (!email.trim()) {
-      alert('Email Address is required.');
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      alert('Please enter a valid email address.');
-      return;
+    if (email && email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        alert('Please enter a valid email address.');
+        return;
+      }
     }
 
     if (!bloodGroup) {
@@ -247,17 +250,44 @@ export default function RegisterNewPatient({
           {/* 1. MR No (Medical Record Number) */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-0.5">
-              MR No (Medical Record Number)
+              MR No (Medical Record Number) <span className="text-red-500 font-bold ml-0.5">*</span>
             </label>
             <input
               id="reg-mr-no"
               type="text"
+              required
               maxLength={10}
               className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-slate-900"
               value={mrNo}
               onChange={(e) => setMrNo(e.target.value)}
-              placeholder="E.g. MR00001 (or leave blank to auto-generate)"
+              placeholder="E.g. MR00001"
             />
+          </div>
+
+          {/* UHID & ABHA Number (Optional) */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">UHID</label>
+              <input
+                id="reg-uhid"
+                type="text"
+                placeholder="E.g. UHI12345"
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                value={uhid}
+                onChange={(e) => setUhid(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">ABHA Number</label>
+              <input
+                id="reg-abha"
+                type="text"
+                placeholder="14-digit ABHA"
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                value={abhaNumber}
+                onChange={(e) => setAbhaNumber(e.target.value)}
+              />
+            </div>
           </div>
 
           {/* 2. Full Name */}
@@ -415,42 +445,15 @@ export default function RegisterNewPatient({
 
             {/* Email Address */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Email Address <span className="text-red-500 font-bold ml-0.5">*</span></label>
+              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Email Address</label>
               <input
                 id="reg-email"
                 type="email"
-                required
                 placeholder="patient@example.com"
                 className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-            </div>
-
-            {/* UHID & ABHA Number (Optional) */}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">UHID </label>
-                <input
-                  id="reg-uhid"
-                  type="text"
-                  placeholder="E.g. UHI12345"
-                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  value={uhid}
-                  onChange={(e) => setUhid(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">ABHA Number </label>
-                <input
-                  id="reg-abha"
-                  type="text"
-                  placeholder="14-digit ABHA"
-                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  value={abhaNumber}
-                  onChange={(e) => setAbhaNumber(e.target.value)}
-                />
-              </div>
             </div>
           </div>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Clock, User, FileText, X, RefreshCw, AlertCircle, Mail, CheckCircle } from 'lucide-react';
 import api from '../../api/axiosInstance';
+import { formatDateTimeForDisplay } from '../../utils/dateUtils';
 
 export default function AuditLogViewer({ hfId, regPatientId, isOpen = true, onClose, isInline = false }) {
   const [auditLogs, setAuditLogs] = useState([]);
@@ -385,7 +386,7 @@ export default function AuditLogViewer({ hfId, regPatientId, isOpen = true, onCl
 
                 <div className="text-[11px] text-slate-500 flex items-center gap-1 font-mono">
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  {new Date(log.timestamp).toLocaleString()}
+                  {formatDateTimeForDisplay(log.timestamp)}
                 </div>
               </div>
 

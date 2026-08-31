@@ -98,6 +98,10 @@ function normalizePatientInput(body = {}) {
         throw new Error("Date of birth is required.");
     }
 
+    if (!mr_no) {
+        throw new Error("MR Number (mr_no) is required.");
+    }
+
     validateEnum(gender, VALID_GENDERS, "gender");
     validateEnum(blood_group, VALID_BLOOD_GROUPS, "blood_group");
     validateEnum(insurance_mode, VALID_INSURANCE, "insurance_mode");

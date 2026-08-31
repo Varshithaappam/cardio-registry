@@ -614,8 +614,8 @@ async function saveHfAssessment(data, userId = 1) {
                 const statusVal = isYes ? 'Required' : 'No Follow-Up Needed';
 
                 const { recordset: existingTasks } = await conn.query(
-                    `SELECT task_id FROM patient_followup_tasks WHERE reg_patient_id = @regPatientId;`,
-                    { regPatientId: targetPatientId }
+                    `SELECT task_id FROM patient_followup_tasks WHERE reg_patient_id = @regPatientId AND timeframe = @timeframeVal;`,
+                    { regPatientId: targetPatientId, timeframeVal }
                 );
 
                 if (existingTasks && existingTasks.length > 0) {
@@ -626,8 +626,9 @@ async function saveHfAssessment(data, userId = 1) {
                              target_date = @targetDateVal,
                              timeframe = @timeframeVal,
                              visit_mode = @visitModeVal,
-                             special_instructions = @instructionsVal
-                         WHERE reg_patient_id = @regPatientId;`,
+                             special_instructions = @instructionsVal,
+                             updated_at = GETDATE()
+                         WHERE reg_patient_id = @regPatientId AND timeframe = @timeframeVal;`,
                         {
                             regPatientId: targetPatientId,
                             statusVal,
@@ -640,9 +641,9 @@ async function saveHfAssessment(data, userId = 1) {
                 } else {
                     await conn.query(
                         `INSERT INTO patient_followup_tasks (
-                            reg_patient_id, source_registry, status, target_date, timeframe, clinic_location, visit_mode, special_instructions
+                            reg_patient_id, source_registry, status, target_date, timeframe, clinic_location, visit_mode, special_instructions, created_at, updated_at
                          ) VALUES (
-                            @regPatientId, 'Heart Failure Registry', @statusVal, @targetDateVal, @timeframeVal, 'CARE Heart Institute', @visitModeVal, @instructionsVal
+                            @regPatientId, 'Heart Failure Registry', @statusVal, @targetDateVal, @timeframeVal, 'CARE Heart Institute', @visitModeVal, @instructionsVal, GETDATE(), GETDATE()
                          );`,
                         {
                             regPatientId: targetPatientId,
