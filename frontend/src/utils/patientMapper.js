@@ -61,11 +61,29 @@ export function buildPatientPayload({
   renalFailure,
   dialysisStatus,
   address,
+  houseFlatNo,
+  streetLocality,
+  villageTown,
+  mandal,
+  district,
+  state,
+  pincode,
   higherEducation,
   occupation,
   uhid,
   abhaNumber
 }) {
+  const parts = [
+    houseFlatNo,
+    streetLocality,
+    villageTown,
+    mandal,
+    district,
+    state,
+    pincode
+  ].filter(Boolean);
+  const combinedAddress = address || (parts.length > 0 ? parts.join(', ') : null);
+
   return {
     mr_no: mrNo ? String(mrNo).trim() : null,
     ip_no: ipNo ? String(ipNo).trim() : null,
@@ -82,7 +100,14 @@ export function buildPatientPayload({
     diabetes_control_type: diabetes === "Yes" ? mapDiabetesControlToDb(diabetesControl) : "Unknown",
     renal_failure: renalFailure,
     active_dialysis_status: renalFailure === "Yes" ? mapDialysisStatusToDb(dialysisStatus) : "Unknown",
-    address: address ? String(address).trim() : null,
+    address: combinedAddress ? String(combinedAddress).trim() : null,
+    house_flat_no: houseFlatNo ? String(houseFlatNo).trim() : null,
+    street_locality: streetLocality ? String(streetLocality).trim() : null,
+    village_town: villageTown ? String(villageTown).trim() : null,
+    mandal: mandal ? String(mandal).trim() : null,
+    district: district ? String(district).trim() : null,
+    state: state ? String(state).trim() : null,
+    pincode: pincode ? String(pincode).trim() : null,
     higher_education: higherEducation || "None",
     occupation: occupation ? String(occupation).trim() : null,
     uhid: uhid ? String(uhid).trim() : null,
@@ -114,6 +139,13 @@ const normalizeRecord = (dbPatient) => {
     patient.active_dialysis_status || patient.dialysisStatus || patient.comorbidities?.dialysisStatus
   );
   const address = patient.address || "";
+  const houseFlatNo = patient.house_flat_no || patient.houseFlatNo || "";
+  const streetLocality = patient.street_locality || patient.streetLocality || "";
+  const villageTown = patient.village_town || patient.villageTown || "";
+  const mandal = patient.mandal || "";
+  const district = patient.district || "";
+  const state = patient.state || "";
+  const pincode = patient.pincode || "";
   const higherEducation = patient.higher_education || patient.higherEducation || "None";
   const occupation = patient.occupation || "";
   const mrNo = patient.mr_no || patient.mrNo || "";
@@ -136,6 +168,16 @@ const normalizeRecord = (dbPatient) => {
       bloodGroup,
       insuranceMode,
       address,
+      houseFlatNo,
+      house_flat_no: houseFlatNo,
+      streetLocality,
+      street_locality: streetLocality,
+      villageTown,
+      village_town: villageTown,
+      mandal,
+      district,
+      state,
+      pincode,
       higherEducation,
       occupation,
       uhid,

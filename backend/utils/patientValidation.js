@@ -82,13 +82,30 @@ function normalizePatientInput(body = {}) {
         body.active_dialysis_status,
         renal_failure
     );
-    const address = body.address ? String(body.address).trim().substring(0, 500) : null;
+    const house_flat_no = body.house_flat_no ? String(body.house_flat_no).trim().substring(0, 100) : null;
+    const street_locality = body.street_locality ? String(body.street_locality).trim().substring(0, 255) : null;
+    const village_town = body.village_town ? String(body.village_town).trim().substring(0, 150) : null;
+    const mandal = body.mandal ? String(body.mandal).trim().substring(0, 100) : null;
+    const district = body.district ? String(body.district).trim().substring(0, 100) : null;
+    const state = body.state ? String(body.state).trim().substring(0, 100) : null;
+    const pincode = body.pincode ? String(body.pincode).trim().substring(0, 10) : null;
+
+    let address = body.address ? String(body.address).trim().substring(0, 500) : null;
+    if (!address) {
+        const addressParts = [house_flat_no, street_locality, village_town, mandal, district, state, pincode].filter(Boolean);
+        if (addressParts.length > 0) {
+            address = addressParts.join(', ').substring(0, 500);
+        }
+    }
+
     const higher_education = body.higher_education || "None";
     const occupation = body.occupation ? String(body.occupation).trim().substring(0, 255) : null;
     const mr_no = body.mr_no || body.mrNo ? String(body.mr_no || body.mrNo).trim().substring(0, 10) : null;
     const ip_no = body.ip_no || body.ipNo ? String(body.ip_no || body.ipNo).trim().substring(0, 10) : null;
     const uhid = body.uhid || body.uhi ? String(body.uhid || body.uhi).trim() : null;
     const abha_number = body.abha_number ? String(body.abha_number).trim() : null;
+    const patient_status = body.patient_status ? String(body.patient_status).trim().toUpperCase() : "ACTIVE";
+    const merged_into_patient_id = body.merged_into_patient_id ? parseInt(body.merged_into_patient_id, 10) : null;
 
     if (!patient_name) {
         throw new Error("Patient name is required.");
@@ -130,10 +147,19 @@ function normalizePatientInput(body = {}) {
         renal_failure,
         active_dialysis_status,
         address,
+        house_flat_no,
+        street_locality,
+        village_town,
+        mandal,
+        district,
+        state,
+        pincode,
         higher_education,
         occupation,
         uhid,
-        abha_number
+        abha_number,
+        patient_status,
+        merged_into_patient_id
     };
 }
 

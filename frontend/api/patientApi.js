@@ -1,10 +1,46 @@
 import api from "./axios";
 
 /**
+ * Verify Patient Identity (Pre-registration Deduplication Check)
+ */
+export const verifyPatient = async (patientData) => {
+    const response = await api.post("/patients/verify", patientData);
+    return response.data;
+};
+
+/**
  * Register New Patient
  */
-export const createPatient = async (patientData) => {
-    const response = await api.post("/patients", patientData);
+export const createPatient = async (patientData, options = {}) => {
+    const params = {};
+    if (options.confirm_no_existing_match) {
+        params.confirm_no_existing_match = 'true';
+    }
+    const response = await api.post("/patients", patientData, { params });
+    return response.data;
+};
+
+/**
+ * Confirm Match with an Existing Patient
+ */
+export const confirmPatientMatch = async (matchData) => {
+    const response = await api.post("/patients/confirm-match", matchData);
+    return response.data;
+};
+
+/**
+ * Reject Match (Mark candidate as distinct person)
+ */
+export const rejectPatientMatch = async (matchData) => {
+    const response = await api.post("/patients/reject-match", matchData);
+    return response.data;
+};
+
+/**
+ * Get Identity Matching Audit Trail
+ */
+export const getPatientAudit = async (params = {}) => {
+    const response = await api.get("/patients/audit", { params });
     return response.data;
 };
 

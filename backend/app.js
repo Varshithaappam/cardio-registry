@@ -13,8 +13,8 @@ const documentRoutes = require("./routes/documentRoutes");
 const hfFilesRoutes = require("./routes/hfFilesRoutes");
 const authRoutes = require("./routes/authRoutes");
 const hfRegistryRoutes = require("./routes/hfRegistryRoutes");
-const nurseDashboardRoutes = require("./routes/nurseDashboardRoutes");
 const hfController = require('./controllers/hfController');
+const patientController = require('./controllers/patientController');
 
 // Middleware
 app.use(cors());
@@ -40,7 +40,12 @@ const stemiRoutes = require("./routes/stemiRoutes");
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/hf-registry", hfRegistryRoutes);
+app.post("/api/resolve-staging", patientController.resolveStaging);
 app.use("/api/patients", patientRoutes);
+app.use("/api/audit", (req, res, next) => {
+    req.url = "/audit" + (req.url === "/" ? "" : req.url);
+    patientRoutes(req, res, next);
+});
 app.use("/api/nurse-dashboard", nurseFollowUpReportRoutes);
 app.use("/api/nurse-followup-report", nurseFollowUpReportRoutes);
 app.use("/api/hf-form", hfFormRoutes);

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { User, MapPin, Briefcase, GraduationCap, X, Check, Phone, Mail, Shield, CreditCard } from 'lucide-react';
+import { User, MapPin, Briefcase, GraduationCap, X, Check, Phone, Mail, Shield, CreditCard, Sparkles } from 'lucide-react';
 import { buildPatientPayload } from '../utils/patientMapper';
 import { validateField } from '../utils/validation';
-import { createPatient, updatePatient } from '../../api/patientApi';
+import { createPatient, updatePatient, verifyPatient, confirmPatientMatch, rejectPatientMatch } from '../../api/patientApi';
+import PatientVerificationModal from './PatientVerificationModal';
 
 const HIGHER_EDUCATION_OPTIONS = [
   'Primary',
@@ -64,6 +65,13 @@ export default function RegisterNewPatient({
 
   // Address, Higher Education, Occupation
   const [address, setAddress] = useState('');
+  const [houseFlatNo, setHouseFlatNo] = useState('');
+  const [streetLocality, setStreetLocality] = useState('');
+  const [villageTown, setVillageTown] = useState('');
+  const [mandal, setMandal] = useState('');
+  const [district, setDistrict] = useState('');
+  const [state, setState] = useState('Telangana');
+  const [pincode, setPincode] = useState('');
   const [higherEducation, setHigherEducation] = useState('None');
   const [occupation, setOccupation] = useState('');
 
@@ -76,6 +84,9 @@ export default function RegisterNewPatient({
   const [dialysisStatus, setDialysisStatus] = useState('No');
 
   const [loading, setLoading] = useState(false);
+  const [verificationModalOpen, setVerificationModalOpen] = useState(false);
+  const [verificationResult, setVerificationResult] = useState(null);
+  const [pendingPayload, setPendingPayload] = useState(null);
 
   // Pre-fill state when initialData / patient record changes (Data Hydration)
   useEffect(() => {
@@ -91,6 +102,39 @@ export default function RegisterNewPatient({
       setUhid(p.uhi || p.uhid || '');
       setAbhaNumber(p.abha_number || p.abhaNumber || '');
       setAddress(p.address || '');
+
+      let hNo = p.houseFlatNo || p.house_flat_no || '';
+      let sLoc = p.streetLocality || p.street_locality || '';
+      let vTown = p.villageTown || p.village_town || '';
+      let mnd = p.mandal || '';
+      let dist = p.district || '';
+      let st = p.state || 'Telangana';
+      let pin = p.pincode || '';
+
+      // Fallback: If structured fields are empty on existing record, parse legacy address string
+      if (!hNo && !sLoc && !vTown && !mnd && !dist && !pin && p.address) {
+        const rawParts = String(p.address).split(',').map(s => s.trim()).filter(Boolean);
+        if (rawParts.length > 0) {
+          const last = rawParts[rawParts.length - 1];
+          if (/^\d{6}$/.test(last)) {
+            pin = last;
+            rawParts.pop();
+          }
+          if (rawParts.length >= 1) dist = rawParts.pop();
+          if (rawParts.length >= 1) vTown = rawParts.pop();
+          if (rawParts.length >= 1) sLoc = rawParts.pop();
+          if (rawParts.length >= 1) hNo = rawParts.join(', ');
+        }
+      }
+
+      setHouseFlatNo(hNo);
+      setStreetLocality(sLoc);
+      setVillageTown(vTown);
+      setMandal(mnd);
+      setDistrict(dist);
+      setState(st || 'Telangana');
+      setPincode(pin);
+
       setHigherEducation(p.higherEducation || p.higher_education || 'None');
       setOccupation(p.occupation || '');
       setHypertension(p.hypertension || initialData.comorbidities?.hypertension || 'No');
@@ -101,6 +145,81 @@ export default function RegisterNewPatient({
       setDialysisStatus(p.dialysisStatus || initialData.comorbidities?.dialysisStatus || 'No');
     }
   }, [initialData]);
+
+  // Autofill test data matching existing Patient XYZ to trigger duplicate detection
+  const handleAutofillDuplicate = () => {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    setMrNo(`MR${randomSuffix}`);
+    setName('Patient XYZ');
+    setDob('1966-01-01');
+    setGender('Male');
+    setBloodGroup('A+');
+    setPhone('9878950020');
+    setEmail('PatientXYZ@gmail.com');
+    setUhid('UHID12321');
+    setAbhaNumber('ABHA0987654321');
+    setHouseFlatNo('Flat 402, Sai Residency');
+    setStreetLocality('Road No 12, Banjara Hills');
+    setVillageTown('Hyderabad');
+    setMandal('Khairatabad');
+    setDistrict('Hyderabad');
+    setState('Telangana');
+    setPincode('500034');
+    setOccupation('Business Consultant');
+    setHigherEducation('Graduate');
+    setHypertension('Yes');
+    setSmoking('Yes');
+    setDiabetes('No');
+    setDiabetesControl('None');
+    setRenalFailure('No');
+    setDialysisStatus('No');
+  };
+
+  const handleSelectExistingCandidate = async (candidate, verificationId) => {
+    try {
+      await confirmPatientMatch({
+        staging_id: candidate.patient_id,
+        verification_id: verificationId,
+        user_decision: 'USE_EXISTING_PATIENT'
+      });
+      setVerificationModalOpen(false);
+      alert(`Existing patient file selected: ${candidate.full_name} (MR: ${candidate.mr_no || candidate.patient_id}).`);
+      if (onSuccess) {
+        onSuccess(candidate);
+      }
+    } catch (err) {
+      console.error('Error confirming match:', err);
+      alert('Failed to select existing patient.');
+    }
+  };
+
+  const handleForceCreateCandidate = async (verificationId, candidateId) => {
+    try {
+      if (candidateId) {
+        await rejectPatientMatch({
+          staging_id: candidateId,
+          verification_id: verificationId,
+          user_decision: 'CREATE_NEW_PATIENT'
+        });
+      }
+      setVerificationModalOpen(false);
+      setLoading(true);
+      const response = await createPatient(pendingPayload, { confirm_no_existing_match: true });
+      if (response?.success) {
+        alert('Patient registered successfully.');
+        if (onSuccess) {
+          onSuccess(response.data);
+        }
+      } else {
+        alert(response?.message || 'Registration failed.');
+      }
+    } catch (err) {
+      const message = err?.response?.data?.message || err?.message || 'Registration failed.';
+      alert(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -125,12 +244,9 @@ export default function RegisterNewPatient({
       return;
     }
 
-    if (!address.trim()) {
-      alert('Address is required.');
-      return;
-    }
-    if (address.length > 500) {
-      alert('Address cannot exceed 500 characters.');
+    const fullAddressCombined = [houseFlatNo, streetLocality, villageTown, mandal, district, state, pincode].filter(Boolean).join(', ');
+    if (!fullAddressCombined.trim() && !address.trim()) {
+      alert('Residential address details are required.');
       return;
     }
 
@@ -175,7 +291,14 @@ export default function RegisterNewPatient({
       bloodGroup,
       phone,
       email,
-      address,
+      address: fullAddressCombined || address,
+      houseFlatNo,
+      streetLocality,
+      villageTown,
+      mandal,
+      district,
+      state,
+      pincode,
       higherEducation,
       occupation,
       hypertension,
@@ -191,21 +314,57 @@ export default function RegisterNewPatient({
     setLoading(true);
 
     try {
-      let response;
       if (isEditMode && (initialData?.patient?.id || initialData?.id)) {
         const regPatientId = initialData?.patient?.id || initialData?.id;
-        response = await updatePatient(regPatientId, payload);
-      } else {
-        response = await createPatient(payload);
-      }
-
-      if (response?.success) {
-        alert(`Patient ${isEditMode ? 'updated' : 'registered'} successfully.`);
-        if (onSuccess) {
-          onSuccess(response.data);
+        const response = await updatePatient(regPatientId, payload);
+        if (response?.success) {
+          alert('Patient updated successfully.');
+          if (onSuccess) {
+            onSuccess(response.data);
+          }
+        } else {
+          alert(response?.message || 'Patient update failed.');
         }
       } else {
-        alert(response?.message || `Patient ${isEditMode ? 'update' : 'registration'} failed.`);
+        // Step 1: Pre-registration deduplication verification check
+        try {
+          console.log('[RegisterNewPatient] Verifying intake for duplicates:', payload);
+          const verifyRes = await verifyPatient(payload);
+          console.log('[RegisterNewPatient] Verification response received:', verifyRes);
+
+          const isMatchFound =
+            verifyRes?.action_required === true ||
+            verifyRes?.decision === 'HIGH_CONFIDENCE_MATCH' ||
+            verifyRes?.decision === 'REVIEW_REQUIRED' ||
+            (typeof verifyRes?.confidence === 'number' && verifyRes.confidence >= 80.0) ||
+            (typeof verifyRes?.confidence_score === 'number' && verifyRes.confidence_score >= 80.0);
+
+          if (isMatchFound && Array.isArray(verifyRes?.candidates) && verifyRes.candidates.length > 0) {
+            console.log('[RegisterNewPatient] Match detected! Opening PatientVerificationModal:', {
+              decision: verifyRes.decision,
+              confidence: verifyRes.confidence || verifyRes.confidence_score,
+              candidatesCount: verifyRes.candidates.length
+            });
+            setVerificationResult(verifyRes);
+            setPendingPayload(payload);
+            setVerificationModalOpen(true);
+            setLoading(false);
+            return;
+          }
+        } catch (verifyErr) {
+          console.error('[RegisterNewPatient] Identity verification error:', verifyErr);
+        }
+
+        // Step 2: Clean registration
+        const response = await createPatient(payload);
+        if (response?.success) {
+          alert('Patient registered successfully.');
+          if (onSuccess) {
+            onSuccess(response.data);
+          }
+        } else {
+          alert(response?.message || 'Patient registration failed.');
+        }
       }
     } catch (error) {
       const message = error?.response?.data?.message || error?.message || 'Operation failed.';
@@ -220,11 +379,23 @@ export default function RegisterNewPatient({
       <div className="absolute top-0 left-0 right-0 h-1.5 bg-blue-600 z-10"></div>
 
       {/* Fixed Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-100 shrink-0 bg-white">
-        <div>
+      <div className="flex items-center justify-between p-3.5 border-b border-slate-100 shrink-0 bg-white">
+        <div className="flex items-center gap-3">
           <h3 className="text-base font-bold text-slate-800">
             {isEditMode ? 'Edit Patient Master Record' : 'Master Registry: Patient Registration'}
           </h3>
+          {!isEditMode && (
+            <button
+              id="btn-autofill-duplicate"
+              type="button"
+              onClick={handleAutofillDuplicate}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer active:scale-95"
+              title="Populate test data matching existing Patient XYZ to verify duplicate alert modal"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Fill Dummy Duplicate (Patient XYZ)</span>
+            </button>
+          )}
         </div>
         {onCancel && (
           <button
@@ -394,66 +565,146 @@ export default function RegisterNewPatient({
 
         {/* COLUMN 2: Contact & Address + Distinct Medical Information */}
         <div className="space-y-3">
-          {/* Card A: PATIENT CONTACT & ADMINISTRATIVE */}
-          <div className="space-y-2 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
+          {/* Card A: PATIENT CONTACT & RESIDENTIAL ADDRESS */}
+          <div className="space-y-2.5 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
             <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1">
               <MapPin className="w-4 h-4 text-blue-600" />
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Patient Contact & Administrative</h4>
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Residential Address & Contact</h4>
             </div>
 
-            {/* Address Textarea */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Address <span className="text-red-500 font-bold ml-0.5">*</span></label>
-              <textarea
-                id="reg-address"
-                maxLength={500}
-                rows={2}
-                required
-                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Enter full address..."
-              />
-              <div className="text-[10px] text-slate-400 text-right mt-0.5">{address.length}/500</div>
+            {/* Row 1: House/Flat No + Street/Locality */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-0.5">House / Flat No</label>
+                <input
+                  id="reg-house-flat-no"
+                  type="text"
+                  maxLength={100}
+                  placeholder="E.g. Flat 402, Sai Residency"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  value={houseFlatNo}
+                  onChange={(e) => setHouseFlatNo(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-0.5">Street / Locality</label>
+                <input
+                  id="reg-street-locality"
+                  type="text"
+                  maxLength={255}
+                  placeholder="E.g. Road No 12, Banjara Hills"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  value={streetLocality}
+                  onChange={(e) => setStreetLocality(e.target.value)}
+                />
+              </div>
             </div>
 
-            {/* Contact Phone */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Contact Phone <span className="text-red-500 font-bold ml-0.5">*</span></label>
-              <input
-                id="reg-phone"
-                type="text"
-                required
-                placeholder="+91 98480 12345"
-                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                value={phone}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const res = validateField('phone', val);
-                  setPhoneError(res.isValid ? null : res.error);
-                  setPhone(val);
-                }}
-                onBlur={(e) => {
-                  const res = validateField('phone', e.target.value);
-                  setPhoneError(res.isValid ? null : res.error);
-                }}
-              />
-              {phoneError && (
-                <span className="text-red-500 text-[10px] block mt-1 font-bold">{phoneError}</span>
-              )}
+            {/* Row 2: Village/Town/City + Mandal */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-0.5">Village / Town / City</label>
+                <input
+                  id="reg-village-town"
+                  type="text"
+                  maxLength={150}
+                  placeholder="E.g. Hyderabad"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  value={villageTown}
+                  onChange={(e) => setVillageTown(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-0.5">Mandal</label>
+                <input
+                  id="reg-mandal"
+                  type="text"
+                  maxLength={100}
+                  placeholder="E.g. Khairatabad"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  value={mandal}
+                  onChange={(e) => setMandal(e.target.value)}
+                />
+              </div>
             </div>
 
-            {/* Email Address */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Email Address</label>
-              <input
-                id="reg-email"
-                type="email"
-                placeholder="patient@example.com"
-                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+            {/* Row 3: District + State + PIN Code */}
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-0.5">District</label>
+                <input
+                  id="reg-district"
+                  type="text"
+                  maxLength={100}
+                  placeholder="E.g. Hyderabad"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-0.5">State</label>
+                <input
+                  id="reg-state"
+                  type="text"
+                  maxLength={100}
+                  placeholder="E.g. Telangana"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-0.5">PIN Code</label>
+                <input
+                  id="reg-pincode"
+                  type="text"
+                  maxLength={10}
+                  placeholder="500034"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Contact Phone & Email */}
+            <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-200/80">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-0.5">Contact Phone <span className="text-red-500 font-bold ml-0.5">*</span></label>
+                <input
+                  id="reg-phone"
+                  type="text"
+                  required
+                  placeholder="+91 98480 12345"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                  value={phone}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const res = validateField('phone', val);
+                    setPhoneError(res.isValid ? null : res.error);
+                    setPhone(val);
+                  }}
+                  onBlur={(e) => {
+                    const res = validateField('phone', e.target.value);
+                    setPhoneError(res.isValid ? null : res.error);
+                  }}
+                />
+                {phoneError && (
+                  <span className="text-red-500 text-[10px] block mt-1 font-bold">{phoneError}</span>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-0.5">Email Address</label>
+                <input
+                  id="reg-email"
+                  type="email"
+                  placeholder="patient@example.com"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
@@ -646,6 +897,16 @@ export default function RegisterNewPatient({
           <span>{loading ? 'Saving...' : isEditMode ? 'Update Patient Record' : 'Verify & Register Patient'}</span>
         </button>
       </div>
+
+      {/* Patient Identity Resolution & Deduplication Interceptor Modal */}
+      <PatientVerificationModal
+        isOpen={verificationModalOpen}
+        onClose={() => setVerificationModalOpen(false)}
+        verificationData={verificationResult}
+        incomingPatient={pendingPayload}
+        onSelectExisting={handleSelectExistingCandidate}
+        onForceCreate={handleForceCreateCandidate}
+      />
     </form>
   );
 }

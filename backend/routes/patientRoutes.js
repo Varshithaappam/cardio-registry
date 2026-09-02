@@ -7,8 +7,24 @@ const patientController = require("../controllers/patientController");
  * Patient Routes
  */
 
+// Verify Patient Identity (Pre-registration check)
+router.post("/verify", patientController.verifyPatient);
+
+// Resolve Staging (Action: FORCE_CREATE or MERGE)
+router.post("/resolve-staging", patientController.resolveStaging);
+
 // Register New Patient
+router.post("/register", patientController.registerPatient);
 router.post("/", patientController.registerPatient);
+
+// Confirm / Reject Matches (Audit & Action)
+router.post("/confirm-match", patientController.confirmMatch);
+router.post("/:id/confirm-match", patientController.confirmMatch);
+router.post("/reject-match", patientController.rejectMatch);
+router.post("/:id/reject-match", patientController.rejectMatch);
+
+// Get Patient Match Audit History
+router.get("/audit", patientController.getAuditLogs);
 
 // Get All Patients
 router.get("/", patientController.getAllPatients);
