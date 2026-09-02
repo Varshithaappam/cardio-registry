@@ -10,13 +10,32 @@ const api = axios.create({
   timeout: 10000,
 });
 
-// Attach token to outgoing requests
+// Attach token and authenticated user headers to outgoing requests
 api.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    const storedUser = sessionStorage.getItem('user') || localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const userObj = typeof storedUser === 'string' ? JSON.parse(storedUser) : storedUser;
+        const userName = userObj.username || userObj.name || userObj.full_name || userObj.email;
+        if (userName) {
+          config.headers['X-User-Name'] = userName;
+        }
+        if (userObj.id || userObj.userId || userObj.user_id) {
+          config.headers['X-User-Id'] = userObj.id || userObj.userId || userObj.user_id;
+        }
+        if (userObj.role || userObj.role_name) {
+          config.headers['X-User-Role'] = userObj.role || userObj.role_name;
+        }
+      } catch (e) {
+        config.headers['X-User-Name'] = storedUser;
+      }
     }
 
     return config;

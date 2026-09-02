@@ -1,5 +1,6 @@
 const fuzzball = require('fuzzball');
 const db = require('../config/db');
+const mpiConfigService = require('./mpiConfigService');
 const {
   normalizeName,
   getPhonetic,
@@ -12,35 +13,6 @@ const {
   maskPhone,
   maskEmail
 } = require('./normalizationService');
-
-const WEIGHTS = {
-  abha: 25,
-  uhid: 20,
-  phone: 15,
-  dob: 15,
-  name: 15,
-  address: 5,
-  email: 3,
-  gender: 2
-};
-
-const POSITIVE_EVIDENCE = {
-  abhaExact: 100,
-  uhidExact: 100,
-  phoneExact: 40,
-  dobExact: 30,
-  nameHighSim: 25,
-  addressHighSim: 10,
-  genderExact: 5
-};
-
-const PENALTIES = {
-  abhaConflict: 100,
-  uhidConflict: 80,
-  dobConflict: 40,
-  genderConflict: 20,
-  phoneConflict: 15
-};
 
 /**
  * Normalizes input patient intake payload into standard comparison attributes
@@ -128,7 +100,10 @@ function normalizeIntake(payload = {}) {
 /**
  * Calculates similarity, reasons, and conflict penalties between input intake and an index candidate
  */
-function scoreCandidate(input, candidate) {
+function scoreCandidate(input, candidate, config = null) {
+  const weights = config?.weights || mpiConfigService.DEFAULT_WEIGHTS;
+  const penaltiesConfig = config?.penalties || mpiConfigService.DEFAULT_PENALTIES;
+
   // =========================================================================
   // Layer 1: Deterministic Matching (Strict All-Fields-Identical Rule)
   // An automatic 100% deterministic match ONLY triggers if ALL core patient
@@ -204,8 +179,7 @@ function scoreCandidate(input, candidate) {
   }
 
   // =========================================================================
-  // Layer 3: Fuzzy Match Engine (Fall-through when Layer 1 does not match)
-  // For records with minor typos or partial demographic alignment
+  // Layer 3: Dynamic Weighted Fuzzy Match Engine (Fall-through from Layer 1)
   // =========================================================================
   let weightedScoreSum = 0;
   let availableWeightSum = 0;
@@ -215,14 +189,15 @@ function scoreCandidate(input, candidate) {
   const reasons = [];
   const conflicts = [];
 
-  // 1. ABHA Number (Weight = 25%) - Gradient Fuzzy Ratio
+  // 1. ABHA Number
   if (input.normAbha && candidate.normalized_abha) {
-    availableWeightSum += WEIGHTS.abha;
+    const w = weights.abha ?? mpiConfigService.DEFAULT_WEIGHTS.abha;
+    availableWeightSum += w;
     const r1 = fuzzball.ratio(input.normAbha, candidate.normalized_abha);
     const r2 = fuzzball.token_sort_ratio(input.normAbha, candidate.normalized_abha);
     const abhaSim = Math.max(r1, r2) / 100;
     fieldScores.abha = parseFloat(abhaSim.toFixed(2));
-    weightedScoreSum += WEIGHTS.abha * abhaSim;
+    weightedScoreSum += w * abhaSim;
 
     if (abhaSim >= 0.85) {
       reasons.push(`ABHA number highly similar (${Math.round(abhaSim * 100)}%)`);
@@ -235,14 +210,15 @@ function scoreCandidate(input, candidate) {
     fieldScores.abha = null;
   }
 
-  // 2. UHID (Weight = 20%) - Gradient Fuzzy Ratio
+  // 2. UHID
   if (input.normUhid && candidate.normalized_uhid) {
-    availableWeightSum += WEIGHTS.uhid;
+    const w = weights.uhid ?? mpiConfigService.DEFAULT_WEIGHTS.uhid;
+    availableWeightSum += w;
     const r1 = fuzzball.ratio(input.normUhid, candidate.normalized_uhid);
     const r2 = fuzzball.token_sort_ratio(input.normUhid, candidate.normalized_uhid);
     const uhidSim = Math.max(r1, r2) / 100;
     fieldScores.uhid = parseFloat(uhidSim.toFixed(2));
-    weightedScoreSum += WEIGHTS.uhid * uhidSim;
+    weightedScoreSum += w * uhidSim;
 
     if (uhidSim >= 0.85) {
       reasons.push(`UHID highly similar (${Math.round(uhidSim * 100)}%)`);
@@ -255,29 +231,32 @@ function scoreCandidate(input, candidate) {
     fieldScores.uhid = null;
   }
 
-  // 3. Contact Phone (Weight = 15%)
+  // 3. Contact Phone
   if (input.normPhone && candidate.normalized_phone) {
-    availableWeightSum += WEIGHTS.phone;
+    const w = weights.phone ?? mpiConfigService.DEFAULT_WEIGHTS.phone;
+    availableWeightSum += w;
     const phoneSim = fuzzball.ratio(input.normPhone, candidate.normalized_phone) / 100;
     fieldScores.phone = parseFloat(phoneSim.toFixed(2));
-    weightedScoreSum += WEIGHTS.phone * phoneSim;
+    weightedScoreSum += w * phoneSim;
 
     if (phoneSim >= 0.80) {
       reasons.push(`Phone highly similar (${Math.round(phoneSim * 100)}%)`);
     } else {
-      penalties += PENALTIES.phoneConflict;
-      conflicts.push(`Phone mismatch (-${PENALTIES.phoneConflict} pts)`);
+      const p = penaltiesConfig.phoneConflict ?? mpiConfigService.DEFAULT_PENALTIES.phoneConflict;
+      penalties += p;
+      conflicts.push(`Phone mismatch (-${p} pts)`);
     }
   } else {
     fieldScores.phone = null;
   }
 
-  // 4. Date of Birth (Weight = 15%)
+  // 4. Date of Birth
   if (input.dobStr && candidate.date_of_birth) {
-    availableWeightSum += WEIGHTS.dob;
+    const w = weights.dob ?? mpiConfigService.DEFAULT_WEIGHTS.dob;
+    availableWeightSum += w;
     if (input.dobStr === candDobStr) {
       fieldScores.dob = 1.0;
-      weightedScoreSum += WEIGHTS.dob * 1.0;
+      weightedScoreSum += w * 1.0;
       reasons.push('Date of birth exact match');
     } else {
       const inputYear = input.dobYear;
@@ -286,27 +265,29 @@ function scoreCandidate(input, candidate) {
 
       if (yearDiff === 0) {
         fieldScores.dob = 0.5;
-        weightedScoreSum += WEIGHTS.dob * 0.5;
+        weightedScoreSum += w * 0.5;
         reasons.push('Birth year match');
       } else {
         fieldScores.dob = 0.0;
-        penalties += PENALTIES.dobConflict;
-        conflicts.push(`Date of birth conflict (-${PENALTIES.dobConflict} pts)`);
+        const p = penaltiesConfig.dobConflict ?? mpiConfigService.DEFAULT_PENALTIES.dobConflict;
+        penalties += p;
+        conflicts.push(`Date of birth conflict (-${p} pts)`);
       }
     }
   } else {
     fieldScores.dob = null;
   }
 
-  // 5. Full Name (Weight = 15%)
+  // 5. Full Name
   if (input.normName && candidate.normalized_name) {
-    availableWeightSum += WEIGHTS.name;
+    const w = weights.name ?? mpiConfigService.DEFAULT_WEIGHTS.name;
+    availableWeightSum += w;
     const r1 = fuzzball.ratio(input.normName, candidate.normalized_name);
     const r2 = fuzzball.WRatio(input.normName, candidate.normalized_name);
     const r3 = fuzzball.token_sort_ratio(input.normName, candidate.normalized_name);
     const nameSim = Math.max(r1, r2, r3) / 100;
     fieldScores.name = parseFloat(nameSim.toFixed(2));
-    weightedScoreSum += WEIGHTS.name * nameSim;
+    weightedScoreSum += w * nameSim;
 
     if (nameSim >= 0.90) {
       reasons.push(`Name similarity > 0.90 (${Math.round(nameSim * 100)}%)`);
@@ -319,15 +300,16 @@ function scoreCandidate(input, candidate) {
     fieldScores.name = null;
   }
 
-  // 6. Residential Address (Weight = 5%) - Component-Level Fuzzy
+  // 6. Residential Address
   if (input.normAddress && candidate.normalized_address) {
-    availableWeightSum += WEIGHTS.address;
+    const w = weights.address ?? mpiConfigService.DEFAULT_WEIGHTS.address;
+    availableWeightSum += w;
     const r1 = fuzzball.ratio(input.normAddress, candidate.normalized_address);
     const r2 = fuzzball.WRatio(input.normAddress, candidate.normalized_address);
     const r3 = fuzzball.token_set_ratio(input.normAddress, candidate.normalized_address);
     const addrSim = Math.max(r1, r2, r3) / 100;
     fieldScores.address = parseFloat(addrSim.toFixed(2));
-    weightedScoreSum += WEIGHTS.address * addrSim;
+    weightedScoreSum += w * addrSim;
 
     if (addrSim >= 0.85) {
       reasons.push(`Address similarity > 0.85 (${Math.round(addrSim * 100)}%)`);
@@ -338,25 +320,27 @@ function scoreCandidate(input, candidate) {
     fieldScores.address = null;
   }
 
-  // 7. Email Address (Weight = 3%)
+  // 7. Email Address
   if (input.normEmail && candidate.normalized_email) {
-    availableWeightSum += WEIGHTS.email;
+    const w = weights.email ?? mpiConfigService.DEFAULT_WEIGHTS.email;
+    availableWeightSum += w;
     if (input.normEmail === candidate.normalized_email) {
       fieldScores.email = 1.0;
-      weightedScoreSum += WEIGHTS.email * 1.0;
+      weightedScoreSum += w * 1.0;
       reasons.push('Email exact match');
     } else {
       const emailSim = fuzzball.ratio(input.normEmail, candidate.normalized_email) / 100;
       fieldScores.email = parseFloat(emailSim.toFixed(2));
-      weightedScoreSum += WEIGHTS.email * emailSim;
+      weightedScoreSum += w * emailSim;
     }
   } else {
     fieldScores.email = null;
   }
 
-  // 8. Gender (Weight = 2%)
+  // 8. Gender
   if (input.gender && candidate.gender) {
-    availableWeightSum += WEIGHTS.gender;
+    const w = weights.gender ?? mpiConfigService.DEFAULT_WEIGHTS.gender;
+    availableWeightSum += w;
     const candGenderNorm = (candidate.gender || '').toLowerCase().startsWith('m')
       ? 'Male'
       : (candidate.gender || '').toLowerCase().startsWith('f')
@@ -365,12 +349,13 @@ function scoreCandidate(input, candidate) {
 
     if (input.gender === candGenderNorm) {
       fieldScores.gender = 1.0;
-      weightedScoreSum += WEIGHTS.gender * 1.0;
+      weightedScoreSum += w * 1.0;
       reasons.push('Gender exact match');
     } else {
       fieldScores.gender = 0.0;
-      penalties += PENALTIES.genderConflict;
-      conflicts.push(`Gender conflict (-${PENALTIES.genderConflict} pts)`);
+      const p = penaltiesConfig.genderConflict ?? mpiConfigService.DEFAULT_PENALTIES.genderConflict;
+      penalties += p;
+      conflicts.push(`Gender conflict (-${p} pts)`);
     }
   } else {
     fieldScores.gender = null;
@@ -402,7 +387,8 @@ function scoreCandidate(input, candidate) {
 /**
  * Resolves patient identity across Pass 1 (Exact Seek) & Pass 2 (Candidate Blocking)
  */
-async function resolvePatientIdentity(intakePayload) {
+async function resolvePatientIdentity(intakePayload, customConfig = null) {
+  const config = customConfig || await mpiConfigService.getScoringConfig();
   const input = normalizeIntake(intakePayload);
   const pool = await db.getPool();
 
@@ -495,12 +481,12 @@ async function resolvePatientIdentity(intakePayload) {
   }
 
   // =========================================================================
-  // Score all retrieved candidates
+  // Score all retrieved candidates using dynamic configuration
   // =========================================================================
   const scoredCandidates = [];
 
   for (const candidate of candidateMap.values()) {
-    const scored = scoreCandidate(input, candidate);
+    const scored = scoreCandidate(input, candidate, config);
 
     console.log(`[Identity Resolution] Scoring candidate ID #${candidate.reg_patient_id} (${candidate.patient_name}):`, {
       baseScore: scored.baseScore,
@@ -540,14 +526,17 @@ async function resolvePatientIdentity(intakePayload) {
   const topCandidates = scoredCandidates.slice(0, 5);
   const highestConfidence = topCandidates.length > 0 ? topCandidates[0].confidence : 0.0;
 
-  // Determine system decision
+  // Determine system decision using dynamic thresholds
+  const highConfThreshold = config?.thresholds?.high_confidence ?? 95.0;
+  const reviewReqThreshold = config?.thresholds?.review_required ?? 80.0;
+
   let decision = 'NO_LIKELY_MATCH';
   let action_required = false;
 
-  if (highestConfidence >= 95.0) {
+  if (highestConfidence >= highConfThreshold) {
     decision = 'HIGH_CONFIDENCE_MATCH';
     action_required = true;
-  } else if (highestConfidence >= 80.0) {
+  } else if (highestConfidence >= reviewReqThreshold) {
     decision = 'REVIEW_REQUIRED';
     action_required = true;
   }
@@ -561,14 +550,14 @@ async function resolvePatientIdentity(intakePayload) {
     confidence_score: highestConfidence,
     candidates: topCandidates,
     total_candidates_analyzed: scoredCandidates.length,
-    algorithm_version: 'v1.0.0'
+    algorithm_version: 'v1.0.0',
+    active_config: config
   };
 }
 
 module.exports = {
-  WEIGHTS,
-  PENALTIES,
-  normalizeIntake,
   scoreCandidate,
-  resolvePatientIdentity
+  resolvePatientIdentity,
+  normalizeIntake,
+  mpiConfigService
 };

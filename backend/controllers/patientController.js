@@ -2,6 +2,7 @@ const patientService = require("../services/patientService");
 const patientMatchAuditService = require("../services/patientMatchAuditService");
 const identityResolutionEngine = require("../services/identityResolutionEngine");
 const { mapDatabaseError } = require("../utils/patientValidation");
+const { getAuthenticatedUser } = require("../utils/authUtils");
 
 function handlePatientError(res, error, action) {
     console.error(`${action} Error:`, {
@@ -30,15 +31,16 @@ function handlePatientError(res, error, action) {
  */
 async function registerPatient(req, res) {
     try {
-        const user = req.user || { id: 1, name: 'Nurse / User' };
-        const userId = user?.id || user?.userId || 1;
+        const user = getAuthenticatedUser(req);
+        const userId = user.userId || user.id || 1;
+        const userName = user.username || user.name || `User_${userId}`;
         const confirmOverride = req.query.confirm_no_existing_match === 'true' || 
                                 req.body.confirm_no_existing_match === true ||
                                 req.body.force_create === true;
 
         // If clinical safety override is confirmed (Force Register as New Record)
         if (confirmOverride) {
-            const stagingId = req.body.staging_id || await patientService.insertPatientStaging(req.body);
+            const stagingId = req.body.staging_id || await patientService.getOrCreatePatientStaging(req.body, userName);
             const newPatient = await patientService.registerPatient(req.body, userId);
             await patientService.updatePatientStaging(stagingId, 'RESOLVED', 'MANUAL_CREATED', newPatient.reg_patient_id);
             
@@ -61,7 +63,7 @@ async function registerPatient(req, res) {
                     user_decision: 'MANUAL_CREATED',
                     overall_score: 0.0,
                     reasons: ['User confirmed clinical safety override and forced registration'],
-                    created_by: user.name || `User_${userId}`
+                    created_by: userName
                 });
             } catch (auditErr) {
                 console.error("Audit log error on force create:", auditErr);
@@ -110,7 +112,7 @@ async function registerPatient(req, res) {
  */
 async function resolveStaging(req, res) {
     try {
-        const user = req.user || { id: 1, name: 'Nurse / User' };
+        const user = getAuthenticatedUser(req);
         const { staging_id, action, target_patient_id } = req.body;
 
         if (!staging_id || !action) {
@@ -139,11 +141,10 @@ async function resolveStaging(req, res) {
  */
 async function verifyPatient(req, res) {
     try {
-        const user = req.user || { id: 1, name: 'Nurse / User' };
-        // 1. Insert into patient_staging or reuse existing staging_id so candidate_patient_id is always present
-        const stagingId = req.body.staging_id || await patientService.insertPatientStaging(req.body);
+        const user = getAuthenticatedUser(req);
+        const stagingId = req.body.staging_id || null;
         
-        // 2. Perform fuzzy identity resolution and log audit with BOTH IDs simultaneously in one row
+        // Perform fuzzy identity resolution
         const result = await patientService.verifyPatientIdentity(req.body, user, stagingId);
 
         return res.status(200).json({
@@ -161,7 +162,7 @@ async function verifyPatient(req, res) {
  */
 async function confirmMatch(req, res) {
     try {
-        const user = req.user || { id: 1, name: 'Nurse / User' };
+        const user = getAuthenticatedUser(req);
         const candidateId = req.params.id || req.body.candidate_patient_id;
         const result = await patientService.confirmMatch({
             ...req.body,
@@ -183,7 +184,7 @@ async function confirmMatch(req, res) {
  */
 async function rejectMatch(req, res) {
     try {
-        const user = req.user || { id: 1, name: 'Nurse / User' };
+        const user = getAuthenticatedUser(req);
         const candidateId = req.params.id || req.body.candidate_patient_id;
         const result = await patientService.rejectMatch({
             ...req.body,

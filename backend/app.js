@@ -36,9 +36,11 @@ const hfFormRoutes = require("./routes/hfFormRoutes");
 const nurseFollowUpReportRoutes = require("./routes/nurseFollowUpReportRoutes");
 const nstemiRoutes = require("./routes/nstemiRoutes");
 const stemiRoutes = require("./routes/stemiRoutes");
+const mpiConfigRoutes = require("./routes/mpiConfigRoutes");
 
 // API Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/mpi-config", mpiConfigRoutes);
 app.use("/api/hf-registry", hfRegistryRoutes);
 app.post("/api/resolve-staging", patientController.resolveStaging);
 app.use("/api/patients", patientRoutes);

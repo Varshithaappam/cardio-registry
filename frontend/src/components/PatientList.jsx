@@ -101,8 +101,8 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
 
   // New Patient Form State
   const [name, setName] = useState('');
-  const [dob, setDob] = useState('1966-01-01');
-  const [gender, setGender] = useState('Male');
+  const [dob, setDob] = useState('');
+  const [gender, setGender] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [insuranceMode, setInsuranceMode] = useState('Direct Cash / Self-Pay');
@@ -159,8 +159,8 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
         alert('Patient registered successfully.');
         setIsRegistering(false);
         setName('');
-        setDob('1966-01-01');
-        setGender('Male');
+        setDob('');
+        setGender('');
         setPhone('');
         setEmail('');
         setInsuranceMode('Direct Cash / Self-Pay');

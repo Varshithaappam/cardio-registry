@@ -9,6 +9,14 @@ export const verifyPatient = async (patientData) => {
 };
 
 /**
+ * Resolve unverified staging intake (FORCE_CREATE or MERGE)
+ */
+export const resolveStagingPatient = async ({ staging_id, action, target_patient_id }) => {
+    const response = await api.post("/resolve-staging", { staging_id, action, target_patient_id });
+    return response.data;
+};
+
+/**
  * Register New Patient
  */
 export const createPatient = async (patientData, options = {}) => {

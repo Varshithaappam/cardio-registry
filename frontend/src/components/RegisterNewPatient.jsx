@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, MapPin, Briefcase, GraduationCap, X, Check, Phone, Mail, Shield, CreditCard, Sparkles } from 'lucide-react';
 import { buildPatientPayload } from '../utils/patientMapper';
 import { validateField } from '../utils/validation';
-import { createPatient, updatePatient, verifyPatient, confirmPatientMatch, rejectPatientMatch } from '../../api/patientApi';
+import { createPatient, updatePatient, verifyPatient, confirmPatientMatch, rejectPatientMatch, resolveStagingPatient } from '../../api/patientApi';
 import PatientVerificationModal from './PatientVerificationModal';
 
 const HIGHER_EDUCATION_OPTIONS = [
@@ -14,19 +14,19 @@ const HIGHER_EDUCATION_OPTIONS = [
 ];
 
 function formatDateForInput(dateVal) {
-  if (!dateVal) return '1966-01-01';
+  if (!dateVal) return '';
   if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateVal.trim())) {
     return dateVal.trim();
   }
   try {
     const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return '1966-01-01';
+    if (isNaN(d.getTime())) return '';
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   } catch {
-    return '1966-01-01';
+    return '';
   }
 }
 
@@ -55,8 +55,8 @@ export default function RegisterNewPatient({
   const [nameError, setNameError] = useState(null);
   const [phoneError, setPhoneError] = useState(null);
   const [mrNo, setMrNo] = useState('');
-  const [dob, setDob] = useState('1966-01-01');
-  const [gender, setGender] = useState('Male');
+  const [dob, setDob] = useState('');
+  const [gender, setGender] = useState('');
   const [bloodGroup, setBloodGroup] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -95,7 +95,7 @@ export default function RegisterNewPatient({
       setName(p.name || p.patient_name || '');
       setMrNo(p.mrNo || p.mr_no || '');
       setDob(formatDateForInput(p.dob || p.date_of_birth));
-      setGender(p.gender || 'Male');
+      setGender(p.gender || '');
       setBloodGroup(p.bloodGroup || p.blood_group || '');
       setPhone(p.phone || p.phone_no || '');
       setEmail(p.email || '');
@@ -178,13 +178,21 @@ export default function RegisterNewPatient({
   const handleSelectExistingCandidate = async (candidate, verificationId) => {
     try {
       const activeStagingId = verificationResult?.staging_id || pendingPayload?.staging_id;
-      await confirmPatientMatch({
-        reg_patient_id: candidate.patient_id,
-        candidate_patient_id: activeStagingId,
-        staging_id: activeStagingId,
-        verification_id: verificationId,
-        user_decision: 'USE_EXISTING_PATIENT'
-      });
+      if (activeStagingId) {
+        await resolveStagingPatient({
+          staging_id: activeStagingId,
+          action: 'MERGE',
+          target_patient_id: candidate.patient_id
+        });
+      } else {
+        await confirmPatientMatch({
+          reg_patient_id: candidate.patient_id,
+          candidate_patient_id: activeStagingId,
+          staging_id: activeStagingId,
+          verification_id: verificationId,
+          user_decision: 'USE_EXISTING_PATIENT'
+        });
+      }
       setVerificationModalOpen(false);
       alert(`Existing patient file selected: ${candidate.full_name} (MR: ${candidate.mr_no || candidate.patient_id}).`);
       if (onSuccess) {
@@ -199,26 +207,28 @@ export default function RegisterNewPatient({
   const handleForceCreateCandidate = async (verificationId, candidateId) => {
     try {
       const activeStagingId = verificationResult?.staging_id || pendingPayload?.staging_id;
-      if (candidateId) {
-        await rejectPatientMatch({
-          reg_patient_id: candidateId,
-          candidate_patient_id: activeStagingId,
-          staging_id: activeStagingId,
-          verification_id: verificationId,
-          user_decision: 'CREATE_NEW_PATIENT'
-        });
-      }
       setVerificationModalOpen(false);
       setLoading(true);
-      const response = await createPatient({
-        ...pendingPayload,
-        staging_id: activeStagingId,
-        matched_patient_id: candidateId
-      }, { confirm_no_existing_match: true });
-      if (response?.success) {
+
+      let response;
+      if (activeStagingId) {
+        response = await resolveStagingPatient({
+          staging_id: activeStagingId,
+          action: 'FORCE_CREATE',
+          target_patient_id: candidateId
+        });
+      } else {
+        response = await createPatient({
+          ...pendingPayload,
+          staging_id: activeStagingId,
+          matched_patient_id: candidateId
+        }, { confirm_no_existing_match: true });
+      }
+
+      if (response?.success || response?.action === 'MANUAL_CREATED' || response?.data) {
         alert('Patient registered successfully.');
         if (onSuccess) {
-          onSuccess(response.data);
+          onSuccess(response.data || response.patient);
         }
       } else {
         alert(response?.message || 'Registration failed.');
@@ -251,6 +261,11 @@ export default function RegisterNewPatient({
 
     if (!dob) {
       alert('Date of Birth is required.');
+      return;
+    }
+
+    if (!gender) {
+      alert('Gender is required.');
       return;
     }
 
@@ -336,44 +351,35 @@ export default function RegisterNewPatient({
           alert(response?.message || 'Patient update failed.');
         }
       } else {
-        // Step 1: Pre-registration deduplication verification check
+        // Direct Unified Staging Intercept Call (POST /api/patients)
+        // Guarantees exactly ONE staging row per submission lifecycle
         try {
-          console.log('[RegisterNewPatient] Verifying intake for duplicates:', payload);
-          const verifyRes = await verifyPatient(payload);
-          console.log('[RegisterNewPatient] Verification response received:', verifyRes);
+          const response = await createPatient(payload);
+          if (response?.success) {
+            alert('Patient registered successfully.');
+            if (onSuccess) {
+              onSuccess(response.data);
+            }
+          } else {
+            alert(response?.message || 'Patient registration failed.');
+          }
+        } catch (postErr) {
+          const errData = postErr?.response?.data;
+          const isConflict = postErr?.response?.status === 409;
 
-          const isMatchFound =
-            verifyRes?.action_required === true ||
-            verifyRes?.decision === 'HIGH_CONFIDENCE_MATCH' ||
-            verifyRes?.decision === 'REVIEW_REQUIRED' ||
-            (typeof verifyRes?.confidence === 'number' && verifyRes.confidence >= 80.0) ||
-            (typeof verifyRes?.confidence_score === 'number' && verifyRes.confidence_score >= 80.0);
-
-          if (isMatchFound && Array.isArray(verifyRes?.candidates) && verifyRes.candidates.length > 0) {
-            console.log('[RegisterNewPatient] Match detected! Opening PatientVerificationModal:', {
-              decision: verifyRes.decision,
-              confidence: verifyRes.confidence || verifyRes.confidence_score,
-              candidatesCount: verifyRes.candidates.length
+          if (isConflict && Array.isArray(errData?.candidates) && errData.candidates.length > 0) {
+            console.log('[RegisterNewPatient] Duplicate match intercepted by backend staging engine:', errData);
+            setVerificationResult(errData);
+            setPendingPayload({
+              ...payload,
+              staging_id: errData.staging_id
             });
-            setVerificationResult(verifyRes);
-            setPendingPayload(payload);
             setVerificationModalOpen(true);
             setLoading(false);
             return;
           }
-        } catch (verifyErr) {
-          console.error('[RegisterNewPatient] Identity verification error:', verifyErr);
-        }
 
-        // Step 2: Clean registration
-        const response = await createPatient(payload);
-        if (response?.success) {
-          alert('Patient registered successfully.');
-          if (onSuccess) {
-            onSuccess(response.data);
-          }
-        } else {
-          alert(response?.message || 'Patient registration failed.');
+          throw postErr;
         }
       }
     } catch (error) {
@@ -515,10 +521,12 @@ export default function RegisterNewPatient({
             <label className="block text-sm font-semibold text-slate-700 mb-0.5">Gender <span className="text-red-500 font-bold ml-0.5">*</span></label>
             <select
               id="reg-gender"
+              required
               className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               value={gender}
               onChange={(e) => setGender(e.target.value)}
             >
+              <option value="">Select Gender</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
               <option value="Other">Other</option>

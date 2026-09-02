@@ -195,61 +195,73 @@ async function verifyPatientIdentity(patientData, user = 'System', stagingId = n
 
     const auditIds = [];
 
-    // Loop through ALL matching candidates (e.g. Patient 12, Patient 31) and insert a separate audit row for each
-    if (evaluatedCandidates.length > 0) {
-        for (const candidate of evaluatedCandidates) {
-            const candScore = typeof candidate.confidence === 'number' 
-                ? candidate.confidence 
-                : (candidate.confidence_score ?? 0);
-            const candDecision = candScore >= 95.0 
-                ? 'HIGH_CONFIDENCE_MATCH' 
-                : 'REVIEW_REQUIRED';
+    // Only write audit entries when an active staging_id exists
+    if (stagingId) {
+        if (evaluatedCandidates.length > 0) {
+            for (const candidate of evaluatedCandidates) {
+                const candScore = typeof candidate.confidence === 'number' 
+                    ? candidate.confidence 
+                    : (candidate.confidence_score ?? 0);
+                const candDecision = candScore >= 95.0 
+                    ? 'HIGH_CONFIDENCE_MATCH' 
+                    : 'REVIEW_REQUIRED';
 
-            const auditId = await patientMatchAuditService.logMatchAudit({
-                reg_patient_id: candidate.patient_id || candidate.reg_patient_id, // e.g. 12, 31
-                candidate_patient_id: stagingId,                                  // Single active staging_id
-                action: 'VERIFY',
-                decision: candDecision,
-                user_decision: null,
-                overall_score: candScore,
-                field_scores: candidate.field_scores || null,
-                reasons: candidate.reasons || ['Candidate matched threshold criteria'],
-                algorithm_version: result.algorithm_version,
-                created_by: typeof user === 'string' ? user : (user?.name || user?.username || `User_${user?.id || 1}`)
-            });
-            auditIds.push(auditId);
+                try {
+                    const auditId = await patientMatchAuditService.logMatchAudit({
+                        reg_patient_id: candidate.patient_id || candidate.reg_patient_id, // e.g. 12, 31
+                        candidate_patient_id: stagingId,                                  // Single active staging_id
+                        action: 'VERIFY',
+                        decision: candDecision,
+                        user_decision: null,
+                        overall_score: candScore,
+                        field_scores: candidate.field_scores || null,
+                        reasons: candidate.reasons || ['Candidate matched threshold criteria'],
+                        algorithm_version: result.algorithm_version,
+                        created_by: typeof user === 'string' ? user : (user?.name || user?.username || `User_${user?.id || 1}`)
+                    });
+                    auditIds.push(auditId);
+                } catch (auditErr) {
+                    console.error('[Verify Patient] Audit log error:', auditErr.message);
+                }
+            }
+        } else {
+            // If no candidate met threshold (< 80%), log a single NO_LIKELY_MATCH entry
+            const topCand = (result.candidates || [])[0] || null;
+            try {
+                const auditId = await patientMatchAuditService.logMatchAudit({
+                    reg_patient_id: topCand ? (topCand.patient_id || topCand.reg_patient_id) : null,
+                    candidate_patient_id: stagingId,
+                    action: 'VERIFY',
+                    decision: result.decision || 'NO_LIKELY_MATCH',
+                    user_decision: null,
+                    overall_score: result.confidence || 0.0,
+                    field_scores: topCand ? topCand.field_scores : null,
+                    reasons: topCand ? topCand.reasons : ['No matching candidate found above threshold'],
+                    algorithm_version: result.algorithm_version,
+                    created_by: typeof user === 'string' ? user : (user?.name || user?.username || `User_${user?.id || 1}`)
+                });
+                auditIds.push(auditId);
+            } catch (auditErr) {
+                console.error('[Verify Patient] Audit log error:', auditErr.message);
+            }
         }
-    } else {
-        // If no candidate met threshold (< 80%), log a single NO_LIKELY_MATCH entry
-        const topCand = (result.candidates || [])[0] || null;
-        const auditId = await patientMatchAuditService.logMatchAudit({
-            reg_patient_id: topCand ? (topCand.patient_id || topCand.reg_patient_id) : null,
-            candidate_patient_id: stagingId,
-            action: 'VERIFY',
-            decision: result.decision || 'NO_LIKELY_MATCH',
-            user_decision: null,
-            overall_score: result.confidence || 0.0,
-            field_scores: topCand ? topCand.field_scores : null,
-            reasons: topCand ? topCand.reasons : ['No matching candidate found above threshold'],
-            algorithm_version: result.algorithm_version,
-            created_by: typeof user === 'string' ? user : (user?.name || user?.username || `User_${user?.id || 1}`)
-        });
-        auditIds.push(auditId);
     }
 
     return {
         ...result,
+        staging_id: stagingId,
         verification_id: auditIds[0] || null,
         audit_ids: auditIds
     };
 }
 
 /**
- * Inserts incoming unverified intake into dbo.patient_staging
+ * Inserts incoming unverified intake into dbo.patient_staging (Lean Schema with Clinical Accountability)
  */
-async function insertPatientStaging(patientData) {
+async function insertPatientStaging(patientData, createdBy = 'Clinical Staff') {
     const normalized = normalizePatientInput(patientData);
     const pool = await db.getPool();
+    const userIdentifier = typeof createdBy === 'string' ? createdBy : (createdBy?.username || createdBy?.name || 'Clinical Staff');
 
     const req = pool.request();
     req.input('patient_name', db.sql.VarChar(100), normalized.patient_name || null);
@@ -259,44 +271,22 @@ async function insertPatientStaging(patientData) {
     req.input('uhid', db.sql.VarChar(50), normalized.uhid || null);
     req.input('abha_number', db.sql.VarChar(50), normalized.abha_number || null);
     req.input('mr_no', db.sql.VarChar(10), normalized.mr_no || null);
-    req.input('ip_no', db.sql.VarChar(10), normalized.ip_no || null);
-    req.input('blood_group', db.sql.NVarChar(7), normalized.blood_group || 'Unknown');
-    req.input('insurance_mode', db.sql.NVarChar(24), normalized.insurance_mode || 'Unknown');
     req.input('email', db.sql.VarChar(100), normalized.email || null);
     req.input('address', db.sql.VarChar(500), normalized.address || null);
-    req.input('house_flat_no', db.sql.NVarChar(100), normalized.house_flat_no || null);
-    req.input('street_locality', db.sql.NVarChar(255), normalized.street_locality || null);
-    req.input('village_town', db.sql.NVarChar(150), normalized.village_town || null);
-    req.input('mandal', db.sql.NVarChar(100), normalized.mandal || null);
-    req.input('district', db.sql.NVarChar(100), normalized.district || null);
-    req.input('state', db.sql.NVarChar(100), normalized.state || null);
     req.input('pincode', db.sql.VarChar(10), normalized.pincode || null);
-    req.input('higher_education', db.sql.NVarChar(13), normalized.higher_education || 'None');
-    req.input('occupation', db.sql.VarChar(255), normalized.occupation || null);
-    req.input('hypertension', db.sql.NVarChar(7), normalized.hypertension || 'No');
-    req.input('smoking', db.sql.NVarChar(7), normalized.smoking || 'No');
-    req.input('diabetes', db.sql.NVarChar(7), normalized.diabetes || 'No');
-    req.input('diabetes_control_type', db.sql.NVarChar(26), normalized.diabetes_control_type || 'Unknown');
-    req.input('renal_failure', db.sql.NVarChar(7), normalized.renal_failure || 'No');
-    req.input('active_dialysis_status', db.sql.NVarChar(14), normalized.active_dialysis_status || 'Unknown');
     req.input('raw_payload', db.sql.NVarChar(db.sql.MAX), JSON.stringify(patientData));
+    req.input('created_by', db.sql.VarChar(100), userIdentifier);
 
     const result = await req.query(`
         INSERT INTO dbo.patient_staging (
             patient_name, date_of_birth, gender, phone_no, uhid, abha_number,
-            mr_no, ip_no, blood_group, insurance_mode, email, address,
-            house_flat_no, street_locality, village_town, mandal, district, state, pincode,
-            higher_education, occupation, hypertension, smoking, diabetes,
-            diabetes_control_type, renal_failure, active_dialysis_status, raw_payload,
+            mr_no, email, address, pincode, raw_payload, created_by,
             match_status, created_at, updated_at
         )
         OUTPUT INSERTED.staging_id
         VALUES (
             @patient_name, @date_of_birth, @gender, @phone_no, @uhid, @abha_number,
-            @mr_no, @ip_no, @blood_group, @insurance_mode, @email, @address,
-            @house_flat_no, @street_locality, @village_town, @mandal, @district, @state, @pincode,
-            @higher_education, @occupation, @hypertension, @smoking, @diabetes,
-            @diabetes_control_type, @renal_failure, @active_dialysis_status, @raw_payload,
+            @mr_no, @email, @address, @pincode, @raw_payload, @created_by,
             'PENDING', GETDATE(), GETDATE()
         );
     `);
@@ -308,7 +298,7 @@ async function insertPatientStaging(patientData) {
  * Retrieves existing staging record if staging_id is provided; otherwise inserts a new row into patient_staging.
  * Ensures that a single submission lifecycle only produces ONE row in patient_staging.
  */
-async function getOrCreatePatientStaging(patientData) {
+async function getOrCreatePatientStaging(patientData, createdBy = 'Clinical Staff') {
     const existingStagingId = patientData?.staging_id || patientData?.stagingId;
     if (existingStagingId) {
         const existing = await getStagingPatientById(existingStagingId);
@@ -316,7 +306,7 @@ async function getOrCreatePatientStaging(patientData) {
             return existing.staging_id;
         }
     }
-    return await insertPatientStaging(patientData);
+    return await insertPatientStaging(patientData, createdBy);
 }
 
 /**
@@ -354,11 +344,12 @@ async function getStagingPatientById(stagingId) {
 /**
  * Step 1: Staging Intercept Handler
  */
-async function registerWithStagingIntercept(patientData, user = { id: 1 }) {
+async function registerWithStagingIntercept(patientData, user = { id: 1, username: 'Clinical Staff' }) {
     const userId = user?.id || user?.userId || 1;
+    const userName = typeof user === 'string' ? user : (user?.username || user?.name || `User_${userId}`);
 
-    // 1. Ensure only ONE staging row exists per submission lifecycle
-    const stagingId = await getOrCreatePatientStaging(patientData);
+    // 1. Ensure only ONE staging row exists per submission lifecycle with dynamic created_by
+    const stagingId = await getOrCreatePatientStaging(patientData, userName);
 
     // 2. Call fuzzy matching service and log audit rows for all matching candidates
     const verification = await verifyPatientIdentity(patientData, user, stagingId);
@@ -420,14 +411,19 @@ async function resolveStagingPatient({ staging_id, action, target_patient_id, us
     const userId = user?.id || user?.userId || 1;
 
     if (action === 'FORCE_CREATE') {
-        // Copy staging data to patient_demographics, generating new ID
-        let payload = stagingRow;
+        // Extract complete original intake values directly from raw_payload (JSON)
+        let payload = {};
         if (stagingRow.raw_payload) {
             try {
-                payload = { ...stagingRow, ...JSON.parse(stagingRow.raw_payload) };
+                payload = typeof stagingRow.raw_payload === 'string'
+                    ? JSON.parse(stagingRow.raw_payload)
+                    : stagingRow.raw_payload;
             } catch (e) {
-                // Ignore JSON parse error, fallback to stagingRow columns
+                console.error("Error parsing raw_payload in resolveStagingPatient:", e);
+                payload = { ...stagingRow };
             }
+        } else {
+            payload = { ...stagingRow };
         }
 
         const newPatient = await registerPatient(payload, userId);
