@@ -181,30 +181,66 @@ async function getPatientCounts(regPatientId) {
 }
 
 /**
- * Verifies patient identity using the 2-pass deterministic & fuzzy scoring engine
+ * Verifies patient identity using the deterministic & fuzzy scoring engine.
+ * Evaluates all candidate records in patient_demographics and inserts a separate audit log
+ * row for every candidate meeting the threshold criteria, linked to the active staging_id.
  */
-async function verifyPatientIdentity(patientData, user = 'System') {
+async function verifyPatientIdentity(patientData, user = 'System', stagingId = null) {
     const result = await identityResolutionEngine.resolvePatientIdentity(patientData);
 
-    const topCandidate = result.candidates.length > 0 ? result.candidates[0] : null;
-    const candidateId = topCandidate ? topCandidate.patient_id : null;
+    // Filter candidates meeting threshold criteria (>= 80% similarity)
+    const evaluatedCandidates = (result.candidates || []).filter(
+        c => (typeof c.confidence === 'number' ? c.confidence : c.confidence_score ?? 0) >= 80.0
+    );
 
-    const auditId = await patientMatchAuditService.logMatchAudit({
-        reg_patient_id: null,
-        candidate_patient_id: candidateId,
-        action: 'VERIFY',
-        decision: result.decision,
-        user_decision: null,
-        overall_score: result.confidence,
-        field_scores: topCandidate ? topCandidate.field_scores : null,
-        reasons: topCandidate ? topCandidate.reasons : ['No matching candidate found above threshold'],
-        algorithm_version: result.algorithm_version,
-        created_by: typeof user === 'string' ? user : (user?.name || user?.username || `User_${user?.id || 1}`)
-    });
+    const auditIds = [];
+
+    // Loop through ALL matching candidates (e.g. Patient 12, Patient 31) and insert a separate audit row for each
+    if (evaluatedCandidates.length > 0) {
+        for (const candidate of evaluatedCandidates) {
+            const candScore = typeof candidate.confidence === 'number' 
+                ? candidate.confidence 
+                : (candidate.confidence_score ?? 0);
+            const candDecision = candScore >= 95.0 
+                ? 'HIGH_CONFIDENCE_MATCH' 
+                : 'REVIEW_REQUIRED';
+
+            const auditId = await patientMatchAuditService.logMatchAudit({
+                reg_patient_id: candidate.patient_id || candidate.reg_patient_id, // e.g. 12, 31
+                candidate_patient_id: stagingId,                                  // Single active staging_id
+                action: 'VERIFY',
+                decision: candDecision,
+                user_decision: null,
+                overall_score: candScore,
+                field_scores: candidate.field_scores || null,
+                reasons: candidate.reasons || ['Candidate matched threshold criteria'],
+                algorithm_version: result.algorithm_version,
+                created_by: typeof user === 'string' ? user : (user?.name || user?.username || `User_${user?.id || 1}`)
+            });
+            auditIds.push(auditId);
+        }
+    } else {
+        // If no candidate met threshold (< 80%), log a single NO_LIKELY_MATCH entry
+        const topCand = (result.candidates || [])[0] || null;
+        const auditId = await patientMatchAuditService.logMatchAudit({
+            reg_patient_id: topCand ? (topCand.patient_id || topCand.reg_patient_id) : null,
+            candidate_patient_id: stagingId,
+            action: 'VERIFY',
+            decision: result.decision || 'NO_LIKELY_MATCH',
+            user_decision: null,
+            overall_score: result.confidence || 0.0,
+            field_scores: topCand ? topCand.field_scores : null,
+            reasons: topCand ? topCand.reasons : ['No matching candidate found above threshold'],
+            algorithm_version: result.algorithm_version,
+            created_by: typeof user === 'string' ? user : (user?.name || user?.username || `User_${user?.id || 1}`)
+        });
+        auditIds.push(auditId);
+    }
 
     return {
         ...result,
-        verification_id: auditId
+        verification_id: auditIds[0] || null,
+        audit_ids: auditIds
     };
 }
 
@@ -269,6 +305,21 @@ async function insertPatientStaging(patientData) {
 }
 
 /**
+ * Retrieves existing staging record if staging_id is provided; otherwise inserts a new row into patient_staging.
+ * Ensures that a single submission lifecycle only produces ONE row in patient_staging.
+ */
+async function getOrCreatePatientStaging(patientData) {
+    const existingStagingId = patientData?.staging_id || patientData?.stagingId;
+    if (existingStagingId) {
+        const existing = await getStagingPatientById(existingStagingId);
+        if (existing) {
+            return existing.staging_id;
+        }
+    }
+    return await insertPatientStaging(patientData);
+}
+
+/**
  * Updates match_status, final_action, and resolved_patient_id in dbo.patient_staging
  */
 async function updatePatientStaging(stagingId, matchStatus, finalAction = null, resolvedPatientId = null) {
@@ -306,16 +357,16 @@ async function getStagingPatientById(stagingId) {
 async function registerWithStagingIntercept(patientData, user = { id: 1 }) {
     const userId = user?.id || user?.userId || 1;
 
-    // 1. Insert incoming req.body into patient_staging with match_status = 'PENDING'
-    const stagingId = await insertPatientStaging(patientData);
+    // 1. Ensure only ONE staging row exists per submission lifecycle
+    const stagingId = await getOrCreatePatientStaging(patientData);
 
-    // 2. Call fuzzy matching service and log to patient_match_audit
-    const verification = await verifyPatientIdentity(patientData, user);
+    // 2. Call fuzzy matching service and log audit rows for all matching candidates
+    const verification = await verifyPatientIdentity(patientData, user, stagingId);
     const confidence = typeof verification.confidence === 'number' ? verification.confidence : (verification.confidence_score ?? 0);
     const candidates = verification.candidates || [];
     const topCandidate = candidates[0] || null;
 
-    // 3. If score < 80%: Auto-create in patient_demographics, update staging to RESOLVED / AUTO_CREATED
+    // 3. If score < 80%: Auto-create in patient_demographics, update existing staging row to RESOLVED / AUTO_CREATED
     if (confidence < 80.0) {
         const createdPatient = await registerPatient(patientData, userId);
         await updatePatientStaging(stagingId, 'RESOLVED', 'AUTO_CREATED', createdPatient.reg_patient_id);
@@ -328,7 +379,7 @@ async function registerWithStagingIntercept(patientData, user = { id: 1 }) {
         };
     }
 
-    // 4. If score between 80% and 94.99%: Update staging to REVIEW_REQUIRED, return status 'REVIEW_REQUIRED'
+    // 4. If score between 80% and 94.99%: Update existing staging row to REVIEW_REQUIRED
     if (confidence >= 80.0 && confidence < 95.0) {
         await updatePatientStaging(stagingId, 'REVIEW_REQUIRED', null, null);
         return {
@@ -342,7 +393,7 @@ async function registerWithStagingIntercept(patientData, user = { id: 1 }) {
         };
     }
 
-    // 5. If score >= 95%: Update staging to REVIEW_REQUIRED, return status 'HIGH_CONFIDENCE_MATCH'
+    // 5. If score >= 95%: Update existing staging row to REVIEW_REQUIRED
     await updatePatientStaging(stagingId, 'REVIEW_REQUIRED', null, null);
     return {
         status: 'HIGH_CONFIDENCE_MATCH',
@@ -382,11 +433,12 @@ async function resolveStagingPatient({ staging_id, action, target_patient_id, us
         const newPatient = await registerPatient(payload, userId);
         await updatePatientStaging(staging_id, 'RESOLVED', 'MANUAL_CREATED', newPatient.reg_patient_id);
 
-        // Audit resolution
+        // Audit resolution:
+        // reg_patient_id = existing matched candidate ID (target_patient_id)
+        // candidate_patient_id = newly generated staging_id
         await patientMatchAuditService.logMatchAudit({
-            incoming_patient_id: staging_id,
-            reg_patient_id: newPatient.reg_patient_id,
-            candidate_patient_id: target_patient_id || null,
+            reg_patient_id: target_patient_id || null,
+            candidate_patient_id: staging_id,
             action: 'FORCE_CREATE',
             decision: 'CONFIRMED_DIFFERENT_PATIENT',
             user_decision: 'MANUAL_CREATED',
@@ -414,11 +466,12 @@ async function resolveStagingPatient({ staging_id, action, target_patient_id, us
         // Update staging to RESOLVED / MANUAL_MERGED with the target_patient_id (Do not insert new patient)
         await updatePatientStaging(staging_id, 'RESOLVED', 'MANUAL_MERGED', target_patient_id);
 
-        // Audit resolution
+        // Audit resolution:
+        // reg_patient_id = existing matched patient ID (target_patient_id)
+        // candidate_patient_id = staging_id
         await patientMatchAuditService.logMatchAudit({
-            incoming_patient_id: staging_id,
-            reg_patient_id: null,
-            candidate_patient_id: target_patient_id,
+            reg_patient_id: target_patient_id,
+            candidate_patient_id: staging_id,
             action: 'MERGE',
             decision: 'CONFIRMED_SAME_PATIENT',
             user_decision: 'MANUAL_MERGED',
@@ -445,15 +498,16 @@ async function resolveStagingPatient({ staging_id, action, target_patient_id, us
  * Confirms a match decision (User selects "Same Patient")
  */
 async function confirmMatch(payload, user = 'System') {
-    const { reg_patient_id, candidate_patient_id, user_decision = 'CONFIRMED_SAME_PATIENT', score = null } = payload;
+    const existingPatientId = payload.reg_patient_id || payload.candidate_patient_id || payload.matched_patient_id || null;
+    const activeStagingId = payload.staging_id || payload.candidate_patient_id || null;
 
     const auditId = await patientMatchAuditService.logMatchAudit({
-        reg_patient_id: reg_patient_id || null,
-        candidate_patient_id: candidate_patient_id,
+        reg_patient_id: existingPatientId,   // 12 (Matched existing patient)
+        candidate_patient_id: activeStagingId, // 13 (Active staging_id)
         action: 'CONFIRM_MATCH',
         decision: 'CONFIRMED_SAME_PATIENT',
-        user_decision: user_decision || 'USE_EXISTING_PATIENT',
-        overall_score: score || 100.0,
+        user_decision: payload.user_decision || 'USE_EXISTING_PATIENT',
+        overall_score: payload.score || 100.0,
         field_scores: null,
         reasons: ['User confirmed candidate is the same patient'],
         algorithm_version: 'v1.0.0',
@@ -467,15 +521,16 @@ async function confirmMatch(payload, user = 'System') {
  * Rejects a match decision (User selects "Different Patient")
  */
 async function rejectMatch(payload, user = 'System') {
-    const { reg_patient_id, candidate_patient_id, user_decision = 'CONFIRMED_DIFFERENT_PATIENT', score = null } = payload;
+    const existingPatientId = payload.reg_patient_id || payload.candidate_patient_id || payload.matched_patient_id || null;
+    const activeStagingId = payload.staging_id || payload.candidate_patient_id || null;
 
     const auditId = await patientMatchAuditService.logMatchAudit({
-        reg_patient_id: reg_patient_id || null,
-        candidate_patient_id: candidate_patient_id,
+        reg_patient_id: existingPatientId,   // 12 (Matched existing patient)
+        candidate_patient_id: activeStagingId, // 13 (Active staging_id)
         action: 'REJECT_MATCH',
         decision: 'CONFIRMED_DIFFERENT_PATIENT',
-        user_decision: user_decision || 'CREATE_NEW_PATIENT',
-        overall_score: score || 0.0,
+        user_decision: payload.user_decision || 'CREATE_NEW_PATIENT',
+        overall_score: payload.score || 0.0,
         field_scores: null,
         reasons: ['User confirmed candidate is a distinct patient'],
         algorithm_version: 'v1.0.0',
@@ -495,6 +550,7 @@ async function getAuditHistory(params) {
 module.exports = {
     registerPatient,
     insertPatientStaging,
+    getOrCreatePatientStaging,
     updatePatientStaging,
     getStagingPatientById,
     registerWithStagingIntercept,

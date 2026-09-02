@@ -177,8 +177,11 @@ export default function RegisterNewPatient({
 
   const handleSelectExistingCandidate = async (candidate, verificationId) => {
     try {
+      const activeStagingId = verificationResult?.staging_id || pendingPayload?.staging_id;
       await confirmPatientMatch({
-        staging_id: candidate.patient_id,
+        reg_patient_id: candidate.patient_id,
+        candidate_patient_id: activeStagingId,
+        staging_id: activeStagingId,
         verification_id: verificationId,
         user_decision: 'USE_EXISTING_PATIENT'
       });
@@ -195,16 +198,23 @@ export default function RegisterNewPatient({
 
   const handleForceCreateCandidate = async (verificationId, candidateId) => {
     try {
+      const activeStagingId = verificationResult?.staging_id || pendingPayload?.staging_id;
       if (candidateId) {
         await rejectPatientMatch({
-          staging_id: candidateId,
+          reg_patient_id: candidateId,
+          candidate_patient_id: activeStagingId,
+          staging_id: activeStagingId,
           verification_id: verificationId,
           user_decision: 'CREATE_NEW_PATIENT'
         });
       }
       setVerificationModalOpen(false);
       setLoading(true);
-      const response = await createPatient(pendingPayload, { confirm_no_existing_match: true });
+      const response = await createPatient({
+        ...pendingPayload,
+        staging_id: activeStagingId,
+        matched_patient_id: candidateId
+      }, { confirm_no_existing_match: true });
       if (response?.success) {
         alert('Patient registered successfully.');
         if (onSuccess) {

@@ -1,5 +1,6 @@
 const patientService = require("../services/patientService");
 const patientMatchAuditService = require("../services/patientMatchAuditService");
+const identityResolutionEngine = require("../services/identityResolutionEngine");
 const { mapDatabaseError } = require("../utils/patientValidation");
 
 function handlePatientError(res, error, action) {
@@ -35,18 +36,26 @@ async function registerPatient(req, res) {
                                 req.body.confirm_no_existing_match === true ||
                                 req.body.force_create === true;
 
-        // If clinical safety override is confirmed (e.g. user clicked "Force Register as New Record")
+        // If clinical safety override is confirmed (Force Register as New Record)
         if (confirmOverride) {
-            const stagingId = await patientService.insertPatientStaging(req.body);
+            const stagingId = req.body.staging_id || await patientService.insertPatientStaging(req.body);
             const newPatient = await patientService.registerPatient(req.body, userId);
             await patientService.updatePatientStaging(stagingId, 'RESOLVED', 'MANUAL_CREATED', newPatient.reg_patient_id);
             
-            // Log clinical override audit
+            // Determine existing matched patient ID if not passed in payload
+            let existingMatchedId = req.body.matched_patient_id || req.body.candidate_patient_id || req.body.target_patient_id || null;
+            if (!existingMatchedId) {
+                const matchCheck = await identityResolutionEngine.resolvePatientIdentity(req.body);
+                existingMatchedId = matchCheck.candidates?.[0]?.patient_id || null;
+            }
+
+            // Log single audit entry with BOTH foreign keys populated in one row:
+            // reg_patient_id: ID of existing matched patient from patient_demographics (e.g. 12)
+            // candidate_patient_id: Active staging_id from patient_staging (e.g. 13)
             try {
                 await patientMatchAuditService.logMatchAudit({
-                    incoming_patient_id: stagingId,
-                    reg_patient_id: newPatient.reg_patient_id,
-                    candidate_patient_id: req.body.candidate_patient_id || null,
+                    reg_patient_id: existingMatchedId,
+                    candidate_patient_id: stagingId,
                     action: 'FORCE_CREATE',
                     decision: 'CONFIRMED_DIFFERENT_PATIENT',
                     user_decision: 'MANUAL_CREATED',
@@ -131,10 +140,15 @@ async function resolveStaging(req, res) {
 async function verifyPatient(req, res) {
     try {
         const user = req.user || { id: 1, name: 'Nurse / User' };
-        const result = await patientService.verifyPatientIdentity(req.body, user);
+        // 1. Insert into patient_staging or reuse existing staging_id so candidate_patient_id is always present
+        const stagingId = req.body.staging_id || await patientService.insertPatientStaging(req.body);
+        
+        // 2. Perform fuzzy identity resolution and log audit with BOTH IDs simultaneously in one row
+        const result = await patientService.verifyPatientIdentity(req.body, user, stagingId);
 
         return res.status(200).json({
             success: true,
+            staging_id: stagingId,
             ...result
         });
     } catch (error) {
