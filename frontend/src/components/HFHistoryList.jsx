@@ -5,14 +5,14 @@ import api from '../../api/axios';
 
 import { formatDateForDisplay, formatDateTimeForDisplay } from '../utils/dateUtils';
 
-export default function HFHistoryList({ regPatientId, patientName, onEditEventClick }) {
+export default function HFHistoryList({ regPatientId, patientName, onEditEventClick, isReadOnly = false }) {
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const currentUserRole = (sessionStorage.getItem('userRole') || 'CLINICIAN').toUpperCase();
-  const canDelete = ['ADMIN', 'CLINICIAN'].includes(currentUserRole);
+  const canDelete = ['ADMIN', 'CLINICIAN'].includes(currentUserRole) && !isReadOnly;
 
   const fetchHistory = async () => {
     if (!regPatientId) return;
@@ -172,8 +172,14 @@ export default function HFHistoryList({ regPatientId, patientName, onEditEventCl
                   <>
                     {isDraftRecord && (
                       <button
-                        onClick={() => onEditEventClick ? onEditEventClick(record.hf_id) : navigate(`/patient/${regPatientId}/edit?formType=HF&hf_id=${record.hf_id}`)}
-                        className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer border border-amber-600"
+                        disabled={isReadOnly}
+                        onClick={isReadOnly ? undefined : () => onEditEventClick ? onEditEventClick(record.hf_id) : navigate(`/patient/${regPatientId}/edit?formType=HF&hf_id=${record.hf_id}`)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition-all ${
+                          isReadOnly
+                            ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
+                            : 'bg-amber-500 hover:bg-amber-600 text-white cursor-pointer border border-amber-600'
+                        }`}
+                        title={isReadOnly ? 'Editing is disabled for Inactive/Deceased patients.' : 'Resume Form Filling'}
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
                         <span>Resume Form Filling</span>
@@ -182,8 +188,14 @@ export default function HFHistoryList({ regPatientId, patientName, onEditEventCl
 
                     {!isDraftRecord && onEditEventClick && (
                       <button
-                        onClick={() => onEditEventClick(record.hf_id)}
-                        className="px-2.5 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                        disabled={isReadOnly}
+                        onClick={isReadOnly ? undefined : () => onEditEventClick(record.hf_id)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors ${
+                          isReadOnly
+                            ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60'
+                            : 'bg-teal-600 hover:bg-teal-700 text-white cursor-pointer'
+                        }`}
+                        title={isReadOnly ? 'Editing is disabled for Inactive/Deceased patients.' : 'Edit Form'}
                       >
                         <span>Edit Form</span>
                         <ArrowUpRight className="w-3.5 h-3.5" />

@@ -13,6 +13,12 @@ const HIGHER_EDUCATION_OPTIONS = [
   'None'
 ];
 
+export const PATIENT_STATUS_OPTIONS = [
+  'ACTIVE',
+  'INACTIVE',
+  'DECEASED'
+];
+
 function formatDateForInput(dateVal) {
   if (!dateVal) return '';
   if (typeof dateVal === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateVal.trim())) {
@@ -84,6 +90,7 @@ export default function RegisterNewPatient({
   const [dialysisStatus, setDialysisStatus] = useState('No');
 
   const [loading, setLoading] = useState(false);
+  const [patientStatus, setPatientStatus] = useState('ACTIVE');
   const [verificationModalOpen, setVerificationModalOpen] = useState(false);
   const [verificationResult, setVerificationResult] = useState(null);
   const [pendingPayload, setPendingPayload] = useState(null);
@@ -96,6 +103,7 @@ export default function RegisterNewPatient({
       setMrNo(p.mrNo || p.mr_no || '');
       setDob(formatDateForInput(p.dob || p.date_of_birth));
       setGender(p.gender || '');
+      setPatientStatus(p.patient_status || p.status || 'ACTIVE');
       setBloodGroup(p.bloodGroup || p.blood_group || '');
       setPhone(p.phone || p.phone_no || '');
       setEmail(p.email || '');
@@ -333,7 +341,8 @@ export default function RegisterNewPatient({
       renalFailure,
       dialysisStatus,
       uhid,
-      abhaNumber
+      abhaNumber,
+      patientStatus: patientStatus || 'ACTIVE'
     });
 
     setLoading(true);
@@ -429,9 +438,39 @@ export default function RegisterNewPatient({
         
         {/* COLUMN 1: Demographics & Profile */}
         <div className="space-y-2 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
-          <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1">
-            <User className="w-4 h-4 text-blue-600" />
-            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Demographics & Profile</h4>
+          <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-blue-600" />
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Demographics & Profile</h4>
+            </div>
+          </div>
+
+          {/* Patient Status Dropdown */}
+          <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/50 p-2 rounded-xl border border-blue-200/80 shadow-2xs space-y-1">
+            <div className="flex items-center justify-between">
+              <label htmlFor="reg-patient-status" className="block text-[11px] font-bold text-slate-700">
+                Patient Status <span className="text-red-500 font-bold">*</span>
+              </label>
+              <span className={`px-2 py-0.5 text-[9px] font-extrabold rounded-md uppercase tracking-wider ${
+                patientStatus === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                patientStatus === 'DECEASED' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                'bg-slate-100 text-slate-700 border border-slate-300'
+              }`}>
+                {patientStatus}
+              </span>
+            </div>
+            <select
+              id="reg-patient-status"
+              value={patientStatus}
+              onChange={(e) => setPatientStatus(e.target.value)}
+              className="w-full p-1.5 text-xs font-semibold bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 cursor-pointer shadow-2xs"
+            >
+              {PATIENT_STATUS_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* 1. MR No (Medical Record Number) */}

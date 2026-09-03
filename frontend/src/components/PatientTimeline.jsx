@@ -77,6 +77,9 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
                      (record?.hfAssessments && record.hfAssessments.length > 0 ? (record.hfAssessments[0].hf_id || record.hfAssessments[0].id) : null) || 
                      record?.patient?.id;
 
+  const patientStatus = (record?.patient?.patient_status || record?.patient?.status || 'ACTIVE').toUpperCase();
+  const isInactiveOrDeceased = ['INACTIVE', 'DECEASED'].includes(patientStatus);
+
   if (!record || !record.patient) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
@@ -179,8 +182,14 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
             <span>Edit Patient Info</span>
           </button>
           <button
-            onClick={onAddEventClick}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+            disabled={isInactiveOrDeceased}
+            onClick={isInactiveOrDeceased ? undefined : onAddEventClick}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-2 ${
+              isInactiveOrDeceased
+                ? 'bg-slate-100 text-slate-400 border border-slate-300 cursor-not-allowed opacity-60 pointer-events-none'
+                : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+            }`}
+            title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding new forms is disabled.` : 'Add Clinical Event'}
           >
             <Plus className="w-4 h-4" />
             <span>ADD CLINICAL EVENT</span>
@@ -214,7 +223,16 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
             </div>
             <div>
               <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider block">Longitudinal Clinical Portfolio</span>
-              <h2 className="text-xl font-bold text-slate-800 mt-0.5">{record.patient.name}</h2>
+              <div className="flex items-center gap-2 mt-0.5">
+                <h2 className="text-xl font-bold text-slate-800">{record.patient.name}</h2>
+                <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md uppercase tracking-wider ${
+                  patientStatus === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                  patientStatus === 'DECEASED' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
+                  'bg-slate-100 text-slate-700 border border-slate-300'
+                }`}>
+                  {patientStatus}
+                </span>
+              </div>
               <span className="text-xs text-slate-400 font-mono">ID: {record.patient.id} • Registered {formatDateForDisplay(record.patient.createdAt)}</span>
             </div>
           </div>
@@ -307,6 +325,23 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
             </div>
           </div>
         </div>
+
+        {/* Inactive / Deceased Notice Banner */}
+        {isInactiveOrDeceased && (
+          <div className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 text-xs shadow-2xs ${
+            patientStatus === 'DECEASED' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-slate-100 border-slate-300 text-slate-700'
+          }`}>
+            <div className="flex items-center gap-2.5">
+              <ShieldAlert className={`w-5 h-5 shrink-0 ${patientStatus === 'DECEASED' ? 'text-rose-600' : 'text-slate-600'}`} />
+              <div>
+                <span className="font-bold block">Patient Record is {patientStatus} (Read-Only)</span>
+                <span className="text-[11px] opacity-90">
+                  Adding new clinical forms (HF, STEMI, NSTEMI, CABG) and modifying historical assessments are disabled.
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Navigation Tabs */}
@@ -341,8 +376,8 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          <Activity className="w-4 h-4 text-orange-500" />
-          <span>NSTEMI Registry ({counts.nstemiCount || 0})</span>
+          <Stethoscope className="w-4 h-4" />
+          <span>NSTEMI Registry ({counts.nstemiCount || record.acsEvents?.length || 0})</span>
         </button>
         {isAuthorizedForAudit && (
           <button
@@ -353,30 +388,37 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
-            <Shield className="w-4 h-4 text-purple-600" />
-            <span>📋 Audit Log</span>
+            <Shield className="w-4 h-4" />
+            <span>Audit & Verification Trail</span>
           </button>
         )}
       </div>
 
-      {/* Outer Tab Content Area with explicit background color & fixed min-height */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[450px]">
-        {/* Tab Content 1: Full Clinical Timeline */}
-        <div className={activeTab === 'timeline' ? 'block space-y-6' : 'hidden'}>
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Clinical Event Timeline</h3>
-            <span className="text-xs text-slate-400">Ordered newest to oldest</span>
+      {/* Main Tab Panels Container */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[400px]">
+        {/* Tab Content 1: Main Timeline Events */}
+        <div className={activeTab === 'timeline' ? 'block' : 'hidden'}>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Patient Longitudinal Encounters</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Chronological aggregate of all clinical registrations and audits.</p>
+            </div>
           </div>
 
           {timelineEvents.length === 0 ? (
-            <div className="text-center py-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-              <Activity className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-              <p className="text-xs text-slate-500">No clinical events recorded for this patient yet.</p>
+            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+              <Calendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              <p className="text-xs font-bold text-slate-600">No Clinical Encounters Logged Yet</p>
+              <p className="text-[11px] text-slate-400 mt-1 mb-4">Start capturing heart failure, NSTEMI, or ACS events for this patient.</p>
               <button
-                onClick={onAddEventClick}
-                className="mt-3 px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-1"
+                disabled={isInactiveOrDeceased}
+                onClick={isInactiveOrDeceased ? undefined : onAddEventClick}
+                className={`px-4 py-2 rounded-lg text-xs font-bold shadow-xs ${
+                  isInactiveOrDeceased
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed pointer-events-none'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                }`}
               >
-                <Plus className="w-3.5 h-3.5" />
                 Add First Event
               </button>
             </div>
@@ -415,7 +457,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
                         <Eye className="w-3.5 h-3.5" />
                         <span>View Assessment</span>
                       </button>
-                      {onDeleteEvent && isAuthorizedForAudit && (
+                      {onDeleteEvent && isAuthorizedForAudit && !isInactiveOrDeceased && (
                         <button
                           onClick={() => onDeleteEvent(evt.id, evt.type, evt.hfId || evt.id)}
                           className="px-3 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
@@ -435,12 +477,12 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
 
         {/* Tab Content 2: HF Registry Assessment List */}
         <div className={activeTab === 'hf' ? 'block space-y-6' : 'hidden'}>
-          <HFHistoryList regPatientId={record.patient.id} patientName={record.patient.name} onEditEventClick={onEditEventClick} />
+          <HFHistoryList regPatientId={record.patient.id} patientName={record.patient.name} onEditEventClick={isInactiveOrDeceased ? null : onEditEventClick} isReadOnly={isInactiveOrDeceased} />
         </div>
 
         {/* Tab Content: NSTEMI Registry History List */}
         <div className={activeTab === 'nstemi' ? 'block space-y-6' : 'hidden'}>
-          <NSTEMIHistoryList regPatientId={record.patient.id} patientName={record.patient.name} onEditEventClick={onEditEventClick} />
+          <NSTEMIHistoryList regPatientId={record.patient.id} patientName={record.patient.name} onEditEventClick={isInactiveOrDeceased ? null : onEditEventClick} isReadOnly={isInactiveOrDeceased} />
         </div>
 
         {/* Tab Content 3: Audit Log Tab */}

@@ -280,18 +280,30 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
               <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                 {filteredPatients.map((record) => {
                 const dq = calculateDataQualityScore(record);
+                const patientStatus = (record.patient?.patient_status || record.patient?.status || 'ACTIVE').toUpperCase();
+                const isInactiveOrDeceased = ['INACTIVE', 'DECEASED'].includes(patientStatus);
+
                 return (
                   <tr key={record.patient.id} className="hover:bg-slate-50/60 transition-colors group">
                       {/* Name & Demographics */}
                       <td className="px-5 py-4">
                         <div>
-                          <span
-                          id={`tbl-name-${record.patient.id}`}
-                          onClick={() => onSelectPatient(record.patient.id)}
-                          className="font-extrabold text-slate-900 text-sm hover:text-blue-600 hover:underline cursor-pointer transition-colors block">
-                          
-                            {record.patient.name}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              id={`tbl-name-${record.patient.id}`}
+                              onClick={() => onSelectPatient(record.patient.id)}
+                              className="font-extrabold text-slate-900 text-sm hover:text-blue-600 hover:underline cursor-pointer transition-colors block"
+                            >
+                              {record.patient.name}
+                            </span>
+                            {patientStatus !== 'ACTIVE' && (
+                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase border ${
+                                patientStatus === 'DECEASED' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-600 border-slate-300'
+                              }`}>
+                                {patientStatus}
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-500 font-medium">
                             <span className="px-1.5 py-0.2 bg-slate-100 rounded text-slate-600 font-bold uppercase text-[9px]">{record.patient.gender}</span>
                             <span>•</span>
@@ -357,9 +369,6 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       {/* Encounter Counts */}
                       <EncounterCounter regPatientId={record.patient.id} />
 
-                      {/* Quality Score */}
-                      
-
                       {/* Table Actions */}
                       <td className="px-5 py-4 text-right">
                         <div className="flex items-center justify-end gap-2.5">
@@ -373,36 +382,45 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                           {/* Event Shortcuts */}
                           <div className="flex items-center gap-1 bg-slate-100/50 p-1 rounded-xl border border-slate-200/40">
                             <button
-                            id={`tbl-add-hf-${record.patient.id}`}
-                            onClick={() => onAddEventClick(record.patient.id, 'HF')}
-                            className="px-2 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-lg text-[10px] font-black cursor-pointer transition-colors"
-                            title="Add HF Assessment">
-                            
+                              id={`tbl-add-hf-${record.patient.id}`}
+                              disabled={isInactiveOrDeceased}
+                              onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'HF')}
+                              className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-colors ${
+                                isInactiveOrDeceased
+                                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
+                                  : 'bg-teal-50 hover:bg-teal-100 text-teal-700 cursor-pointer'
+                              }`}
+                              title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add HF Assessment'}
+                            >
                               + HF
                             </button>
                             <button
-                            disabled={true}
-                            id={`tbl-add-stemi-${record.patient.id}`}
-                            onClick={() => onAddEventClick(record.patient.id, 'STEMI')}
-                            className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-black cursor-not-allowed opacity-50 pointer-events-none transition-colors"
-                            title="STEMI registry under development">
-                            
+                              disabled={true}
+                              id={`tbl-add-stemi-${record.patient.id}`}
+                              className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-black cursor-not-allowed opacity-50 pointer-events-none transition-colors"
+                              title="STEMI registry under development"
+                            >
                               + STEMI
                             </button>
                             <button
-                            id={`tbl-add-nstemi-${record.patient.id}`}
-                            onClick={() => onAddEventClick(record.patient.id, 'NSTEMI')}
-                            className="px-2 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-[10px] font-black cursor-pointer transition-colors shadow-xs"
-                            title="Add NSTEMI Registry Entry">
+                              id={`tbl-add-nstemi-${record.patient.id}`}
+                              disabled={isInactiveOrDeceased}
+                              onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'NSTEMI')}
+                              className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-colors ${
+                                isInactiveOrDeceased
+                                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
+                                  : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 cursor-pointer shadow-xs'
+                              }`}
+                              title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add NSTEMI Registry Entry'}
+                            >
                               + NSTEMI
                             </button>
                             <button
-                            disabled={true}
-                            id={`tbl-add-cabg-${record.patient.id}`}
-                            onClick={() => onAddEventClick(record.patient.id, 'CABG')}
-                            className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-black cursor-not-allowed opacity-50 pointer-events-none transition-colors"
-                            title="CABG registry under development">
-                            
+                              disabled={true}
+                              id={`tbl-add-cabg-${record.patient.id}`}
+                              className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-black cursor-not-allowed opacity-50 pointer-events-none transition-colors"
+                              title="CABG registry under development"
+                            >
                               + CABG
                             </button>
                           </div>
@@ -437,6 +455,8 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
           {filteredPatients.map((record) => {
           const dq = calculateDataQualityScore(record);
+          const patientStatus = (record.patient?.patient_status || record.patient?.status || 'ACTIVE').toUpperCase();
+          const isInactiveOrDeceased = ['INACTIVE', 'DECEASED'].includes(patientStatus);
 
           return (
             <div
@@ -447,9 +467,18 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h4 className="text-base font-bold text-slate-800 hover:text-blue-600 cursor-pointer" onClick={() => onSelectPatient(record.patient.id)}>
-                        {record.patient.name}
-                      </h4>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-base font-bold text-slate-800 hover:text-blue-600 cursor-pointer" onClick={() => onSelectPatient(record.patient.id)}>
+                          {record.patient.name}
+                        </h4>
+                        {patientStatus !== 'ACTIVE' && (
+                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase border ${
+                            patientStatus === 'DECEASED' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-600 border-slate-300'
+                          }`}>
+                            {patientStatus}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-semibold text-slate-600">
                           {record.patient.gender} • {calculateAge(record.patient.dob) ?? '—'} Yrs
@@ -529,33 +558,45 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                   {/* Rapid Record Add Button Select */}
                   <div className="flex gap-1 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
                     <button
-                    id={`btn-add-hf-${record.patient.id}`}
-                    onClick={() => onAddEventClick(record.patient.id, 'HF')}
-                    className="px-2 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-md text-[10px] font-bold shrink-0 transition-colors cursor-pointer">
-                    
+                      id={`btn-add-hf-${record.patient.id}`}
+                      disabled={isInactiveOrDeceased}
+                      onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'HF')}
+                      className={`px-2 py-1.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${
+                        isInactiveOrDeceased
+                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
+                          : 'bg-teal-50 hover:bg-teal-100 text-teal-700 cursor-pointer'
+                      }`}
+                      title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add HF Assessment'}
+                    >
                       + HF Assess
                     </button>
                     <button
-                    disabled={true}
-                    id={`btn-add-stemi-${record.patient.id}`}
-                    onClick={() => onAddEventClick(record.patient.id, 'STEMI')}
-                    className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[10px] font-bold shrink-0 cursor-not-allowed opacity-50 pointer-events-none transition-colors">
-                    
+                      disabled={true}
+                      id={`btn-add-stemi-${record.patient.id}`}
+                      className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[10px] font-bold shrink-0 cursor-not-allowed opacity-50 pointer-events-none transition-colors"
+                      title="STEMI registry under development"
+                    >
                       + STEMI
                     </button>
                     <button
-                    id={`btn-add-nstemi-${record.patient.id}`}
-                    onClick={() => onAddEventClick(record.patient.id, 'NSTEMI')}
-                    className="px-2 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-md text-[10px] font-bold shrink-0 cursor-pointer transition-colors"
-                    title="Add NSTEMI Registry Entry">
+                      id={`btn-add-nstemi-${record.patient.id}`}
+                      disabled={isInactiveOrDeceased}
+                      onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'NSTEMI')}
+                      className={`px-2 py-1.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${
+                        isInactiveOrDeceased
+                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
+                          : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 cursor-pointer shadow-xs'
+                      }`}
+                      title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add NSTEMI Registry Entry'}
+                    >
                       + NSTEMI
                     </button>
                     <button
-                    disabled={true}
-                    id={`btn-add-cabg-${record.patient.id}`}
-                    onClick={() => onAddEventClick(record.patient.id, 'CABG')}
-                    className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[10px] font-bold shrink-0 cursor-not-allowed opacity-50 pointer-events-none transition-colors">
-                    
+                      disabled={true}
+                      id={`btn-add-cabg-${record.patient.id}`}
+                      className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[10px] font-bold shrink-0 cursor-not-allowed opacity-50 pointer-events-none transition-colors"
+                      title="CABG registry under development"
+                    >
                       + CABG
                     </button>
                   </div>

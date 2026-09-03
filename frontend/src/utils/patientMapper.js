@@ -71,7 +71,9 @@ export function buildPatientPayload({
   higherEducation,
   occupation,
   uhid,
-  abhaNumber
+  abhaNumber,
+  patientStatus,
+  patient_status
 }) {
   const parts = [
     houseFlatNo,
@@ -111,7 +113,8 @@ export function buildPatientPayload({
     higher_education: higherEducation || "None",
     occupation: occupation ? String(occupation).trim() : null,
     uhid: uhid ? String(uhid).trim() : null,
-    abha_number: abhaNumber ? String(abhaNumber).trim() : null
+    abha_number: abhaNumber ? String(abhaNumber).trim() : null,
+    patient_status: patientStatus || patient_status || "ACTIVE"
   };
 }
 
@@ -184,6 +187,8 @@ const normalizeRecord = (dbPatient) => {
       uhi: uhid,
       abhaNumber,
       abha_number: abhaNumber,
+      patient_status: patient.patient_status || patient.status || "ACTIVE",
+      status: patient.patient_status || patient.status || "ACTIVE",
       primaryConsultant: patient.primaryConsultant || "Dr. K. Sridhar",
       createdAt,
       updatedAt,
