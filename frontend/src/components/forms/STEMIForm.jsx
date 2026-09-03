@@ -8,21 +8,23 @@ import Select from './common/Select';
 import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
 
 const STEMIForm = forwardRef(function STEMIForm(
-  { patientRecord, editingRecord, onCompletionChange },
+  { patientRecord, patient: directPatient, editingRecord, onCompletionChange },
   ref
 ) {
-  const patient = patientRecord?.patient || {};
+  const patient = patientRecord?.patient || directPatient || patientRecord || {};
   const patientAge = useMemo(() => {
-    if (!patient.dob) return 0;
-    const birthDate = new Date(patient.dob);
+    const dobVal = patient.dob || patient.date_of_birth;
+    if (!dobVal) return patient.age || 0;
+    const birthDate = new Date(dobVal);
+    if (isNaN(birthDate.getTime())) return patient.age || 0;
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    return age;
-  }, [patient.dob]);
+    return isNaN(age) ? (patient.age || 0) : age;
+  }, [patient.dob, patient.date_of_birth, patient.age]);
 
   // States
   const [eventDate, setEventDate] = useState(editingRecord?.admission_date || editingRecord?.admissionDate || editingRecord?.eventDate || new Date().toISOString().split('T')[0]);

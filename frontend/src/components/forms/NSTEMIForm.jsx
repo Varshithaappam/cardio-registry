@@ -128,22 +128,24 @@ const getFollowupInitialState = (followupArray) => {
 };
 
 const NSTEMIForm = forwardRef(function NSTEMIForm(
-  { patientRecord, editingRecord },
+  { patientRecord, patient: directPatient, editingRecord },
   ref
 ) {
-  const patient = patientRecord?.patient || {};
+  const patient = patientRecord?.patient || directPatient || patientRecord || {};
 
   const patientAge = useMemo(() => {
-    if (!patient.dob) return 0;
-    const birthDate = new Date(patient.dob);
+    const dobVal = patient.dob || patient.date_of_birth;
+    if (!dobVal) return patient.age || 0;
+    const birthDate = new Date(dobVal);
+    if (isNaN(birthDate.getTime())) return patient.age || 0;
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-    return age;
-  }, [patient.dob]);
+    return isNaN(age) ? (patient.age || 0) : age;
+  }, [patient.dob, patient.date_of_birth, patient.age]);
 
   // Initial State mapping precisely to database schemas and UI form elements
   const [formData, setFormData] = useState({
@@ -993,7 +995,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               type="text"
               readOnly
               disabled
-              value={patient.age ? `${patient.age} Yrs` : (patient.date_of_birth ? `${new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear()} Yrs` : '—')}
+              value={patient.age ? `${patient.age} Yrs` : (patientAge ? `${patientAge} Yrs` : '—')}
               className={INPUT_DISABLED_STYLES}
             />
           </div>
@@ -1003,7 +1005,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               type="text"
               readOnly
               disabled
-              value={patient.gender ? `${patient.gender} (M/F)` : '—'}
+              value={patient.gender || '—'}
               className={INPUT_DISABLED_STYLES}
             />
           </div>

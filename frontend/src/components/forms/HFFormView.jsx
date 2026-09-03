@@ -213,6 +213,7 @@ export default function HFFormView() {
             formType === 'NSTEMI' ? (
               <div className="pointer-events-none select-none opacity-95">
                 <NSTEMIForm
+                  patientRecord={patientRecord}
                   patient={patientRecord.patient}
                   editingRecord={assessmentData}
                 />
