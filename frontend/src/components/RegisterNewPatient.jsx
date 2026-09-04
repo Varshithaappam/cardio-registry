@@ -428,18 +428,6 @@ export default function RegisterNewPatient({
           <h3 className="text-base font-bold text-slate-800">
             {isEditMode ? 'Edit Patient Master Record' : 'Master Registry: Patient Registration'}
           </h3>
-          {!isEditMode && (
-            <button
-              id="btn-autofill-duplicate"
-              type="button"
-              onClick={handleAutofillDuplicate}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold shadow-xs transition-all cursor-pointer active:scale-95"
-              title="Populate test data matching existing Patient XYZ to verify duplicate alert modal"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>Fill Dummy Duplicate (Patient XYZ)</span>
-            </button>
-          )}
         </div>
         {onCancel && (
           <button
