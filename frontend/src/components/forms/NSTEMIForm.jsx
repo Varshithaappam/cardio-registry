@@ -961,20 +961,6 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
   return (
     <div className="space-y-6 text-slate-800">
-      <div className="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm">
-        <div>
-          <span className="font-extrabold text-sm text-slate-900 block">NSTEMI Clinical Event Registry Form</span>
-          <span className="text-[10px] text-slate-500 font-medium">Replicated layout matching NSTEMI FORMAT (1) PDF</span>
-        </div>
-        <button
-          type="button"
-          onClick={fillDummyData}
-          className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold rounded-lg shadow-sm transition-all"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          Fill Dummy Data (Test)
-        </button>
-      </div>
 
       {/* Patient Profile & Administrative Details */}
       <SectionCard title="Patient Profile & Administrative Details" subtitle="Demographics, Dates, Identifiers & Admission context">

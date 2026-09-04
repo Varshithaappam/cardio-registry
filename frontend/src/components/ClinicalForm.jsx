@@ -17,7 +17,7 @@ import LaboratoryForm from './forms/LaboratoryForm';
 import InvestigationForm from './forms/InvestigationForm';
 
 // Feature flag to control dev helper UI (Draft checkbox & Fill Dummy Data button)
-const SHOW_DEV_HELPERS = true;
+const SHOW_DEV_HELPERS = false;
 
 export default function ClinicalForm({ patientRecord, formType, editingRecord, onCancel, onSave, onBackPatients }) {
   const navigate = useNavigate();
