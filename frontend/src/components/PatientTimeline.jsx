@@ -223,7 +223,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
             </div>
             <div>
               <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider block">Longitudinal Clinical Portfolio</span>
-              <div className="flex items-center gap-2 mt-0.5">
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 <h2 className="text-xl font-bold text-slate-800">{record.patient.name}</h2>
                 <span className={`px-2 py-0.5 text-[10px] font-extrabold rounded-md uppercase tracking-wider ${
                   patientStatus === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
@@ -232,6 +232,11 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
                 }`}>
                   {patientStatus}
                 </span>
+                {patientStatus === 'DECEASED' && (record.patient.date_of_death || record.patient.dateOfDeath) && (
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-rose-50 text-rose-700 border border-rose-200">
+                    Date of Death: {formatDateForDisplay(record.patient.date_of_death || record.patient.dateOfDeath)}
+                  </span>
+                )}
               </div>
               <span className="text-xs text-slate-400 font-mono">ID: {record.patient.id} • Registered {formatDateForDisplay(record.patient.createdAt)}</span>
             </div>
@@ -334,7 +339,14 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
             <div className="flex items-center gap-2.5">
               <ShieldAlert className={`w-5 h-5 shrink-0 ${patientStatus === 'DECEASED' ? 'text-rose-600' : 'text-slate-600'}`} />
               <div>
-                <span className="font-bold block">Patient Record is {patientStatus} (Read-Only)</span>
+                <span className="font-bold block">
+                  Patient Record is {patientStatus} (Read-Only)
+                  {patientStatus === 'DECEASED' && (record.patient.date_of_death || record.patient.dateOfDeath) && (
+                    <span className="ml-2 font-normal text-rose-900 bg-rose-100/80 px-2 py-0.5 rounded border border-rose-200">
+                      Date of Death: {formatDateForDisplay(record.patient.date_of_death || record.patient.dateOfDeath)} (DD-MM-YYYY)
+                    </span>
+                  )}
+                </span>
                 <span className="text-[11px] opacity-90">
                   Adding new clinical forms (HF, STEMI, NSTEMI, CABG) and modifying historical assessments are disabled.
                 </span>

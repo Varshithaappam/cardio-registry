@@ -9,6 +9,7 @@ import api from '../../api/axios';
 import { createPatient } from '../../api/patientApi';
 import { calculateDataQualityScore } from '../data/mockPatients';
 import { calculateAge } from '../utils/calculateAge';
+import { formatDateForDisplay } from '../utils/dateUtils';
 import { buildPatientPayload, mapPatientRecord } from '../utils/patientMapper';
 import RegisterNewPatient from './RegisterNewPatient';
 import { Edit, ArrowLeft } from 'lucide-react';
@@ -300,7 +301,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                               <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase border ${
                                 patientStatus === 'DECEASED' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-600 border-slate-300'
                               }`}>
-                                {patientStatus}
+                                {patientStatus}{patientStatus === 'DECEASED' && (record.patient.date_of_death || record.patient.dateOfDeath) ? ` • DOD: ${formatDateForDisplay(record.patient.date_of_death || record.patient.dateOfDeath)}` : ''}
                               </span>
                             )}
                           </div>
@@ -475,7 +476,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                           <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase border ${
                             patientStatus === 'DECEASED' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-600 border-slate-300'
                           }`}>
-                            {patientStatus}
+                            {patientStatus}{patientStatus === 'DECEASED' && (record.patient.date_of_death || record.patient.dateOfDeath) ? ` • DOD: ${formatDateForDisplay(record.patient.date_of_death || record.patient.dateOfDeath)}` : ''}
                           </span>
                         )}
                       </div>

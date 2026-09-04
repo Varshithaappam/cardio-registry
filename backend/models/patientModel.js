@@ -6,7 +6,7 @@ const patientFields = [
   'diabetes_control_type', 'renal_failure', 'active_dialysis_status', 'address',
   'house_flat_no', 'street_locality', 'village_town', 'mandal', 'district', 'state', 'pincode',
   'higher_education', 'occupation', 'uhid', 'abha_number',
-  'patient_status', 'merged_into_patient_id'
+  'patient_status', 'date_of_death', 'merged_into_patient_id'
 ];
 
 async function createPatient(patientData) {
@@ -41,6 +41,7 @@ async function createPatient(patientData) {
   request.input('uhid', db.sql.VarChar(50), patientData.uhid || null);
   request.input('abha_number', db.sql.VarChar(50), patientData.abha_number || null);
   request.input('patient_status', db.sql.VarChar(20), patientData.patient_status || 'ACTIVE');
+  request.input('date_of_death', db.sql.Date, patientData.date_of_death || null);
   request.input('merged_into_patient_id', db.sql.Int, patientData.merged_into_patient_id || null);
   request.output('NewPatientId', db.sql.Int);
 
@@ -103,6 +104,7 @@ async function updatePatient(regPatientId, patientData) {
   request.input('uhid', db.sql.VarChar(50), patientData.uhid || null);
   request.input('abha_number', db.sql.VarChar(50), patientData.abha_number || null);
   request.input('patient_status', db.sql.VarChar(20), patientData.patient_status || 'ACTIVE');
+  request.input('date_of_death', db.sql.Date, patientData.date_of_death || null);
   request.input('merged_into_patient_id', db.sql.Int, patientData.merged_into_patient_id || null);
 
   return request.query(`
@@ -134,6 +136,7 @@ async function updatePatient(regPatientId, patientData) {
         [uhid] = @uhid,
         [abha_number] = @abha_number,
         [patient_status] = COALESCE(@patient_status, [patient_status]),
+        [date_of_death] = @date_of_death,
         [merged_into_patient_id] = @merged_into_patient_id,
         [updated_at] = GETDATE()
     WHERE [reg_patient_id] = @regPatientId;

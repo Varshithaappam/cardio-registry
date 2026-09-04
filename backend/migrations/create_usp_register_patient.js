@@ -34,6 +34,7 @@ async function createRegisterPatientSP() {
         @uhid                  VARCHAR(50)   = NULL,
         @abha_number           VARCHAR(50)   = NULL,
         @patient_status        VARCHAR(20)   = 'ACTIVE',
+        @date_of_death         DATE          = NULL,
         @merged_into_patient_id INT          = NULL,
         @NewPatientId          INT           = NULL OUTPUT
     AS
@@ -46,7 +47,7 @@ async function createRegisterPatientSP() {
             diabetes_control_type, renal_failure, active_dialysis_status, address,
             house_flat_no, street_locality, village_town, mandal, district, state, pincode,
             higher_education, occupation, uhid, abha_number,
-            patient_status, merged_into_patient_id,
+            patient_status, date_of_death, merged_into_patient_id,
             created_at, updated_at
         )
         VALUES (
@@ -55,7 +56,7 @@ async function createRegisterPatientSP() {
             @diabetes_control_type, @renal_failure, @active_dialysis_status, @address,
             @house_flat_no, @street_locality, @village_town, @mandal, @district, @state, @pincode,
             @higher_education, @occupation, @uhid, @abha_number,
-            ISNULL(@patient_status, 'ACTIVE'), @merged_into_patient_id,
+            ISNULL(@patient_status, 'ACTIVE'), @date_of_death, @merged_into_patient_id,
             GETDATE(), GETDATE()
         );
 

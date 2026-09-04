@@ -103,8 +103,11 @@ function normalizePatientInput(body = {}) {
     const mr_no = body.mr_no || body.mrNo ? String(body.mr_no || body.mrNo).trim().substring(0, 10) : null;
     const ip_no = body.ip_no || body.ipNo ? String(body.ip_no || body.ipNo).trim().substring(0, 10) : null;
     const uhid = body.uhid || body.uhi ? String(body.uhid || body.uhi).trim() : null;
-    const abha_number = body.abha_number ? String(body.abha_number).trim() : null;
+    const abha_number = body.abha_number || body.abhaNumber || body.abha ? String(body.abha_number || body.abhaNumber || body.abha).trim() : null;
     const patient_status = body.patient_status ? String(body.patient_status).trim().toUpperCase() : "ACTIVE";
+    const date_of_death = (patient_status === "DECEASED" && (body.date_of_death || body.dateOfDeath))
+        ? (body.date_of_death || body.dateOfDeath)
+        : null;
     const merged_into_patient_id = body.merged_into_patient_id ? parseInt(body.merged_into_patient_id, 10) : null;
 
     if (!patient_name) {
@@ -159,6 +162,7 @@ function normalizePatientInput(body = {}) {
         uhid,
         abha_number,
         patient_status,
+        date_of_death,
         merged_into_patient_id
     };
 }

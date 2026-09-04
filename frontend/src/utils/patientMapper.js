@@ -73,7 +73,9 @@ export function buildPatientPayload({
   uhid,
   abhaNumber,
   patientStatus,
-  patient_status
+  patient_status,
+  dateOfDeath,
+  date_of_death
 }) {
   const parts = [
     houseFlatNo,
@@ -85,6 +87,7 @@ export function buildPatientPayload({
     pincode
   ].filter(Boolean);
   const combinedAddress = address || (parts.length > 0 ? parts.join(', ') : null);
+  const status = patientStatus || patient_status || "ACTIVE";
 
   return {
     mr_no: mrNo ? String(mrNo).trim() : null,
@@ -114,7 +117,8 @@ export function buildPatientPayload({
     occupation: occupation ? String(occupation).trim() : null,
     uhid: uhid ? String(uhid).trim() : null,
     abha_number: abhaNumber ? String(abhaNumber).trim() : null,
-    patient_status: patientStatus || patient_status || "ACTIVE"
+    patient_status: status,
+    date_of_death: status === 'DECEASED' ? (dateOfDeath || date_of_death || null) : null
   };
 }
 
@@ -189,6 +193,8 @@ const normalizeRecord = (dbPatient) => {
       abha_number: abhaNumber,
       patient_status: patient.patient_status || patient.status || "ACTIVE",
       status: patient.patient_status || patient.status || "ACTIVE",
+      date_of_death: patient.date_of_death || patient.dateOfDeath || null,
+      dateOfDeath: patient.date_of_death || patient.dateOfDeath || null,
       primaryConsultant: patient.primaryConsultant || "Dr. K. Sridhar",
       createdAt,
       updatedAt,

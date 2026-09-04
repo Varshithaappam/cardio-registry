@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, MapPin, Briefcase, GraduationCap, X, Check, Phone, Mail, Shield, CreditCard, Sparkles } from 'lucide-react';
 import { buildPatientPayload } from '../utils/patientMapper';
 import { validateField } from '../utils/validation';
+import { formatDateForDisplay } from '../utils/dateUtils';
 import { createPatient, updatePatient, verifyPatient, confirmPatientMatch, rejectPatientMatch, resolveStagingPatient } from '../../api/patientApi';
 import PatientVerificationModal from './PatientVerificationModal';
 
@@ -91,6 +92,7 @@ export default function RegisterNewPatient({
 
   const [loading, setLoading] = useState(false);
   const [patientStatus, setPatientStatus] = useState('ACTIVE');
+  const [dateOfDeath, setDateOfDeath] = useState('');
   const [verificationModalOpen, setVerificationModalOpen] = useState(false);
   const [verificationResult, setVerificationResult] = useState(null);
   const [pendingPayload, setPendingPayload] = useState(null);
@@ -104,6 +106,7 @@ export default function RegisterNewPatient({
       setDob(formatDateForInput(p.dob || p.date_of_birth));
       setGender(p.gender || '');
       setPatientStatus(p.patient_status || p.status || 'ACTIVE');
+      setDateOfDeath(formatDateForInput(p.date_of_death || p.dateOfDeath));
       setBloodGroup(p.bloodGroup || p.blood_group || '');
       setPhone(p.phone || p.phone_no || '');
       setEmail(p.email || '');
@@ -316,6 +319,21 @@ export default function RegisterNewPatient({
       return;
     }
 
+    if (patientStatus === 'DECEASED') {
+      if (!dateOfDeath) {
+        alert('Date of Death is required when Patient Status is DECEASED.');
+        return;
+      }
+      if (dob && new Date(dateOfDeath) < new Date(dob)) {
+        alert('Date of Death cannot be earlier than Date of Birth.');
+        return;
+      }
+      if (new Date(dateOfDeath) > new Date()) {
+        alert('Date of Death cannot be in the future.');
+        return;
+      }
+    }
+
     const payload = buildPatientPayload({
       name,
       mrNo,
@@ -342,7 +360,8 @@ export default function RegisterNewPatient({
       dialysisStatus,
       uhid,
       abhaNumber,
-      patientStatus: patientStatus || 'ACTIVE'
+      patientStatus: patientStatus || 'ACTIVE',
+      dateOfDeath: patientStatus === 'DECEASED' ? dateOfDeath : null
     });
 
     setLoading(true);
@@ -471,6 +490,35 @@ export default function RegisterNewPatient({
                 </option>
               ))}
             </select>
+
+            {/* Conditional Date of Death Field (when status is DECEASED) */}
+            {patientStatus === 'DECEASED' && (
+              <div className="bg-rose-50/90 p-2.5 rounded-lg border border-rose-200 mt-2 space-y-1.5 animate-fadeIn">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="reg-date-of-death" className="block text-[11px] font-bold text-rose-900">
+                    Date of Death <span className="text-red-600 font-bold">*</span>
+                  </label>
+                  <span className="text-[9px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-200 uppercase">
+                    DD-MM-YYYY
+                  </span>
+                </div>
+                <input
+                  id="reg-date-of-death"
+                  type="date"
+                  required
+                  max={new Date().toISOString().split('T')[0]}
+                  min={dob || undefined}
+                  className="w-full p-1.5 text-xs font-semibold bg-white border border-rose-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-slate-900 shadow-2xs cursor-pointer"
+                  value={dateOfDeath}
+                  onChange={(e) => setDateOfDeath(e.target.value)}
+                />
+                {dateOfDeath && (
+                  <p className="text-[10px] text-rose-700 font-medium">
+                    Formatted: <strong>{formatDateForDisplay(dateOfDeath)}</strong> (DD-MM-YYYY)
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 1. MR No (Medical Record Number) */}
