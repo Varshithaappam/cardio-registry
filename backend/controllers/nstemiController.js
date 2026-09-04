@@ -584,32 +584,19 @@ async function createNstemiRecord(req, res) {
       }
     };
 
-    const STANDARD_TIMEFRAMES = [
-      { key: '1m', label: '1-Month', months: 1 },
-      { key: '3m', label: '3-Month', months: 3 },
-      { key: '6m', label: '6-Month', months: 6 },
-      { key: '12m', label: '12-Month', months: 12 }
-    ];
-
     const rawFollowupRows = Array.isArray(req.body.followup)
       ? req.body.followup
       : typeof req.body.followup === 'object' && req.body.followup !== null
       ? Object.values(req.body.followup)
       : [];
 
-    const followupMap = {};
-    rawFollowupRows.forEach(r => {
-      if (r && r.followup_month) {
-        followupMap[r.followup_month] = r;
-      }
-    });
-
     const regPid = parseInt(val('reg_patient_id', 1), 10);
     const baseFollowupDate = discharge_date || admission_date;
 
-    for (const tf of STANDARD_TIMEFRAMES) {
-      const row = followupMap[tf.label] || {};
-      const followupMonth = tf.label;
+    for (const row of rawFollowupRows) {
+      if (!row || !row.followup_month) continue;
+      const followupMonth = row.followup_month;
+      const monthsToAdd = monthMap[followupMonth] || 1;
 
       const reqFollowup = new sql.Request(transaction);
       reqFollowup.input('nstemi_id', sql.Int, nstemi_id);
@@ -633,7 +620,7 @@ async function createNstemiRecord(req, res) {
 
       let finalFollowupDate = row.followup_date;
       if (!finalFollowupDate && baseFollowupDate) {
-        finalFollowupDate = calculateBackendExpectedDate(baseFollowupDate, tf.months);
+        finalFollowupDate = calculateBackendExpectedDate(baseFollowupDate, monthsToAdd);
       }
       if (typeof finalFollowupDate === 'string') {
         finalFollowupDate = finalFollowupDate.trim();
@@ -1521,32 +1508,35 @@ async function updateNstemiRecord(req, res) {
       }
     };
 
-    const STANDARD_TIMEFRAMES = [
-      { key: '1m', label: '1-Month', months: 1 },
-      { key: '3m', label: '3-Month', months: 3 },
-      { key: '6m', label: '6-Month', months: 6 },
-      { key: '12m', label: '12-Month', months: 12 }
-    ];
-
     const rawFollowupRows = Array.isArray(req.body.followup)
       ? req.body.followup
       : typeof req.body.followup === 'object' && req.body.followup !== null
       ? Object.values(req.body.followup)
       : [];
 
-    const followupMap = {};
-    rawFollowupRows.forEach(r => {
-      if (r && r.followup_month) {
-        followupMap[r.followup_month] = r;
-      }
-    });
-
     const regPid = parseInt(val('reg_patient_id', 1), 10);
     const baseFollowupDate = discharge_date || admission_date;
+    const selectedMonths = rawFollowupRows.map(r => r.followup_month).filter(Boolean);
 
-    for (const tf of STANDARD_TIMEFRAMES) {
-      const row = followupMap[tf.label] || {};
-      const followupMonth = tf.label;
+    // Clean up unselected follow-up intervals from nstemi_followup and patient_followup_tasks
+    const standardMonthNames = ['1-Month', '3-Month', '6-Month', '12-Month'];
+    const unselectedMonths = standardMonthNames.filter(m => !selectedMonths.includes(m));
+    for (const unsel of unselectedMonths) {
+      const reqDel = new sql.Request(transaction);
+      reqDel.input('nstemi_id', sql.Int, nstemi_id);
+      reqDel.input('reg_patient_id', sql.Int, regPid);
+      reqDel.input('unsel_month', sql.NVarChar(50), unsel);
+      await reqDel.query(`
+        DELETE FROM [nstemi_followup] WHERE [nstemi_id] = @nstemi_id AND [followup_month] = @unsel_month;
+        DELETE FROM [patient_followup_tasks] WHERE [reg_patient_id] = @reg_patient_id AND [source_registry] = 'NSTEMI Registry' AND [timeframe] = @unsel_month AND ([source_record_id] = @nstemi_id OR [source_record_id] IS NULL);
+      `);
+    }
+
+    // Upsert each selected interval
+    for (const row of rawFollowupRows) {
+      if (!row || !row.followup_month) continue;
+      const followupMonth = row.followup_month;
+      const monthsToAdd = monthMap[followupMonth] || 1;
 
       const reqFollowup = new sql.Request(transaction);
       reqFollowup.input('nstemi_id', sql.Int, nstemi_id);
@@ -1570,7 +1560,7 @@ async function updateNstemiRecord(req, res) {
 
       let finalFollowupDate = row.followup_date;
       if (!finalFollowupDate && baseFollowupDate) {
-        finalFollowupDate = calculateBackendExpectedDate(baseFollowupDate, tf.months);
+        finalFollowupDate = calculateBackendExpectedDate(baseFollowupDate, monthsToAdd);
       }
       if (typeof finalFollowupDate === 'string') {
         finalFollowupDate = finalFollowupDate.trim();

@@ -207,7 +207,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
             <input
               id="patient-search"
               type="text"
-              placeholder="Search master list by name, MR No or IP No..."
+              placeholder="Search master list by Name or MR No"
               className="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 hover:bg-slate-100/50 focus:bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)} />

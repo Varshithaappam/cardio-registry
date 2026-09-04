@@ -186,7 +186,7 @@ function mapDatabaseError(error) {
         case 2627:
             return {
                 status: 409,
-                message: "A patient with the same MR Number or IP Number already exists."
+                message: "A patient with the same MR Number already exists."
             };
         case 515:
             return {

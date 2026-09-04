@@ -73,8 +73,14 @@ export const formatDisplayDate = (dateStr) => {
   return `${day}-${month}-${year}`;
 };
 
-const getFollowupInitialState = (followupArray) => {
+const getFollowupInitialState = (followupArray, baseDate) => {
   const state = {
+    enabled_1m: false, enabled_3m: false, enabled_6m: false, enabled_12m: false,
+    date_1m: calculateExpectedDate(baseDate, 1) || '',
+    date_3m: calculateExpectedDate(baseDate, 3) || '',
+    date_6m: calculateExpectedDate(baseDate, 6) || '',
+    date_12m: calculateExpectedDate(baseDate, 12) || '',
+    custom_date_1m: false, custom_date_3m: false, custom_date_6m: false, custom_date_12m: false,
     angina_1m: 'No', angina_3m: 'No', angina_6m: 'No', angina_12m: 'No',
     func_1m: 'None', func_3m: 'None', func_6m: 'None', func_12m: 'None',
     antiang_1m: '', antiang_3m: '', antiang_6m: '', antiang_12m: '',
@@ -102,6 +108,11 @@ const getFollowupInitialState = (followupArray) => {
   followupArray.forEach(row => {
     const key = mapping[row.followup_month];
     if (key) {
+      state[`enabled_${key}`] = true;
+      if (row.followup_date) {
+        state[`date_${key}`] = String(row.followup_date).split('T')[0];
+        state[`custom_date_${key}`] = true;
+      }
       state[`angina_${key}`] = row.angina || 'No';
       state[`func_${key}`] = row.functional_class || 'None';
       state[`antiang_${key}`] = row.number_of_antianginals !== null && row.number_of_antianginals !== undefined ? String(row.number_of_antianginals) : '';
@@ -386,7 +397,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     total_cost: editingRecord?.total_cost || '',
 
     // Follow-up grid states from database followup array
-    ...getFollowupInitialState(editingRecord?.followup),
+    ...getFollowupInitialState(editingRecord?.followup, editingRecord?.discharge_date || editingRecord?.admission_date || new Date().toISOString().split('T')[0]),
     visit_mode: editingRecord?.visit_mode || editingRecord?.followup?.[0]?.visit_mode || 'In-Person',
     special_instructions: editingRecord?.special_instructions || editingRecord?.followup?.[0]?.special_instructions || editingRecord?.special_clinical_instructions || '',
 
@@ -460,18 +471,13 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       };
 
       // Recompute stay duration & validate chronological order
-      if (field === 'discharge_date' && value) {
-        if (isValidDateStr(value) && isValidDateStr(updated.admission_date) && value.length >= 10 && updated.admission_date.length >= 10) {
-          if (new Date(value) < new Date(updated.admission_date)) {
-            alert('Date of Discharge cannot be earlier than Date of Admission.');
-          }
-        }
-      }
-      if (field === 'admission_date' && value) {
-        if (isValidDateStr(value) && isValidDateStr(updated.discharge_date) && value.length >= 10 && updated.discharge_date.length >= 10) {
-          if (new Date(updated.discharge_date) < new Date(value)) {
-            alert('Date of Discharge cannot be earlier than Date of Admission.');
-          }
+      if (field === 'discharge_date' || field === 'admission_date') {
+        const baseDate = field === 'discharge_date' ? (value || updated.admission_date) : (updated.discharge_date || value);
+        if (baseDate && isValidDateStr(baseDate)) {
+          if (!updated.custom_date_1m) updated.date_1m = calculateExpectedDate(baseDate, 1) || '';
+          if (!updated.custom_date_3m) updated.date_3m = calculateExpectedDate(baseDate, 3) || '';
+          if (!updated.custom_date_6m) updated.date_6m = calculateExpectedDate(baseDate, 6) || '';
+          if (!updated.custom_date_12m) updated.date_12m = calculateExpectedDate(baseDate, 12) || '';
         }
       }
 
@@ -569,7 +575,11 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     const baseFollowupDate = formData.discharge_date || formData.admission_date;
 
     payload.followup = timeframes
+      .filter(tf => formData[`enabled_${tf.key}`] === true)
       .map(tf => {
+        const customDate = formData[`date_${tf.key}`];
+        const finalDate = customDate || calculateExpectedDate(baseFollowupDate, tf.months);
+
         const angina = formData[`angina_${tf.key}`] || 'No';
         const funcClass = formData[`func_${tf.key}`] || 'None';
         const antiangRaw = formData[`antiang_${tf.key}`];
@@ -587,7 +597,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
         return {
           followup_month: tf.label,
-          followup_date: calculateExpectedDate(baseFollowupDate, tf.months),
+          followup_date: finalDate,
           angina,
           functional_class: funcClass,
           number_of_antianginals: antianginals,
@@ -2322,23 +2332,72 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
           <table className="w-full text-left border-collapse border border-slate-200 min-w-[700px]">
             <thead>
               <tr className="bg-slate-100 text-slate-900">
-                <th className="p-2.5 border border-slate-200 font-bold w-[240px]">Parameter</th>
+                <th className="p-2.5 border border-slate-200 font-bold w-[220px] text-slate-800">Parameter</th>
                 {[
-                  { label: '1-month', months: 1 },
-                  { label: '3-month', months: 3 },
-                  { label: '6-month', months: 6 },
-                  { label: '12-month', months: 12 }
-                ].map(({ label, months }) => {
+                  { key: '1m', label: '1-Month', months: 1 },
+                  { key: '3m', label: '3-Month', months: 3 },
+                  { key: '6m', label: '6-Month', months: 6 },
+                  { key: '12m', label: '12-Month', months: 12 }
+                ].map(({ key, label, months }) => {
+                  const isEnabled = !!formData[`enabled_${key}`];
                   const baseDate = formData.discharge_date || formData.admission_date;
-                  const expDate = calculateExpectedDate(baseDate, months);
+                  const defaultCalculatedDate = calculateExpectedDate(baseDate, months);
+                  const currentDateVal = formData[`date_${key}`] || defaultCalculatedDate;
+
                   return (
-                    <th key={label} className="p-2 border border-slate-200 text-center font-bold">
-                      <div className="text-slate-900 font-semibold">{label}</div>
-                      {expDate && (
-                        <div className="text-[10px] font-mono text-orange-700 bg-orange-50/90 border border-orange-200 rounded px-1.5 py-0.5 mt-1 inline-block whitespace-nowrap shadow-2xs">
-                          📅 {formatDisplayDate(expDate)}
-                        </div>
-                      )}
+                    <th
+                      key={key}
+                      className={`p-2.5 border border-slate-200 text-center transition-all ${
+                        isEnabled ? 'bg-orange-50/60 border-orange-200' : 'bg-slate-100/70 text-slate-400'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-1.5">
+                        <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={isEnabled}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setFormData(prev => ({
+                                ...prev,
+                                [`enabled_${key}`]: checked,
+                                ...(!prev[`date_${key}`] ? { [`date_${key}`]: calculateExpectedDate(prev.discharge_date || prev.admission_date, months) } : {})
+                              }));
+                            }}
+                            className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500 cursor-pointer"
+                          />
+                          <span className={`font-bold text-xs ${isEnabled ? 'text-slate-900' : 'text-slate-500'}`}>
+                            {label}
+                          </span>
+                        </label>
+
+                        {isEnabled ? (
+                          <div className="w-full flex flex-col items-center gap-1 mt-0.5">
+                            <input
+                              type="date"
+                              value={currentDateVal || ''}
+                              onChange={(e) => {
+                                const newDate = e.target.value;
+                                setFormData(prev => ({
+                                  ...prev,
+                                  [`date_${key}`]: newDate,
+                                  [`custom_date_${key}`]: true
+                                }));
+                              }}
+                              className="w-full max-w-[130px] p-1 text-[11px] font-mono border border-orange-300 rounded bg-white text-slate-800 text-center focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                            />
+                            {currentDateVal && (
+                              <span className="text-[10px] font-mono text-orange-700 bg-orange-100/70 border border-orange-200 rounded px-1.5 py-0.5 whitespace-nowrap shadow-2xs">
+                                📅 {formatDisplayDate(currentDateVal)}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] font-medium text-slate-400 bg-slate-200/60 rounded px-2 py-0.5 mt-1 inline-block">
+                            Not Scheduled
+                          </span>
+                        )}
+                      </div>
                     </th>
                   );
                 })}
@@ -2349,10 +2408,16 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <tr className="hover:bg-slate-50">
                 <td className="p-2 border border-slate-200 font-semibold">Angina</td>
                 {['1m', '3m', '6m', '12m'].map(t => (
-                  <td key={t} className="p-2 border border-slate-200 text-center">
+                  <td
+                    key={t}
+                    className={`p-2 border border-slate-200 text-center transition-opacity ${
+                      !formData[`enabled_${t}`] ? 'bg-slate-50/70 opacity-30 pointer-events-none' : 'bg-white'
+                    }`}
+                  >
                     <select
                       value={formData[`angina_${t}`]}
                       onChange={(e) => handleChange(`angina_${t}`, e.target.value)}
+                      disabled={!formData[`enabled_${t}`]}
                       className="p-1 border rounded w-20 text-center bg-white"
                     >
                       <option value="Yes">Yes</option>
@@ -2366,10 +2431,16 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <tr className="hover:bg-slate-50">
                 <td className="p-2 border border-slate-200 font-semibold">Func. Class:</td>
                 {['1m', '3m', '6m', '12m'].map(t => (
-                  <td key={t} className="p-2 border border-slate-200 text-center">
+                  <td
+                    key={t}
+                    className={`p-2 border border-slate-200 text-center transition-opacity ${
+                      !formData[`enabled_${t}`] ? 'bg-slate-50/70 opacity-30 pointer-events-none' : 'bg-white'
+                    }`}
+                  >
                     <select
                       value={formData[`func_${t}`] || 'None'}
                       onChange={(e) => handleChange(`func_${t}`, e.target.value)}
+                      disabled={!formData[`enabled_${t}`]}
                       className="p-1 border rounded w-20 text-center bg-white"
                     >
                       <option value="None">None</option>
@@ -2386,11 +2457,17 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <tr className="hover:bg-slate-50">
                 <td className="p-2 border border-slate-200 font-semibold">No. of antianginals:</td>
                 {['1m', '3m', '6m', '12m'].map(t => (
-                  <td key={t} className="p-2 border border-slate-200 text-center">
+                  <td
+                    key={t}
+                    className={`p-2 border border-slate-200 text-center transition-opacity ${
+                      !formData[`enabled_${t}`] ? 'bg-slate-50/70 opacity-30 pointer-events-none' : 'bg-white'
+                    }`}
+                  >
                     <input
                       type="number"
                       value={formData[`antiang_${t}`]}
                       onChange={(e) => handleChange(`antiang_${t}`, e.target.value)}
+                      disabled={!formData[`enabled_${t}`]}
                       className="p-1 border rounded w-20 text-center"
                     />
                   </td>
@@ -2401,10 +2478,16 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <tr className="hover:bg-slate-50">
                 <td className="p-2 border border-slate-200 font-semibold">Dual Antiplatelets:</td>
                 {['1m', '3m', '6m', '12m'].map(t => (
-                  <td key={t} className="p-2 border border-slate-200 text-center">
+                  <td
+                    key={t}
+                    className={`p-2 border border-slate-200 text-center transition-opacity ${
+                      !formData[`enabled_${t}`] ? 'bg-slate-50/70 opacity-30 pointer-events-none' : 'bg-white'
+                    }`}
+                  >
                     <select
                       value={formData[`dapt_${t}`]}
                       onChange={(e) => handleChange(`dapt_${t}`, e.target.value)}
+                      disabled={!formData[`enabled_${t}`]}
                       className="p-1 border rounded w-20 text-center bg-white"
                     >
                       <option value="Yes">Yes</option>
@@ -2418,10 +2501,16 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <tr className="hover:bg-slate-50">
                 <td className="p-2 border border-slate-200 font-semibold">Statins:</td>
                 {['1m', '3m', '6m', '12m'].map(t => (
-                  <td key={t} className="p-2 border border-slate-200 text-center">
+                  <td
+                    key={t}
+                    className={`p-2 border border-slate-200 text-center transition-opacity ${
+                      !formData[`enabled_${t}`] ? 'bg-slate-50/70 opacity-30 pointer-events-none' : 'bg-white'
+                    }`}
+                  >
                     <select
                       value={formData[`statin_${t}`]}
                       onChange={(e) => handleChange(`statin_${t}`, e.target.value)}
+                      disabled={!formData[`enabled_${t}`]}
                       className="p-1 border rounded w-20 text-center bg-white"
                     >
                       <option value="Yes">Yes</option>
@@ -2444,10 +2533,16 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 <tr key={row.key} className="hover:bg-slate-50">
                   <td className="p-2 border border-slate-200 font-semibold">{row.label}</td>
                   {['1m', '3m', '6m', '12m'].map(t => (
-                    <td key={t} className="p-2 border border-slate-200 text-center">
+                    <td
+                      key={t}
+                      className={`p-2 border border-slate-200 text-center transition-opacity ${
+                        !formData[`enabled_${t}`] ? 'bg-slate-50/70 opacity-30 pointer-events-none' : 'bg-white'
+                      }`}
+                    >
                       <select
                         value={formData[`${row.key}_${t}`]}
                         onChange={(e) => handleChange(`${row.key}_${t}`, e.target.value)}
+                        disabled={!formData[`enabled_${t}`]}
                         className="p-1 border rounded w-20 text-center bg-white"
                       >
                         <option value="Yes">Yes</option>
@@ -2462,11 +2557,17 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <tr className="hover:bg-slate-50">
                 <td className="p-2 border border-slate-200 font-semibold">Any other</td>
                 {['1m', '3m', '6m', '12m'].map(t => (
-                  <td key={t} className="p-2 border border-slate-200 text-center">
+                  <td
+                    key={t}
+                    className={`p-2 border border-slate-200 text-center transition-opacity ${
+                      !formData[`enabled_${t}`] ? 'bg-slate-50/70 opacity-30 pointer-events-none' : 'bg-white'
+                    }`}
+                  >
                     <input
                       type="text"
                       value={formData[`other_${t}`]}
                       onChange={(e) => handleChange(`other_${t}`, e.target.value)}
+                      disabled={!formData[`enabled_${t}`]}
                       className="p-1 border rounded w-24 text-center"
                     />
                   </td>
