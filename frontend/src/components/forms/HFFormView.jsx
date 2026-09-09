@@ -5,6 +5,7 @@ import api from '../../../api/axios';
 import { mapPatientRecord } from '../../utils/patientMapper';
 import hf from './hf';
 import NSTEMIForm from './NSTEMIForm';
+import STEMIForm from './STEMIForm';
 
 export default function HFFormView() {
   const { recordId } = useParams();
@@ -44,7 +45,7 @@ export default function HFFormView() {
       try {
         setLoading(true);
         // 1. Fetch Assessment details (without '/api' prefix)
-        const endpoint = formType === 'NSTEMI' ? `/nstemi/${recordId}` : `/hf-assessment/${recordId}`;
+        const endpoint = formType === 'NSTEMI' ? `/nstemi/${recordId}` : (formType === 'STEMI' ? `/stemi/${recordId}` : `/hf-assessment/${recordId}`);
         const resAssessment = await api.get(endpoint);
         if (!resAssessment.data || !resAssessment.data.success) {
           throw new Error(resAssessment.data?.message || 'Failed to load assessment data.');
@@ -174,7 +175,7 @@ export default function HFFormView() {
       `}} />
 
       {/* Top bar (Hidden when printing) */}
-      <header className={`no-print ${formType === 'NSTEMI' ? 'bg-orange-950 border-orange-900' : 'bg-teal-950 border-teal-900'} text-white border-b shrink-0 shadow-sm relative z-20 px-4 py-3.5 sm:px-6 lg:px-8`}>
+      <header className={`no-print ${formType === 'STEMI' ? 'bg-red-950 border-red-900' : (formType === 'NSTEMI' ? 'bg-orange-950 border-orange-900' : 'bg-teal-950 border-teal-900')} text-white border-b shrink-0 shadow-sm relative z-20 px-4 py-3.5 sm:px-6 lg:px-8`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <button
@@ -184,15 +185,15 @@ export default function HFFormView() {
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div className={`p-2 ${formType === 'NSTEMI' ? 'bg-orange-500/20 text-orange-400' : 'bg-teal-500/20 text-teal-400'} rounded-lg`}>
+            <div className={`p-2 ${formType === 'STEMI' ? 'bg-red-500/20 text-red-400' : (formType === 'NSTEMI' ? 'bg-orange-500/20 text-orange-400' : 'bg-teal-500/20 text-teal-400')} rounded-lg`}>
               <FileText className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-1.5">
-                <span>View Existing Entry: {formType === 'NSTEMI' ? 'NSTEMI Clinical Event Form' : 'Heart Failure (HF) Clinical Form'}</span>
+                <span>View Existing Entry: {formType === 'STEMI' ? 'STEMI Emergency Event Form' : (formType === 'NSTEMI' ? 'NSTEMI Clinical Event Form' : 'Heart Failure (HF) Clinical Form')}</span>
               </h1>
               <p className="text-[10px] text-slate-300 mt-0.5">
-                Patient Reference: {patientRecord?.patient?.name} ({patientRecord?.patient?.mrNo}) • {formType === 'NSTEMI' ? 'NSTEMI Registry' : 'CARE CHF Assessment & Cohort Tracking'}
+                Patient Reference: {patientRecord?.patient?.name} ({patientRecord?.patient?.mrNo}) • {formType === 'STEMI' ? 'STEMI Registry' : (formType === 'NSTEMI' ? 'NSTEMI Registry' : 'CARE CHF Assessment & Cohort Tracking')}
               </p>
             </div>
           </div>
@@ -210,7 +211,16 @@ export default function HFFormView() {
       <div className="print-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden p-6 text-black">
           {patientRecord && assessmentData && (
-            formType === 'NSTEMI' ? (
+            formType === 'STEMI' ? (
+              <div className="pointer-events-none select-none opacity-95">
+                <STEMIForm
+                  patientRecord={patientRecord}
+                  patient={patientRecord.patient}
+                  editingRecord={assessmentData}
+                  readOnly={true}
+                />
+              </div>
+            ) : formType === 'NSTEMI' ? (
               <div className="pointer-events-none select-none opacity-95">
                 <NSTEMIForm
                   patientRecord={patientRecord}

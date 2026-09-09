@@ -51,6 +51,7 @@ const getPatientCentricTasks = async (req, res) => {
           CASE 
             WHEN t.source_registry LIKE '%Heart Failure%' THEN 'HF'
             WHEN t.source_registry LIKE '%NSTEMI%' THEN 'NSTEMI'
+            WHEN t.source_registry LIKE '%STEMI%' THEN 'STEMI'
             ELSE 'HF'
           END AS registry_type,
           t.source_record_id,
@@ -262,8 +263,52 @@ const getPatientTimelineLogs = async (req, res) => {
           )
         ORDER BY COALESCE(nol.created_at, CAST(nol.contact_date AS DATETIME2)) DESC, nol.log_id DESC;
       `;
+    } else if (registryType === 'STEMI') {
+      // 2. Isolated STEMI Outreach Logs with Episode Tracking
+      queryStr = `
+        SELECT 
+          nol.log_id,
+          nol.task_id,
+          nol.nstemi_followup_id,
+          'STEMI' AS registry_type,
+          nol.reg_patient_id,
+          COALESCE(nol.created_at, CAST(nol.contact_date AS DATETIME2)) AS contact_date,
+          nol.created_at,
+          nol.nurse_name,
+          nol.contact_mode,
+          nol.outcome,
+          nol.symptoms_status,
+          nol.medication_adherence,
+          nol.notes,
+          'Manual Outreach Log' AS log_type,
+          COALESCE(t.timeframe, sf.followup_month, 'Follow-Up') AS timeframe,
+          COALESCE(t.source_record_id, sf.stemi_id, sr.stemi_id, (SELECT MAX(stemi_id) FROM stemi_registry WHERE reg_patient_id = nol.reg_patient_id)) AS registry_id,
+          COALESCE(
+            sr.acs_no, 
+            sr.ip_no, 
+            CONCAT('STEMI-', RIGHT(CONCAT('00', CAST(COALESCE(t.source_record_id, sf.stemi_id, sr.stemi_id, (SELECT MAX(stemi_id) FROM stemi_registry WHERE reg_patient_id = nol.reg_patient_id)) AS VARCHAR(10))), 2)),
+            'STEMI-EPISODE'
+          ) AS episode_id,
+          COALESCE(t.status, 'Completed') AS episode_status,
+          CASE 
+            WHEN COALESCE(t.source_record_id, sf.stemi_id, sr.stemi_id, (SELECT MAX(stemi_id) FROM stemi_registry WHERE reg_patient_id = nol.reg_patient_id)) = (
+              SELECT MAX(stemi_id) FROM stemi_registry WHERE reg_patient_id = nol.reg_patient_id AND (status = 0 OR status IS NULL)
+            ) THEN 1 
+            ELSE 0 
+          END AS is_current_episode
+        FROM nurse_outreach_logs nol
+        LEFT JOIN patient_followup_tasks t ON nol.task_id = t.task_id
+        LEFT JOIN stemi_followup sf ON (t.source_record_id = sf.stemi_id AND t.timeframe = sf.followup_month)
+        LEFT JOIN stemi_registry sr ON (sf.stemi_id = sr.stemi_id OR t.source_record_id = sr.stemi_id)
+        WHERE nol.reg_patient_id = @pid 
+          AND (
+            nol.registry_type = 'STEMI' 
+            OR (t.source_registry LIKE '%STEMI%')
+          )
+        ORDER BY COALESCE(nol.created_at, CAST(nol.contact_date AS DATETIME2)) DESC, nol.log_id DESC;
+      `;
     } else if (registryType === 'HF' || registryType === 'HEART FAILURE') {
-      // 2. Isolated Heart Failure Outreach Logs with Episode Tracking
+      // 3. Isolated Heart Failure Outreach Logs with Episode Tracking
       queryStr = `
         SELECT 
           nol.log_id,
@@ -415,12 +460,144 @@ const postLog = async (req, res) => {
 
     const pid = parseInt(reg_patient_id, 10);
     const parsedTaskId = rawTaskId ? parseInt(rawTaskId, 10) : null;
+    const isStemi = (registry_type === 'STEMI') || (source_registry && source_registry.includes('STEMI'));
     const isNstemi = (registry_type === 'NSTEMI') || (source_registry && source_registry.includes('NSTEMI'));
     const overallStatus = status || overall_status || task_status || 'Completed';
 
     await transaction.begin();
 
-    if (isNstemi) {
+    if (isStemi) {
+      // -------------------------------------------------------------
+      // 1. STEMI Registry Branch
+      // -------------------------------------------------------------
+      let finalTaskId = parsedTaskId;
+
+      if (!finalTaskId) {
+        const findTaskRes = await transaction.request()
+          .input('pid', db.sql.Int, pid)
+          .query(`
+            SELECT TOP 1 task_id 
+            FROM patient_followup_tasks 
+            WHERE reg_patient_id = @pid AND source_registry = 'STEMI Registry'
+            ORDER BY CASE WHEN status != 'Completed' THEN 0 ELSE 1 END ASC, target_date ASC, task_id ASC;
+          `);
+        if (findTaskRes.recordset.length > 0) {
+          finalTaskId = findTaskRes.recordset[0].task_id;
+        }
+      }
+
+      const stemiRecordId = source_record_id ? parseInt(source_record_id, 10) : null;
+
+      // Step 1: Insert into nurse_outreach_logs
+      const insertRes = await transaction.request()
+        .input('finalTaskId', db.sql.Int, finalTaskId || null)
+        .input('pid', db.sql.Int, pid)
+        .input('assignedNurse', db.sql.VarChar(100), assigned_nurse || 'Cardiac Care Nurse')
+        .input('contactMode', db.sql.VarChar(50), contact_mode || 'Phone Call')
+        .input('outcome', db.sql.VarChar(100), outcome || 'Patient Contacted & Appointment Confirmed')
+        .input('symptomsStatus', db.sql.VarChar(100), symptoms_status || 'Stable - No symptoms')
+        .input('medicationAdherence', db.sql.VarChar(100), medication_adherence || 'Compliant - Taking all meds as prescribed')
+        .input('notes', db.sql.NVarChar(db.sql.MAX), notes || '')
+        .input('targetDate', db.sql.Date, target_date || null)
+        .query(`
+          INSERT INTO nurse_outreach_logs (
+            task_id,
+            nstemi_followup_id,
+            registry_type,
+            reg_patient_id,
+            contact_date,
+            nurse_name,
+            contact_mode,
+            outcome,
+            symptoms_status,
+            medication_adherence,
+            notes,
+            next_followup_date,
+            created_at
+          ) VALUES (
+            @finalTaskId,
+            NULL,
+            'STEMI',
+            @pid,
+            GETDATE(),
+            @assignedNurse,
+            @contactMode,
+            @outcome,
+            @symptomsStatus,
+            @medicationAdherence,
+            @notes,
+            @targetDate,
+            GETDATE()
+          );
+          SELECT SCOPE_IDENTITY() AS log_id;
+        `);
+
+      // Step 2: Immediately execute UPDATE on patient_followup_tasks parent record
+      if (finalTaskId) {
+        await transaction.request()
+          .input('taskId', db.sql.Int, finalTaskId)
+          .input('overallStatus', db.sql.VarChar(50), overallStatus)
+          .input('assignedNurse', db.sql.VarChar(100), assigned_nurse || 'Cardiac Care Nurse')
+          .input('targetDate', db.sql.Date, target_date || null)
+          .input('notes', db.sql.NVarChar(db.sql.MAX), notes || '')
+          .query(`
+            UPDATE patient_followup_tasks
+            SET 
+              status = @overallStatus,
+              assigned_nurse = COALESCE(@assignedNurse, assigned_nurse),
+              target_date = COALESCE(@targetDate, target_date),
+              nurse_notes = @notes,
+              last_contact_date = GETDATE(),
+              updated_at = GETDATE()
+            WHERE task_id = @taskId;
+          `);
+      }
+
+      // Step 3: Update stemi_followup record if stemiRecordId and timeframe present
+      if (stemiRecordId && timeframe) {
+        const visitModeRes = await transaction.request().query(
+          `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.stemi_followup') AND name = 'visit_mode'`
+        );
+        const hasVisitMode = visitModeRes.recordset.length > 0;
+
+        const specInstRes = await transaction.request().query(
+          `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.stemi_followup') AND name = 'special_instructions'`
+        );
+        const hasSpecialInstructions = specInstRes.recordset.length > 0;
+
+        if (hasVisitMode || hasSpecialInstructions) {
+          const reqStemiF = transaction.request()
+            .input('stemiId', db.sql.Int, stemiRecordId)
+            .input('timeframe', db.sql.VarChar(20), timeframe);
+
+          let setClause = 'updated_at = GETDATE()';
+          if (hasVisitMode) {
+            reqStemiF.input('visitMode', db.sql.VarChar(50), visit_mode || null);
+            setClause += ', visit_mode = COALESCE(@visitMode, visit_mode)';
+          }
+          if (hasSpecialInstructions) {
+            reqStemiF.input('instructions', db.sql.NVarChar(500), notes || null);
+            setClause += ', special_instructions = COALESCE(@instructions, special_instructions)';
+          }
+
+          await reqStemiF.query(`
+            UPDATE stemi_followup
+            SET ${setClause}
+            WHERE stemi_id = @stemiId AND followup_month = @timeframe;
+          `);
+        }
+      }
+
+      await transaction.commit();
+
+      return res.status(201).json({
+        success: true,
+        message: 'STEMI outreach log recorded and synced successfully.',
+        log_id: insertRes.recordset[0]?.log_id,
+        status: overallStatus
+      });
+
+    } else if (isNstemi) {
       // -------------------------------------------------------------
       // 1. NSTEMI Registry Branch
       // -------------------------------------------------------------

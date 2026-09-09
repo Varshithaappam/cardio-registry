@@ -35,6 +35,7 @@ export default function NurseFollowUpReport() {
   // Search and Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [registryTypeFilter, setRegistryTypeFilter] = useState('All');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
@@ -118,9 +119,18 @@ export default function NurseFollowUpReport() {
     return <ChevronDown className="w-3.5 h-3.5 text-blue-600 font-bold ml-1.5 inline-block shrink-0" />;
   };
 
+  // Helper to extract registry type (STEMI, NSTEMI, HF)
+  const getTaskRegistryType = (task) => {
+    if (task.registry_type) return task.registry_type;
+    const src = (task.source_registry || '').toUpperCase();
+    if (src.includes('NSTEMI')) return 'NSTEMI';
+    if (src.includes('STEMI')) return 'STEMI';
+    return 'HF';
+  };
+
   // Unique composite key generator for multi-registry rows
   const getUniqueKey = (task) =>
-    `${task.reg_patient_id}-${task.registry_type || (task.source_registry?.includes('NSTEMI') ? 'NSTEMI' : 'HF')}`;
+    `${task.reg_patient_id}-${getTaskRegistryType(task)}`;
 
   // Expanded Row State (Composite Unique Key: `${patient_id}-${registry_type}`)
   const [expandedRowKey, setExpandedRowKey] = useState(null);
@@ -245,7 +255,7 @@ export default function NurseFollowUpReport() {
 
   const toggleExpandRow = (task) => {
     const key = getUniqueKey(task);
-    const registryType = task.registry_type || (task.source_registry?.includes('NSTEMI') ? 'NSTEMI' : 'HF');
+    const registryType = getTaskRegistryType(task);
     if (expandedRowKey === key) {
       setExpandedRowKey(null);
     } else {
@@ -290,7 +300,14 @@ export default function NurseFollowUpReport() {
         }
       }
 
-      // 3. Follow-Up Date Range Filter
+      // 3. Registry Pathway Filter
+      let matchesRegistry = true;
+      if (registryTypeFilter !== 'All') {
+        const regType = getTaskRegistryType(task).toUpperCase();
+        matchesRegistry = regType.includes(registryTypeFilter.toUpperCase());
+      }
+
+      // 4. Follow-Up Date Range Filter
       let matchesDate = true;
       const targetIso = task.target_date ? String(task.target_date).split('T')[0] : '';
       if (fromDate && targetIso) {
@@ -306,7 +323,7 @@ export default function NurseFollowUpReport() {
         }
       }
 
-      return matchesSearch && matchesStatus && matchesDate;
+      return matchesSearch && matchesStatus && matchesRegistry && matchesDate;
     });
 
     // 4. Column Sorting Logic
@@ -337,7 +354,7 @@ export default function NurseFollowUpReport() {
     }
 
     return result;
-  }, [tasks, searchQuery, statusFilter, fromDate, toDate, sortConfig]);
+  }, [tasks, searchQuery, statusFilter, registryTypeFilter, fromDate, toDate, sortConfig]);
 
   // 5. Open Log Outreach Modal
   const handleOpenModal = (task) => {
@@ -361,10 +378,11 @@ export default function NurseFollowUpReport() {
     if (!selectedTask) return;
 
     setSubmitting(true);
+    const regType = getTaskRegistryType(selectedTask);
     const payload = {
       reg_patient_id: selectedTask.reg_patient_id,
       task_id: selectedTask.task_id,
-      registry_type: selectedTask.registry_type || (selectedTask.source_registry?.includes('NSTEMI') ? 'NSTEMI' : 'HF'),
+      registry_type: regType,
       source_registry: selectedTask.source_registry,
       source_record_id: selectedTask.source_record_id,
       timeframe: selectedTask.timeframe,
@@ -384,7 +402,6 @@ export default function NurseFollowUpReport() {
         setIsModalOpen(false);
         await fetchTasks();
         const key = getUniqueKey(selectedTask);
-        const regType = selectedTask.registry_type || (selectedTask.source_registry?.includes('NSTEMI') ? 'NSTEMI' : 'HF');
         if (expandedRowKey === key) {
           await fetchPatientLogs(selectedTask.reg_patient_id, regType);
         }
@@ -594,7 +611,7 @@ export default function NurseFollowUpReport() {
 
       {/* Filter and Search Bar Card */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
           {/* Search Patient Name or MRN */}
           <div className="space-y-1.5">
             <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wide">
@@ -609,6 +626,26 @@ export default function NurseFollowUpReport() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
               />
+            </div>
+          </div>
+
+          {/* Registry Pathway Filter */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wide">
+              REGISTRY PATHWAY
+            </label>
+            <div className="relative">
+              <select
+                value={registryTypeFilter}
+                onChange={(e) => setRegistryTypeFilter(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all cursor-pointer appearance-none pr-8"
+              >
+                <option value="All">All Registries</option>
+                <option value="STEMI">STEMI Registry</option>
+                <option value="NSTEMI">NSTEMI Registry</option>
+                <option value="HF">Heart Failure (HF)</option>
+              </select>
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
 
@@ -697,11 +734,12 @@ export default function NurseFollowUpReport() {
             Showing <strong className="text-slate-900">{filteredTasks.length}</strong> of{' '}
             <strong className="text-slate-900">{tasks.length}</strong> patient records
           </span>
-          {(searchQuery || statusFilter !== 'All' || fromDate || toDate || sortConfig.key) && (
+          {(searchQuery || statusFilter !== 'All' || registryTypeFilter !== 'All' || fromDate || toDate || sortConfig.key) && (
             <button
               onClick={() => {
                 setSearchQuery('');
                 setStatusFilter('All');
+                setRegistryTypeFilter('All');
                 setFromDate('');
                 setToDate('');
                 setSortConfig({ key: null, direction: 'asc' });

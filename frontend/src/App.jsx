@@ -231,6 +231,28 @@ function PatientTimelinePage({ records, loadPatients }) {
         alert(err.response?.data?.message || 'Failed to soft-delete record.');
         return;
       }
+    } else if (type === 'STEMI') {
+      try {
+        await api.delete(`/stemi/${targetHfId}`);
+        alert('STEMI Registry record soft-deleted successfully.');
+        loadPatients();
+        return;
+      } catch (err) {
+        console.error('Error soft-deleting STEMI record:', err);
+        alert(err.response?.data?.message || 'Failed to soft-delete STEMI record.');
+        return;
+      }
+    } else if (type === 'NSTEMI') {
+      try {
+        await api.delete(`/nstemi/${targetHfId}`);
+        alert('NSTEMI Registry record soft-deleted successfully.');
+        loadPatients();
+        return;
+      } catch (err) {
+        console.error('Error soft-deleting NSTEMI record:', err);
+        alert(err.response?.data?.message || 'Failed to soft-delete NSTEMI record.');
+        return;
+      }
     }
   };
 
@@ -239,10 +261,11 @@ function PatientTimelinePage({ records, loadPatients }) {
       record={record}
       onBack={() => navigate('/patients')}
       onAddEventClick={(formType) => navigate(`/patient/${regPatientId}/edit?formType=${formType}`)}
-      onEditEventClick={(hfId) => navigate(`/patient/${regPatientId}/edit/${hfId}`)}
+      onEditEventClick={(hfId, formType = 'HF') => navigate(`/patient/${regPatientId}/edit/${hfId}?formType=${formType}`)}
       onViewEventDetails={(evt, type) => {
         const targetHfId = evt.hf_id || evt.hfId || evt.id;
-        navigate(`/patient/${regPatientId}/view/${targetHfId}`, { state: { from: `/patient/${regPatientId}` } });
+        const eventType = evt.type || type || 'HF';
+        navigate(`/patient/${regPatientId}/view/${targetHfId}?formType=${eventType}`, { state: { from: `/patient/${regPatientId}` } });
       }}
       onDeleteEvent={handleDeleteClinicalEvent}
       onRefreshPatient={loadPatients}
@@ -267,7 +290,7 @@ function EditFormPage({ records, loadPatients }) {
       async function fetchEditData() {
         try {
           setLoading(true);
-          const endpoint = formType === 'NSTEMI' ? `/nstemi/${hfId}` : `/hf-assessment/${hfId}`;
+          const endpoint = formType === 'NSTEMI' ? `/nstemi/${hfId}` : (formType === 'STEMI' ? `/stemi/${hfId}` : `/hf-assessment/${hfId}`);
           const response = await api.get(endpoint);
           if (response.data && response.data.success) {
             setEditingRecord(response.data.data);
@@ -358,16 +381,28 @@ function EditFormPage({ records, loadPatients }) {
           }
         } else if (type === 'STEMI') {
           try {
-            const response = await api.post('/stemi', eventData);
+            const isDraft = eventData.isDraft === true;
+            const payload = { ...eventData, status: isDraft ? 'draft' : 'final' };
+            let response;
+            if (hfId) {
+              response = await api.put(`/stemi/${hfId}`, payload);
+            } else {
+              response = await api.post('/stemi', payload);
+            }
             if (response.data && response.data.success) {
-              alert(response.data.message || 'STEMI Registry record submitted successfully.');
+              const regNo = response.data?.data?.acs_no || eventData.acs_no || 'STEMI Draft';
+              if (isDraft) {
+                alert(`Draft saved successfully (Registry No: ${regNo}). You can resume and complete it anytime.`);
+              } else {
+                alert('STEMI Registry record submitted and finalized in database successfully.');
+              }
               await loadPatients();
             } else {
-              alert(response.data?.message || 'Failed to submit STEMI record.');
+              alert(response.data?.message || 'Failed to save STEMI record.');
             }
           } catch (err) {
             console.error('Error saving STEMI:', err);
-            alert(err.response?.data?.message || 'Error submitting STEMI record. Please check backend connection.');
+            alert(err.response?.data?.message || 'Error saving STEMI record. Please check backend connection.');
           }
         }
         navigate(`/patient/${regPatientId}`);

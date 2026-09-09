@@ -396,10 +396,15 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                               + HF
                             </button>
                             <button
-                              disabled={true}
                               id={`tbl-add-stemi-${record.patient.id}`}
-                              className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-black cursor-not-allowed opacity-50 pointer-events-none transition-colors"
-                              title="STEMI registry under development"
+                              disabled={isInactiveOrDeceased}
+                              onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'STEMI')}
+                              className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-colors ${
+                                isInactiveOrDeceased
+                                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
+                                  : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer shadow-xs'
+                              }`}
+                              title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add STEMI Registry Entry'}
                             >
                               + STEMI
                             </button>
@@ -572,10 +577,15 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       + HF Assess
                     </button>
                     <button
-                      disabled={true}
                       id={`btn-add-stemi-${record.patient.id}`}
-                      className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[10px] font-bold shrink-0 cursor-not-allowed opacity-50 pointer-events-none transition-colors"
-                      title="STEMI registry under development"
+                      disabled={isInactiveOrDeceased}
+                      onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'STEMI')}
+                      className={`px-2 py-1.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${
+                        isInactiveOrDeceased
+                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
+                          : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 cursor-pointer shadow-xs'
+                      }`}
+                      title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add STEMI Registry Entry'}
                     >
                       + STEMI
                     </button>

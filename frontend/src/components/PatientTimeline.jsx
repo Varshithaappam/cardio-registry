@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { calculateDataQualityScore } from '../data/mockPatients';
 import HFHistoryList from './HFHistoryList';
+import STEMIHistoryList from './STEMIHistoryList';
 import NSTEMIHistoryList from './NSTEMIHistoryList';
 import RegisterNewPatient from './RegisterNewPatient';
 import AuditLogViewer from './hf/AuditLogViewer';
@@ -45,7 +46,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
   const [activeTab, setActiveTab] = useState('timeline');
   const [isEditingPatient, setIsEditingPatient] = useState(false);
   const [isAuditViewerExpanded, setIsAuditViewerExpanded] = useState(false);
-  const [counts, setCounts] = useState({ hfCount: 0, nstemiCount: 0 });
+  const [counts, setCounts] = useState({ hfCount: 0, stemiCount: 0, nstemiCount: 0 });
 
   useEffect(() => {
     if (record?.patient?.id) {
@@ -54,6 +55,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
           if (res.data && res.data.success) {
             setCounts({
               hfCount: res.data.data.hfCount || 0,
+              stemiCount: res.data.data.stemiCount || 0,
               nstemiCount: res.data.data.nstemiCount || 0
             });
           }
@@ -381,6 +383,17 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
           <span>Heart Failure Registry ({counts.hfCount || record.hfAssessments?.length || 0})</span>
         </button>
         <button
+          onClick={() => setActiveTab('stemi')}
+          className={`py-3 px-1 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'stemi'
+              ? 'border-red-600 text-red-600'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Heart className="w-4 h-4" />
+          <span>STEMI Registry ({counts.stemiCount || 0})</span>
+        </button>
+        <button
           onClick={() => setActiveTab('nstemi')}
           className={`py-3 px-1 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
             activeTab === 'nstemi'
@@ -490,6 +503,11 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
         {/* Tab Content 2: HF Registry Assessment List */}
         <div className={activeTab === 'hf' ? 'block space-y-6' : 'hidden'}>
           <HFHistoryList regPatientId={record.patient.id} patientName={record.patient.name} onEditEventClick={isInactiveOrDeceased ? null : onEditEventClick} isReadOnly={isInactiveOrDeceased} />
+        </div>
+
+        {/* Tab Content: STEMI Registry History List */}
+        <div className={activeTab === 'stemi' ? 'block space-y-6' : 'hidden'}>
+          <STEMIHistoryList regPatientId={record.patient.id} patientName={record.patient.name} onEditEventClick={isInactiveOrDeceased ? null : onEditEventClick} isReadOnly={isInactiveOrDeceased} />
         </div>
 
         {/* Tab Content: NSTEMI Registry History List */}
