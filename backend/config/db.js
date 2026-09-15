@@ -275,7 +275,6 @@ async function ensureAppropriatenessColumns() {
     console.warn('Auto column check notice:', err.message);
   }
 }
-
 async function ensureAuditTable() {
   try {
     const checkTableQuery = `
@@ -286,7 +285,7 @@ async function ensureAuditTable() {
           [registry_type] VARCHAR(50) NOT NULL,
           [record_identifier] VARCHAR(100) NULL,
           [record_id] VARCHAR(100) NULL,
-          [patient_id] INT NULL,
+          [patient_id] VARCHAR(100) NULL,
           [user_id] VARCHAR(100) NULL,
           [action_type] VARCHAR(50) NOT NULL,
           [changed_fields] NVARCHAR(MAX) NULL,
@@ -303,12 +302,18 @@ async function ensureAuditTable() {
         IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.system_audit_log') AND name = 'record_id')
           ALTER TABLE dbo.[system_audit_log] ADD [record_id] VARCHAR(100) NULL;
         IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.system_audit_log') AND name = 'patient_id')
-          ALTER TABLE dbo.[system_audit_log] ADD [patient_id] INT NULL;
+          ALTER TABLE dbo.[system_audit_log] ADD [patient_id] VARCHAR(100) NULL;
         IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.system_audit_log') AND name = 'previous_values')
           ALTER TABLE dbo.[system_audit_log] ADD [previous_values] NVARCHAR(MAX) NULL;
         IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.system_audit_log') AND name = 'new_values')
           ALTER TABLE dbo.[system_audit_log] ADD [new_values] NVARCHAR(MAX) NULL;
       END
+
+      -- Force existing columns to VARCHAR on the remote server
+      ALTER TABLE dbo.[system_audit_log] ALTER COLUMN [patient_id] VARCHAR(100) NULL;
+      ALTER TABLE dbo.[system_audit_log] ALTER COLUMN [record_id] VARCHAR(100) NULL;
+      ALTER TABLE dbo.[system_audit_log] ALTER COLUMN [record_identifier] VARCHAR(100) NULL;
+      ALTER TABLE dbo.[system_audit_log] ALTER COLUMN [user_id] VARCHAR(100) NULL;
     `;
     await query(checkTableQuery);
     console.log('✓ Verified/Initialized [system_audit_log] database table');
