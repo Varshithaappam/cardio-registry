@@ -5,8 +5,11 @@ import api from '../../api/axios';
 
 import { formatDateForDisplay, formatDateTimeForDisplay } from '../utils/dateUtils';
 
+import { useAlert } from '../context/AlertContext';
+
 export default function HFHistoryList({ regPatientId, patientName, onEditEventClick, isReadOnly = false }) {
   const navigate = useNavigate();
+  const { showAlert, showConfirm } = useAlert();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,38 +40,76 @@ export default function HFHistoryList({ regPatientId, patientName, onEditEventCl
   }, [regPatientId]);
 
   const handleDeleteRecord = async (hfId, registryNo) => {
-    if (!window.confirm(`Are you sure you want to soft-delete HF Registry Record ${registryNo || '#' + hfId}? This record will become read-only and archived.`)) {
-      return;
-    }
+    const isConfirmed = await showConfirm({
+      type: 'delete',
+      title: 'Delete HF Record?',
+      message: `Are you sure you want to soft-delete HF Registry Record ${registryNo || '#' + hfId}? This record will become read-only and archived.`,
+      confirmText: 'Delete Record',
+      cancelText: 'Cancel'
+    });
+
+    if (!isConfirmed) return;
+
     try {
       const res = await api.delete(`/hf-registry/${hfId}`);
       if (res.data && res.data.success) {
-        alert('HF Registry record soft-deleted successfully.');
+        await showAlert({
+          type: 'success',
+          title: 'Record Deleted',
+          message: 'HF Registry record soft-deleted successfully.'
+        });
         fetchHistory();
       } else {
-        alert(res.data?.message || 'Failed to soft-delete record.');
+        showAlert({
+          type: 'danger',
+          title: 'Delete Failed',
+          message: res.data?.message || 'Failed to soft-delete record.'
+        });
       }
     } catch (err) {
       console.error('Soft delete error:', err);
-      alert(err.response?.data?.message || 'Failed to soft-delete HF Registry record.');
+      showAlert({
+        type: 'danger',
+        title: 'Error',
+        message: err.response?.data?.message || 'Failed to soft-delete HF Registry record.'
+      });
     }
   };
 
   const handleUndeleteRecord = async (hfId, registryNo) => {
-    if (!window.confirm(`Are you sure you want to restore HF Registry Record ${registryNo || '#' + hfId}? It will be reactivated for editing.`)) {
-      return;
-    }
+    const isConfirmed = await showConfirm({
+      type: 'info',
+      title: 'Restore HF Record?',
+      message: `Are you sure you want to restore HF Registry Record ${registryNo || '#' + hfId}? It will be reactivated for editing.`,
+      confirmText: 'Restore Record',
+      cancelText: 'Cancel'
+    });
+
+    if (!isConfirmed) return;
+
     try {
       const res = await api.patch(`/hf-registry/${hfId}/undelete`);
       if (res.data && res.data.success) {
-        alert('HF Registry record restored successfully.');
+        await showAlert({
+          type: 'success',
+          title: 'Record Restored',
+          message: 'HF Registry record restored successfully.'
+        });
         fetchHistory();
       } else {
-        alert(res.data?.message || 'Failed to restore record.');
+        showAlert({
+          type: 'danger',
+          title: 'Restore Failed',
+          message: res.data?.message || 'Failed to restore record.'
+        });
       }
     } catch (err) {
       console.error('Undelete error:', err);
-      alert(err.response?.data?.message || 'Failed to restore HF Registry record.');
+      showAlert({
+        type: 'danger',
+        title: 'Error',
+        message: err.response?.data?.message || 'Failed to restore HF Registry record.'
+      });
     }
   };
 

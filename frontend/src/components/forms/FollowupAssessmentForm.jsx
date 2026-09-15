@@ -295,7 +295,6 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
   return (
     <SectionCard
       title={title}
-      subtitle="Determine post-discharge follow-up necessity, schedule, and pre-visit diagnostic requirements."
     >
       <div className="space-y-4">
         {/* Core Logic: Mandatory Primary Toggle */}
@@ -348,10 +347,9 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
               <RadioGroup
                 label="Visit Mode"
                 name="visitModeGroup"
-                columns={3}
+                columns={2}
                 options={[
                   'In-Person',
-                  'Tele-consultation',
                   'Phone Check-in'
                 ]}
                 value={visitMode}

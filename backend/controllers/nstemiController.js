@@ -1,4 +1,104 @@
 const { getPool, sql } = require('../config/db');
+const { logAuditTrail } = require('../utils/logAuditTrail');
+
+async function saveAppropriatenessHelper(transaction, tableName, idField, idVal, isUpdate, getVal) {
+  const colRes = await new sql.Request(transaction).query(
+    `SELECT name FROM sys.columns WHERE object_id = OBJECT_ID('dbo.${tableName}')`
+  );
+  let existingCols = new Set(colRes.recordset ? colRes.recordset.map(r => r.name) : []);
+
+  const candidateInputs = {
+    iccu_admission: { type: sql.NVarChar(50), val: getVal('appr_iccu_admission') },
+    iccu_transfer_out: { type: sql.NVarChar(50), val: getVal('appr_iccu_transfer_out') },
+    thrombolysis_indication: { type: sql.NVarChar(50), val: getVal('appr_thrombolysis_indication') },
+    ptca_indication: { type: sql.NVarChar(50), val: getVal('appr_ptca_indication') },
+    invasive_monitoring: { type: sql.NVarChar(50), val: getVal('appr_invasive_monitoring') },
+    iabp_indication: { type: sql.NVarChar(50), val: getVal('appr_iabp_indication') },
+    invasive_ventilation: { type: sql.NVarChar(50), val: getVal('appr_invasive_ventilation') },
+    dialysis_indication: { type: sql.NVarChar(50), val: getVal('appr_dialysis_indication') },
+    other_procedure_name: { type: sql.VarChar(255), val: getVal('appr_other_procedure_name') },
+    other_procedure_appropriateness: { type: sql.NVarChar(50), val: getVal('appr_other_procedure_appropriateness') },
+    cardiac_enzymes: { type: sql.NVarChar(50), val: getVal('appr_cardiac_enzymes') },
+    bnp: { type: sql.NVarChar(50), val: getVal('appr_bnp') },
+    crp: { type: sql.NVarChar(50), val: getVal('appr_crp') },
+    lipid_profile: { type: sql.NVarChar(50), val: getVal('appr_lipid_profile') },
+    bedside_echo: { type: sql.NVarChar(50), val: getVal('appr_bedside_echo') },
+    chest_xray: { type: sql.NVarChar(50), val: getVal('appr_chest_xray') },
+    beta_blockers: { type: sql.NVarChar(50), val: getVal('appr_beta_blockers') },
+    aspirin: { type: sql.NVarChar(50), val: getVal('appr_aspirin') },
+    clopidogrel: { type: sql.NVarChar(50), val: getVal('appr_clopidogrel') },
+    ace_inhibitor: { type: sql.NVarChar(50), val: getVal('appr_ace_inhibitor') },
+    arb: { type: sql.NVarChar(50), val: getVal('appr_arb') },
+    statin: { type: sql.NVarChar(50), val: getVal('appr_statin') },
+    diuretic: { type: sql.NVarChar(50), val: getVal('appr_diuretic') },
+    lanoxin: { type: sql.NVarChar(50), val: getVal('appr_lanoxin') },
+    anticoagulant: { type: sql.NVarChar(50), val: getVal('appr_anticoagulant') },
+    amiodarone: { type: sql.NVarChar(50), val: getVal('appr_amiodarone') },
+    other_drug_name: { type: sql.VarChar(255), val: getVal('appr_other_drug_name') },
+    other_drug_appropriateness: { type: sql.NVarChar(50), val: getVal('appr_other_drug_appropriateness') },
+
+    // Notes:
+    iccu_admission_note: { type: sql.NVarChar(255), val: getVal('appr_iccu_admission_note') },
+    iccu_transfer_out_note: { type: sql.NVarChar(255), val: getVal('appr_iccu_transfer_out_note') },
+    tlt_note: { type: sql.NVarChar(255), val: getVal('appr_thrombolysis_indication_note') },
+    ptca_note: { type: sql.NVarChar(255), val: getVal('appr_ptca_indication_note') },
+    invasive_monitoring_note: { type: sql.NVarChar(255), val: getVal('appr_invasive_monitoring_note') },
+    iabp_note: { type: sql.NVarChar(255), val: getVal('appr_iabp_indication_note') },
+    invasive_ventilation_note: { type: sql.NVarChar(255), val: getVal('appr_invasive_ventilation_note') },
+    dialysis_note: { type: sql.NVarChar(255), val: getVal('appr_dialysis_indication_note') },
+    any_other_procedure_note: { type: sql.NVarChar(255), val: getVal('appr_other_procedure_appropriateness_note') || getVal('appr_other_procedure_note') },
+    cardiac_enzymes_note: { type: sql.NVarChar(255), val: getVal('appr_cardiac_enzymes_note') },
+    bnp_note: { type: sql.NVarChar(255), val: getVal('appr_bnp_note') },
+    crp_note: { type: sql.NVarChar(255), val: getVal('appr_crp_note') },
+    lipid_profile_note: { type: sql.NVarChar(255), val: getVal('appr_lipid_profile_note') },
+    bed_side_echo_note: { type: sql.NVarChar(255), val: getVal('appr_bedside_echo_note') || getVal('appr_bed_side_echo_note') },
+    cxr_note: { type: sql.NVarChar(255), val: getVal('appr_chest_xray_note') || getVal('appr_cxr_note') },
+    beta_blockers_note: { type: sql.NVarChar(255), val: getVal('appr_beta_blockers_note') },
+    aspirin_note: { type: sql.NVarChar(255), val: getVal('appr_aspirin_note') },
+    clopidogrel_note: { type: sql.NVarChar(255), val: getVal('appr_clopidogrel_note') },
+    ace_inhibitor_note: { type: sql.NVarChar(255), val: getVal('appr_ace_inhibitor_note') },
+    arb_note: { type: sql.NVarChar(255), val: getVal('appr_arb_note') },
+    statin_note: { type: sql.NVarChar(255), val: getVal('appr_statin_note') },
+    diuretic_note: { type: sql.NVarChar(255), val: getVal('appr_diuretic_note') },
+    lanoxin_note: { type: sql.NVarChar(255), val: getVal('appr_lanoxin_note') },
+    anticoagulant_note: { type: sql.NVarChar(255), val: getVal('appr_anticoagulant_note') },
+    amiodarone_note: { type: sql.NVarChar(255), val: getVal('appr_amiodarone_note') },
+    any_other_drug_note: { type: sql.NVarChar(255), val: getVal('appr_other_drug_appropriateness_note') || getVal('appr_other_drug_note') }
+  };
+
+  const reqAppr = new sql.Request(transaction);
+  reqAppr.input(idField, sql.Int, idVal);
+
+  const activeCols = [];
+  for (const [colName, colMeta] of Object.entries(candidateInputs)) {
+    if (existingCols.has(colName)) {
+      activeCols.push(colName);
+      reqAppr.input(colName, colMeta.type, colMeta.val !== undefined ? colMeta.val : null);
+    }
+  }
+
+  if (isUpdate) {
+    if (activeCols.length === 0) return;
+    const setClause = activeCols.map(c => `[${c}] = @${c}`).join(', ');
+    const updateSql = `
+      UPDATE [${tableName}]
+      SET ${setClause}${existingCols.has('updated_at') ? ', [updated_at] = GETDATE()' : ''}
+      WHERE [${idField}] = @${idField};
+    `;
+    await reqAppr.query(updateSql);
+  } else {
+    const colList = [`[${idField}]`, ...activeCols.map(c => `[${c}]`)].join(', ');
+    const valList = [`@${idField}`, ...activeCols.map(c => `@${c}`)].join(', ');
+    const insertSql = `
+      INSERT INTO [${tableName}] (
+        ${colList}${existingCols.has('created_at') ? ', [created_at], [updated_at]' : ''}
+      ) VALUES (
+        ${valList}${existingCols.has('created_at') ? ', GETDATE(), GETDATE()' : ''}
+      );
+    `;
+    await reqAppr.query(insertSql);
+  }
+}
 
 /**
  * Controller to handle full NSTEMI Registry insertion across 9 modular tables
@@ -503,56 +603,7 @@ async function createNstemiRecord(req, res) {
     // ==========================================
     // TABLE 9: nstemi_appropriateness
     // ==========================================
-    const reqAppr = new sql.Request(transaction);
-    reqAppr.input('nstemi_id', sql.Int, nstemi_id);
-    reqAppr.input('iccu_admission', sql.NVarChar(50), val('appr_iccu_admission'));
-    reqAppr.input('iccu_transfer_out', sql.NVarChar(50), val('appr_iccu_transfer_out'));
-    reqAppr.input('thrombolysis_indication', sql.NVarChar(50), val('appr_thrombolysis_indication'));
-    reqAppr.input('ptca_indication', sql.NVarChar(50), val('appr_ptca_indication'));
-    reqAppr.input('invasive_monitoring', sql.NVarChar(50), val('appr_invasive_monitoring'));
-    reqAppr.input('iabp_indication', sql.NVarChar(50), val('appr_iabp_indication'));
-    reqAppr.input('invasive_ventilation', sql.NVarChar(50), val('appr_invasive_ventilation'));
-    reqAppr.input('dialysis_indication', sql.NVarChar(50), val('appr_dialysis_indication'));
-    reqAppr.input('other_procedure_name', sql.VarChar(255), val('appr_other_procedure_name'));
-    reqAppr.input('other_procedure_appropriateness', sql.NVarChar(50), val('appr_other_procedure_appropriateness'));
-
-    reqAppr.input('cardiac_enzymes', sql.NVarChar(50), val('appr_cardiac_enzymes'));
-    reqAppr.input('bnp', sql.NVarChar(50), val('appr_bnp'));
-    reqAppr.input('crp', sql.NVarChar(50), val('appr_crp'));
-    reqAppr.input('lipid_profile', sql.NVarChar(50), val('appr_lipid_profile'));
-    reqAppr.input('bedside_echo', sql.NVarChar(50), val('appr_bedside_echo'));
-    reqAppr.input('chest_xray', sql.NVarChar(50), val('appr_chest_xray'));
-
-    reqAppr.input('beta_blockers', sql.NVarChar(50), val('appr_beta_blockers'));
-    reqAppr.input('aspirin', sql.NVarChar(50), val('appr_aspirin'));
-    reqAppr.input('clopidogrel', sql.NVarChar(50), val('appr_clopidogrel'));
-    reqAppr.input('ace_inhibitor', sql.NVarChar(50), val('appr_ace_inhibitor'));
-    reqAppr.input('arb', sql.NVarChar(50), val('appr_arb'));
-    reqAppr.input('statin', sql.NVarChar(50), val('appr_statin'));
-    reqAppr.input('diuretic', sql.NVarChar(50), val('appr_diuretic'));
-    reqAppr.input('lanoxin', sql.NVarChar(50), val('appr_lanoxin'));
-    reqAppr.input('anticoagulant', sql.NVarChar(50), val('appr_anticoagulant'));
-    reqAppr.input('amiodarone', sql.NVarChar(50), val('appr_amiodarone'));
-    reqAppr.input('other_drug_name', sql.VarChar(255), val('appr_other_drug_name'));
-    reqAppr.input('other_drug_appropriateness', sql.NVarChar(50), val('appr_other_drug_appropriateness'));
-
-    await reqAppr.query(`
-      INSERT INTO [nstemi_appropriateness] (
-        [nstemi_id], [iccu_admission], [iccu_transfer_out], [thrombolysis_indication], [ptca_indication],
-        [invasive_monitoring], [iabp_indication], [invasive_ventilation], [dialysis_indication],
-        [other_procedure_name], [other_procedure_appropriateness], [cardiac_enzymes], [bnp], [crp],
-        [lipid_profile], [bedside_echo], [chest_xray], [beta_blockers], [aspirin], [clopidogrel],
-        [ace_inhibitor], [arb], [statin], [diuretic], [lanoxin], [anticoagulant], [amiodarone],
-        [other_drug_name], [other_drug_appropriateness]
-      ) VALUES (
-        @nstemi_id, @iccu_admission, @iccu_transfer_out, @thrombolysis_indication, @ptca_indication,
-        @invasive_monitoring, @iabp_indication, @invasive_ventilation, @dialysis_indication,
-        @other_procedure_name, @other_procedure_appropriateness, @cardiac_enzymes, @bnp, @crp,
-        @lipid_profile, @bedside_echo, @chest_xray, @beta_blockers, @aspirin, @clopidogrel,
-        @ace_inhibitor, @arb, @statin, @diuretic, @lanoxin, @anticoagulant, @amiodarone,
-        @other_drug_name, @other_drug_appropriateness
-      );
-    `);
+    await saveAppropriatenessHelper(transaction, 'nstemi_appropriateness', 'nstemi_id', nstemi_id, false, val);
 
     // ==========================================
     // TABLE 8: nstemi_followup (4 rows)
@@ -714,6 +765,16 @@ async function createNstemiRecord(req, res) {
     // Commit Transaction
     await transaction.commit();
 
+    logAuditTrail(
+      req,
+      'CREATE',
+      'NSTEMI',
+      finalIpNo || finalAcsNo || nstemi_id,
+      val('reg_patient_id', 1),
+      null,
+      payload
+    ).catch(err => console.error('[NSTEMI Audit] Create error:', err));
+
     return res.status(201).json({
       success: true,
       message: 'NSTEMI Registry record successfully created across all 9 modular tables.',
@@ -815,8 +876,8 @@ async function getNstemiRecord(req, res) {
           }
         } else if (table === 'nstemi_appropriateness') {
           // Prefix appropriateness columns with appr_ and attach sub-object
-          merged.appropriateness = row;
-          merged.nstemi_appropriateness = row;
+          merged.appropriateness = { ...row };
+          merged.nstemi_appropriateness = { ...row };
           for (const k in row) {
             if (k !== 'nstemi_id' && k !== 'appropriateness_id' && k !== 'created_at' && k !== 'updated_at') {
               merged[`appr_${k}`] = row[k];
@@ -824,6 +885,36 @@ async function getNstemiRecord(req, res) {
               merged[k] = row[k];
             }
           }
+          const noteAliases = {
+            appr_iccu_admission_note: row.iccu_admission_note,
+            appr_iccu_transfer_out_note: row.iccu_transfer_out_note,
+            appr_thrombolysis_indication_note: row.tlt_note || row.thrombolysis_indication_note,
+            appr_ptca_indication_note: row.ptca_note || row.ptca_indication_note,
+            appr_invasive_monitoring_note: row.invasive_monitoring_note,
+            appr_iabp_indication_note: row.iabp_note || row.iabp_indication_note,
+            appr_invasive_ventilation_note: row.invasive_ventilation_note,
+            appr_dialysis_indication_note: row.dialysis_note || row.dialysis_indication_note,
+            appr_other_procedure_appropriateness_note: row.any_other_procedure_note || row.other_procedure_note,
+            appr_cardiac_enzymes_note: row.cardiac_enzymes_note,
+            appr_bnp_note: row.bnp_note,
+            appr_crp_note: row.crp_note,
+            appr_lipid_profile_note: row.lipid_profile_note,
+            appr_bedside_echo_note: row.bed_side_echo_note || row.bedside_echo_note,
+            appr_chest_xray_note: row.cxr_note || row.chest_xray_note,
+            appr_beta_blockers_note: row.beta_blockers_note,
+            appr_aspirin_note: row.aspirin_note,
+            appr_clopidogrel_note: row.clopidogrel_note,
+            appr_ace_inhibitor_note: row.ace_inhibitor_note,
+            appr_arb_note: row.arb_note,
+            appr_statin_note: row.statin_note,
+            appr_diuretic_note: row.diuretic_note,
+            appr_lanoxin_note: row.lanoxin_note,
+            appr_anticoagulant_note: row.anticoagulant_note,
+            appr_amiodarone_note: row.amiodarone_note,
+            appr_other_drug_appropriateness_note: row.any_other_drug_note || row.other_drug_note
+          };
+          Object.assign(merged, noteAliases);
+          Object.assign(merged.appropriateness, noteAliases);
         } else if (table === 'nstemi_registry') {
           const formatDate = (val) => {
             if (!val) return null;
@@ -919,9 +1010,25 @@ async function deleteNstemiRecord(req, res) {
   try {
     const nstemi_id = req.params.id;
     const pool = await getPool();
+    const { recordset: existingRows } = await pool.request()
+      .input('nstemi_id', sql.Int, nstemi_id)
+      .query(`SELECT [nstemi_id], [reg_patient_id], [ip_no], [acs_no] FROM [nstemi_registry] WHERE [nstemi_id] = @nstemi_id`);
+    const oldRecord = existingRows[0] || {};
+
     await pool.request()
       .input('nstemi_id', sql.Int, nstemi_id)
       .query('UPDATE [nstemi_registry] SET [status] = 1, [updated_at] = GETDATE() WHERE [nstemi_id] = @nstemi_id');
+
+    logAuditTrail(
+      req,
+      'DELETE',
+      'NSTEMI',
+      oldRecord.ip_no || oldRecord.acs_no || nstemi_id,
+      oldRecord.reg_patient_id,
+      oldRecord,
+      { ...oldRecord, is_deleted: 1 }
+    ).catch(err => console.error('[NSTEMI Audit] Delete error:', err));
+
     return res.status(200).json({
       success: true,
       message: 'NSTEMI record soft-deleted successfully.'
@@ -939,9 +1046,26 @@ async function undeleteNstemiRecord(req, res) {
   try {
     const nstemi_id = req.params.id;
     const pool = await getPool();
+
+    const { recordset: existingRows } = await pool.request()
+      .input('nstemi_id', sql.Int, nstemi_id)
+      .query(`SELECT [nstemi_id], [reg_patient_id], [ip_no], [acs_no] FROM [nstemi_registry] WHERE [nstemi_id] = @nstemi_id`);
+    const oldRecord = existingRows[0] || {};
+
     await pool.request()
       .input('nstemi_id', sql.Int, nstemi_id)
       .query('UPDATE [nstemi_registry] SET [status] = 0, [updated_at] = GETDATE() WHERE [nstemi_id] = @nstemi_id');
+
+    logAuditTrail(
+      req,
+      'RESTORE',
+      'NSTEMI',
+      oldRecord.ip_no || oldRecord.acs_no || nstemi_id,
+      oldRecord.reg_patient_id,
+      oldRecord,
+      { ...oldRecord, is_deleted: 0 }
+    ).catch(err => console.error('[NSTEMI Audit] Restore error:', err));
+
     return res.status(200).json({
       success: true,
       message: 'NSTEMI record restored successfully.'
@@ -953,6 +1077,53 @@ async function undeleteNstemiRecord(req, res) {
       message: error.message || 'Internal server error while restoring NSTEMI record.'
     });
   }
+}
+
+async function fetchNstemiFullData(nstemi_id) {
+  const pool = await getPool();
+  const tables = [
+    'nstemi_registry', 'nstemi_administrative', 'nstemi_clinical_assessment',
+    'nstemi_diagnostics', 'nstemi_treatment_strategy', 'nstemi_hospitalization',
+    'nstemi_outcomes', 'nstemi_appropriateness'
+  ];
+  let merged = {};
+  for (const table of tables) {
+    try {
+      const res = await pool.request()
+        .input('nstemi_id', sql.Int, nstemi_id)
+        .query(`SELECT * FROM [${table}] WHERE [nstemi_id] = @nstemi_id`);
+      if (res.recordset && res.recordset.length > 0) {
+        const row = res.recordset[0];
+        if (table === 'nstemi_outcomes') {
+          const clashingOutcomes = [
+            'beta_blocker', 'calcium_channel_blocker', 'nitrate', 'nicorandil', 'ivabradine', 'ranolazine',
+            'trimetazidine', 'aspirin', 'clopidogrel', 'prasugrel', 'ticagrelor', 'statin',
+            'statin_10mg', 'statin_20mg', 'statin_40mg', 'statin_80mg'
+          ];
+          for (const k in row) {
+            if (clashingOutcomes.includes(k)) {
+              merged[`discharge_${k}`] = row[k];
+            } else {
+              merged[k] = row[k];
+            }
+          }
+        } else if (table === 'nstemi_appropriateness') {
+          for (const k in row) {
+            if (k !== 'nstemi_id' && k !== 'appropriateness_id' && k !== 'created_at' && k !== 'updated_at') {
+              merged[`appr_${k}`] = row[k];
+            } else {
+              merged[k] = row[k];
+            }
+          }
+        } else {
+          merged = { ...merged, ...row };
+        }
+      }
+    } catch (tblErr) {
+      console.warn(`[fetchNstemiFullData] Notice reading table ${table}:`, tblErr.message);
+    }
+  }
+  return merged;
 }
 
 async function updateNstemiRecord(req, res) {
@@ -967,6 +1138,7 @@ async function updateNstemiRecord(req, res) {
   let transaction;
   try {
     const payload = req.body || {};
+    const oldRecord = await fetchNstemiFullData(nstemi_id);
 
     const val = (key, defaultVal = null) => {
       const v = payload[key];
@@ -1413,72 +1585,7 @@ async function updateNstemiRecord(req, res) {
     `);
 
     // 9. UPDATE nstemi_appropriateness
-    const reqAppr = new sql.Request(transaction);
-    reqAppr.input('nstemi_id', sql.Int, nstemi_id);
-    reqAppr.input('iccu_admission', sql.NVarChar(50), val('appr_iccu_admission'));
-    reqAppr.input('iccu_transfer_out', sql.NVarChar(50), val('appr_iccu_transfer_out'));
-    reqAppr.input('thrombolysis_indication', sql.NVarChar(50), val('appr_thrombolysis_indication'));
-    reqAppr.input('ptca_indication', sql.NVarChar(50), val('appr_ptca_indication'));
-    reqAppr.input('invasive_monitoring', sql.NVarChar(50), val('appr_invasive_monitoring'));
-    reqAppr.input('iabp_indication', sql.NVarChar(50), val('appr_iabp_indication'));
-    reqAppr.input('invasive_ventilation', sql.NVarChar(50), val('appr_invasive_ventilation'));
-    reqAppr.input('dialysis_indication', sql.NVarChar(50), val('appr_dialysis_indication'));
-    reqAppr.input('other_procedure_name', sql.VarChar(255), val('appr_other_procedure_name'));
-    reqAppr.input('other_procedure_appropriateness', sql.NVarChar(50), val('appr_other_procedure_appropriateness'));
-
-    reqAppr.input('cardiac_enzymes', sql.NVarChar(50), val('appr_cardiac_enzymes'));
-    reqAppr.input('bnp', sql.NVarChar(50), val('appr_bnp'));
-    reqAppr.input('crp', sql.NVarChar(50), val('appr_crp'));
-    reqAppr.input('lipid_profile', sql.NVarChar(50), val('appr_lipid_profile'));
-    reqAppr.input('bedside_echo', sql.NVarChar(50), val('appr_bedside_echo'));
-    reqAppr.input('chest_xray', sql.NVarChar(50), val('appr_chest_xray'));
-
-    reqAppr.input('beta_blockers', sql.NVarChar(50), val('appr_beta_blockers'));
-    reqAppr.input('aspirin', sql.NVarChar(50), val('appr_aspirin'));
-    reqAppr.input('clopidogrel', sql.NVarChar(50), val('appr_clopidogrel'));
-    reqAppr.input('ace_inhibitor', sql.NVarChar(50), val('appr_ace_inhibitor'));
-    reqAppr.input('arb', sql.NVarChar(50), val('appr_arb'));
-    reqAppr.input('statin', sql.NVarChar(50), val('appr_statin'));
-    reqAppr.input('diuretic', sql.NVarChar(50), val('appr_diuretic'));
-    reqAppr.input('lanoxin', sql.NVarChar(50), val('appr_lanoxin'));
-    reqAppr.input('anticoagulant', sql.NVarChar(50), val('appr_anticoagulant'));
-    reqAppr.input('amiodarone', sql.NVarChar(50), val('appr_amiodarone'));
-    reqAppr.input('other_drug_name', sql.VarChar(255), val('appr_other_drug_name'));
-    reqAppr.input('other_drug_appropriateness', sql.NVarChar(50), val('appr_other_drug_appropriateness'));
-
-    await reqAppr.query(`
-      UPDATE [nstemi_appropriateness]
-      SET [iccu_admission] = @iccu_admission,
-          [iccu_transfer_out] = @iccu_transfer_out,
-          [thrombolysis_indication] = @thrombolysis_indication,
-          [ptca_indication] = @ptca_indication,
-          [invasive_monitoring] = @invasive_monitoring,
-          [iabp_indication] = @iabp_indication,
-          [invasive_ventilation] = @invasive_ventilation,
-          [dialysis_indication] = @dialysis_indication,
-          [other_procedure_name] = @other_procedure_name,
-          [other_procedure_appropriateness] = @other_procedure_appropriateness,
-          [cardiac_enzymes] = @cardiac_enzymes,
-          [bnp] = @bnp,
-          [crp] = @crp,
-          [lipid_profile] = @lipid_profile,
-          [bedside_echo] = @bedside_echo,
-          [chest_xray] = @chest_xray,
-          [beta_blockers] = @beta_blockers,
-          [aspirin] = @aspirin,
-          [clopidogrel] = @clopidogrel,
-          [ace_inhibitor] = @ace_inhibitor,
-          [arb] = @arb,
-          [statin] = @statin,
-          [diuretic] = @diuretic,
-          [lanoxin] = @lanoxin,
-          [anticoagulant] = @anticoagulant,
-          [amiodarone] = @amiodarone,
-          [other_drug_name] = @other_drug_name,
-          [other_drug_appropriateness] = @other_drug_appropriateness,
-          [updated_at] = GETDATE()
-      WHERE [nstemi_id] = @nstemi_id;
-    `);
+    await saveAppropriatenessHelper(transaction, 'nstemi_appropriateness', 'nstemi_id', nstemi_id, true, val);
 
     // 8. UPDATE nstemi_followup (UPSERT: Update existing interval rows or Insert new ones without deleting)
     const visitMode = val('visit_mode', null) || (req.body.followup?.[0]?.visit_mode ?? 'In-Person');
@@ -1652,6 +1759,16 @@ async function updateNstemiRecord(req, res) {
     }
 
     await transaction.commit();
+
+    logAuditTrail(
+      req,
+      'UPDATE',
+      'NSTEMI',
+      val('ip_no') || val('acs_no') || oldRecord.ip_no || nstemi_id,
+      val('reg_patient_id') || oldRecord.reg_patient_id || 1,
+      oldRecord,
+      payload
+    ).catch(err => console.error('[NSTEMI Audit] Update error:', err));
 
     return res.status(200).json({
       success: true,

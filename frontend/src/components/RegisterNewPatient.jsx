@@ -260,6 +260,11 @@ export default function RegisterNewPatient({
       return;
     }
 
+    if (!uhid.trim()) {
+      alert('UHID is required.');
+      return;
+    }
+
     if (!name.trim()) {
       alert('Patient Full Name is required.');
       return;
@@ -526,13 +531,16 @@ export default function RegisterNewPatient({
             />
           </div>
 
-          {/* UHID & ABHA Number (Optional) */}
+          {/* UHID & ABHA Number */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">UHID</label>
+              <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">
+                UHID <span className="text-red-500 font-bold ml-0.5">*</span>
+              </label>
               <input
                 id="reg-uhid"
                 type="text"
+                required
                 placeholder="E.g. UHI12345"
                 className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 value={uhid}

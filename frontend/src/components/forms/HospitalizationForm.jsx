@@ -80,8 +80,8 @@ const HospitalizationForm = forwardRef(function HospitalizationForm(
   useImperativeHandle(ref, () => ({
     getSubmissionData,
     validateForm: () => {
-      if (admissionDate && dischargeDate && new Date(dischargeDate) < new Date(admissionDate)) {
-        alert('Date of Discharge cannot be earlier than Date of Admission.');
+      if (admissionDate && dischargeDate && new Date(dischargeDate) <= new Date(admissionDate)) {
+        alert('Date of Discharge must be greater than Date of Admission.');
         return false;
       }
       return true;
@@ -97,8 +97,8 @@ const HospitalizationForm = forwardRef(function HospitalizationForm(
           value={admissionDate}
           onChange={(val) => {
             setAdmissionDate(val);
-            if (dischargeDate && val && new Date(dischargeDate) < new Date(val)) {
-              alert('Date of Discharge cannot be earlier than Date of Admission.');
+            if (dischargeDate && val && new Date(dischargeDate) <= new Date(val)) {
+              alert('Date of Discharge must be greater than Date of Admission.');
             }
           }}
           required
@@ -107,10 +107,11 @@ const HospitalizationForm = forwardRef(function HospitalizationForm(
           id="hosp-dischdt"
           label="Date of Discharge"
           value={dischargeDate}
+          min={admissionDate || undefined}
           onChange={(val) => {
             setDischargeDate(val);
-            if (admissionDate && val && new Date(val) < new Date(admissionDate)) {
-              alert('Date of Discharge cannot be earlier than Date of Admission.');
+            if (admissionDate && val && new Date(val) <= new Date(admissionDate)) {
+              alert('Date of Discharge must be greater than Date of Admission.');
             }
           }}
         />

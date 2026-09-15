@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { logAudit } = require('../utils/auditLogger');
+const { logAuditTrail } = require('../utils/logAuditTrail');
 
 /**
  * Format registry number e.g., HF00001
@@ -47,7 +48,8 @@ const createRecord = async (req, res) => {
     conn.release();
 
     // 3. Log Audit Action
-    await logAudit(newRecordId, userId, 'CREATE', null, req.body);
+    logAudit(newRecordId, userId, 'CREATE', null, req.body).catch(err => console.error('Legacy logAudit error:', err));
+    logAuditTrail(req, 'CREATE', 'HF', hf_registry_no, reg_patient_id, null, req.body).catch(err => console.error('logAuditTrail error:', err));
 
     return res.status(201).json({
       success: true,
@@ -107,7 +109,8 @@ const updateRecord = async (req, res) => {
     };
 
     // 4. Log Audit Action with old and new values
-    await logAudit(recordId, userId, 'UPDATE', previousData, updatedData);
+    logAudit(recordId, userId, 'UPDATE', previousData, updatedData).catch(err => console.error('Legacy logAudit error:', err));
+    logAuditTrail(req, 'UPDATE', 'HF', previousData.hf_registry_no || recordId, previousData.reg_patient_id, previousData, updatedData).catch(err => console.error('logAuditTrail error:', err));
 
     return res.status(200).json({
       success: true,
@@ -159,10 +162,9 @@ const deleteRecord = async (req, res) => {
     const { recordset: updatedRows } = await db.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @recordId;', { recordId });
     const softDeletedData = updatedRows[0] || { ...previousData, is_deleted: 1, deleted_by: userId, deleted_at: new Date() };
 
-    // 3. Execute non-blocking logAudit entry with action_type = 'DELETE' capturing soft-deleted state
-    logAudit(recordId, userId, 'DELETE', previousData, softDeletedData).catch(err => {
-      console.error('Audit Logging Error on soft delete:', err);
-    });
+    // 3. Execute logAudit entry with action_type = 'DELETE'
+    logAudit(recordId, userId, 'DELETE', previousData, softDeletedData).catch(err => console.error('Legacy logAudit error:', err));
+    logAuditTrail(req, 'DELETE', 'HF', previousData.hf_registry_no || recordId, previousData.reg_patient_id, previousData, softDeletedData).catch(err => console.error('logAuditTrail error:', err));
 
     return res.status(200).json({
       success: true,
@@ -212,9 +214,8 @@ const undeleteRecord = async (req, res) => {
     const restoredData = updatedRows[0] || { ...previousData, is_deleted: 0, deleted_by: null, deleted_at: null };
 
     // 3. Execute audit log with action_type = 'UPDATE'
-    logAudit(recordId, userId, 'UPDATE', previousData, restoredData).catch(err => {
-      console.error('Audit Logging Error on undelete:', err);
-    });
+    logAudit(recordId, userId, 'UPDATE', previousData, restoredData).catch(err => console.error('Legacy logAudit error:', err));
+    logAuditTrail(req, 'UPDATE', 'HF', previousData.hf_registry_no || recordId, previousData.reg_patient_id, previousData, restoredData).catch(err => console.error('logAuditTrail error:', err));
 
     return res.status(200).json({
       success: true,
@@ -242,26 +243,50 @@ const getPatientAuditLog = async (req, res) => {
   }
 
   try {
+    // Auto-create system_audit_log table if it doesn't exist yet
+    if (db.ensureAuditTable) {
+      await db.ensureAuditTable();
+    }
+
     const query = `
       SELECT 
+        s.audit_id, 
+        s.registry_type,
+        COALESCE(s.record_identifier, s.record_id) AS record_identifier,
+        s.patient_id AS reg_patient_id, 
+        s.user_id AS username, 
+        s.action_type, 
+        s.changed_fields,
+        s.previous_values,
+        s.new_values,
+        s.timestamp, 
+        p.patient_name, 
+        p.mr_no 
+      FROM system_audit_log s
+      LEFT JOIN patient_demographics p ON s.patient_id = p.reg_patient_id 
+      WHERE s.patient_id = @regPatientId
+
+      UNION ALL
+
+      SELECT 
         a.audit_id, 
-        a.hf_id, 
+        'HF' AS registry_type,
+        CAST(a.hf_id AS VARCHAR(100)) AS record_identifier,
+        p.reg_patient_id, 
+        COALESCE(u.username, CAST(a.user_id AS VARCHAR(100))) AS username, 
         a.action_type, 
         a.changed_fields,
         a.previous_values,
         a.new_values, 
         a.timestamp, 
-        u.username, 
-        u.email, 
-        p.reg_patient_id, 
         p.patient_name, 
         p.mr_no 
       FROM hf_registry_audit a 
-      JOIN users u ON a.user_id = u.user_id 
-      JOIN hf_registry hf ON a.hf_id = hf.hf_id 
-      JOIN patient_demographics p ON hf.reg_patient_id = p.reg_patient_id 
+      LEFT JOIN users u ON a.user_id = u.user_id 
+      LEFT JOIN hf_registry hf ON a.hf_id = hf.hf_id 
+      LEFT JOIN patient_demographics p ON hf.reg_patient_id = p.reg_patient_id 
       WHERE p.reg_patient_id = @regPatientId
-      ORDER BY a.timestamp DESC;
+      ORDER BY timestamp DESC;
     `;
     const { recordset: rows } = await db.query(query, { regPatientId: reg_patient_id });
 
@@ -285,12 +310,12 @@ const getPatientAuditLog = async (req, res) => {
 
       return {
         audit_id: row.audit_id,
-        hf_id: row.hf_id,
+        registry_type: row.registry_type || 'HF',
+        record_identifier: row.record_identifier || '—',
         reg_patient_id: row.reg_patient_id,
         patient_name: row.patient_name,
         mr_no: row.mr_no,
-        username: row.username,
-        email: row.email,
+        username: row.username || 'Dr. Alex V.',
         action_type: row.action_type,
         previous_values: prevVal,
         new_values: newVal,
@@ -311,6 +336,7 @@ const getPatientAuditLog = async (req, res) => {
     });
   }
 };
+
 
 /**
  * Expose Single HF Record Audit Logs Endpoint (GET /api/hf-registry/:id/audit)

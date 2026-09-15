@@ -8,7 +8,6 @@ export default function SectionCard({ title, subtitle, children, className = '',
     } ${className}`}>
       <div className="border-b border-slate-200/80 pb-2">
         <h4 className={`${FORM_STYLES.mainHeading} ${disabled ? 'text-slate-400' : ''}`}>{title}</h4>
-        {subtitle && <p className={`${FORM_STYLES.sectionDescription} ${disabled ? 'text-slate-400/80' : ''}`}>{subtitle}</p>}
       </div>
       {children}
     </section>

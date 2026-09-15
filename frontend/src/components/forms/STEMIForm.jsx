@@ -2,6 +2,7 @@ import React, { useState, forwardRef, useImperativeHandle, useMemo } from 'react
 import SectionCard from './common/SectionCard';
 import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
 import { Sparkles, Layers, ArrowUpRight } from 'lucide-react';
+import { useAlert } from '../../context/AlertContext';
 
 const proceduresList = [
   { label: 'Indication for ICCU admission', key: 'appr_iccu_admission' },
@@ -159,6 +160,7 @@ const STEMIForm = forwardRef(function STEMIForm(
   { patientRecord, patient: directPatient, editingRecord, readOnly = false },
   ref
 ) {
+  const { showConfirm } = useAlert();
   const patient = patientRecord?.patient || directPatient || patientRecord || {};
 
   const patientAge = useMemo(() => {
@@ -203,7 +205,7 @@ const STEMIForm = forwardRef(function STEMIForm(
     prior_cabg: editingRecord?.prior_cabg ?? editingRecord?.administrative?.prior_cabg ?? 'Unknown',
     other_background: editingRecord?.other_background ?? editingRecord?.administrative?.other_background ?? '',
 
-    typical_angina: editingRecord?.typical_angina ?? editingRecord?.clinical?.typical_angina ?? 'Yes',
+    typical_angina: editingRecord?.typical_angina ?? editingRecord?.clinical?.typical_angina ?? 'No',
     atypical_chest_pain: editingRecord?.atypical_chest_pain ?? editingRecord?.clinical?.atypical_chest_pain ?? 'No',
     breathlessness: editingRecord?.breathlessness ?? editingRecord?.clinical?.breathlessness ?? 'No',
     syncope_presyncope: editingRecord?.syncope_presyncope ?? editingRecord?.clinical?.syncope_presyncope ?? 'No',
@@ -232,7 +234,7 @@ const STEMIForm = forwardRef(function STEMIForm(
 
     // Section 5: Treatment Strategy
     treatment_strategy: editingRecord?.pami === 'Yes' ? 'PAMI' : (editingRecord?.thrombolysis === 'Yes' ? 'Thrombolysis' : (editingRecord?.conservative === 'Yes' ? 'Conservative' : 'PAMI')),
-    pami: editingRecord?.pami || 'Yes',
+    pami: editingRecord?.pami || 'No',
     thrombolysis: editingRecord?.thrombolysis || 'No',
     conservative: editingRecord?.conservative || 'No',
 
@@ -251,7 +253,7 @@ const STEMIForm = forwardRef(function STEMIForm(
     stent_type: editingRecord?.stent_des === 'Yes' ? 'DES' : (editingRecord?.stent_bms === 'Yes' ? 'BMS' : 'DES'),
     stent_diameter: editingRecord?.stent_diameter || '',
     stent_length: editingRecord?.stent_length || '',
-    procedural_success: editingRecord?.procedural_success || 'Yes',
+    procedural_success: editingRecord?.procedural_success || 'No',
     timi_flow: editingRecord?.timi_flow !== undefined ? editingRecord?.timi_flow : 3,
     complication_none: editingRecord?.complication_none === 'Yes' || editingRecord?.complication_none === true || true,
     complication_tamponade: editingRecord?.complication_tamponade === 'Yes' || editingRecord?.complication_tamponade === true,
@@ -271,38 +273,38 @@ const STEMIForm = forwardRef(function STEMIForm(
     thrombolysis_dose: editingRecord?.thrombolysis_dose || '',
 
     // Section 8: Acute Drugs
-    beta_blocker: editingRecord?.beta_blocker || 'Yes',
+    beta_blocker: editingRecord?.beta_blocker || 'No',
     calcium_channel_blocker: editingRecord?.calcium_channel_blocker || 'No',
     nitrate: editingRecord?.nitrate || 'No',
     nicorandil: editingRecord?.nicorandil || 'No',
     ivabradine: editingRecord?.ivabradine || 'No',
     ranolazine: editingRecord?.ranolazine || 'No',
     trimetazidine: editingRecord?.trimetazidine || 'No',
-    aspirin: editingRecord?.aspirin || 'Yes',
+    aspirin: editingRecord?.aspirin || 'No',
     clopidogrel: editingRecord?.clopidogrel || 'No',
     prasugrel: editingRecord?.prasugrel || 'No',
-    ticagrelor: editingRecord?.ticagrelor || 'Yes',
+    ticagrelor: editingRecord?.ticagrelor || 'No',
     heparin_strategy: editingRecord?.heparin_ufh_iv === 'Yes' ? 'UFH i.v alone' : (editingRecord?.heparin_ufh_sc === 'Yes' ? 'UFH s.c alone' : (editingRecord?.heparin_lmwh === 'Yes' ? 'LMWH alone' : (editingRecord?.heparin_ufh_iv_sc === 'Yes' ? 'UFH i.v+UFHs.c' : (editingRecord?.heparin_ufh_iv_lmwh === 'Yes' ? 'UFH i.v + LMWH' : 'LMWH alone')))),
     gp2b3a: editingRecord?.gp2b3a || 'No',
     bivaluridin: editingRecord?.bivaluridin || 'No',
-    statin: editingRecord?.statin || 'Yes',
+    statin: editingRecord?.statin || 'No',
     statin_dose: editingRecord?.statin_10mg === 'Yes' ? '10 mg' : (editingRecord?.statin_20mg === 'Yes' ? '20 mg' : (editingRecord?.statin_80mg === 'Yes' ? '80 mg' : '40 mg')),
     other_drugs: editingRecord?.other_drugs || '',
 
     // Section 9: Diagnostic Procedures
-    bedside_echo: editingRecord?.bedside_echo || 'Yes',
+    bedside_echo: editingRecord?.bedside_echo || 'No',
     departmental_echo: editingRecord?.departmental_echo || 'No',
     stress_testing: editingRecord?.stress_testing || 'No',
-    lipid_profile: editingRecord?.lipid_profile || 'Yes',
+    lipid_profile: editingRecord?.lipid_profile || 'No',
     bnp: editingRecord?.bnp || 'No',
     crp: editingRecord?.crp || 'No',
-    troponin_test: editingRecord?.troponin_test || 'Yes',
-    cpk_ckmb: editingRecord?.cpk_ckmb || 'Yes',
-    rft: editingRecord?.rft || 'Yes',
-    lft: editingRecord?.lft || 'Yes',
-    electrolytes: editingRecord?.electrolytes || 'Yes',
-    hemogram: editingRecord?.hemogram || 'Yes',
-    cxr: editingRecord?.cxr || 'Yes',
+    troponin_test: editingRecord?.troponin_test || 'No',
+    cpk_ckmb: editingRecord?.cpk_ckmb || 'No',
+    rft: editingRecord?.rft || 'No',
+    lft: editingRecord?.lft || 'No',
+    electrolytes: editingRecord?.electrolytes || 'No',
+    hemogram: editingRecord?.hemogram || 'No',
+    cxr: editingRecord?.cxr || 'No',
     diagnostic_other: editingRecord?.diagnostic_other || '',
 
     // Section 10: Reports -> ECG
@@ -355,14 +357,14 @@ const STEMIForm = forwardRef(function STEMIForm(
     rbs_admission: editingRecord?.rbs_admission || 130,
 
     // Section 10: Reports -> CAG
-    angiogram_done: editingRecord?.angiogram_done || 'Yes',
+    angiogram_done: editingRecord?.angiogram_done || 'No',
     angiogram_finding: editingRecord?.angiogram_normal === 'Yes' ? 'Normal' : (editingRecord?.angiogram_1vd === 'Yes' ? '1VD' : (editingRecord?.angiogram_2vd === 'Yes' ? '2VD' : (editingRecord?.angiogram_3vd === 'Yes' ? '3VD' : (editingRecord?.angiogram_lmca === 'Yes' ? 'LMCA' : '1VD')))),
 
     // Section 11: Invasive Procedures
-    cag: editingRecord?.cag || 'Yes',
+    cag: editingRecord?.cag || 'No',
     iabp: editingRecord?.iabp || 'No',
     invasive_ventilation: editingRecord?.invasive_ventilation || 'No',
-    ptca: editingRecord?.ptca || 'Yes',
+    ptca: editingRecord?.ptca || 'No',
     cabg: editingRecord?.cabg || 'No',
     other_procedure: editingRecord?.other_procedure || '',
 
@@ -377,18 +379,18 @@ const STEMIForm = forwardRef(function STEMIForm(
     outcome_other: editingRecord?.outcome_other || '',
 
     // Section 13: Discharge Medications
-    discharge_beta_blocker: editingRecord?.discharge_beta_blocker ?? editingRecord?.outcomes?.beta_blocker ?? 'Yes',
+    discharge_beta_blocker: editingRecord?.discharge_beta_blocker ?? editingRecord?.outcomes?.beta_blocker ?? 'No',
     discharge_calcium_channel_blocker: editingRecord?.discharge_calcium_channel_blocker ?? editingRecord?.outcomes?.calcium_channel_blocker ?? 'No',
     discharge_nitrate: editingRecord?.discharge_nitrate ?? editingRecord?.outcomes?.nitrate ?? 'No',
     discharge_nicorandil: editingRecord?.discharge_nicorandil ?? editingRecord?.outcomes?.nicorandil ?? 'No',
     discharge_ivabradine: editingRecord?.discharge_ivabradine ?? editingRecord?.outcomes?.ivabradine ?? 'No',
     discharge_ranolazine: editingRecord?.discharge_ranolazine ?? editingRecord?.outcomes?.ranolazine ?? 'No',
     discharge_trimetazidine: editingRecord?.discharge_trimetazidine ?? editingRecord?.outcomes?.trimetazidine ?? 'No',
-    discharge_aspirin: editingRecord?.discharge_aspirin ?? editingRecord?.outcomes?.aspirin ?? 'Yes',
+    discharge_aspirin: editingRecord?.discharge_aspirin ?? editingRecord?.outcomes?.aspirin ?? 'No',
     discharge_clopidogrel: editingRecord?.discharge_clopidogrel ?? editingRecord?.outcomes?.clopidogrel ?? 'No',
     discharge_prasugrel: editingRecord?.discharge_prasugrel ?? editingRecord?.outcomes?.prasugrel ?? 'No',
-    discharge_ticagrelor: editingRecord?.discharge_ticagrelor ?? editingRecord?.outcomes?.ticagrelor ?? 'Yes',
-    discharge_statin: editingRecord?.discharge_statin ?? editingRecord?.outcomes?.statin ?? 'Yes',
+    discharge_ticagrelor: editingRecord?.discharge_ticagrelor ?? editingRecord?.outcomes?.ticagrelor ?? 'No',
+    discharge_statin: editingRecord?.discharge_statin ?? editingRecord?.outcomes?.statin ?? 'No',
     discharge_statin_dose: editingRecord?.discharge_statin_10mg === 'Yes' ? '10 mg' : (editingRecord?.discharge_statin_20mg === 'Yes' ? '20 mg' : (editingRecord?.discharge_statin_80mg === 'Yes' ? '80 mg' : '40 mg')),
     discharge_other_medication: editingRecord?.discharge_other_medication ?? editingRecord?.outcomes?.discharge_other_medication ?? '',
 
@@ -421,6 +423,36 @@ const STEMIForm = forwardRef(function STEMIForm(
     appr_amiodarone: editingRecord?.appr_amiodarone || 'Inappropriate',
     appr_other_drug_name: editingRecord?.appr_other_drug_name || '',
     appr_other_drug_appropriateness: editingRecord?.appr_other_drug_appropriateness || 'Inappropriate',
+
+    // Appropriateness Notes
+    appr_iccu_admission_note: editingRecord?.appr_iccu_admission_note ?? editingRecord?.appropriateness?.iccu_admission_note ?? editingRecord?.iccu_admission_note ?? '',
+    appr_iccu_transfer_out_note: editingRecord?.appr_iccu_transfer_out_note ?? editingRecord?.appropriateness?.iccu_transfer_out_note ?? editingRecord?.iccu_transfer_out_note ?? '',
+    appr_thrombolysis_indication_note: editingRecord?.appr_thrombolysis_indication_note ?? editingRecord?.appr_tlt_note ?? editingRecord?.appropriateness?.tlt_note ?? editingRecord?.tlt_note ?? '',
+    appr_ptca_indication_note: editingRecord?.appr_ptca_indication_note ?? editingRecord?.appr_ptca_note ?? editingRecord?.appropriateness?.ptca_note ?? editingRecord?.ptca_note ?? '',
+    appr_invasive_monitoring_note: editingRecord?.appr_invasive_monitoring_note ?? editingRecord?.appropriateness?.invasive_monitoring_note ?? editingRecord?.invasive_monitoring_note ?? '',
+    appr_iabp_indication_note: editingRecord?.appr_iabp_indication_note ?? editingRecord?.appr_iabp_note ?? editingRecord?.appropriateness?.iabp_note ?? editingRecord?.iabp_note ?? '',
+    appr_invasive_ventilation_note: editingRecord?.appr_invasive_ventilation_note ?? editingRecord?.appropriateness?.invasive_ventilation_note ?? editingRecord?.invasive_ventilation_note ?? '',
+    appr_dialysis_indication_note: editingRecord?.appr_dialysis_indication_note ?? editingRecord?.appropriateness?.dialysis_note ?? editingRecord?.dialysis_note ?? '',
+    appr_other_procedure_appropriateness_note: editingRecord?.appr_other_procedure_appropriateness_note ?? editingRecord?.appr_any_other_procedure_note ?? editingRecord?.appropriateness?.any_other_procedure_note ?? editingRecord?.any_other_procedure_note ?? '',
+
+    appr_cardiac_enzymes_note: editingRecord?.appr_cardiac_enzymes_note ?? editingRecord?.appropriateness?.cardiac_enzymes_note ?? editingRecord?.cardiac_enzymes_note ?? '',
+    appr_bnp_note: editingRecord?.appr_bnp_note ?? editingRecord?.appropriateness?.bnp_note ?? editingRecord?.bnp_note ?? '',
+    appr_crp_note: editingRecord?.appr_crp_note ?? editingRecord?.appropriateness?.crp_note ?? editingRecord?.crp_note ?? '',
+    appr_lipid_profile_note: editingRecord?.appr_lipid_profile_note ?? editingRecord?.appropriateness?.lipid_profile_note ?? editingRecord?.lipid_profile_note ?? '',
+    appr_bedside_echo_note: editingRecord?.appr_bedside_echo_note ?? editingRecord?.appr_bed_side_echo_note ?? editingRecord?.appropriateness?.bed_side_echo_note ?? editingRecord?.bed_side_echo_note ?? '',
+    appr_chest_xray_note: editingRecord?.appr_chest_xray_note ?? editingRecord?.appr_cxr_note ?? editingRecord?.appropriateness?.cxr_note ?? editingRecord?.cxr_note ?? '',
+
+    appr_beta_blockers_note: editingRecord?.appr_beta_blockers_note ?? editingRecord?.appropriateness?.beta_blockers_note ?? editingRecord?.beta_blockers_note ?? '',
+    appr_aspirin_note: editingRecord?.appr_aspirin_note ?? editingRecord?.appropriateness?.aspirin_note ?? editingRecord?.aspirin_note ?? '',
+    appr_clopidogrel_note: editingRecord?.appr_clopidogrel_note ?? editingRecord?.appropriateness?.clopidogrel_note ?? editingRecord?.clopidogrel_note ?? '',
+    appr_ace_inhibitor_note: editingRecord?.appr_ace_inhibitor_note ?? editingRecord?.appropriateness?.ace_inhibitor_note ?? editingRecord?.ace_inhibitor_note ?? '',
+    appr_arb_note: editingRecord?.appr_arb_note ?? editingRecord?.appropriateness?.arb_note ?? editingRecord?.arb_note ?? '',
+    appr_statin_note: editingRecord?.appr_statin_note ?? editingRecord?.appropriateness?.statin_note ?? editingRecord?.statin_note ?? '',
+    appr_diuretic_note: editingRecord?.appr_diuretic_note ?? editingRecord?.appropriateness?.diuretic_note ?? editingRecord?.diuretic_note ?? '',
+    appr_lanoxin_note: editingRecord?.appr_lanoxin_note ?? editingRecord?.appropriateness?.lanoxin_note ?? editingRecord?.lanoxin_note ?? '',
+    appr_anticoagulant_note: editingRecord?.appr_anticoagulant_note ?? editingRecord?.appropriateness?.anticoagulant_note ?? editingRecord?.anticoagulant_note ?? '',
+    appr_amiodarone_note: editingRecord?.appr_amiodarone_note ?? editingRecord?.appropriateness?.amiodarone_note ?? editingRecord?.amiodarone_note ?? '',
+    appr_other_drug_appropriateness_note: editingRecord?.appr_other_drug_appropriateness_note ?? editingRecord?.appr_any_other_drug_note ?? editingRecord?.appropriateness?.any_other_drug_note ?? editingRecord?.any_other_drug_note ?? '',
 
     // Section 17: Length of Stay
     iccu_hours: editingRecord?.iccu_hours || 48,
@@ -783,6 +815,70 @@ const STEMIForm = forwardRef(function STEMIForm(
     formData.radiology_cost, formData.miscellaneous_cost
   ]);
 
+  // Real-time Field Validation State
+  const [formErrors, setFormErrors] = useState({});
+
+  const NUMERIC_FIELDS = [
+    'age', 'pulse_rate', 'systolic_bp', 'diastolic_bp', 'door_to_balloon_time',
+    'door_to_needle_time', 'lvef', 'serum_creatinine', 'hb', 'wbc', 'platelets',
+    'troponin_i_t', 'iccu_hours', 'stepdown_icu_hours', 'floor_days',
+    'total_hospital_stay_days', 'bed_charges', 'drugs_disposables_cost',
+    'package_cost', 'laboratory_cost', 'non_invasive_lab_cost', 'consultation_cost',
+    'radiology_cost', 'miscellaneous_cost', 'total_cost'
+  ];
+
+  const TEXT_ONLY_FIELDS = ['name'];
+
+  const validateFieldValue = (field, value, currentFormData = formData) => {
+    if (value === undefined || value === null || String(value).trim() === '') {
+      return '';
+    }
+    const strVal = String(value).trim();
+    if (field === 'phone') {
+      if (/[a-zA-Z]/.test(strVal) || !/^[0-9+\-\s()]+$/.test(strVal)) {
+        return 'Phone number must contain numbers only';
+      }
+    } else if (NUMERIC_FIELDS.includes(field)) {
+      if (!/^\d+(\.\d+)?$/.test(strVal)) {
+        return 'Must be a valid number';
+      }
+    } else if (TEXT_ONLY_FIELDS.includes(field)) {
+      if (!/^[A-Za-z\s.\-']+$/.test(strVal)) {
+        return 'Must contain letters only';
+      }
+    } else if (field === 'discharge_date') {
+      const adm = currentFormData.admission_date;
+      if (adm && strVal) {
+        if (new Date(strVal) <= new Date(adm)) {
+          return 'Discharge date must be greater than admission date';
+        }
+      }
+    }
+    return '';
+  };
+
+  const validateAllFields = () => {
+    const newErrors = {};
+    Object.keys(formData).forEach((field) => {
+      const err = validateFieldValue(field, formData[field], formData);
+      if (err) {
+        newErrors[field] = err;
+      }
+    });
+    setFormErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const renderFieldError = (field) => {
+    if (!formErrors[field]) return null;
+    return (
+      <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
+        <span>⚠️</span>
+        <span>{formErrors[field]}</span>
+      </p>
+    );
+  };
+
   const handleChange = (field, value) => {
     setFormData(prev => {
       const updated = { ...prev, [field]: value };
@@ -798,6 +894,22 @@ const STEMIForm = forwardRef(function STEMIForm(
       }
 
       return updated;
+    });
+
+    setFormErrors((prev) => {
+      const copy = { ...prev };
+      const updatedData = { ...formData, [field]: value };
+      const err = validateFieldValue(field, value, updatedData);
+      if (err) copy[field] = err;
+      else delete copy[field];
+
+      if (field === 'admission_date' || field === 'discharge_date') {
+        const disErr = validateFieldValue('discharge_date', updatedData.discharge_date, updatedData);
+        if (disErr) copy['discharge_date'] = disErr;
+        else delete copy['discharge_date'];
+      }
+
+      return copy;
     });
   };
 
@@ -1088,35 +1200,61 @@ const STEMIForm = forwardRef(function STEMIForm(
 
       // 14, 15, 16. Appropriateness Assessment
       appr_iccu_admission: formData.appr_iccu_admission,
+      appr_iccu_admission_note: formData.appr_iccu_admission_note || '',
       appr_iccu_transfer_out: formData.appr_iccu_transfer_out,
+      appr_iccu_transfer_out_note: formData.appr_iccu_transfer_out_note || '',
       appr_thrombolysis_indication: formData.appr_thrombolysis_indication,
+      appr_thrombolysis_indication_note: formData.appr_thrombolysis_indication_note || '',
       appr_ptca_indication: formData.appr_ptca_indication,
+      appr_ptca_indication_note: formData.appr_ptca_indication_note || '',
       appr_invasive_monitoring: formData.appr_invasive_monitoring,
+      appr_invasive_monitoring_note: formData.appr_invasive_monitoring_note || '',
       appr_iabp_indication: formData.appr_iabp_indication,
+      appr_iabp_indication_note: formData.appr_iabp_indication_note || '',
       appr_invasive_ventilation: formData.appr_invasive_ventilation,
+      appr_invasive_ventilation_note: formData.appr_invasive_ventilation_note || '',
       appr_dialysis_indication: formData.appr_dialysis_indication,
+      appr_dialysis_indication_note: formData.appr_dialysis_indication_note || '',
       appr_other_procedure_name: formData.appr_other_procedure_name || null,
       appr_other_procedure_appropriateness: formData.appr_other_procedure_appropriateness,
+      appr_other_procedure_appropriateness_note: formData.appr_other_procedure_appropriateness_note || '',
 
       appr_cardiac_enzymes: formData.appr_cardiac_enzymes,
+      appr_cardiac_enzymes_note: formData.appr_cardiac_enzymes_note || '',
       appr_bnp: formData.appr_bnp,
+      appr_bnp_note: formData.appr_bnp_note || '',
       appr_crp: formData.appr_crp,
+      appr_crp_note: formData.appr_crp_note || '',
       appr_lipid_profile: formData.appr_lipid_profile,
+      appr_lipid_profile_note: formData.appr_lipid_profile_note || '',
       appr_bedside_echo: formData.appr_bedside_echo,
+      appr_bedside_echo_note: formData.appr_bedside_echo_note || '',
       appr_chest_xray: formData.appr_chest_xray,
+      appr_chest_xray_note: formData.appr_chest_xray_note || '',
 
       appr_beta_blockers: formData.appr_beta_blockers,
+      appr_beta_blockers_note: formData.appr_beta_blockers_note || '',
       appr_aspirin: formData.appr_aspirin,
+      appr_aspirin_note: formData.appr_aspirin_note || '',
       appr_clopidogrel: formData.appr_clopidogrel,
+      appr_clopidogrel_note: formData.appr_clopidogrel_note || '',
       appr_ace_inhibitor: formData.appr_ace_inhibitor,
+      appr_ace_inhibitor_note: formData.appr_ace_inhibitor_note || '',
       appr_arb: formData.appr_arb,
+      appr_arb_note: formData.appr_arb_note || '',
       appr_statin: formData.appr_statin,
+      appr_statin_note: formData.appr_statin_note || '',
       appr_diuretic: formData.appr_diuretic,
+      appr_diuretic_note: formData.appr_diuretic_note || '',
       appr_lanoxin: formData.appr_lanoxin,
+      appr_lanoxin_note: formData.appr_lanoxin_note || '',
       appr_anticoagulant: formData.appr_anticoagulant,
+      appr_anticoagulant_note: formData.appr_anticoagulant_note || '',
       appr_amiodarone: formData.appr_amiodarone,
+      appr_amiodarone_note: formData.appr_amiodarone_note || '',
       appr_other_drug_name: formData.appr_other_drug_name || null,
       appr_other_drug_appropriateness: formData.appr_other_drug_appropriateness,
+      appr_other_drug_appropriateness_note: formData.appr_other_drug_appropriateness_note || '',
 
       // 17. Length of Stay
       iccu_hours: formData.iccu_hours ? parseInt(formData.iccu_hours, 10) : null,
@@ -1142,20 +1280,32 @@ const STEMIForm = forwardRef(function STEMIForm(
 
   useImperativeHandle(ref, () => ({
     getSubmissionData: () => getFlattenedData(),
-    fillDummyData: () => fillDummyData(),
+    fillDummyData: () => {
+      fillDummyData();
+      setFormErrors({});
+    },
     validateForm: () => {
       if (formData.admission_date && formData.discharge_date) {
-        if (new Date(formData.discharge_date) < new Date(formData.admission_date)) {
-          alert('Date of Discharge cannot be earlier than Date of Admission.');
+        if (new Date(formData.discharge_date) <= new Date(formData.admission_date)) {
+          setFormErrors(prev => ({
+            ...prev,
+            discharge_date: 'Discharge date must be greater than admission date'
+          }));
+          alert('Form submission blocked: Date of Discharge must be greater than Date of Admission.');
           return false;
         }
+      }
+      const isValid = validateAllFields();
+      if (!isValid) {
+        alert('Form submission blocked: Please fix validation errors highlighted in red.');
+        return false;
       }
       return true;
     }
   }));
 
   const renderRadio = (field, label, options = ['Yes', 'No', 'Unknown']) => (
-    <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-200/80 rounded-lg">
+    <div className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-lg">
       <span className="text-xs font-semibold text-slate-700">{label}</span>
       <div className="flex gap-3">
         {options.map((opt) => (
@@ -1175,26 +1325,83 @@ const STEMIForm = forwardRef(function STEMIForm(
     </div>
   );
 
-  const renderAppropriatenessRadio = (field, label) => (
-    <div className="flex items-center justify-between p-2.5 bg-slate-50/70 border border-slate-200/80 rounded-lg">
-      <span className="text-xs font-semibold text-slate-700">{label}</span>
-      <div className="flex gap-3">
-        {['Appropriate', 'Inappropriate'].map((opt) => (
-          <label key={opt} className="flex items-center gap-1.5 cursor-pointer text-xs">
-            <input
-              type="radio"
-              disabled={readOnly}
-              name={`${field}-${label}`}
-              checked={formData[field] === opt || (formData[field] === '+' && opt === 'Appropriate') || (formData[field] === 'NA' && opt === 'Inappropriate')}
-              onChange={() => handleChange(field, opt)}
-              className="text-red-600 focus:ring-red-500"
-            />
-            <span className={`font-bold ${opt === 'Appropriate' ? 'text-emerald-700' : 'text-slate-600'}`}>{opt}</span>
-          </label>
-        ))}
+  const handleAppropriatenessChange = async (fieldKey, newValue, noteKey = `${fieldKey}_note`) => {
+    const currentValue = formData[fieldKey];
+    const currentNote = formData[noteKey] ? String(formData[noteKey]).trim() : '';
+
+    if (currentValue && currentValue !== newValue && currentNote.length > 0) {
+      const keepNote = await showConfirm({
+        type: 'warning',
+        title: 'Change Status?',
+        message: `You are changing the appropriateness status. Do you want to keep your existing note: '${currentNote}'?`,
+        confirmText: 'Keep Note',
+        cancelText: 'Clear Note'
+      });
+
+      if (keepNote) {
+        handleChange(fieldKey, newValue);
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          [fieldKey]: newValue,
+          [noteKey]: ''
+        }));
+      }
+    } else {
+      handleChange(fieldKey, newValue);
+    }
+  };
+
+  const renderAppropriatenessRadio = (field, label, specifyKey = null) => {
+    const noteKey = `${field}_note`;
+
+    return (
+      <div key={field} className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 p-2.5 bg-white border border-slate-200 rounded-lg text-xs min-h-[52px]">
+        <div className="flex-1 font-semibold text-slate-700 min-w-0">
+          {specifyKey ? (
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="whitespace-nowrap flex-shrink-0">{label}:</span>
+              <input
+                type="text"
+                disabled={readOnly}
+                value={formData[specifyKey] || ''}
+                onChange={(e) => handleChange(specifyKey, e.target.value)}
+                placeholder="Specify name"
+                className="px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-red-500 w-full sm:w-36 bg-white font-normal min-w-0 flex-1"
+              />
+            </div>
+          ) : (
+            <span className="leading-tight block">{label}</span>
+          )}
+        </div>
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 flex-shrink-0">
+          <div className="flex gap-2.5 flex-shrink-0">
+            {['Appropriate', 'Inappropriate'].map((opt) => (
+              <label key={opt} className="flex items-center gap-1 cursor-pointer text-xs select-none">
+                <input
+                  type="radio"
+                  disabled={readOnly}
+                  name={`${field}-${label}`}
+                  checked={formData[field] === opt}
+                  onChange={() => handleAppropriatenessChange(field, opt, noteKey)}
+                  className="text-red-600 focus:ring-red-500 cursor-pointer"
+                />
+                <span className={`font-semibold ${opt === 'Appropriate' ? 'text-emerald-700' : 'text-slate-600'}`}>{opt}</span>
+              </label>
+            ))}
+          </div>
+          <input
+            type="text"
+            disabled={readOnly}
+            value={formData[noteKey] || ''}
+            onChange={(e) => handleChange(noteKey, e.target.value)}
+            placeholder="Add note..."
+            className="w-28 sm:w-36 px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400 disabled:border-gray-200 transition-all bg-white font-normal"
+          />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const scrollToSection = (sectionId) => {
     const el = document.getElementById(sectionId);
@@ -1205,44 +1412,19 @@ const STEMIForm = forwardRef(function STEMIForm(
 
   return (
     <div className="space-y-6 text-slate-800">
-      {/* Sticky Table of Contents / Section Anchor Bar */}
+      {/* Top Action Bar (Fill Dummy Data) */}
       {!readOnly && (
-        <div className="sticky top-14 z-30 bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-xl p-3 text-white shadow-lg">
-          <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 bg-red-600 text-white rounded text-xs font-black uppercase tracking-wider shadow-xs">
-                STEMI LONG FORM (19 SECTIONS)
-              </span>
-              <span className="text-xs text-slate-300 font-semibold hidden sm:inline">
-                Click any section badge to jump directly
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                id="btn-stemi-fill-dummy-data"
-                type="button"
-                onClick={fillDummyData}
-                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm border border-red-500"
-                title="Autofill complete test data across all 19 STEMI sections"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-rose-200 animate-pulse" />
-                <span>Fill Dummy Data (Test STEMI)</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden py-1">
-            {SECTIONS_LIST.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => scrollToSection(s.id)}
-                className="px-2.5 py-1 bg-slate-800 hover:bg-red-600 text-slate-200 hover:text-white rounded text-[11px] font-bold transition-all shrink-0 border border-slate-700 hover:border-red-500 cursor-pointer"
-              >
-                {s.short}
-              </button>
-            ))}
-          </div>
+        <div className="flex justify-end">
+          <button
+            id="btn-stemi-fill-dummy-data"
+            type="button"
+            onClick={fillDummyData}
+            className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm border border-red-500"
+            title="Autofill complete test data across all 19 STEMI sections"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-rose-200 animate-pulse" />
+            <span>Fill Dummy Data (Test STEMI)</span>
+          </button>
         </div>
       )}
 
@@ -1250,49 +1432,46 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 1: Demographic Information                                        */}
       {/* ========================================================================= */}
       <div id="section-1">
-        <SectionCard title="1. Demographic Information" subtitle="Demographics, Patient Linkage, Contact details & Administrative Keys">
+        <SectionCard title="1. Demographic Information">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
             <div>
               <label className={LABEL_STYLES}>Name</label>
               <input
                 type="text"
-                disabled={readOnly}
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-medium"
+                readOnly
+                disabled
+                value={formData.name || ''}
+                className="w-full px-3 py-2 border border-slate-200 bg-gray-100 text-gray-500 rounded-lg text-xs cursor-not-allowed pointer-events-none font-medium"
               />
             </div>
             <div>
               <label className={LABEL_STYLES}>Age (yrs)</label>
               <input
-                type="number"
-                disabled={readOnly}
-                value={formData.age}
-                onChange={(e) => handleChange('age', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold"
+                type="text"
+                readOnly
+                disabled
+                value={formData.age || ''}
+                className="w-full px-3 py-2 border border-slate-200 bg-gray-100 text-gray-500 rounded-lg text-xs cursor-not-allowed pointer-events-none font-bold"
               />
             </div>
             <div>
               <label className={LABEL_STYLES}>Gender (M/F)</label>
-              <select
-                disabled={readOnly}
-                value={formData.gender}
-                onChange={(e) => handleChange('gender', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-bold"
-              >
-                <option value="M">Male (M)</option>
-                <option value="F">Female (F)</option>
-                <option value="Other">Other</option>
-              </select>
+              <input
+                type="text"
+                readOnly
+                disabled
+                value={formData.gender === 'M' ? 'Male (M)' : formData.gender === 'F' ? 'Female (F)' : (formData.gender || '')}
+                className="w-full px-3 py-2 border border-slate-200 bg-gray-100 text-gray-500 rounded-lg text-xs cursor-not-allowed pointer-events-none font-bold"
+              />
             </div>
             <div>
               <label className={LABEL_STYLES}>MR No</label>
               <input
                 type="text"
-                disabled={readOnly}
-                value={formData.mr_no}
-                onChange={(e) => handleChange('mr_no', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-mono"
+                readOnly
+                disabled
+                value={formData.mr_no || ''}
+                className="w-full px-3 py-2 border border-slate-200 bg-gray-100 text-gray-500 rounded-lg text-xs cursor-not-allowed pointer-events-none font-mono"
               />
             </div>
             <div>
@@ -1303,7 +1482,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 value={formData.ip_no}
                 onChange={(e) => handleChange('ip_no', e.target.value)}
                 placeholder="e.g. IP00123"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-mono"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-mono bg-white"
               />
             </div>
             <div>
@@ -1314,7 +1493,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 value={formData.acs_no}
                 onChange={(e) => handleChange('acs_no', e.target.value)}
                 placeholder="e.g. ACS-2026-001"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-mono"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-mono bg-white"
               />
             </div>
             <div>
@@ -1324,8 +1503,11 @@ const STEMIForm = forwardRef(function STEMIForm(
                 disabled={readOnly}
                 value={formData.admission_date}
                 onChange={(e) => handleChange('admission_date', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
+                className={`w-full px-3 py-2 border rounded-lg text-xs focus:ring-1 focus:ring-red-500 ${
+                  formErrors.admission_date ? 'border-red-500 bg-red-50/50 text-red-900 font-semibold' : 'border-slate-300 bg-white'
+                }`}
               />
+              {renderFieldError('admission_date')}
             </div>
             <div>
               <label className={LABEL_STYLES}>Date of Discharge</label>
@@ -1333,9 +1515,13 @@ const STEMIForm = forwardRef(function STEMIForm(
                 type="date"
                 disabled={readOnly}
                 value={formData.discharge_date}
+                min={formData.admission_date || undefined}
                 onChange={(e) => handleChange('discharge_date', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
+                className={`w-full px-3 py-2 border rounded-lg text-xs focus:ring-1 focus:ring-red-500 ${
+                  formErrors.discharge_date ? 'border-red-500 bg-red-50/50 text-red-900 font-semibold' : 'border-slate-300 bg-white'
+                }`}
               />
+              {renderFieldError('discharge_date')}
             </div>
             <div>
               <label className={LABEL_STYLES}>Primary Consultant</label>
@@ -1344,29 +1530,29 @@ const STEMIForm = forwardRef(function STEMIForm(
                 disabled={readOnly}
                 value={formData.primary_consultant}
                 onChange={(e) => handleChange('primary_consultant', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-medium"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-medium bg-white"
               />
             </div>
             <div>
               <label className={LABEL_STYLES}>Contact details: Phone</label>
               <input
                 type="text"
-                disabled={readOnly}
-                value={formData.phone}
-                onChange={(e) => handleChange('phone', e.target.value)}
+                readOnly
+                disabled
+                value={formData.phone || ''}
                 placeholder="e.g. +91 98765 43210"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
+                className="w-full px-3 py-2 border border-slate-200 bg-gray-100 text-gray-500 rounded-lg text-xs cursor-not-allowed pointer-events-none"
               />
             </div>
             <div>
               <label className={LABEL_STYLES}>Contact details: E-mail</label>
               <input
                 type="email"
-                disabled={readOnly}
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
+                readOnly
+                disabled
+                value={formData.email || ''}
                 placeholder="e.g. patient@example.com"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
+                className="w-full px-3 py-2 border border-slate-200 bg-gray-100 text-gray-500 rounded-lg text-xs cursor-not-allowed pointer-events-none"
               />
             </div>
           </div>
@@ -1377,7 +1563,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 2: Clinical Information                                          */}
       {/* ========================================================================= */}
       <div id="section-2" className="space-y-6">
-        <SectionCard title="2. Clinical Information - Background History" subtitle="Options: Yes / No / Unknown">
+        <SectionCard title="2. Clinical Information - Background History">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {renderRadio('hypertension', 'Hypertension')}
             {renderRadio('diabetes', 'Diabetes')}
@@ -1402,7 +1588,7 @@ const STEMIForm = forwardRef(function STEMIForm(
           </div>
         </SectionCard>
 
-        <SectionCard title="2. Clinical Information - Presentation & Vitals" subtitle="Presentation (Yes / No) and Vitals (Numeric)">
+        <SectionCard title="2. Clinical Information - Presentation & Vitals">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
             {renderRadio('typical_angina', 'Typical angina', ['Yes', 'No'])}
             {renderRadio('atypical_chest_pain', 'Atypical chest pain', ['Yes', 'No'])}
@@ -1414,32 +1600,41 @@ const STEMIForm = forwardRef(function STEMIForm(
             <div>
               <label className={LABEL_STYLES}>Pulse rate</label>
               <input
-                type="number"
+                type="text"
                 disabled={readOnly}
                 value={formData.pulse_rate}
                 onChange={(e) => handleChange('pulse_rate', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold"
+                className={`w-full px-3 py-2 border rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold ${
+                  formErrors.pulse_rate ? 'border-red-500 bg-red-50/50 text-red-900' : 'border-slate-300'
+                }`}
               />
+              {renderFieldError('pulse_rate')}
             </div>
             <div>
               <label className={LABEL_STYLES}>SBP</label>
               <input
-                type="number"
+                type="text"
                 disabled={readOnly}
                 value={formData.systolic_bp}
                 onChange={(e) => handleChange('systolic_bp', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold"
+                className={`w-full px-3 py-2 border rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold ${
+                  formErrors.systolic_bp ? 'border-red-500 bg-red-50/50 text-red-900' : 'border-slate-300'
+                }`}
               />
+              {renderFieldError('systolic_bp')}
             </div>
             <div>
               <label className={LABEL_STYLES}>DBP</label>
               <input
-                type="number"
+                type="text"
                 disabled={readOnly}
                 value={formData.diastolic_bp}
                 onChange={(e) => handleChange('diastolic_bp', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold"
+                className={`w-full px-3 py-2 border rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold ${
+                  formErrors.diastolic_bp ? 'border-red-500 bg-red-50/50 text-red-900' : 'border-slate-300'
+                }`}
               />
+              {renderFieldError('diastolic_bp')}
             </div>
           </div>
         </SectionCard>
@@ -1449,22 +1644,13 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 3: Risk Stratification - TIMI Risk score                         */}
       {/* ========================================================================= */}
       <div id="section-3">
-        <SectionCard title="3. Risk Stratification - TIMI Risk score" subtitle="Checkboxes (Yes/No) that automatically calculate a Total Score field">
-          <div className="mb-6 p-4 rounded-xl bg-slate-900 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm border border-slate-800">
+        <SectionCard title="3. Risk Stratification - TIMI Risk score">
+          <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg flex justify-between items-center mb-4">
             <div>
-              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-extrabold block">STEMI TIMI Risk Calculator</span>
-              <div className="flex items-center gap-3 mt-1">
-                <span className="text-3xl font-black text-red-500">{timiCalculatedScore} / 16</span>
-                <span className={`px-2.5 py-1 rounded-md text-xs font-extrabold border ${timiRiskCategory.color}`}>
-                  {timiRiskCategory.label}
-                </span>
-              </div>
-              <p className="text-xs text-slate-300 mt-1">{timiRiskCategory.mortality}</p>
+              <span className="font-bold text-orange-950 block text-xs uppercase tracking-wide">TOTAL CALCULATED TIMI SCORE</span>
+              <span className="text-[10px] text-orange-800 block">Dynamic score calculation matching point weights</span>
             </div>
-            <div className="text-xs text-slate-400 space-y-1 text-left md:text-right border-t md:border-t-0 pt-2 md:pt-0 border-slate-800">
-              <div>Total Score: <strong className="text-white font-mono text-sm">{timiCalculatedScore} Points</strong></div>
-              <div>Calculated automatically from points criteria below.</div>
-            </div>
+            <span className="text-2xl font-bold text-orange-500 pr-4">{timiCalculatedScore} Points</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
@@ -1485,7 +1671,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 4: Other Risk Factors                                             */}
       {/* ========================================================================= */}
       <div id="section-4">
-        <SectionCard title="4. Other Risk Factors" subtitle="Options (Yes / No)">
+        <SectionCard title="4. Other Risk Factors">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
             {renderRadio('lvf', 'LVF', ['Yes', 'No'])}
             {renderRadio('vt_vf', 'VT/VF', ['Yes', 'No'])}
@@ -1500,8 +1686,8 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 5: Treatment Strategy                                            */}
       {/* ========================================================================= */}
       <div id="section-5">
-        <SectionCard title="5. Treatment Strategy" subtitle="Options (Select one): PAMI, Thrombolysis, Conservative">
-          <div className="flex flex-wrap gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+        <SectionCard title="5. Treatment Strategy">
+          <div className="flex flex-wrap gap-4 p-4 bg-white rounded-xl border border-slate-200">
             {['PAMI', 'Thrombolysis', 'Conservative'].map((strat) => (
               <label key={strat} className="flex items-center gap-2 cursor-pointer font-bold text-xs text-slate-800">
                 <input
@@ -1523,7 +1709,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 6: PAMI details, if done                                         */}
       {/* ========================================================================= */}
       <div id="section-6">
-        <SectionCard title="6. PAMI details, if done" subtitle="Door to Balloon Time, Vessels, Segment, Thrombosuction, Stents, Result & Major Complications">
+        <SectionCard title="6. PAMI details, if done">
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
               <div>
@@ -1538,7 +1724,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 />
               </div>
               <div>
-                <label className={LABEL_STYLES}>Segment (Text)</label>
+                <label className={LABEL_STYLES}>Segment</label>
                 <input
                   type="text"
                   disabled={readOnly}
@@ -1549,7 +1735,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 />
               </div>
               <div>
-                <label className={LABEL_STYLES}>Thrombosuction (Done / Not done)</label>
+                <label className={LABEL_STYLES}>Thrombosuction</label>
                 <select
                   disabled={readOnly}
                   value={formData.thrombosuction_done}
@@ -1563,7 +1749,7 @@ const STEMIForm = forwardRef(function STEMIForm(
             </div>
 
             <div>
-              <label className={LABEL_STYLES}>Vessel(s): LMCA, LAD, Diagonal, LCX, Ramus, OM, RCA, PDA</label>
+              <label className={LABEL_STYLES}>Vessel(s)</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
                 {[
                   { key: 'vessel_lmca', label: 'LMCA' },
@@ -1575,7 +1761,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                   { key: 'vessel_rca', label: 'RCA' },
                   { key: 'vessel_pda', label: 'PDA' }
                 ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
+                  <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
                     <input
                       type="checkbox"
                       disabled={readOnly}
@@ -1591,7 +1777,7 @@ const STEMIForm = forwardRef(function STEMIForm(
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
               <div>
-                <label className={LABEL_STYLES}>Stent(s) (BMS / DES)</label>
+                <label className={LABEL_STYLES}>Stent(s)</label>
                 <select
                   disabled={readOnly}
                   value={formData.stent_type}
@@ -1627,7 +1813,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 />
               </div>
               <div>
-                <label className={LABEL_STYLES}>Result: Post-procedure TIMI flow (0/1/2/3)</label>
+                <label className={LABEL_STYLES}>Result: Post-procedure TIMI flow</label>
                 <select
                   disabled={readOnly}
                   value={formData.timi_flow}
@@ -1642,10 +1828,10 @@ const STEMIForm = forwardRef(function STEMIForm(
               </div>
             </div>
 
-            {renderRadio('procedural_success', 'Result: Procedural success (Yes/No)', ['Yes', 'No'])}
+            {renderRadio('procedural_success', 'Result: Procedural success', ['Yes', 'No'])}
 
             <div>
-              <label className={LABEL_STYLES}>Major Complications (Multi-select)</label>
+              <label className={LABEL_STYLES}>Major Complications</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
                 {[
                   { key: 'complication_none', label: 'None' },
@@ -1657,7 +1843,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                   { key: 'complication_death', label: 'Death' },
                   { key: 'complication_emergency_cabg', label: 'Emergency CABG' }
                 ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
+                  <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
                     <input
                       type="checkbox"
                       disabled={readOnly}
@@ -1698,7 +1884,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 7: Thrombolysis details                                          */}
       {/* ========================================================================= */}
       <div id="section-7">
-        <SectionCard title="7. Thrombolysis details" subtitle="Door to Needle Time, Drug: STK, UK, Reteplase, Tenectaplase & Dose">
+        <SectionCard title="7. Thrombolysis details">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs mb-4">
             <div>
               <label className={LABEL_STYLES}>Door to Needle Time (min)</label>
@@ -1712,7 +1898,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               />
             </div>
             <div>
-              <label className={LABEL_STYLES}>Dose (Text)</label>
+              <label className={LABEL_STYLES}>Dose</label>
               <input
                 type="text"
                 disabled={readOnly}
@@ -1725,7 +1911,7 @@ const STEMIForm = forwardRef(function STEMIForm(
           </div>
 
           <div>
-            <label className={LABEL_STYLES}>Drug: STK, UK, Reteplase, Tenectaplase</label>
+            <label className={LABEL_STYLES}>Drug</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
               {[
                 { key: 'drug_stk', label: 'STK' },
@@ -1733,7 +1919,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 { key: 'drug_reteplase', label: 'Reteplase' },
                 { key: 'drug_tenecteplase', label: 'Tenectaplase' }
               ].map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
+                <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
                   <input
                     type="checkbox"
                     disabled={readOnly}
@@ -1753,7 +1939,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 8: Drugs                                                          */}
       {/* ========================================================================= */}
       <div id="section-8" className="space-y-6">
-        <SectionCard title="8. Drugs - Acute Drugs (Yes/No)" subtitle="Beta-blocker, Calcium-channel blocker, Nitrate, Nicorandil, Ivabradine, Ranozolidine, Trimetazidine, Aspirin, Clopidigrel, Prasugrel, Ticagralor">
+        <SectionCard title="8. Drugs - Acute Drugs">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
             {renderRadio('beta_blocker', 'Beta-blocker', ['Yes', 'No'])}
             {renderRadio('calcium_channel_blocker', 'Calcium-channel blocker', ['Yes', 'No'])}
@@ -1769,10 +1955,10 @@ const STEMIForm = forwardRef(function STEMIForm(
           </div>
         </SectionCard>
 
-        <SectionCard title="8. Drugs - Heparin Strategy & Other Drugs" subtitle="Heparin strategy (Select one), Other Drugs (Yes/No), Statin Dose, Any Other (Text)">
+        <SectionCard title="8. Drugs - Heparin Strategy & Other Drugs">
           <div className="space-y-4">
             <div>
-              <label className={LABEL_STYLES}>Heparin strategy (Select one): UFH i.v alone, UFH s.c alone, LMWH alone, UFH i.v+UFHs.c, UFH i.v + LMWH</label>
+              <label className={LABEL_STYLES}>Heparin strategy</label>
               <select
                 disabled={readOnly}
                 value={formData.heparin_strategy}
@@ -1795,7 +1981,7 @@ const STEMIForm = forwardRef(function STEMIForm(
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
-                <label className={LABEL_STYLES}>Statin Dose: 10 mg, 20 mg, 40 mg, 80 mg</label>
+                <label className={LABEL_STYLES}>Statin Dose</label>
                 <select
                   disabled={readOnly}
                   value={formData.statin_dose}
@@ -1809,7 +1995,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 </select>
               </div>
               <div>
-                <label className={LABEL_STYLES}>Any Other (Text)</label>
+                <label className={LABEL_STYLES}>Any Other</label>
                 <input
                   type="text"
                   disabled={readOnly}
@@ -1828,7 +2014,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 9: Diagnostic Procedures                                         */}
       {/* ========================================================================= */}
       <div id="section-9">
-        <SectionCard title="9. Diagnostic Procedures" subtitle="Options (Yes/No): Bed-side echo, Departmental echo, Stress Testing, Lipid profile, BNP, CRP, Trop-T/I, CPK/CPK-MB, RFT, LFT, Electrolytes, Hemogram, CXR, Others">
+        <SectionCard title="9. Diagnostic Procedures">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
             {renderRadio('bedside_echo', 'Bed-side echo', ['Yes', 'No'])}
             {renderRadio('departmental_echo', 'Departmental echo', ['Yes', 'No'])}
@@ -1859,407 +2045,418 @@ const STEMIForm = forwardRef(function STEMIForm(
       </div>
 
       {/* ========================================================================= */}
+      {/* ========================================================================= */}
       {/* SECTION 10: Reports (ECG, Echo, Blood Investigations, Angiogram)         */}
       {/* ========================================================================= */}
-      <div id="section-10" className="space-y-6">
-        <SectionCard title="10. Reports - ECG" subtitle="HR (bpm), AV Block, BBB, Q waves, ST dep, T inv, Rhythm, Any other">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              <div>
-                <label className={LABEL_STYLES}>HR (bpm)</label>
-                <input
-                  type="number"
-                  disabled={readOnly}
-                  value={formData.ecg_heart_rate}
-                  onChange={(e) => handleChange('ecg_heart_rate', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold"
-                />
+      <div id="section-10">
+        <SectionCard title="10. Reports">
+          <div className="space-y-6">
+            {/* Subsection: ECG */}
+            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+              <span className="font-bold text-slate-800 text-xs block border-b pb-2 uppercase tracking-wide">ECG</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div>
+                  <label className={LABEL_STYLES}>HR (bpm)</label>
+                  <input
+                    type="number"
+                    disabled={readOnly}
+                    value={formData.ecg_heart_rate}
+                    onChange={(e) => handleChange('ecg_heart_rate', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold bg-white"
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_STYLES}>AV Block</label>
+                  <select
+                    disabled={readOnly}
+                    value={formData.av_block}
+                    onChange={(e) => handleChange('av_block', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white"
+                  >
+                    <option value="None">None</option>
+                    <option value="1-degree">1-degree</option>
+                    <option value="2-degree">2-degree</option>
+                    <option value="CHB">CHB</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={LABEL_STYLES}>BBB</label>
+                  <select
+                    disabled={readOnly}
+                    value={formData.bbb}
+                    onChange={(e) => handleChange('bbb', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white"
+                  >
+                    <option value="None">None</option>
+                    <option value="RBBB">RBBB</option>
+                    <option value="LBBB">LBBB</option>
+                    <option value="Indeterminate">Inderminate</option>
+                  </select>
+                </div>
               </div>
+
               <div>
-                <label className={LABEL_STYLES}>AV Block (None / 1-degree / 2-degree / CHB)</label>
-                <select
-                  disabled={readOnly}
-                  value={formData.av_block}
-                  onChange={(e) => handleChange('av_block', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white"
-                >
-                  <option value="None">None</option>
-                  <option value="1-degree">1-degree</option>
-                  <option value="2-degree">2-degree</option>
-                  <option value="CHB">CHB</option>
-                </select>
+                <label className={LABEL_STYLES}>Q waves</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
+                  {[
+                    { key: 'qwaves_none', label: 'None' },
+                    { key: 'qwaves_inferior', label: 'Inferior' },
+                    { key: 'qwaves_anteroseptal', label: 'Antero-septal' },
+                    { key: 'qwaves_anterior', label: 'Anterior' },
+                    { key: 'qwaves_anterolateral', label: 'Anterolateral' },
+                    { key: 'qwaves_lateral', label: 'Lateral' }
+                  ].map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
+                      <input
+                        type="checkbox"
+                        disabled={readOnly}
+                        checked={formData[key] || false}
+                        onChange={(e) => handleChange(key, e.target.checked)}
+                        className="text-red-600 rounded"
+                      />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
+
               <div>
-                <label className={LABEL_STYLES}>BBB (RBBB / LBBB / Inderminate / None)</label>
-                <select
-                  disabled={readOnly}
-                  value={formData.bbb}
-                  onChange={(e) => handleChange('bbb', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white"
-                >
-                  <option value="None">None</option>
-                  <option value="RBBB">RBBB</option>
-                  <option value="LBBB">LBBB</option>
-                  <option value="Indeterminate">Inderminate</option>
-                </select>
+                <label className={LABEL_STYLES}>ST dep</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
+                  {[
+                    { key: 'st_depression_none', label: 'None' },
+                    { key: 'st_depression_inferior', label: 'Inferior' },
+                    { key: 'st_depression_anteroseptal', label: 'Antero-septal' },
+                    { key: 'st_depression_anterior', label: 'Anterior' },
+                    { key: 'st_depression_anterolateral', label: 'Anterolateral' },
+                    { key: 'st_depression_lateral', label: 'Lateral' }
+                  ].map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
+                      <input
+                        type="checkbox"
+                        disabled={readOnly}
+                        checked={formData[key] || false}
+                        onChange={(e) => handleChange(key, e.target.checked)}
+                        className="text-red-600 rounded"
+                      />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className={LABEL_STYLES}>T inv</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
+                  {[
+                    { key: 't_inversion_none', label: 'None' },
+                    { key: 't_inversion_inferior', label: 'Inferior' },
+                    { key: 't_inversion_anteroseptal', label: 'Antero-septal' },
+                    { key: 't_inversion_anterior', label: 'Anterior' },
+                    { key: 't_inversion_anterolateral', label: 'Anterolateral' },
+                    { key: 't_inversion_lateral', label: 'Lateral' }
+                  ].map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
+                      <input
+                        type="checkbox"
+                        disabled={readOnly}
+                        checked={formData[key] || false}
+                        onChange={(e) => handleChange(key, e.target.checked)}
+                        className="text-red-600 rounded"
+                      />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <label className={LABEL_STYLES}>Rhythm</label>
+                  <select
+                    disabled={readOnly}
+                    value={formData.rhythm}
+                    onChange={(e) => handleChange('rhythm', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-bold"
+                  >
+                    <option value="NSR">NSR</option>
+                    <option value="AF">AF</option>
+                    <option value="SVT">SVT</option>
+                    <option value="VT">VT</option>
+                    <option value="VF">VF</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={LABEL_STYLES}>Any other</label>
+                  <input
+                    type="text"
+                    disabled={readOnly}
+                    value={formData.ecg_other}
+                    onChange={(e) => handleChange('ecg_other', e.target.value)}
+                    placeholder="e.g. S1Q3T3 pattern, PR depression"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white"
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className={LABEL_STYLES}>Q waves (None / Inferior / Antero-septal / Anterior / Anterolateral / Lateral)</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
-                {[
-                  { key: 'qwaves_none', label: 'None' },
-                  { key: 'qwaves_inferior', label: 'Inferior' },
-                  { key: 'qwaves_anteroseptal', label: 'Antero-septal' },
-                  { key: 'qwaves_anterior', label: 'Anterior' },
-                  { key: 'qwaves_anterolateral', label: 'Anterolateral' },
-                  { key: 'qwaves_lateral', label: 'Lateral' }
-                ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
+            {/* Subsection: Echo */}
+            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+              <span className="font-bold text-slate-800 text-xs block border-b pb-2 uppercase tracking-wide">Echo</span>
+              <div className="space-y-4 text-xs">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className={LABEL_STYLES}>EF (%)</label>
                     <input
-                      type="checkbox"
+                      type="number"
                       disabled={readOnly}
-                      checked={formData[key] || false}
-                      onChange={(e) => handleChange(key, e.target.checked)}
-                      className="text-red-600 rounded"
+                      value={formData.echo_ef}
+                      onChange={(e) => handleChange('echo_ef', e.target.value)}
+                      placeholder="e.g. 50"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold bg-white"
                     />
-                    <span>{label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+                  </div>
+                  <div>
+                    <label className={LABEL_STYLES}>LV Function</label>
+                    <select
+                      disabled={readOnly}
+                      value={formData.lv_function}
+                      onChange={(e) => handleChange('lv_function', e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-semibold"
+                    >
+                      <option value="Normal">Normal</option>
+                      <option value="Mild LVD">Mild LVD</option>
+                      <option value="Mod. LVD">Mod. LVD</option>
+                      <option value="Sev.LVD">Sev.LVD</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className={LABEL_STYLES}>MR</label>
+                    <select
+                      disabled={readOnly}
+                      value={formData.mr_grade}
+                      onChange={(e) => handleChange('mr_grade', e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-semibold"
+                    >
+                      <option value="None">None</option>
+                      <option value="Mild">Mild</option>
+                      <option value="Mod">Mod</option>
+                      <option value="Severe">Severe</option>
+                    </select>
+                  </div>
+                </div>
 
-            <div>
-              <label className={LABEL_STYLES}>ST dep (None / Inferior / Antero-septal / Anterior / Anterolateral / Lateral)</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
-                {[
-                  { key: 'st_depression_none', label: 'None' },
-                  { key: 'st_depression_inferior', label: 'Inferior' },
-                  { key: 'st_depression_anteroseptal', label: 'Antero-septal' },
-                  { key: 'st_depression_anterior', label: 'Anterior' },
-                  { key: 'st_depression_anterolateral', label: 'Anterolateral' },
-                  { key: 'st_depression_lateral', label: 'Lateral' }
-                ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
+                <div>
+                  <label className={LABEL_STYLES}>RWMA</label>
+                  <div className="grid grid-cols-3 gap-2 pt-1 max-w-md">
+                    {[
+                      { key: 'rwma_lad', label: 'LAD territory' },
+                      { key: 'rwma_rca', label: 'RCA territory' },
+                      { key: 'rwma_lcx', label: 'LCX territory' }
+                    ].map(({ key, label }) => (
+                      <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
+                        <input
+                          type="checkbox"
+                          disabled={readOnly}
+                          checked={formData[key] || false}
+                          onChange={(e) => handleChange(key, e.target.checked)}
+                          className="text-red-600 rounded"
+                        />
+                        <span>{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+                  <div>
+                    <label className={LABEL_STYLES}>E</label>
                     <input
-                      type="checkbox"
+                      type="number"
+                      step="0.1"
                       disabled={readOnly}
-                      checked={formData[key] || false}
-                      onChange={(e) => handleChange(key, e.target.checked)}
-                      className="text-red-600 rounded"
+                      value={formData.echo_e}
+                      onChange={(e) => handleChange('echo_e', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
                     />
-                    <span>{label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className={LABEL_STYLES}>T inv (None / Inferior / Antero-septal / Anterior / Anterolateral / Lateral)</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
-                {[
-                  { key: 't_inversion_none', label: 'None' },
-                  { key: 't_inversion_inferior', label: 'Inferior' },
-                  { key: 't_inversion_anteroseptal', label: 'Antero-septal' },
-                  { key: 't_inversion_anterior', label: 'Anterior' },
-                  { key: 't_inversion_anterolateral', label: 'Anterolateral' },
-                  { key: 't_inversion_lateral', label: 'Lateral' }
-                ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
+                  </div>
+                  <div>
+                    <label className={LABEL_STYLES}>A</label>
                     <input
-                      type="checkbox"
+                      type="number"
+                      step="0.1"
                       disabled={readOnly}
-                      checked={formData[key] || false}
-                      onChange={(e) => handleChange(key, e.target.checked)}
-                      className="text-red-600 rounded"
+                      value={formData.echo_a}
+                      onChange={(e) => handleChange('echo_a', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
                     />
-                    <span>{label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className={LABEL_STYLES}>Rhythm (NSR / AF / SVT / VT / VF)</label>
-                <select
-                  disabled={readOnly}
-                  value={formData.rhythm}
-                  onChange={(e) => handleChange('rhythm', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-bold"
-                >
-                  <option value="NSR">NSR</option>
-                  <option value="AF">AF</option>
-                  <option value="SVT">SVT</option>
-                  <option value="VT">VT</option>
-                  <option value="VF">VF</option>
-                </select>
-              </div>
-              <div>
-                <label className={LABEL_STYLES}>Any other</label>
-                <input
-                  type="text"
-                  disabled={readOnly}
-                  value={formData.ecg_other}
-                  onChange={(e) => handleChange('ecg_other', e.target.value)}
-                  placeholder="e.g. S1Q3T3 pattern, PR depression"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
-                />
-              </div>
-            </div>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="10. Reports - Echo" subtitle="EF (%), LV Function (Normal / Mild LVD / Mod. LVD / Sev.LVD), RWMA (LAD / RCA / LCX territory), MR (None / Mild / Mod / Severe), E, A, DT, E', TAPSV, Others">
-          <div className="space-y-4 text-xs">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className={LABEL_STYLES}>EF (%)</label>
-                <input
-                  type="number"
-                  disabled={readOnly}
-                  value={formData.echo_ef}
-                  onChange={(e) => handleChange('echo_ef', e.target.value)}
-                  placeholder="e.g. 50"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold"
-                />
-              </div>
-              <div>
-                <label className={LABEL_STYLES}>LV Function (Normal / Mild LVD / Mod. LVD / Sev.LVD)</label>
-                <select
-                  disabled={readOnly}
-                  value={formData.lv_function}
-                  onChange={(e) => handleChange('lv_function', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-semibold"
-                >
-                  <option value="Normal">Normal</option>
-                  <option value="Mild LVD">Mild LVD</option>
-                  <option value="Mod. LVD">Mod. LVD</option>
-                  <option value="Sev.LVD">Sev.LVD</option>
-                </select>
-              </div>
-              <div>
-                <label className={LABEL_STYLES}>MR (None / Mild / Mod / Severe)</label>
-                <select
-                  disabled={readOnly}
-                  value={formData.mr_grade}
-                  onChange={(e) => handleChange('mr_grade', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-semibold"
-                >
-                  <option value="None">None</option>
-                  <option value="Mild">Mild</option>
-                  <option value="Mod">Mod</option>
-                  <option value="Severe">Severe</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className={LABEL_STYLES}>RWMA (LAD / RCA / LCX territory)</label>
-              <div className="grid grid-cols-3 gap-2 pt-1 max-w-md">
-                {[
-                  { key: 'rwma_lad', label: 'LAD territory' },
-                  { key: 'rwma_rca', label: 'RCA territory' },
-                  { key: 'rwma_lcx', label: 'LCX territory' }
-                ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
+                  </div>
+                  <div>
+                    <label className={LABEL_STYLES}>DT</label>
                     <input
-                      type="checkbox"
+                      type="number"
+                      step="1"
                       disabled={readOnly}
-                      checked={formData[key] || false}
-                      onChange={(e) => handleChange(key, e.target.checked)}
-                      className="text-red-600 rounded"
+                      value={formData.echo_dt}
+                      onChange={(e) => handleChange('echo_dt', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
                     />
-                    <span>{label}</span>
-                  </label>
-                ))}
+                  </div>
+                  <div>
+                    <label className={LABEL_STYLES}>E'</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      disabled={readOnly}
+                      value={formData.echo_e_prime}
+                      onChange={(e) => handleChange('echo_e_prime', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className={LABEL_STYLES}>TAPSV</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      disabled={readOnly}
+                      value={formData.echo_tapsv}
+                      onChange={(e) => handleChange('echo_tapsv', e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={LABEL_STYLES}>Others</label>
+                  <input
+                    type="text"
+                    disabled={readOnly}
+                    value={formData.echo_other}
+                    onChange={(e) => handleChange('echo_other', e.target.value)}
+                    placeholder="e.g. Mild TR, PASP 35 mmHg"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
-              <div>
-                <label className={LABEL_STYLES}>E</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  disabled={readOnly}
-                  value={formData.echo_e}
-                  onChange={(e) => handleChange('echo_e', e.target.value)}
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"
-                />
-              </div>
-              <div>
-                <label className={LABEL_STYLES}>A</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  disabled={readOnly}
-                  value={formData.echo_a}
-                  onChange={(e) => handleChange('echo_a', e.target.value)}
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"
-                />
-              </div>
-              <div>
-                <label className={LABEL_STYLES}>DT</label>
-                <input
-                  type="number"
-                  step="1"
-                  disabled={readOnly}
-                  value={formData.echo_dt}
-                  onChange={(e) => handleChange('echo_dt', e.target.value)}
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"
-                />
-              </div>
-              <div>
-                <label className={LABEL_STYLES}>E'</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  disabled={readOnly}
-                  value={formData.echo_e_prime}
-                  onChange={(e) => handleChange('echo_e_prime', e.target.value)}
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"
-                />
-              </div>
-              <div>
-                <label className={LABEL_STYLES}>TAPSV</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  disabled={readOnly}
-                  value={formData.echo_tapsv}
-                  onChange={(e) => handleChange('echo_tapsv', e.target.value)}
-                  className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"
-                />
+            {/* Subsection: Blood Investigations */}
+            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+              <span className="font-bold text-slate-800 text-xs block border-b pb-2 uppercase tracking-wide">Blood Investigations (Numeric fields)</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+                <div>
+                  <label className={LABEL_STYLES}>Hemoglobin (gm%)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    disabled={readOnly}
+                    value={formData.hemoglobin}
+                    onChange={(e) => handleChange('hemoglobin', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold bg-white"
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_STYLES}>Creat (mg/dl)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    disabled={readOnly}
+                    value={formData.creatinine}
+                    onChange={(e) => handleChange('creatinine', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold bg-white"
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_STYLES}>Trop-I</label>
+                  <input
+                    type="text"
+                    disabled={readOnly}
+                    value={formData.troponin_i}
+                    onChange={(e) => handleChange('troponin_i', e.target.value)}
+                    placeholder="e.g. Positive / 2.5 ng/ml"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_STYLES}>CPK</label>
+                  <input
+                    type="text"
+                    disabled={readOnly}
+                    value={formData.cpk}
+                    onChange={(e) => handleChange('cpk', e.target.value)}
+                    placeholder="e.g. 450 IU/L"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_STYLES}>CK-MB</label>
+                  <input
+                    type="text"
+                    disabled={readOnly}
+                    value={formData.ck_mb}
+                    onChange={(e) => handleChange('ck_mb', e.target.value)}
+                    placeholder="e.g. 45 ng/ml"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_STYLES}>Na</label>
+                  <input
+                    type="number"
+                    disabled={readOnly}
+                    value={formData.sodium}
+                    onChange={(e) => handleChange('sodium', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_STYLES}>K</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    disabled={readOnly}
+                    value={formData.potassium}
+                    onChange={(e) => handleChange('potassium', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
+                  />
+                </div>
+                <div>
+                  <label className={LABEL_STYLES}>RBS at admission</label>
+                  <input
+                    type="number"
+                    disabled={readOnly}
+                    value={formData.rbs_admission}
+                    onChange={(e) => handleChange('rbs_admission', e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className={LABEL_STYLES}>Others</label>
-              <input
-                type="text"
-                disabled={readOnly}
-                value={formData.echo_other}
-                onChange={(e) => handleChange('echo_other', e.target.value)}
-                placeholder="e.g. Mild TR, PASP 35 mmHg"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
-              />
-            </div>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="10. Reports - Blood Investigations (Numeric fields)" subtitle="Hemoglobin (gm%), Creat (mg/dl), Trop-I, CPK, CK-MB, Na, K, RBS at admission">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-            <div>
-              <label className={LABEL_STYLES}>Hemoglobin (gm%)</label>
-              <input
-                type="number"
-                step="0.1"
-                disabled={readOnly}
-                value={formData.hemoglobin}
-                onChange={(e) => handleChange('hemoglobin', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Creat (mg/dl)</label>
-              <input
-                type="number"
-                step="0.01"
-                disabled={readOnly}
-                value={formData.creatinine}
-                onChange={(e) => handleChange('creatinine', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Trop-I</label>
-              <input
-                type="text"
-                disabled={readOnly}
-                value={formData.troponin_i}
-                onChange={(e) => handleChange('troponin_i', e.target.value)}
-                placeholder="e.g. Positive / 2.5 ng/ml"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>CPK</label>
-              <input
-                type="text"
-                disabled={readOnly}
-                value={formData.cpk}
-                onChange={(e) => handleChange('cpk', e.target.value)}
-                placeholder="e.g. 450 IU/L"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>CK-MB</label>
-              <input
-                type="text"
-                disabled={readOnly}
-                value={formData.ck_mb}
-                onChange={(e) => handleChange('ck_mb', e.target.value)}
-                placeholder="e.g. 45 ng/ml"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Na</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.sodium}
-                onChange={(e) => handleChange('sodium', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>K</label>
-              <input
-                type="number"
-                step="0.1"
-                disabled={readOnly}
-                value={formData.potassium}
-                onChange={(e) => handleChange('potassium', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>RBS at admission</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.rbs_admission}
-                onChange={(e) => handleChange('rbs_admission', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-          </div>
-        </SectionCard>
-
-        <SectionCard title="10. Reports - Coronary Angiogram" subtitle="Done / Not done. If done: Normal / 1-VD / 2-VD / 3-VD / LMCA">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            {renderRadio('angiogram_done', 'Coronary Angiogram (Done / Not done)', ['Yes', 'No'])}
-            {formData.angiogram_done === 'Yes' && (
-              <div>
-                <label className={LABEL_STYLES}>If done: Normal / 1-VD / 2-VD / 3-VD / LMCA</label>
-                <select
-                  disabled={readOnly}
-                  value={formData.angiogram_finding}
-                  onChange={(e) => handleChange('angiogram_finding', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-bold"
-                >
-                  <option value="Normal">Normal</option>
-                  <option value="1VD">1-VD</option>
-                  <option value="2VD">2-VD</option>
-                  <option value="3VD">3-VD</option>
-                  <option value="LMCA">LMCA</option>
-                </select>
+            {/* Subsection: Coronary Angiogram */}
+            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+              <span className="font-bold text-slate-800 text-xs block border-b pb-2 uppercase tracking-wide">Coronary Angiogram</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                {renderRadio('angiogram_done', 'Coronary Angiogram', ['Yes', 'No'])}
+                {formData.angiogram_done === 'Yes' && (
+                  <div>
+                    <label className={LABEL_STYLES}>If done</label>
+                    <select
+                      disabled={readOnly}
+                      value={formData.angiogram_finding}
+                      onChange={(e) => handleChange('angiogram_finding', e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-bold"
+                    >
+                      <option value="Normal">Normal</option>
+                      <option value="1VD">1-VD</option>
+                      <option value="2VD">2-VD</option>
+                      <option value="3VD">3-VD</option>
+                      <option value="LMCA">LMCA</option>
+                    </select>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </SectionCard>
       </div>
@@ -2268,7 +2465,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 11: Invasive Procedures                                          */}
       {/* ========================================================================= */}
       <div id="section-11">
-        <SectionCard title="11. Invasive Procedures" subtitle="Options (Yes / No): IABP, CAG, Invasive Ventilation, PTCA, CABG, Other">
+        <SectionCard title="11. Invasive Procedures">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
             {renderRadio('iabp', 'IABP', ['Yes', 'No'])}
             {renderRadio('cag', 'CAG', ['Yes', 'No'])}
@@ -2294,7 +2491,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 12: Out-comes                                                   */}
       {/* ========================================================================= */}
       <div id="section-12">
-        <SectionCard title="12. Out-comes" subtitle="Clinical (Yes / No): Death, STEMI for NONSTEMI subjects, Re-MI for STEMI subjects, Revascularization for recurrent ischemia, CVA-thrombotic, CVA-hemorrhagic, Major Bleeding, Any other">
+        <SectionCard title="12. Out-comes">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
             {renderRadio('death', 'Death', ['Yes', 'No'])}
             {renderRadio('stemi_for_nonstemi', 'STEMI for NONSTEMI subjects', ['Yes', 'No'])}
@@ -2322,7 +2519,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 13: Discharge Medications                                         */}
       {/* ========================================================================= */}
       <div id="section-13">
-        <SectionCard title="13. Discharge Medications" subtitle="Options (Yes / No): Beta-blocker, Calcium-channel blocker, Nitrate, Nicorandil, Ivabradine, Ranozolidine, Trimetazidine, Aspirin, Clopidigrel, Prasugrel, Ticagralor, Statin, Statin Dose & Any Other">
+        <SectionCard title="13. Discharge Medications">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs mb-4">
             {renderRadio('discharge_beta_blocker', 'Beta-blocker', ['Yes', 'No'])}
             {renderRadio('discharge_calcium_channel_blocker', 'Calcium-channel blocker', ['Yes', 'No'])}
@@ -2340,7 +2537,7 @@ const STEMIForm = forwardRef(function STEMIForm(
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div>
-              <label className={LABEL_STYLES}>Statin Dose: 10 mg, 20 mg, 40 mg, 80 mg</label>
+              <label className={LABEL_STYLES}>Statin Dose</label>
               <select
                 disabled={readOnly}
                 value={formData.discharge_statin_dose}
@@ -2354,7 +2551,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               </select>
             </div>
             <div>
-              <label className={LABEL_STYLES}>Any Other (Text)</label>
+              <label className={LABEL_STYLES}>Any Other</label>
               <input
                 type="text"
                 disabled={readOnly}
@@ -2372,23 +2569,10 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 14: Appropriateness for various procedures                       */}
       {/* ========================================================================= */}
       <div id="section-14">
-        <SectionCard title="14. Appropriateness for various procedures" subtitle="Options (Appropriate / Inappropriate): Indication for ICCU admission, ICCU transfer-out, Indication for TLT, Indication for PTCA, Indication for Invasive monitoring, Indication for IABP, Indication for Invasive Ventilation, Indication for dialysis, Any other procedure">
+        <SectionCard title="14. Appropriateness for various procedures">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            {proceduresList.map(item => renderAppropriatenessRadio(item.key, item.label))}
+            {proceduresList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
           </div>
-          {formData.appr_other_procedure_appropriateness === 'Appropriate' && (
-            <div className="mt-3">
-              <label className={LABEL_STYLES}>Specify Any other procedure</label>
-              <input
-                type="text"
-                disabled={readOnly}
-                value={formData.appr_other_procedure_name}
-                onChange={(e) => handleChange('appr_other_procedure_name', e.target.value)}
-                placeholder="e.g. Pericardiocentesis"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-          )}
         </SectionCard>
       </div>
 
@@ -2396,9 +2580,9 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 15: Appropriateness for various investigations                   */}
       {/* ========================================================================= */}
       <div id="section-15">
-        <SectionCard title="15. Appropriateness for various investigations" subtitle="Options (Appropriate / Inappropriate): Cardiac enzymes, BNP, CRP, Lipid Profile, Bed-side Echo, CXR">
+        <SectionCard title="15. Appropriateness for various investigations">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            {investigationsList.map(item => renderAppropriatenessRadio(item.key, item.label))}
+            {investigationsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
           </div>
         </SectionCard>
       </div>
@@ -2407,23 +2591,10 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 16: Appropriateness for various drugs                            */}
       {/* ========================================================================= */}
       <div id="section-16">
-        <SectionCard title="16. Appropriateness for various drugs" subtitle="Options (Appropriate / Inappropriate): Beta-blockers, Aspirin, Clopidigrel, ACE-inhibitor, ARB, Statin, Diuretic, Lanoxin, Anticoagulant, Amiodarone, Any other">
+        <SectionCard title="16. Appropriateness for various drugs">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            {drugsList.map(item => renderAppropriatenessRadio(item.key, item.label))}
+            {drugsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
           </div>
-          {formData.appr_other_drug_appropriateness === 'Appropriate' && (
-            <div className="mt-3">
-              <label className={LABEL_STYLES}>Specify Any other drug</label>
-              <input
-                type="text"
-                disabled={readOnly}
-                value={formData.appr_other_drug_name}
-                onChange={(e) => handleChange('appr_other_drug_name', e.target.value)}
-                placeholder="e.g. ARNI / Sacubitril Valsartan"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-          )}
         </SectionCard>
       </div>
 
@@ -2431,7 +2602,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 17: Length of Stay                                                */}
       {/* ========================================================================= */}
       <div id="section-17">
-        <SectionCard title="17. Length of Stay" subtitle="Numeric Fields: ICCU (hours), Step-down ICU (hours), Floors (days), Total Hospital stay (days)">
+        <SectionCard title="17. Length of Stay">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
             <div>
               <label className={LABEL_STYLES}>ICCU (hours)</label>
@@ -2481,7 +2652,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 18: Cost of care                                                  */}
       {/* ========================================================================= */}
       <div id="section-18">
-        <SectionCard title="18. Cost of care" subtitle="Numeric Fields: Bed charges, Drugs & Disposables, Packages, Lab Investigations, Non-invasive labs, Consults, Radiology, Miscellaneous, Total">
+        <SectionCard title="18. Cost of care">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
             <div>
               <label className={LABEL_STYLES}>Bed charges (₹)</label>
@@ -2585,7 +2756,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* SECTION 19: Follow-up Matrix Grid & Instructions                         */}
       {/* ========================================================================= */}
       <div id="section-19">
-        <SectionCard title="FOLLOW-UP MATRIX" subtitle="Long-term Follow-up Grid (PDF Page 8)">
+        <SectionCard title="FOLLOW-UP MATRIX">
           <div className="space-y-6 text-xs">
             <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-2xs">
               <table className="w-full text-left text-xs border-collapse min-w-[750px]">
@@ -2850,8 +3021,8 @@ const STEMIForm = forwardRef(function STEMIForm(
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                   Visit Mode
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {['In-Person', 'Tele-consultation', 'Phone Check-in'].map((mode) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {['In-Person', 'Phone Check-in'].map((mode) => (
                     <label
                       key={mode}
                       className={`flex items-center gap-2.5 p-3 rounded-lg border text-xs font-medium cursor-pointer transition-all ${

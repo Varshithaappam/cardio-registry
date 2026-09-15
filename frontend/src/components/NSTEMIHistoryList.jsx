@@ -4,8 +4,11 @@ import { Calendar, Loader2, ArrowUpRight, Trash2, Play, RotateCcw } from 'lucide
 import api from '../../api/axios';
 import { formatDateForDisplay, formatDateTimeForDisplay } from '../utils/dateUtils';
 
+import { useAlert } from '../context/AlertContext';
+
 export default function NSTEMIHistoryList({ regPatientId, patientName, onEditEventClick, isReadOnly = false }) {
   const navigate = useNavigate();
+  const { showAlert, showConfirm } = useAlert();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,38 +39,76 @@ export default function NSTEMIHistoryList({ regPatientId, patientName, onEditEve
   }, [regPatientId]);
 
   const handleDeleteRecord = async (nstemiId, registryNo) => {
-    if (!window.confirm(`Are you sure you want to soft-delete NSTEMI Registry Record ${registryNo || '#' + nstemiId}? This record will become read-only and archived.`)) {
-      return;
-    }
+    const isConfirmed = await showConfirm({
+      type: 'delete',
+      title: 'Delete NSTEMI Record?',
+      message: `Are you sure you want to soft-delete NSTEMI Registry Record ${registryNo || '#' + nstemiId}? This record will become read-only and archived.`,
+      confirmText: 'Delete Record',
+      cancelText: 'Cancel'
+    });
+
+    if (!isConfirmed) return;
+
     try {
       const res = await api.delete(`/nstemi/${nstemiId}`);
       if (res.data && res.data.success) {
-        alert('NSTEMI Registry record soft-deleted successfully.');
+        await showAlert({
+          type: 'success',
+          title: 'Record Deleted',
+          message: 'NSTEMI Registry record soft-deleted successfully.'
+        });
         fetchHistory();
       } else {
-        alert(res.data?.message || 'Failed to soft-delete record.');
+        showAlert({
+          type: 'danger',
+          title: 'Delete Failed',
+          message: res.data?.message || 'Failed to soft-delete record.'
+        });
       }
     } catch (err) {
       console.error('Soft delete error:', err);
-      alert(err.response?.data?.message || 'Failed to soft-delete NSTEMI Registry record.');
+      showAlert({
+        type: 'danger',
+        title: 'Error',
+        message: err.response?.data?.message || 'Failed to soft-delete NSTEMI Registry record.'
+      });
     }
   };
 
   const handleUndeleteRecord = async (nstemiId, registryNo) => {
-    if (!window.confirm(`Are you sure you want to restore NSTEMI Registry Record ${registryNo || '#' + nstemiId}? It will be reactivated for editing.`)) {
-      return;
-    }
+    const isConfirmed = await showConfirm({
+      type: 'info',
+      title: 'Restore NSTEMI Record?',
+      message: `Are you sure you want to restore NSTEMI Registry Record ${registryNo || '#' + nstemiId}? It will be reactivated for editing.`,
+      confirmText: 'Restore Record',
+      cancelText: 'Cancel'
+    });
+
+    if (!isConfirmed) return;
+
     try {
       const res = await api.patch(`/nstemi/${nstemiId}/undelete`);
       if (res.data && res.data.success) {
-        alert('NSTEMI Registry record restored successfully.');
+        await showAlert({
+          type: 'success',
+          title: 'Record Restored',
+          message: 'NSTEMI Registry record restored successfully.'
+        });
         fetchHistory();
       } else {
-        alert(res.data?.message || 'Failed to restore record.');
+        showAlert({
+          type: 'danger',
+          title: 'Restore Failed',
+          message: res.data?.message || 'Failed to restore record.'
+        });
       }
     } catch (err) {
       console.error('Undelete error:', err);
-      alert(err.response?.data?.message || 'Failed to restore NSTEMI Registry record.');
+      showAlert({
+        type: 'danger',
+        title: 'Error',
+        message: err.response?.data?.message || 'Failed to restore NSTEMI Registry record.'
+      });
     }
   };
 

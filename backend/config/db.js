@@ -240,11 +240,90 @@ async function getConnection() {
   };
 }
 
+async function ensureAppropriatenessColumns() {
+  try {
+    const tables = ['stemi_appropriateness', 'nstemi_appropriateness'];
+    const columns = [
+      'iccu_admission_note', 'iccu_transfer_out_note', 'tlt_note', 'ptca_note',
+      'invasive_monitoring_note', 'iabp_note', 'invasive_ventilation_note', 'dialysis_note',
+      'any_other_procedure_note', 'cardiac_enzymes_note', 'bnp_note', 'crp_note',
+      'lipid_profile_note', 'bed_side_echo_note', 'cxr_note', 'beta_blockers_note',
+      'aspirin_note', 'clopidogrel_note', 'ace_inhibitor_note', 'arb_note',
+      'statin_note', 'diuretic_note', 'lanoxin_note', 'anticoagulant_note',
+      'amiodarone_note', 'any_other_drug_note'
+    ];
+
+    for (const table of tables) {
+      const checkTbl = await query(`SELECT OBJECT_ID(N'dbo.[${table}]') AS id;`);
+      if (checkTbl.recordset?.[0]?.id) {
+        for (const col of columns) {
+          const checkCol = await query(
+            `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.[${table}]') AND name = '${col}'`
+          );
+          if (!checkCol.recordset || checkCol.recordset.length === 0) {
+            try {
+              await query(`ALTER TABLE dbo.[${table}] ADD [${col}] NVARCHAR(255) NULL;`);
+              console.log(`✓ Auto-added column [${col}] to dbo.[${table}]`);
+            } catch (err) {
+              console.warn(`Could not add column [${col}] to dbo.[${table}]:`, err.message);
+            }
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Auto column check notice:', err.message);
+  }
+}
+
+async function ensureAuditTable() {
+  try {
+    const checkTableQuery = `
+      IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'system_audit_log')
+      BEGIN
+        CREATE TABLE [dbo].[system_audit_log] (
+          [audit_id] INT IDENTITY(1,1) PRIMARY KEY,
+          [registry_type] VARCHAR(50) NOT NULL,
+          [record_identifier] VARCHAR(100) NULL,
+          [record_id] VARCHAR(100) NULL,
+          [patient_id] INT NULL,
+          [user_id] VARCHAR(100) NULL,
+          [action_type] VARCHAR(50) NOT NULL,
+          [changed_fields] NVARCHAR(MAX) NULL,
+          [previous_values] NVARCHAR(MAX) NULL,
+          [new_values] NVARCHAR(MAX) NULL,
+          [timestamp] DATETIME2 DEFAULT (SYSDATETIME())
+        );
+        PRINT 'Created table dbo.system_audit_log';
+      END
+      ELSE
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.system_audit_log') AND name = 'record_identifier')
+          ALTER TABLE dbo.[system_audit_log] ADD [record_identifier] VARCHAR(100) NULL;
+        IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.system_audit_log') AND name = 'record_id')
+          ALTER TABLE dbo.[system_audit_log] ADD [record_id] VARCHAR(100) NULL;
+        IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.system_audit_log') AND name = 'patient_id')
+          ALTER TABLE dbo.[system_audit_log] ADD [patient_id] INT NULL;
+        IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.system_audit_log') AND name = 'previous_values')
+          ALTER TABLE dbo.[system_audit_log] ADD [previous_values] NVARCHAR(MAX) NULL;
+        IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.system_audit_log') AND name = 'new_values')
+          ALTER TABLE dbo.[system_audit_log] ADD [new_values] NVARCHAR(MAX) NULL;
+      END
+    `;
+    await query(checkTableQuery);
+    console.log('✓ Verified/Initialized [system_audit_log] database table');
+  } catch (err) {
+    console.warn('⚠️ system_audit_log table check notice:', err.message);
+  }
+}
+
 async function healthCheck() {
   try {
     const result = await query('SELECT 1 AS ok;');
     if (result.recordset?.[0]?.ok !== 1) throw new Error('SQL Server health check returned an unexpected result.');
     console.log('✅ SQL Server Database Connected Successfully');
+    await ensureAuditTable();
+    await ensureAppropriatenessColumns();
     return result.recordset[0];
   } catch (error) {
     console.error('❌ SQL Server Connection Failed');
@@ -256,4 +335,6 @@ async function healthCheck() {
   }
 }
 
-module.exports = { sql, getPool, getConnection, query, insert, healthCheck };
+module.exports = { sql, getPool, getConnection, query, insert, healthCheck, ensureAppropriatenessColumns, ensureAuditTable };
+
+

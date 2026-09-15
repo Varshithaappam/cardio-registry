@@ -2,6 +2,7 @@ import React, { useState, forwardRef, useImperativeHandle, useMemo } from 'react
 import { Sparkles } from 'lucide-react';
 import SectionCard from './common/SectionCard';
 import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
+import { useAlert } from '../../context/AlertContext';
 
 const proceduresList = [
   { label: 'Indication for ICCU admission', key: 'appr_iccu_admission' },
@@ -139,9 +140,10 @@ const getFollowupInitialState = (followupArray, baseDate) => {
 };
 
 const NSTEMIForm = forwardRef(function NSTEMIForm(
-  { patientRecord, patient: directPatient, editingRecord },
+  { patientRecord, patient: directPatient, editingRecord, readOnly = false },
   ref
 ) {
+  const { showConfirm } = useAlert();
   const patient = patientRecord?.patient || directPatient || patientRecord || {};
 
   const patientAge = useMemo(() => {
@@ -433,7 +435,37 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     appr_anticoagulant: editingRecord?.appr_anticoagulant ?? editingRecord?.appropriateness?.anticoagulant ?? editingRecord?.anticoagulant ?? '',
     appr_amiodarone: editingRecord?.appr_amiodarone ?? editingRecord?.appropriateness?.amiodarone ?? editingRecord?.amiodarone ?? '',
     appr_other_drug_name: editingRecord?.appr_other_drug_name ?? editingRecord?.appropriateness?.other_drug_name ?? editingRecord?.other_drug_name ?? '',
-    appr_other_drug_appropriateness: editingRecord?.appr_other_drug_appropriateness ?? editingRecord?.appropriateness?.other_drug_appropriateness ?? editingRecord?.other_drug_appropriateness ?? ''
+    appr_other_drug_appropriateness: editingRecord?.appr_other_drug_appropriateness ?? editingRecord?.appropriateness?.other_drug_appropriateness ?? editingRecord?.other_drug_appropriateness ?? '',
+
+    // Appropriateness Notes:
+    appr_iccu_admission_note: editingRecord?.appr_iccu_admission_note ?? editingRecord?.appropriateness?.iccu_admission_note ?? editingRecord?.iccu_admission_note ?? '',
+    appr_iccu_transfer_out_note: editingRecord?.appr_iccu_transfer_out_note ?? editingRecord?.appropriateness?.iccu_transfer_out_note ?? editingRecord?.iccu_transfer_out_note ?? '',
+    appr_thrombolysis_indication_note: editingRecord?.appr_thrombolysis_indication_note ?? editingRecord?.appr_tlt_note ?? editingRecord?.appropriateness?.tlt_note ?? editingRecord?.tlt_note ?? '',
+    appr_ptca_indication_note: editingRecord?.appr_ptca_indication_note ?? editingRecord?.appr_ptca_note ?? editingRecord?.appropriateness?.ptca_note ?? editingRecord?.ptca_note ?? '',
+    appr_invasive_monitoring_note: editingRecord?.appr_invasive_monitoring_note ?? editingRecord?.appropriateness?.invasive_monitoring_note ?? editingRecord?.invasive_monitoring_note ?? '',
+    appr_iabp_indication_note: editingRecord?.appr_iabp_indication_note ?? editingRecord?.appr_iabp_note ?? editingRecord?.appropriateness?.iabp_note ?? editingRecord?.iabp_note ?? '',
+    appr_invasive_ventilation_note: editingRecord?.appr_invasive_ventilation_note ?? editingRecord?.appropriateness?.invasive_ventilation_note ?? editingRecord?.invasive_ventilation_note ?? '',
+    appr_dialysis_indication_note: editingRecord?.appr_dialysis_indication_note ?? editingRecord?.appropriateness?.dialysis_note ?? editingRecord?.dialysis_note ?? '',
+    appr_other_procedure_appropriateness_note: editingRecord?.appr_other_procedure_appropriateness_note ?? editingRecord?.appr_any_other_procedure_note ?? editingRecord?.appropriateness?.any_other_procedure_note ?? editingRecord?.any_other_procedure_note ?? '',
+
+    appr_cardiac_enzymes_note: editingRecord?.appr_cardiac_enzymes_note ?? editingRecord?.appropriateness?.cardiac_enzymes_note ?? editingRecord?.cardiac_enzymes_note ?? '',
+    appr_bnp_note: editingRecord?.appr_bnp_note ?? editingRecord?.appropriateness?.bnp_note ?? editingRecord?.bnp_note ?? '',
+    appr_crp_note: editingRecord?.appr_crp_note ?? editingRecord?.appropriateness?.crp_note ?? editingRecord?.crp_note ?? '',
+    appr_lipid_profile_note: editingRecord?.appr_lipid_profile_note ?? editingRecord?.appropriateness?.lipid_profile_note ?? editingRecord?.lipid_profile_note ?? '',
+    appr_bedside_echo_note: editingRecord?.appr_bedside_echo_note ?? editingRecord?.appr_bed_side_echo_note ?? editingRecord?.appropriateness?.bed_side_echo_note ?? editingRecord?.bed_side_echo_note ?? '',
+    appr_chest_xray_note: editingRecord?.appr_chest_xray_note ?? editingRecord?.appr_cxr_note ?? editingRecord?.appropriateness?.cxr_note ?? editingRecord?.cxr_note ?? '',
+
+    appr_beta_blockers_note: editingRecord?.appr_beta_blockers_note ?? editingRecord?.appropriateness?.beta_blockers_note ?? editingRecord?.beta_blockers_note ?? '',
+    appr_aspirin_note: editingRecord?.appr_aspirin_note ?? editingRecord?.appropriateness?.aspirin_note ?? editingRecord?.aspirin_note ?? '',
+    appr_clopidogrel_note: editingRecord?.appr_clopidogrel_note ?? editingRecord?.appropriateness?.clopidogrel_note ?? editingRecord?.clopidogrel_note ?? '',
+    appr_ace_inhibitor_note: editingRecord?.appr_ace_inhibitor_note ?? editingRecord?.appropriateness?.ace_inhibitor_note ?? editingRecord?.ace_inhibitor_note ?? '',
+    appr_arb_note: editingRecord?.appr_arb_note ?? editingRecord?.appropriateness?.arb_note ?? editingRecord?.arb_note ?? '',
+    appr_statin_note: editingRecord?.appr_statin_note ?? editingRecord?.appropriateness?.statin_note ?? editingRecord?.statin_note ?? '',
+    appr_diuretic_note: editingRecord?.appr_diuretic_note ?? editingRecord?.appropriateness?.diuretic_note ?? editingRecord?.diuretic_note ?? '',
+    appr_lanoxin_note: editingRecord?.appr_lanoxin_note ?? editingRecord?.appropriateness?.lanoxin_note ?? editingRecord?.lanoxin_note ?? '',
+    appr_anticoagulant_note: editingRecord?.appr_anticoagulant_note ?? editingRecord?.appropriateness?.anticoagulant_note ?? editingRecord?.anticoagulant_note ?? '',
+    appr_amiodarone_note: editingRecord?.appr_amiodarone_note ?? editingRecord?.appropriateness?.amiodarone_note ?? editingRecord?.amiodarone_note ?? '',
+    appr_other_drug_appropriateness_note: editingRecord?.appr_other_drug_appropriateness_note ?? editingRecord?.appr_any_other_drug_note ?? editingRecord?.appropriateness?.any_other_drug_note ?? editingRecord?.any_other_drug_note ?? ''
   });
 
   // Calculate dynamic TIMI Score points exactly based on PDF Page 1 & 2
@@ -626,35 +658,61 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
     // Map Appropriateness Assessment (prefixed to avoid naming collisions in backend):
     payload.appr_iccu_admission = formData.appr_iccu_admission;
+    payload.appr_iccu_admission_note = formData.appr_iccu_admission_note || '';
     payload.appr_iccu_transfer_out = formData.appr_iccu_transfer_out;
+    payload.appr_iccu_transfer_out_note = formData.appr_iccu_transfer_out_note || '';
     payload.appr_thrombolysis_indication = formData.appr_thrombolysis_indication;
+    payload.appr_thrombolysis_indication_note = formData.appr_thrombolysis_indication_note || '';
     payload.appr_ptca_indication = formData.appr_ptca_indication;
+    payload.appr_ptca_indication_note = formData.appr_ptca_indication_note || '';
     payload.appr_invasive_monitoring = formData.appr_invasive_monitoring;
+    payload.appr_invasive_monitoring_note = formData.appr_invasive_monitoring_note || '';
     payload.appr_iabp_indication = formData.appr_iabp_indication;
+    payload.appr_iabp_indication_note = formData.appr_iabp_indication_note || '';
     payload.appr_invasive_ventilation = formData.appr_invasive_ventilation;
+    payload.appr_invasive_ventilation_note = formData.appr_invasive_ventilation_note || '';
     payload.appr_dialysis_indication = formData.appr_dialysis_indication;
+    payload.appr_dialysis_indication_note = formData.appr_dialysis_indication_note || '';
     payload.appr_other_procedure_name = formData.appr_other_procedure_name;
     payload.appr_other_procedure_appropriateness = formData.appr_other_procedure_appropriateness;
+    payload.appr_other_procedure_appropriateness_note = formData.appr_other_procedure_appropriateness_note || '';
 
     payload.appr_cardiac_enzymes = formData.appr_cardiac_enzymes;
+    payload.appr_cardiac_enzymes_note = formData.appr_cardiac_enzymes_note || '';
     payload.appr_bnp = formData.appr_bnp;
+    payload.appr_bnp_note = formData.appr_bnp_note || '';
     payload.appr_crp = formData.appr_crp;
+    payload.appr_crp_note = formData.appr_crp_note || '';
     payload.appr_lipid_profile = formData.appr_lipid_profile;
+    payload.appr_lipid_profile_note = formData.appr_lipid_profile_note || '';
     payload.appr_bedside_echo = formData.appr_bedside_echo;
+    payload.appr_bedside_echo_note = formData.appr_bedside_echo_note || '';
     payload.appr_chest_xray = formData.appr_chest_xray;
+    payload.appr_chest_xray_note = formData.appr_chest_xray_note || '';
 
     payload.appr_beta_blockers = formData.appr_beta_blockers;
+    payload.appr_beta_blockers_note = formData.appr_beta_blockers_note || '';
     payload.appr_aspirin = formData.appr_aspirin;
+    payload.appr_aspirin_note = formData.appr_aspirin_note || '';
     payload.appr_clopidogrel = formData.appr_clopidogrel;
+    payload.appr_clopidogrel_note = formData.appr_clopidogrel_note || '';
     payload.appr_ace_inhibitor = formData.appr_ace_inhibitor;
+    payload.appr_ace_inhibitor_note = formData.appr_ace_inhibitor_note || '';
     payload.appr_arb = formData.appr_arb;
+    payload.appr_arb_note = formData.appr_arb_note || '';
     payload.appr_statin = formData.appr_statin;
+    payload.appr_statin_note = formData.appr_statin_note || '';
     payload.appr_diuretic = formData.appr_diuretic;
+    payload.appr_diuretic_note = formData.appr_diuretic_note || '';
     payload.appr_lanoxin = formData.appr_lanoxin;
+    payload.appr_lanoxin_note = formData.appr_lanoxin_note || '';
     payload.appr_anticoagulant = formData.appr_anticoagulant;
+    payload.appr_anticoagulant_note = formData.appr_anticoagulant_note || '';
     payload.appr_amiodarone = formData.appr_amiodarone;
+    payload.appr_amiodarone_note = formData.appr_amiodarone_note || '';
     payload.appr_other_drug_name = formData.appr_other_drug_name;
     payload.appr_other_drug_appropriateness = formData.appr_other_drug_appropriateness;
+    payload.appr_other_drug_appropriateness_note = formData.appr_other_drug_appropriateness_note || '';
 
     // Follow-up visit mode & special instructions
     payload.visit_mode = formData.visit_mode || 'In-Person';
@@ -939,8 +997,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     getSubmissionData: () => getFlattenedData(),
     validateForm: () => {
       if (formData.admission_date && formData.discharge_date) {
-        if (new Date(formData.discharge_date) < new Date(formData.admission_date)) {
-          alert('Date of Discharge cannot be earlier than Date of Admission.');
+        if (new Date(formData.discharge_date) <= new Date(formData.admission_date)) {
+          alert('Form submission blocked: Date of Discharge must be greater than Date of Admission.');
           return false;
         }
       }
@@ -950,7 +1008,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
   // Reusable radio option mapper
   const renderRadio = (field, label, options = ['Yes', 'No']) => (
-    <div className="flex items-center justify-between p-2 bg-slate-50/50 border border-slate-100 rounded-lg">
+    <div className="flex items-center justify-between p-2 bg-white border border-slate-200 rounded-lg">
       <span className="font-semibold text-slate-700">{label}</span>
       <div className="flex gap-4">
         {options.map((opt) => (
@@ -969,11 +1027,89 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     </div>
   );
 
+  const handleAppropriatenessChange = async (fieldKey, newValue, noteKey = `${fieldKey}_note`) => {
+    const currentValue = formData[fieldKey];
+    const currentNote = formData[noteKey] ? String(formData[noteKey]).trim() : '';
+
+    if (currentValue && currentValue !== newValue && currentNote.length > 0) {
+      const keepNote = await showConfirm({
+        type: 'warning',
+        title: 'Change Status?',
+        message: `You are changing the appropriateness status. Do you want to keep your existing note: '${currentNote}'?`,
+        confirmText: 'Keep Note',
+        cancelText: 'Clear Note'
+      });
+
+      if (keepNote) {
+        handleChange(fieldKey, newValue);
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          [fieldKey]: newValue,
+          [noteKey]: ''
+        }));
+      }
+    } else {
+      handleChange(fieldKey, newValue);
+    }
+  };
+
+  const renderAppropriatenessRadio = (field, label, specifyKey = null) => {
+    const noteKey = `${field}_note`;
+
+    return (
+      <div key={field} className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 p-2.5 bg-white border border-slate-200 rounded-lg text-xs min-h-[52px]">
+        <div className="flex-1 font-semibold text-slate-700 min-w-0">
+          {specifyKey ? (
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="whitespace-nowrap flex-shrink-0">{label}:</span>
+              <input
+                type="text"
+                disabled={readOnly}
+                value={formData[specifyKey] || ''}
+                onChange={(e) => handleChange(specifyKey, e.target.value)}
+                placeholder="Specify name"
+                className="px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-orange-500 w-full sm:w-36 bg-white font-normal min-w-0 flex-1"
+              />
+            </div>
+          ) : (
+            <span className="leading-tight block">{label}</span>
+          )}
+        </div>
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 flex-shrink-0">
+          <div className="flex gap-2.5 flex-shrink-0">
+            {['Appropriate', 'Inappropriate'].map((opt) => (
+              <label key={opt} className="flex items-center gap-1 cursor-pointer text-xs select-none">
+                <input
+                  type="radio"
+                  disabled={readOnly}
+                  name={`${field}-${label}`}
+                  checked={formData[field] === opt}
+                  onChange={() => handleAppropriatenessChange(field, opt, noteKey)}
+                  className="text-orange-600 focus:ring-orange-500 cursor-pointer"
+                />
+                <span className={`font-semibold ${opt === 'Appropriate' ? 'text-emerald-700' : 'text-slate-600'}`}>{opt}</span>
+              </label>
+            ))}
+          </div>
+          <input
+            type="text"
+            disabled={readOnly}
+            value={formData[noteKey] || ''}
+            onChange={(e) => handleChange(noteKey, e.target.value)}
+            placeholder="Add note..."
+            className="w-28 sm:w-36 px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400 disabled:border-gray-200 transition-all bg-white font-normal"
+          />
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6 text-slate-800">
 
       {/* Patient Profile & Administrative Details */}
-      <SectionCard title="Patient Profile & Administrative Details" subtitle="Demographics, Dates, Identifiers & Admission context">
+      <SectionCard title="Patient Profile & Administrative Details">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
           <div>
             <label className={LABEL_STYLES}>Patient Name:</label>
@@ -1049,6 +1185,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <input
               type="date"
               value={formData.discharge_date || ''}
+              min={formData.admission_date || undefined}
               onChange={(e) => handleChange('discharge_date', e.target.value)}
               className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900"
             />
@@ -1089,7 +1226,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       </SectionCard>
 
       {/* Clinical Information - Background */}
-      <SectionCard title="Clinical Information" subtitle="Background Details">
+      <SectionCard title="Clinical Information">
         <div className="space-y-4 text-xs">
           <div className="font-bold text-slate-800 border-b pb-1 text-sm">Background:</div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1117,7 +1254,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       </SectionCard>
 
       {/* Clinical Information - Presentation */}
-      <SectionCard title="Clinical Information" subtitle="Presentation details">
+      <SectionCard title="Clinical Information">
         <div className="space-y-4 text-xs">
           <div className="font-bold text-slate-800 border-b pb-1 text-sm">Presentation:</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -1198,9 +1335,9 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       </SectionCard>
 
       {/* Treatment Strategy Section */}
-      <SectionCard title="Treatment Strategy" subtitle="Table: nstemi_treatment_strategy">
+      <SectionCard title="Treatment Strategy">
         <div className="space-y-4 text-xs">
-          <div className="flex gap-6 p-2 bg-slate-50 border rounded-lg">
+          <div className="flex gap-6 p-2 bg-white border border-slate-200 rounded-lg">
             <span className="font-bold text-slate-700 pt-1">Strategy:</span>
             {[
               { key: 'PAMI', label: 'PAMI' },
@@ -1219,7 +1356,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             ))}
           </div>
 
-          <div className="p-4 bg-slate-50/50 border rounded-xl space-y-4">
+          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
             <div className="font-bold text-slate-800 text-sm">PAMI details, if done:</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
@@ -1370,7 +1507,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
           </div>
 
-          <div className="p-4 bg-slate-50/50 border rounded-xl space-y-4">
+          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
             <div className="font-bold text-slate-800 text-sm">Thrombolysis details</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
@@ -1493,7 +1630,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       </SectionCard>
 
       {/* Diagnostic Procedures Section */}
-      <SectionCard title="Diagnostic Procedures" subtitle="Table: nstemi_diagnostics">
+      <SectionCard title="Diagnostic Procedures">
         <div className="space-y-4 text-xs">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {renderRadio('bedside_echo', 'Bed-side echo')}
@@ -1521,7 +1658,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
           </div>
 
           <div className="font-bold text-slate-800 border-t border-slate-200 pt-3 text-sm">Reports:</div>
-          <div className="p-4 bg-slate-50 border rounded-xl space-y-4">
+          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">ECG:</span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
@@ -1656,7 +1793,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
           </div>
 
-          <div className="p-4 bg-slate-50 border rounded-xl space-y-4">
+          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">Echo:</span>
             <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               <div>
@@ -1785,7 +1922,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
           </div>
 
-          <div className="p-4 bg-slate-50 border rounded-xl space-y-4">
+          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">Blood Investigations:</span>
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
               <div>
@@ -1873,7 +2010,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
           </div>
 
-          <div className="p-4 bg-slate-50 border rounded-xl space-y-4">
+          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">Coronary Angiogram:</span>
             <div className="flex flex-wrap items-center gap-6">
               <div className="flex gap-4 p-2 bg-white border rounded-lg">
@@ -1933,7 +2070,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       </SectionCard>
 
       {/* Out-comes Section */}
-      <SectionCard title="Out-comes" subtitle="Clinical Outcomes & Discharge Meds">
+      <SectionCard title="Out-comes">
         <div className="space-y-4 text-xs">
           <div className="font-bold text-slate-800 text-sm">Clinical:</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 border p-3 rounded-xl bg-white shadow-sm">
@@ -2004,192 +2141,34 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
         </div>
       </SectionCard>
 
-      {/* Appropriateness Grids */}
-      <SectionCard title="Appropriateness Assessment" subtitle="Procedures, Investigations & Drugs (PDF Page 6)">
-        <div className="space-y-4 text-xs overflow-x-auto">
-          <div className="font-bold text-slate-800 text-xs">Appropriateness for various procedures:</div>
-          <table className="w-full text-left border-collapse border border-slate-200 min-w-[500px]">
-            <thead>
-              <tr className="bg-slate-100">
-                <th className="p-2 border border-slate-200 font-bold">Procedure</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">Appropriate</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">Inappropriate</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">+</th>
-              </tr>
-            </thead>
-            <tbody>
-              {proceduresList.map(item => (
-                <tr key={item.key} className="hover:bg-slate-50">
-                  <td className="p-2 border border-slate-200">
-                    {item.specifyKey ? (
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        <span className="font-semibold">{item.label}:</span>
-                        <input
-                          type="text"
-                          value={formData[item.specifyKey] || ''}
-                          onChange={(e) => handleChange(item.specifyKey, e.target.value)}
-                          placeholder="Specify name"
-                          className="p-1 text-xs border border-slate-300 rounded-md focus:ring-orange-500 focus:border-orange-500 w-full sm:w-48"
-                        />
-                      </div>
-                    ) : (
-                      <span className="font-semibold">{item.label}</span>
-                    )}
-                  </td>
-                  <td className="p-2 border border-slate-200 text-center">
-                    <input
-                      type="radio"
-                      name={item.key}
-                      value="Appropriate"
-                      checked={formData[item.key] === 'Appropriate'}
-                      onChange={() => handleChange(item.key, 'Appropriate')}
-                      className="text-orange-600 focus:ring-orange-500"
-                    />
-                  </td>
-                  <td className="p-2 border border-slate-200 text-center">
-                    <input
-                      type="radio"
-                      name={item.key}
-                      value="Inappropriate"
-                      checked={formData[item.key] === 'Inappropriate'}
-                      onChange={() => handleChange(item.key, 'Inappropriate')}
-                      className="text-orange-600 focus:ring-orange-500"
-                    />
-                  </td>
-                  <td className="p-2 border border-slate-200 text-center">
-                    <input
-                      type="radio"
-                      name={item.key}
-                      value="+"
-                      checked={formData[item.key] === '+'}
-                      onChange={() => handleChange(item.key, '+')}
-                      className="text-orange-600 focus:ring-orange-500"
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Appropriateness Assessment */}
+      <SectionCard title="Appropriateness Assessment">
+        <div className="space-y-6 text-xs">
+          <div>
+            <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various procedures</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              {proceduresList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
+            </div>
+          </div>
 
-          <div className="font-bold text-slate-800 text-xs pt-3 border-t">Appropriateness for various investigations:</div>
-          <table className="w-full text-left border-collapse border border-slate-200 min-w-[500px]">
-            <thead>
-              <tr className="bg-slate-100">
-                <th className="p-2 border border-slate-200 font-bold">Investigation</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">Appropriate</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">Inappropriate</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">+</th>
-              </tr>
-            </thead>
-            <tbody>
-              {investigationsList.map(item => (
-                <tr key={item.key} className="hover:bg-slate-50">
-                  <td className="p-2 border border-slate-200">
-                    <span className="font-semibold">{item.label}</span>
-                  </td>
-                  <td className="p-2 border border-slate-200 text-center">
-                    <input
-                      type="radio"
-                      name={item.key}
-                      value="Appropriate"
-                      checked={formData[item.key] === 'Appropriate'}
-                      onChange={() => handleChange(item.key, 'Appropriate')}
-                      className="text-orange-600 focus:ring-orange-500"
-                    />
-                  </td>
-                  <td className="p-2 border border-slate-200 text-center">
-                    <input
-                      type="radio"
-                      name={item.key}
-                      value="Inappropriate"
-                      checked={formData[item.key] === 'Inappropriate'}
-                      onChange={() => handleChange(item.key, 'Inappropriate')}
-                      className="text-orange-600 focus:ring-orange-500"
-                    />
-                  </td>
-                  <td className="p-2 border border-slate-200 text-center">
-                    <input
-                      type="radio"
-                      name={item.key}
-                      value="+"
-                      checked={formData[item.key] === '+'}
-                      onChange={() => handleChange(item.key, '+')}
-                      className="text-orange-600 focus:ring-orange-500"
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="pt-4 border-t border-slate-200">
+            <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various investigations</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              {investigationsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
+            </div>
+          </div>
 
-          <div className="font-bold text-slate-800 text-xs pt-3 border-t">Appropriateness for various drugs:</div>
-          <table className="w-full text-left border-collapse border border-slate-200 min-w-[500px]">
-            <thead>
-              <tr className="bg-slate-100">
-                <th className="p-2 border border-slate-200 font-bold">Drug</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">Appropriate</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">Inappropriate</th>
-                <th className="p-2 border border-slate-200 text-center font-bold">+</th>
-              </tr>
-            </thead>
-            <tbody>
-              {drugsList.map(item => (
-                <tr key={item.key} className="hover:bg-slate-50">
-                  <td className="p-2 border border-slate-200">
-                    {item.specifyKey ? (
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        <span className="font-semibold">{item.label}:</span>
-                        <input
-                          type="text"
-                          value={formData[item.specifyKey] || ''}
-                          onChange={(e) => handleChange(item.specifyKey, e.target.value)}
-                          placeholder="Specify name"
-                          className="p-1 text-xs border border-slate-300 rounded-md focus:ring-orange-500 focus:border-orange-500 w-full sm:w-48"
-                        />
-                      </div>
-                    ) : (
-                      <span className="font-semibold">{item.label}</span>
-                    )}
-                  </td>
-                  <td className="p-2 border border-slate-200 text-center">
-                    <input
-                      type="radio"
-                      name={item.key}
-                      value="Appropriate"
-                      checked={formData[item.key] === 'Appropriate'}
-                      onChange={() => handleChange(item.key, 'Appropriate')}
-                      className="text-orange-600 focus:ring-orange-500"
-                    />
-                  </td>
-                  <td className="p-2 border border-slate-200 text-center">
-                    <input
-                      type="radio"
-                      name={item.key}
-                      value="Inappropriate"
-                      checked={formData[item.key] === 'Inappropriate'}
-                      onChange={() => handleChange(item.key, 'Inappropriate')}
-                      className="text-orange-600 focus:ring-orange-500"
-                    />
-                  </td>
-                  <td className="p-2 border border-slate-200 text-center">
-                    <input
-                      type="radio"
-                      name={item.key}
-                      value="+"
-                      checked={formData[item.key] === '+'}
-                      onChange={() => handleChange(item.key, '+')}
-                      className="text-orange-600 focus:ring-orange-500"
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="pt-4 border-t border-slate-200">
+            <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various drugs</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              {drugsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
+            </div>
+          </div>
         </div>
       </SectionCard>
 
       {/* Length of Stay & Cost breakdown */}
-      <SectionCard title="Hospitalization Details" subtitle="Length of Stay & Cost of Care (PDF Page 7)">
+      <SectionCard title="Hospitalization Details">
         <div className="space-y-4 text-xs">
           <div className="font-bold text-slate-800">Length of Stay:</div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -2270,7 +2249,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 type="number"
                 value={formData.package_cost}
                 onChange={(e) => handleChange('package_cost', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md font-bold text-slate-900 bg-slate-50/50"
+                className="w-full p-2 border border-slate-300 rounded-md font-bold text-slate-900 bg-white"
               />
             </div>
             <div>
@@ -2327,7 +2306,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       </SectionCard>
 
       {/* Follow-up Grid Section */}
-      <SectionCard title="Follow-up Matrix" subtitle="Long-term Follow-up Grid (PDF Page 8)">
+      <SectionCard title="Follow-up Matrix">
         <div className="space-y-4 text-xs overflow-x-auto">
           <table className="w-full text-left border-collapse border border-slate-200 min-w-[700px]">
             <thead>
@@ -2587,8 +2566,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                 Visit Mode
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {['In-Person', 'Tele-consultation', 'Phone Check-in'].map((mode) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {['In-Person', 'Phone Check-in'].map((mode) => (
                   <label
                     key={mode}
                     className={`flex items-center gap-2.5 p-3 rounded-lg border text-xs font-medium cursor-pointer transition-all ${

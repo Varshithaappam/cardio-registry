@@ -304,7 +304,7 @@ export default function NurseFollowUpReport() {
       let matchesRegistry = true;
       if (registryTypeFilter !== 'All') {
         const regType = getTaskRegistryType(task).toUpperCase();
-        matchesRegistry = regType.includes(registryTypeFilter.toUpperCase());
+        matchesRegistry = (regType === registryTypeFilter.toUpperCase());
       }
 
       // 4. Follow-Up Date Range Filter
@@ -356,9 +356,25 @@ export default function NurseFollowUpReport() {
     return result;
   }, [tasks, searchQuery, statusFilter, registryTypeFilter, fromDate, toDate, sortConfig]);
 
+  // Helper to extract currently logged in user details for auto-assigning nurse
+  const getLoggedInNurseName = () => {
+    try {
+      const userStr = sessionStorage.getItem('user') || localStorage.getItem('user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u.name) return u.name;
+        if (u.full_name) return u.full_name;
+        if (u.username) return u.username;
+        if (u.nurse_name) return u.nurse_name;
+      }
+    } catch (e) {}
+    return sessionStorage.getItem('userName') || localStorage.getItem('userName') || '';
+  };
+
   // 5. Open Log Outreach Modal
   const handleOpenModal = (task) => {
     setSelectedTask(task);
+    const loggedInNurse = getLoggedInNurseName();
     setFormData({
       contact_mode: 'Phone Call',
       outcome: 'Patient Contacted & Appointment Confirmed',
@@ -366,7 +382,7 @@ export default function NurseFollowUpReport() {
       target_date: task.target_date ? String(task.target_date).split('T')[0] : '',
       symptoms_status: 'Stable - No worsening shortness of breath',
       medication_adherence: 'Compliant - Taking all meds as prescribed',
-      assigned_nurse: task.assigned_nurse || '',
+      assigned_nurse: loggedInNurse || task.assigned_nurse || '',
       notes: task.nurse_notes || ''
     });
     setIsModalOpen(true);

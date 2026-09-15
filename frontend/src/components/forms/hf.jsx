@@ -2766,9 +2766,9 @@ const hf = forwardRef(function hf(
 
   const validateForm = (isDraft = false) => {
     setFormErrors({});
-    if (assessmentDate && dischargeDate && new Date(dischargeDate) < new Date(assessmentDate)) {
-      alert('Date of Discharge cannot be earlier than Date of Visit / Admission.');
-      setFormErrors(prev => ({ ...prev, dischargeDate: 'Discharge date cannot be earlier than admission date.' }));
+    if (assessmentDate && dischargeDate && new Date(dischargeDate) <= new Date(assessmentDate)) {
+      alert('Date of Discharge must be greater than Date of Visit / Admission.');
+      setFormErrors(prev => ({ ...prev, dischargeDate: 'Discharge date must be greater than admission date.' }));
       return false;
     }
     if (!isDraft && isFormCompletelyEmpty()) {
@@ -3254,7 +3254,7 @@ const hf = forwardRef(function hf(
         viewMode={viewMode}
       >
       {/* 1. Patient Profile */}
-      <SectionCard title="1. Patient Profile" subtitle="Master registry demographics and baseline comorbidities">
+      <SectionCard title="1. Patient Profile">
         
         {/* Top Demographics Grid (4-Column Layout) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 mb-4">
@@ -3461,9 +3461,9 @@ const hf = forwardRef(function hf(
             value={assessmentDate}
             onChange={(val) => {
               setAssessmentDate(val);
-              if (dischargeDate && val && new Date(dischargeDate) < new Date(val)) {
-                alert('Date of Discharge cannot be earlier than Date of Visit / Admission.');
-                setFormErrors(prev => ({ ...prev, dischargeDate: 'Discharge date cannot be earlier than admission date.' }));
+              if (dischargeDate && val && new Date(dischargeDate) <= new Date(val)) {
+                alert('Date of Discharge must be greater than Date of Visit / Admission.');
+                setFormErrors(prev => ({ ...prev, dischargeDate: 'Discharge date must be greater than admission date.' }));
               } else {
                 setFormErrors(prev => ({ ...prev, dischargeDate: undefined }));
               }
@@ -3474,11 +3474,12 @@ const hf = forwardRef(function hf(
             id="dischargeDate"
             label="Date of Discharge"
             value={dischargeDate}
+            min={assessmentDate || undefined}
             onChange={(val) => {
               setDischargeDate(val);
-              if (assessmentDate && val && new Date(val) < new Date(assessmentDate)) {
-                alert('Date of Discharge cannot be earlier than Date of Visit / Admission.');
-                setFormErrors(prev => ({ ...prev, dischargeDate: 'Discharge date cannot be earlier than admission date.' }));
+              if (assessmentDate && val && new Date(val) <= new Date(assessmentDate)) {
+                alert('Date of Discharge must be greater than Date of Visit / Admission.');
+                setFormErrors(prev => ({ ...prev, dischargeDate: 'Discharge date must be greater than admission date.' }));
               } else {
                 setFormErrors(prev => ({ ...prev, dischargeDate: undefined }));
               }
@@ -3530,8 +3531,7 @@ const hf = forwardRef(function hf(
 
       {/* 2. Inpatient Details Section */}
       <SectionCard 
-        title="2. Inpatient Details" 
-        subtitle="Precipitating factors and admission context for heart failure hospitalizations"
+        title="2. Inpatient & Visit Details" 
         disabled={visitType !== 'Inpatient'}
       >
         <fieldset disabled={readOnly || visitType !== 'Inpatient'} className="space-y-4">
@@ -3585,11 +3585,11 @@ const hf = forwardRef(function hf(
       </SectionCard>
 
       {/* 3. Initial Clinical Assessment Dashboard */}
-      <SectionCard title="3. Initial Clinical Assessment" subtitle="Patient background, prior hospitalizations, vitals layout and diagnostic signs">
+      <SectionCard title="3. Initial Clinical Assessment">
         <div className="space-y-5">
           
           {/* Subsection: Previous Diagnosis */}
-          <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl">
+          <div className="bg-white p-4 border border-slate-200 rounded-xl">
             <TextInput readOnly={readOnly}
               id="previousDiagnosis"
               label="Previous Diagnosis"
@@ -3664,7 +3664,7 @@ const hf = forwardRef(function hf(
           </div>
 
           {/* Subsection: VT/VF Risk Panel */}
-          <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl space-y-4">
+          <div className="bg-white p-4 border border-slate-200 rounded-xl space-y-4">
             <span className="form-subsection-heading">VT/VF Risk Assessment</span>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
@@ -3718,7 +3718,7 @@ const hf = forwardRef(function hf(
           </div>
 
           {/* Subsection: Physical Vitals Panels */}
-          <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl space-y-4">
+          <div className="bg-white p-4 border border-slate-200 rounded-xl space-y-4">
             <span className="form-subsection-heading">Vitals Metrics</span>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -3949,7 +3949,7 @@ const hf = forwardRef(function hf(
       </SectionCard>
 
       {/* 4. Final Clinical Assessment */}
-      <SectionCard title="4. Final Clinical Assessment" subtitle="Discharge classification, structural etiologies, and outcomes layout">
+      <SectionCard title="4. Final Clinical Assessment">
         <div className="space-y-4 border border-slate-200 rounded-lg overflow-hidden bg-white text-xs">
           
           {/* Type of Heart Failure Row */}
@@ -4323,7 +4323,7 @@ const hf = forwardRef(function hf(
               </div>
 
               {/* Col 3: Death Context */}
-              <div className="space-y-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+              <div className="space-y-2 bg-white p-2.5 rounded-lg border border-slate-200">
                 <label className="flex items-center gap-1.5 cursor-pointer font-bold text-red-700">
                   <input disabled={readOnly} type="checkbox" checked={maceDeath === 'Yes'} onChange={(e) => {
                     const val = e.target.checked ? 'Yes' : 'No';
@@ -4364,7 +4364,7 @@ const hf = forwardRef(function hf(
       </SectionCard>
 
       {/* 5. Investigations */}
-      <SectionCard title="5. Investigations" subtitle="Complete clinical test records, laboratory metrics, and physiological studies grid mapping">
+      <SectionCard title="5. Investigations">
         <div className="border border-slate-300 rounded-lg overflow-hidden text-xs bg-white space-y-0.5">
           
           
@@ -4871,7 +4871,7 @@ const hf = forwardRef(function hf(
                   </div>
                 </div>
 
-                <div className="space-y-2 bg-slate-50/50 p-2 rounded border border-slate-200">
+                <div className="space-y-2 bg-white p-2 rounded border border-slate-200">
                   <div className="flex items-center gap-1" id="echoOtherValvesBlock"><span className="font-semibold text-slate-600">Other Valves:</span><input disabled={readOnly} type="text" value={echoOtherValves} onChange={(e) => setEchoOtherValves(e.target.value)} className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.echoOtherValves ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-slate-300'}`} /></div>
                   {(() => {
                     const rvspCls = getClassification('rvsp', echoRvSystolicPressure);
@@ -4939,7 +4939,7 @@ const hf = forwardRef(function hf(
               <div className="space-y-1.5">
                 <div id="holterVpcCheckedBlock">
                   <span className="block font-semibold text-slate-700 mb-1">VPC:</span>
-                  <div className={`pl-5 flex flex-wrap gap-4 items-center mt-1 bg-slate-50 p-1.5 rounded border ${formErrors.holterVentricularArrhythmia ? 'border-red-500 bg-red-50/20' : 'border-slate-200'}`} id="holterVentricularArrhythmiaBlock">
+                  <div className={`pl-5 flex flex-wrap gap-4 items-center mt-1 bg-white p-1.5 rounded border ${formErrors.holterVentricularArrhythmia ? 'border-red-500 bg-red-50/20' : 'border-slate-200'}`} id="holterVentricularArrhythmiaBlock">
                     <span className="font-medium text-slate-600">Ventricular Arrhythmia:</span>
                     {['No', 'Yes', 'Complex VPC', 'NSVT', 'VT'].map(opt => (
                       <label key={opt} className="flex items-center gap-1 text-[11px]"><input disabled={readOnly} type="radio" name="holter_va" checked={holterVentricularArrhythmia === opt} onChange={() => setHolterVentricularArrhythmia(opt)} /> {opt}</label>
@@ -4977,7 +4977,7 @@ const hf = forwardRef(function hf(
                 <div>
                   <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Done'} onChange={() => setStressStatus('Done')} /> Done</label>
                   {stressStatus === 'Done' && (
-                    <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 pl-5 bg-slate-50 p-2 rounded border">
+                    <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 pl-5 bg-white p-2 rounded border border-slate-200">
                       <div className="flex items-center gap-1"><span>▪ METS achieved:</span><input disabled={readOnly} type="text" value={stressMets} onChange={(e) => setStressMets(e.target.value)} className="border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full" /></div>
                       <div className="flex items-center gap-3">
                         <span>▪ Ischemic changes:</span>
@@ -5060,7 +5060,7 @@ const hf = forwardRef(function hf(
                 <div>
                   <label className="flex items-center gap-1.5 font-bold text-slate-700"><input disabled={readOnly} type="radio" name="six_mwt" checked={sixMwtStatus === 'Done'} onChange={() => setSixMwtStatus('Done')} /> Done:</label>
                   {sixMwtStatus === 'Done' && (
-                    <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-4 pl-5 bg-slate-50 p-2 rounded border border-slate-200">
+                    <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-4 pl-5 bg-white p-2 rounded border border-slate-200">
                       <div className="flex items-center gap-1">
                         <span>▪ Distance walked in m: <span className="text-red-500 font-bold">*</span></span>
                         <input disabled={readOnly} type="text" value={sixMwtDistance} onChange={(e) => handleNumericChange(setSixMwtDistance, e.target.value)} className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.sixMwtDistance ? 'border-red-500 text-red-700' : 'border-slate-300'}`} />
@@ -5110,7 +5110,7 @@ const hf = forwardRef(function hf(
                 <div>
                   <label className="flex items-center gap-1.5 font-bold text-slate-700"><input disabled={readOnly} type="radio" name="angio_st" checked={angioStatus === 'Done'} onChange={() => setAngioStatus('Done')} /> Done:</label>
                   {angioStatus === 'Done' && (
-                    <div className={`mt-1 flex flex-wrap gap-4 pl-5 bg-slate-50 p-2 rounded border ${formErrors.angioFinding ? 'border-red-500' : 'border-slate-200'}`}>
+                    <div className={`mt-1 flex flex-wrap gap-4 pl-5 bg-white p-2 rounded border ${formErrors.angioFinding ? 'border-red-500' : 'border-slate-200'}`}>
                       {['Normal', '1 vessel disease', '2 vessel disease', '3 vessel disease', 'LMCA'].map(f => (
                         <label key={f} className="flex items-center gap-1 cursor-pointer"><input disabled={readOnly} type="radio" name="angio_find" checked={angioFinding === f} onChange={() => setAngioFinding(f)} /> {f}</label>
                       ))}
@@ -5370,7 +5370,7 @@ const hf = forwardRef(function hf(
       </SectionCard>
 
       {/* 6. Medical Therapy (Dose & Frequency) */}
-      <SectionCard title="6. Medical Therapy (Dose & Frequency)" subtitle="Guideline-directed medical therapy with dosing details">
+      <SectionCard title="6. Medical Therapy (Dose & Frequency)">
         <div className="w-full">
           <div className="border border-slate-300 rounded-xl overflow-hidden text-xs bg-white divide-y divide-slate-300">
           
@@ -6094,7 +6094,7 @@ const hf = forwardRef(function hf(
         </div>
         </div>
       </SectionCard>   {/* 7. Device Therapy */}
-      <SectionCard title="7. Device Therapy" subtitle="Current implanted devices and eligibility assessment">
+      <SectionCard title="7. Device Therapy">
         <div className="border border-slate-300 rounded-lg overflow-hidden text-xs bg-white divide-y divide-slate-300">
           
           {/* Current Device Therapy */}
@@ -6517,7 +6517,7 @@ const hf = forwardRef(function hf(
       </SectionCard>
 
       {/* 8. Patient Education */}
-      <SectionCard title="8. Patient Education" subtitle="Counseling topics documented for this visit">
+      <SectionCard title="8. Patient Education">
         <div className={`border rounded-lg overflow-hidden text-xs bg-white ${formErrors.patientEducation ? 'border-red-500 bg-red-50/20' : 'border-slate-300'}`} id="patientEducationBlock">
           <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
             <div className="lg:col-span-3 bg-slate-50/70 p-3 flex flex-col justify-center">
@@ -6574,7 +6574,7 @@ const hf = forwardRef(function hf(
       </SectionCard>
 
       {/* 9. Recommendations */}
-      <SectionCard title="9. Recommendations" subtitle="Discharge plan, follow-up and therapeutic guidance">
+      <SectionCard title="9. Recommendations">
         <div className={`border rounded-lg overflow-hidden text-xs bg-white divide-y divide-slate-300 ${formErrors.recommendations ? 'border-red-500 bg-red-50/20' : 'border-slate-300'}`} id="recommendationsBlock">
           {formErrors.recommendations && (
             <div className="p-2.5 bg-red-50 text-red-700 font-bold text-xs border-b border-red-200">
@@ -6614,7 +6614,7 @@ const hf = forwardRef(function hf(
         </div>
       </SectionCard>
       {/* 10. Imaging & Document Upload */}
-      <SectionCard title="10. Imaging & Document Upload" subtitle="Upload patient documents such as ECG, ECHO, Lab Reports, etc. (Max 5 files, 5MB limit, PDF or images)">
+      <SectionCard title="10. Imaging & Document Upload">
         <div className="space-y-4">
           {uploadedDocs.length > 0 ? (
             <div className="space-y-2">
@@ -6667,7 +6667,7 @@ const hf = forwardRef(function hf(
               </div>
 
               {selectedFiles.length > 0 && (
-                <div className="space-y-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div className="space-y-3 bg-white p-3 rounded-lg border border-slate-200">
                   <label className="form-field-label">Configure Upload Details:</label>
                   {selectedFiles.map(file => (
                     <div key={file.name} className="p-3 bg-white border border-slate-200 rounded-lg space-y-2">

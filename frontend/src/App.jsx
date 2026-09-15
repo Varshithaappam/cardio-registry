@@ -196,10 +196,13 @@ function PatientListPage({ records, loadPatients }) {
   );
 }
 
+import { useAlert } from "./context/AlertContext";
+
 function PatientTimelinePage({ records, loadPatients }) {
   const params = useParams();
   const regPatientId = params.id || params.regPatientId;
   const navigate = useNavigate();
+  const { showAlert, showConfirm } = useAlert();
 
   const record = records.find((r) => String(r?.patient?.id) === String(regPatientId)) || null;
 
@@ -216,41 +219,72 @@ function PatientTimelinePage({ records, loadPatients }) {
   }
 
   const handleDeleteClinicalEvent = async (eventId, type, hfId) => {
-    if (!window.confirm('Are you sure you want to soft-delete this clinical record? This record will be archived as read-only.')) {
-      return;
-    }
+    const isConfirmed = await showConfirm({
+      type: 'delete',
+      title: 'Soft-Delete Clinical Event?',
+      message: 'Are you sure you want to soft-delete this clinical record? This record will be archived as read-only.',
+      confirmText: 'Delete Record',
+      cancelText: 'Cancel'
+    });
+
+    if (!isConfirmed) return;
+
     const targetHfId = hfId || eventId;
     if (type === 'HF' || type === 'HF Assessment') {
       try {
         await api.delete(`/hf-registry/${targetHfId}`);
-        alert('HF Registry record soft-deleted successfully.');
+        await showAlert({
+          type: 'success',
+          title: 'Record Soft-Deleted',
+          message: 'HF Registry record soft-deleted successfully.'
+        });
         loadPatients();
         return;
       } catch (err) {
         console.error('Error soft-deleting HF record:', err);
-        alert(err.response?.data?.message || 'Failed to soft-delete record.');
+        showAlert({
+          type: 'danger',
+          title: 'Deletion Failed',
+          message: err.response?.data?.message || 'Failed to soft-delete record.'
+        });
         return;
       }
     } else if (type === 'STEMI') {
       try {
         await api.delete(`/stemi/${targetHfId}`);
-        alert('STEMI Registry record soft-deleted successfully.');
+        await showAlert({
+          type: 'success',
+          title: 'Record Soft-Deleted',
+          message: 'STEMI Registry record soft-deleted successfully.'
+        });
         loadPatients();
         return;
       } catch (err) {
         console.error('Error soft-deleting STEMI record:', err);
-        alert(err.response?.data?.message || 'Failed to soft-delete STEMI record.');
+        showAlert({
+          type: 'danger',
+          title: 'Deletion Failed',
+          message: err.response?.data?.message || 'Failed to soft-delete STEMI record.'
+        });
         return;
       }
     } else if (type === 'NSTEMI') {
       try {
         await api.delete(`/nstemi/${targetHfId}`);
-        alert('NSTEMI Registry record soft-deleted successfully.');
+        await showAlert({
+          type: 'success',
+          title: 'Record Soft-Deleted',
+          message: 'NSTEMI Registry record soft-deleted successfully.'
+        });
         loadPatients();
         return;
       } catch (err) {
         console.error('Error soft-deleting NSTEMI record:', err);
-        alert(err.response?.data?.message || 'Failed to soft-delete NSTEMI record.');
+        showAlert({
+          type: 'danger',
+          title: 'Deletion Failed',
+          message: err.response?.data?.message || 'Failed to soft-delete NSTEMI record.'
+        });
         return;
       }
     }
@@ -282,6 +316,7 @@ function EditFormPage({ records, loadPatients }) {
   const formType = searchParams.get('formType') || 'HF';
   const [editingRecord, setEditingRecord] = useState(null);
   const [loading, setLoading] = useState(!!hfId);
+  const { showAlert } = useAlert();
 
   const activePatientRecord = records.find((r) => String(r?.patient?.id) === String(regPatientId)) || null;
 
@@ -344,15 +379,27 @@ function EditFormPage({ records, loadPatients }) {
                 }
               }
               const regNo = res.data?.data?.hf_registry_no || 'HF Draft';
-              alert(`Draft saved successfully (Registry No: ${regNo}). You can resume and complete it anytime.`);
+              await showAlert({
+                type: 'info',
+                title: 'Draft Saved',
+                message: `Draft saved successfully (Registry No: ${regNo}). You can resume and complete it anytime.`
+              });
             } else {
               res = await api.post('/hf-assessment', { ...sanitizedData, isDraft: false });
-              alert('Heart Failure Assessment details submitted and finalized in database successfully.');
+              await showAlert({
+                type: 'success',
+                title: 'Submission Successful',
+                message: 'Heart Failure Assessment details submitted and finalized in database successfully.'
+              });
             }
             await loadPatients();
           } catch (err) {
             console.error('Error saving HF assessment:', err);
-            alert(err.response?.data?.message || 'Failed to save Heart Failure Assessment details.');
+            await showAlert({
+              type: 'danger',
+              title: 'Save Failed',
+              message: err.response?.data?.message || 'Failed to save Heart Failure Assessment details.'
+            });
           }
         } else if (type === 'NSTEMI') {
           try {
@@ -367,17 +414,33 @@ function EditFormPage({ records, loadPatients }) {
             if (response.data && response.data.success) {
               const regNo = response.data?.data?.acs_no || eventData.acs_no || 'NSTEMI Draft';
               if (isDraft) {
-                alert(`Draft saved successfully (Registry No: ${regNo}). You can resume and complete it anytime.`);
+                await showAlert({
+                  type: 'info',
+                  title: 'Draft Saved',
+                  message: `Draft saved successfully (Registry No: ${regNo}). You can resume and complete it anytime.`
+                });
               } else {
-                alert('NSTEMI Registry record submitted and finalized in database successfully.');
+                await showAlert({
+                  type: 'success',
+                  title: 'Submission Successful',
+                  message: 'NSTEMI Registry record submitted and finalized in database successfully.'
+                });
               }
               await loadPatients();
             } else {
-              alert(response.data?.message || 'Failed to save NSTEMI record.');
+              await showAlert({
+                type: 'danger',
+                title: 'Save Failed',
+                message: response.data?.message || 'Failed to save NSTEMI record.'
+              });
             }
           } catch (err) {
             console.error('Error saving NSTEMI:', err);
-            alert(err.response?.data?.message || 'Error saving NSTEMI record. Please check backend connection.');
+            await showAlert({
+              type: 'danger',
+              title: 'Error',
+              message: err.response?.data?.message || 'Error saving NSTEMI record. Please check backend connection.'
+            });
           }
         } else if (type === 'STEMI') {
           try {
@@ -392,17 +455,33 @@ function EditFormPage({ records, loadPatients }) {
             if (response.data && response.data.success) {
               const regNo = response.data?.data?.acs_no || eventData.acs_no || 'STEMI Draft';
               if (isDraft) {
-                alert(`Draft saved successfully (Registry No: ${regNo}). You can resume and complete it anytime.`);
+                await showAlert({
+                  type: 'info',
+                  title: 'Draft Saved',
+                  message: `Draft saved successfully (Registry No: ${regNo}). You can resume and complete it anytime.`
+                });
               } else {
-                alert('STEMI Registry record submitted and finalized in database successfully.');
+                await showAlert({
+                  type: 'success',
+                  title: 'Submission Successful',
+                  message: 'STEMI Registry record submitted and finalized in database successfully.'
+                });
               }
               await loadPatients();
             } else {
-              alert(response.data?.message || 'Failed to save STEMI record.');
+              await showAlert({
+                type: 'danger',
+                title: 'Save Failed',
+                message: response.data?.message || 'Failed to save STEMI record.'
+              });
             }
           } catch (err) {
             console.error('Error saving STEMI:', err);
-            alert(err.response?.data?.message || 'Error saving STEMI record. Please check backend connection.');
+            await showAlert({
+              type: 'danger',
+              title: 'Error',
+              message: err.response?.data?.message || 'Error saving STEMI record. Please check backend connection.'
+            });
           }
         }
         navigate(`/patient/${regPatientId}`);

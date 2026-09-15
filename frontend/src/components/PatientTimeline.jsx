@@ -10,6 +10,7 @@ import STEMIHistoryList from './STEMIHistoryList';
 import NSTEMIHistoryList from './NSTEMIHistoryList';
 import RegisterNewPatient from './RegisterNewPatient';
 import AuditLogViewer from './hf/AuditLogViewer';
+import AuditTimeline from './AuditTimeline';
 import api from '../../api/axios';
 import { formatDateForDisplay, formatDateTimeForDisplay } from '../utils/dateUtils';
 
@@ -63,6 +64,28 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
         .catch(err => console.error("Error fetching timeline counts:", err));
     }
   }, [record]);
+
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
+
+  const fetchAuditLogs = () => {
+    if (!record?.patient?.id) return;
+    setLoadingAudit(true);
+    api.get(`/hf-registry/patient/${record.patient.id}/audit`)
+      .then(res => {
+        if (res.data && res.data.success) {
+          setAuditLogs(res.data.data || []);
+        }
+      })
+      .catch(err => console.error("Error fetching patient audit logs:", err))
+      .finally(() => setLoadingAudit(false));
+  };
+
+  useEffect(() => {
+    if (activeTab === 'audit' && record?.patient?.id) {
+      fetchAuditLogs();
+    }
+  }, [activeTab, record]);
 
   const currentUser = (() => {
     try {
@@ -518,22 +541,12 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
         {/* Tab Content 3: Audit Log Tab */}
         {isAuthorizedForAudit && (
           <div className={activeTab === 'audit' ? 'block space-y-6' : 'hidden'}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-              <div>
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">CHRONOLOGICAL EVENT TIMELINE</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Immutable record of modifications, creations, and deletions.</p>
-              </div>
-              <button
-                onClick={() => setIsAuditViewerExpanded(!isAuditViewerExpanded)}
-                className="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
-              >
-                <Shield className="w-3.5 h-3.5 text-blue-600" />
-                <span>{isAuditViewerExpanded ? 'Collapse Audit Viewer' : 'Expand Audit Viewer'}</span>
-              </button>
-            </div>
-
-            {/* Inline Audit Viewer (Queried by Patient ID) */}
-            <AuditLogViewer regPatientId={record.patient.id} hfId={targetHfId} isInline={true} />
+            <AuditTimeline
+              logs={auditLogs}
+              patientMr={record.patient.mr_no || record.patient.mrNo || `MR${record.patient.id}`}
+              patientName={record.patient.name || record.patient.patient_name}
+              onRefresh={fetchAuditLogs}
+            />
           </div>
         )}
       </div>

@@ -451,8 +451,8 @@ const HFForm = forwardRef(function HFForm(
     getSubmissionData,
     validateForm: () => {
       const adm = admissionDate || assessmentDate;
-      if (adm && dischargeDate && new Date(dischargeDate) < new Date(adm)) {
-        alert('Date of Discharge cannot be earlier than Admission / Assessment date.');
+      if (adm && dischargeDate && new Date(dischargeDate) <= new Date(adm)) {
+        alert('Date of Discharge must be greater than Admission / Assessment date.');
         return false;
       }
       return true;
@@ -462,7 +462,7 @@ const HFForm = forwardRef(function HFForm(
   return (
     <div className="space-y-6">
       {/* 1. Patient Profile */}
-      <SectionCard title="1. Patient Profile" subtitle="Master registry demographics and baseline comorbidities">
+      <SectionCard title="1. Patient Profile">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
           <div className="p-3 bg-white border border-slate-100 rounded-lg">
             <span className="text-slate-400 font-semibold uppercase block">Patient Name</span>
@@ -544,7 +544,7 @@ const HFForm = forwardRef(function HFForm(
       </SectionCard>
 
       {/* 2. Inpatient & Visit Details */}
-      <SectionCard title="2. Inpatient & Visit Details" subtitle="Encounter context and responsible clinicians">
+      <SectionCard title="2. Inpatient & Visit Details">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <DateInput id="hf-date" label="Assessment Date" value={assessmentDate} onChange={setAssessmentDate} />
           <TextInput
@@ -567,8 +567,8 @@ const HFForm = forwardRef(function HFForm(
             value={admissionDate}
             onChange={(val) => {
               setAdmissionDate(val);
-              if (dischargeDate && val && new Date(dischargeDate) < new Date(val)) {
-                alert('Date of Discharge cannot be earlier than Admission date.');
+              if (dischargeDate && val && new Date(dischargeDate) <= new Date(val)) {
+                alert('Date of Discharge must be greater than Admission date.');
               }
             }}
           />
@@ -576,11 +576,12 @@ const HFForm = forwardRef(function HFForm(
             id="hf-discharge-date"
             label="Discharge Date"
             value={dischargeDate}
+            min={admissionDate || undefined}
             onChange={(val) => {
               setDischargeDate(val);
               const adm = admissionDate || assessmentDate;
-              if (adm && val && new Date(val) < new Date(adm)) {
-                alert('Date of Discharge cannot be earlier than Admission date.');
+              if (adm && val && new Date(val) <= new Date(adm)) {
+                alert('Date of Discharge must be greater than Admission date.');
               }
             }}
           />
@@ -610,7 +611,7 @@ const HFForm = forwardRef(function HFForm(
       </SectionCard>
 
       {/* 3. Initial Clinical Assessment */}
-      <SectionCard title="3. Initial Clinical Assessment" subtitle="Presentation, vitals, symptoms and baseline classification">
+      <SectionCard title="3. Initial Clinical Assessment">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <NumberInput id="hf-height" label="Height (cm)" value={vHeight} onChange={setVHeight} />
           <div>
@@ -702,7 +703,7 @@ const HFForm = forwardRef(function HFForm(
       </SectionCard>
 
       {/* 4. Final Clinical Assessment */}
-      <SectionCard title="4. Final Clinical Assessment" subtitle="Discharge or end-of-visit classification and outcomes">
+      <SectionCard title="4. Final Clinical Assessment">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <RadioGroup label="Final Type of HF" name="hf-final-type" value={finalHfType} onChange={setFinalHfType} columns={2} options={['HFrEF', 'HFpEF', 'HFmrEF', 'Unknown']} />
           <RadioGroup label="Final HF Stage (ACC/AHA)" name="hf-final-stage" value={finalStage} onChange={setFinalStage} columns={2} options={['Stage A', 'Stage B', 'Stage C', 'Stage D']} />
@@ -739,7 +740,7 @@ const HFForm = forwardRef(function HFForm(
       </SectionCard>
 
       {/* 5. Investigations */}
-      <SectionCard title="5. Investigations" subtitle="Diagnostic tests ordered or reviewed during this encounter">
+      <SectionCard title="5. Investigations">
         <CheckboxGroup label="Investigations Performed / Ordered" options={INVESTIGATION_OPTIONS} values={selectedInvestigations} onChange={setSelectedInvestigations} columns={3} />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <NumberInput id="hf-ecg-hr" label="ECG Heart Rate (bpm)" value={ecgHr} onChange={setEcgHr} />
@@ -752,13 +753,13 @@ const HFForm = forwardRef(function HFForm(
       </SectionCard>
 
       {/* 6. Medical Therapy (Dose & Frequency) */}
-      <SectionCard title="6. Medical Therapy (Dose & Frequency)" subtitle="Guideline-directed medical therapy with dosing details">
+      <SectionCard title="6. Medical Therapy (Dose & Frequency)">
         <DrugTable value={drugRows} onChange={setDrugRows} />
         <CheckboxGroup label="Drug Contraindications / Intolerances" options={CONTRAINDICATION_OPTIONS} values={drugContraindications} onChange={setDrugContraindications} columns={2} />
       </SectionCard>
 
       {/* 7. Device Therapy */}
-      <SectionCard title="7. Device Therapy" subtitle="Current implanted devices and eligibility assessment">
+      <SectionCard title="7. Device Therapy">
         <RadioGroup label="Has Implanted Device?" name="hf-dev-has" value={hfDevHas} onChange={setHfDevHas} columns={2} options={['No', 'Yes']} />
         {hfDevHas === 'Yes' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -777,12 +778,12 @@ const HFForm = forwardRef(function HFForm(
       </SectionCard>
 
       {/* 8. Patient Education */}
-      <SectionCard title="8. Patient Education" subtitle="Counseling topics documented for this visit">
+      <SectionCard title="8. Patient Education">
         <CheckboxGroup label="Education Recommended" options={EDUCATION_OPTIONS} values={educationRecommended} onChange={setEducationRecommended} columns={2} />
       </SectionCard>
 
       {/* 9. Recommendations */}
-      <SectionCard title="9. Recommendations" subtitle="Discharge plan, follow-up and therapeutic guidance">
+      <SectionCard title="9. Recommendations">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <TextArea id="hf-rec-fluid" label="Fluid & Diet Recommendations" value={recFluidDiet} onChange={setRecFluidDiet} placeholder="E.g. Restrict fluids to 1.5L daily. Salt < 2g/day." rows={3} />
           <TextArea id="hf-rec-exercise" label="Exercise Recommendations" value={recExercise} onChange={setRecExercise} placeholder="E.g. Gentle walking 10 minutes, as tolerated." rows={3} />

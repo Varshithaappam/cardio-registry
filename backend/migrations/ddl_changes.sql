@@ -55,3 +55,96 @@ PRINT '=========================================================================
 PRINT 'DDL Changes Migration check completed successfully.';
 PRINT '==============================================================================';
 GO
+
+
+
+
+USE [care];
+GO
+
+-- 3. Appropriateness Notes for stemi_appropriateness
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.stemi_appropriateness') AND name = 'iccu_admission_note')
+BEGIN
+    ALTER TABLE dbo.stemi_appropriateness ADD
+        iccu_admission_note NVARCHAR(255) NULL,
+        iccu_transfer_out_note NVARCHAR(255) NULL,
+        tlt_note NVARCHAR(255) NULL,
+        ptca_note NVARCHAR(255) NULL,
+        invasive_monitoring_note NVARCHAR(255) NULL,
+        iabp_note NVARCHAR(255) NULL,
+        invasive_ventilation_note NVARCHAR(255) NULL,
+        dialysis_note NVARCHAR(255) NULL,
+        any_other_procedure_note NVARCHAR(255) NULL,
+        cardiac_enzymes_note NVARCHAR(255) NULL,
+        bnp_note NVARCHAR(255) NULL,
+        crp_note NVARCHAR(255) NULL,
+        lipid_profile_note NVARCHAR(255) NULL,
+        bed_side_echo_note NVARCHAR(255) NULL,
+        cxr_note NVARCHAR(255) NULL,
+        beta_blockers_note NVARCHAR(255) NULL,
+        aspirin_note NVARCHAR(255) NULL,
+        clopidogrel_note NVARCHAR(255) NULL,
+        ace_inhibitor_note NVARCHAR(255) NULL,
+        arb_note NVARCHAR(255) NULL,
+        statin_note NVARCHAR(255) NULL,
+        diuretic_note NVARCHAR(255) NULL,
+        lanoxin_note NVARCHAR(255) NULL,
+        anticoagulant_note NVARCHAR(255) NULL,
+        amiodarone_note NVARCHAR(255) NULL,
+        any_other_drug_note NVARCHAR(255) NULL;
+    PRINT '✓ Added appropriateness note columns to [stemi_appropriateness]';
+END
+GO
+
+-- 4. Appropriateness Notes for nstemi_appropriateness
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.nstemi_appropriateness') AND name = 'iccu_admission_note')
+BEGIN
+    ALTER TABLE dbo.nstemi_appropriateness ADD
+        iccu_admission_note NVARCHAR(255) NULL,
+        iccu_transfer_out_note NVARCHAR(255) NULL,
+        tlt_note NVARCHAR(255) NULL,
+        ptca_note NVARCHAR(255) NULL,
+        invasive_monitoring_note NVARCHAR(255) NULL,
+        iabp_note NVARCHAR(255) NULL,
+        invasive_ventilation_note NVARCHAR(255) NULL,
+        dialysis_note NVARCHAR(255) NULL,
+        any_other_procedure_note NVARCHAR(255) NULL,
+        cardiac_enzymes_note NVARCHAR(255) NULL,
+        bnp_note NVARCHAR(255) NULL,
+        crp_note NVARCHAR(255) NULL,
+        lipid_profile_note NVARCHAR(255) NULL,
+        bed_side_echo_note NVARCHAR(255) NULL,
+        cxr_note NVARCHAR(255) NULL,
+        beta_blockers_note NVARCHAR(255) NULL,
+        aspirin_note NVARCHAR(255) NULL,
+        clopidogrel_note NVARCHAR(255) NULL,
+        ace_inhibitor_note NVARCHAR(255) NULL,
+        arb_note NVARCHAR(255) NULL,
+        statin_note NVARCHAR(255) NULL,
+        diuretic_note NVARCHAR(255) NULL,
+        lanoxin_note NVARCHAR(255) NULL,
+        anticoagulant_note NVARCHAR(255) NULL,
+        amiodarone_note NVARCHAR(255) NULL,
+        any_other_drug_note NVARCHAR(255) NULL;
+    PRINT '✓ Added appropriateness note columns to [nstemi_appropriateness]';
+END
+GO
+
+
+
+
+CREATE TABLE [dbo].[system_audit_log](
+	[audit_id] [int] IDENTITY(1,1) NOT NULL PRIMARY KEY,
+	[registry_type] [varchar](50) NOT NULL, -- e.g., 'STEMI', 'NSTEMI', 'HF', 'CABG'
+	[record_id] [int] NOT NULL,             -- The specific stemi_id, nstemi_id, etc.
+	[user_id] [int] NOT NULL,               -- References your users table
+	[action_type] [nvarchar](20) NOT NULL,  -- e.g., 'INSERT', 'UPDATE', 'DELETE'
+	[changed_fields] [nvarchar](max) NULL,  -- JSON list of fields changed
+	[previous_values] [nvarchar](max) NULL, -- JSON of old state
+	[new_values] [nvarchar](max) NULL,      -- JSON of new state
+	[timestamp] [datetime2](0) DEFAULT (sysutcdatetime())
+);
+
+-- Add a foreign key constraint linking back to your users
+ALTER TABLE [dbo].[system_audit_log]  WITH CHECK ADD CONSTRAINT [fk_system_audit_user] FOREIGN KEY([user_id])
+REFERENCES [dbo].[users] ([user_id]);
