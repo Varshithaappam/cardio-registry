@@ -158,6 +158,38 @@ async function getPatientCounts(regPatientId) {
   return result.recordset[0];
 }
 
+async function getAllPatientCounts() {
+  const result = await db.query(`
+    SELECT 
+      pd.[reg_patient_id] AS patientId,
+      COUNT(DISTINCT hf.[hf_id]) AS hfCount,
+      COUNT(DISTINCT st.[stemi_id]) AS stemiCount,
+      COUNT(DISTINCT nst.[nstemi_id]) AS nstemiCount,
+      COUNT(DISTINCT cabg.[id]) AS cabgCount
+    FROM [patient_demographics] pd WITH (NOLOCK)
+    LEFT JOIN [hf_registry] hf WITH (NOLOCK) 
+      ON pd.[reg_patient_id] = hf.[reg_patient_id]
+    LEFT JOIN [stemi_registry] st WITH (NOLOCK) 
+      ON pd.[reg_patient_id] = st.[reg_patient_id]
+    LEFT JOIN [nstemi_registry] nst WITH (NOLOCK) 
+      ON pd.[reg_patient_id] = nst.[reg_patient_id]
+    LEFT JOIN [cabg_registry] cabg WITH (NOLOCK) 
+      ON pd.[reg_patient_id] = cabg.[reg_patient_id]
+    GROUP BY pd.[reg_patient_id];
+  `);
+
+  const countsMap = {};
+  (result.recordset || []).forEach(row => {
+    countsMap[row.patientId] = {
+      hfCount: row.hfCount || 0,
+      stemiCount: row.stemiCount || 0,
+      nstemiCount: row.nstemiCount || 0,
+      cabgCount: row.cabgCount || 0
+    };
+  });
+  return countsMap;
+}
+
 module.exports = {
   createPatient,
   updatePatientNumbers,
@@ -165,5 +197,6 @@ module.exports = {
   getPatientById,
   updatePatient,
   deletePatient,
-  getPatientCounts
+  getPatientCounts,
+  getAllPatientCounts
 };

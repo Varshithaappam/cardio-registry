@@ -180,6 +180,10 @@ async function getPatientCounts(regPatientId) {
     return await patientModel.getPatientCounts(regPatientId);
 }
 
+async function getAllPatientCounts() {
+    return await patientModel.getAllPatientCounts();
+}
+
 /**
  * Verifies patient identity using the deterministic & fuzzy scoring engine.
  * Evaluates all candidate records in patient_demographics and inserts a separate audit log
@@ -556,6 +560,7 @@ module.exports = {
     updatePatient,
     deletePatient,
     getPatientCounts,
+    getAllPatientCounts,
     verifyPatientIdentity,
     confirmMatch,
     rejectMatch,

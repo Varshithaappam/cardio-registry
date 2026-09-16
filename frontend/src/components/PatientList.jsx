@@ -37,55 +37,36 @@ import {
 
 
 
-function EncounterCounter({ regPatientId }) {
-  const [counts, setCounts] = useState({ hfCount: 0, stemiCount: 0, nstemiCount: 0, cabgCount: 0 });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    async function fetchCounts() {
-      try {
-        const res = await api.get(`/patients/counts/${regPatientId}`);
-        if (active && res.data && res.data.success) {
-          setCounts(res.data.data);
-        }
-      } catch (err) {
-        console.error("Error fetching patient counts:", err);
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-    fetchCounts();
-    return () => { active = false; };
-  }, [regPatientId]);
+function EncounterCounter({ counts, loading }) {
+  const safeCounts = counts || { hfCount: 0, stemiCount: 0, nstemiCount: 0, cabgCount: 0 };
 
   return (
     <>
       <td className="px-4 py-4 text-center font-mono text-[11px]">
         <div className="inline-flex items-center justify-center min-w-[32px] px-1.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg">
-          <span className={`font-extrabold ${counts.hfCount > 0 ? 'text-teal-600' : 'text-slate-400'}`}>
-            {loading ? '...' : counts.hfCount}
+          <span className={`font-extrabold ${safeCounts.hfCount > 0 ? 'text-teal-600' : 'text-slate-400'}`}>
+            {loading ? '...' : safeCounts.hfCount}
           </span>
         </div>
       </td>
       <td className="px-4 py-4 text-center font-mono text-[11px]">
         <div className="inline-flex items-center justify-center min-w-[32px] px-1.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg">
-          <span className={`font-extrabold ${counts.stemiCount > 0 ? 'text-red-500' : 'text-slate-400'}`}>
-            {loading ? '...' : counts.stemiCount}
+          <span className={`font-extrabold ${safeCounts.stemiCount > 0 ? 'text-red-500' : 'text-slate-400'}`}>
+            {loading ? '...' : safeCounts.stemiCount}
           </span>
         </div>
       </td>
       <td className="px-4 py-4 text-center font-mono text-[11px]">
         <div className="inline-flex items-center justify-center min-w-[32px] px-1.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg">
-          <span className={`font-extrabold ${counts.nstemiCount > 0 ? 'text-orange-500' : 'text-slate-400'}`}>
-            {loading ? '...' : counts.nstemiCount}
+          <span className={`font-extrabold ${safeCounts.nstemiCount > 0 ? 'text-orange-500' : 'text-slate-400'}`}>
+            {loading ? '...' : safeCounts.nstemiCount}
           </span>
         </div>
       </td>
       <td className="px-4 py-4 text-center font-mono text-[11px]">
         <div className="inline-flex items-center justify-center min-w-[32px] px-1.5 py-1 bg-slate-50 border border-slate-200/60 rounded-lg">
-          <span className={`font-extrabold ${counts.cabgCount > 0 ? 'text-purple-600' : 'text-slate-400'}`}>
-            {loading ? '...' : counts.cabgCount}
+          <span className={`font-extrabold ${safeCounts.cabgCount > 0 ? 'text-purple-600' : 'text-slate-400'}`}>
+            {loading ? '...' : safeCounts.cabgCount}
           </span>
         </div>
       </td>
@@ -99,6 +80,28 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
   const [isRegistering, setIsRegistering] = useState(false);
   const [editingPatientRecord, setEditingPatientRecord] = useState(null);
   const [viewMode, setViewMode] = useState('table');
+
+  // Bulk patient counts state to prevent N+1 query bottleneck
+  const [countsMap, setCountsMap] = useState({});
+  const [loadingCounts, setLoadingCounts] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchAllCounts() {
+      try {
+        const res = await api.get('/patients/counts/all');
+        if (active && res.data && res.data.success) {
+          setCountsMap(res.data.data || {});
+        }
+      } catch (err) {
+        console.error("Error fetching all patient counts:", err);
+      } finally {
+        if (active) setLoadingCounts(false);
+      }
+    }
+    fetchAllCounts();
+    return () => { active = false; };
+  }, []);
 
   // New Patient Form State
   const [name, setName] = useState('');
@@ -368,7 +371,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       </td>
 
                       {/* Encounter Counts */}
-                      <EncounterCounter regPatientId={record.patient.id} />
+                      <EncounterCounter counts={countsMap[record.patient.id]} loading={loadingCounts} />
 
                       {/* Table Actions */}
                       <td className="px-5 py-4 text-right">

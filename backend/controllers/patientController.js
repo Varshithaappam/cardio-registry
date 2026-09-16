@@ -330,6 +330,18 @@ async function getPatientCounts(req, res) {
     }
 }
 
+async function getAllPatientCounts(req, res) {
+    try {
+        const countsMap = await patientService.getAllPatientCounts();
+        return res.status(200).json({
+            success: true,
+            data: countsMap
+        });
+    } catch (error) {
+        return handlePatientError(res, error, "Get All Patient Counts");
+    }
+}
+
 module.exports = {
     registerPatient,
     resolveStaging,
@@ -341,5 +353,6 @@ module.exports = {
     getPatientById,
     updatePatient,
     deletePatient,
-    getPatientCounts
+    getPatientCounts,
+    getAllPatientCounts
 };
