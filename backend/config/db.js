@@ -136,6 +136,7 @@ const config = {
   database,
   user: process.env.DB_USER || 'dbuser',
   password: process.env.DB_PASSWORD || 'Admin123!',
+  requestTimeout: 60000, // <-- Add this line here
   pool: { max: 100, min: 0, idleTimeoutMillis: 30000 },
   options: {
     trustedConnection: authMode === 'windows',
