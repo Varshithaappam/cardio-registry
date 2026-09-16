@@ -26,6 +26,10 @@ router.post("/:id/reject-match", patientController.rejectMatch);
 // Get Patient Match Audit History
 router.get("/audit", patientController.getAuditLogs);
 
+// Get Patient Counts
+router.get("/counts/all", patientController.getAllPatientCounts);
+router.get("/counts/:regPatientId", patientController.getPatientCounts);
+
 // Get All Patients
 router.get("/", patientController.getAllPatients);
 
@@ -37,9 +41,5 @@ router.put("/:id", patientController.updatePatient);
 
 // Delete Patient
 router.delete("/:id", patientController.deletePatient);
-
-// Get Patient Counts
-router.get("/counts/all", patientController.getAllPatientCounts);
-router.get("/counts/:regPatientId", patientController.getPatientCounts);
 
 module.exports = router;

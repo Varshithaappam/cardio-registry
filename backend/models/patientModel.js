@@ -162,20 +162,11 @@ async function getAllPatientCounts() {
   const result = await db.query(`
     SELECT 
       pd.[reg_patient_id] AS patientId,
-      COUNT(DISTINCT hf.[hf_id]) AS hfCount,
-      COUNT(DISTINCT st.[stemi_id]) AS stemiCount,
-      COUNT(DISTINCT nst.[nstemi_id]) AS nstemiCount,
-      COUNT(DISTINCT cabg.[id]) AS cabgCount
-    FROM [patient_demographics] pd WITH (NOLOCK)
-    LEFT JOIN [hf_registry] hf WITH (NOLOCK) 
-      ON pd.[reg_patient_id] = hf.[reg_patient_id]
-    LEFT JOIN [stemi_registry] st WITH (NOLOCK) 
-      ON pd.[reg_patient_id] = st.[reg_patient_id]
-    LEFT JOIN [nstemi_registry] nst WITH (NOLOCK) 
-      ON pd.[reg_patient_id] = nst.[reg_patient_id]
-    LEFT JOIN [cabg_registry] cabg WITH (NOLOCK) 
-      ON pd.[reg_patient_id] = cabg.[reg_patient_id]
-    GROUP BY pd.[reg_patient_id];
+      (SELECT COUNT(1) FROM [hf_registry] WITH (NOLOCK) WHERE [reg_patient_id] = pd.[reg_patient_id]) AS hfCount,
+      (SELECT COUNT(1) FROM [stemi_registry] WITH (NOLOCK) WHERE [reg_patient_id] = pd.[reg_patient_id]) AS stemiCount,
+      (SELECT COUNT(1) FROM [nstemi_registry] WITH (NOLOCK) WHERE [reg_patient_id] = pd.[reg_patient_id]) AS nstemiCount,
+      (SELECT COUNT(1) FROM [cabg_registry] WITH (NOLOCK) WHERE [reg_patient_id] = pd.[reg_patient_id]) AS cabgCount
+    FROM [patient_demographics] pd WITH (NOLOCK);
   `);
 
   const countsMap = {};
