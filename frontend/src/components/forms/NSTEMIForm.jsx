@@ -3,6 +3,7 @@ import { Sparkles } from 'lucide-react';
 import SectionCard from './common/SectionCard';
 import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
 import { useAlert } from '../../context/AlertContext';
+import ClinicalMetricBadge from './common/ClinicalMetricBadge';
 
 const proceduresList = [
   { label: 'Indication for ICCU admission', key: 'appr_iccu_admission' },
@@ -1265,31 +1266,34 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Pulse rate:</label>
+              <label className="font-bold text-slate-700 block mb-1">Pulse rate (bpm):</label>
               <input
                 type="number"
                 value={formData.pulse_rate}
                 onChange={(e) => handleChange('pulse_rate', e.target.value)}
                 className="w-full p-2 border border-slate-300 rounded-md"
               />
+              <ClinicalMetricBadge metricId="pulse_rate" value={formData.pulse_rate} />
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">SBP:</label>
+              <label className="font-bold text-slate-700 block mb-1">SBP (mmHg):</label>
               <input
                 type="number"
                 value={formData.systolic_bp}
                 onChange={(e) => handleChange('systolic_bp', e.target.value)}
                 className="w-full p-2 border border-slate-300 rounded-md"
               />
+              <ClinicalMetricBadge metricId="systolic_bp" value={formData.systolic_bp} />
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">DBP:</label>
+              <label className="font-bold text-slate-700 block mb-1">DBP (mmHg):</label>
               <input
                 type="number"
                 value={formData.diastolic_bp}
                 onChange={(e) => handleChange('diastolic_bp', e.target.value)}
                 className="w-full p-2 border border-slate-300 rounded-md"
               />
+              <ClinicalMetricBadge metricId="diastolic_bp" value={formData.diastolic_bp} />
             </div>
           </div>
         </div>
@@ -1360,16 +1364,14 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <div className="font-bold text-slate-800 text-sm">PAMI details, if done:</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Door to Balloon Time:</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={formData.door_to_balloon_time}
-                    onChange={(e) => handleChange('door_to_balloon_time', e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded-md"
-                  />
-                  <span className="font-semibold text-slate-600">min</span>
-                </div>
+                <label className="font-bold text-slate-700 block mb-1">Door to Balloon Time (min):</label>
+                <input
+                  type="number"
+                  value={formData.door_to_balloon_time}
+                  onChange={(e) => handleChange('door_to_balloon_time', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                />
+                <ClinicalMetricBadge metricId="door_to_balloon_time" value={formData.door_to_balloon_time} />
               </div>
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Segment:</label>
@@ -1437,7 +1439,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Diameter:</label>
+                  <label className="font-bold text-slate-700 block mb-1">Diameter (mm):</label>
                   <input
                     type="number"
                     step="0.01"
@@ -1447,7 +1449,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Length:</label>
+                  <label className="font-bold text-slate-700 block mb-1">Length (mm):</label>
                   <input
                     type="number"
                     value={formData.stent_length}
@@ -1511,16 +1513,14 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <div className="font-bold text-slate-800 text-sm">Thrombolysis details</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Door to Needle Time:</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={formData.door_to_needle_time}
-                    onChange={(e) => handleChange('door_to_needle_time', e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded-md"
-                  />
-                  <span className="font-semibold text-slate-600">min</span>
-                </div>
+                <label className="font-bold text-slate-700 block mb-1">Door to Needle Time (min):</label>
+                <input
+                  type="number"
+                  value={formData.door_to_needle_time}
+                  onChange={(e) => handleChange('door_to_needle_time', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                />
+                <ClinicalMetricBadge metricId="door_to_needle_time" value={formData.door_to_needle_time} />
               </div>
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Drug:</label>
@@ -1662,16 +1662,14 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">ECG:</span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">HR:</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={formData.ecg_heart_rate}
-                    onChange={(e) => handleChange('ecg_heart_rate', e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded-md"
-                  />
-                  <span className="font-semibold text-slate-600">bpm;</span>
-                </div>
+                <label className="font-bold text-slate-700 block mb-1">HR (bpm):</label>
+                <input
+                  type="number"
+                  value={formData.ecg_heart_rate}
+                  onChange={(e) => handleChange('ecg_heart_rate', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                />
+                <ClinicalMetricBadge metricId="ecg_heart_rate" value={formData.ecg_heart_rate} />
               </div>
               <div>
                 <label className="font-bold text-slate-700 block mb-1">AV Block:</label>
@@ -1797,16 +1795,14 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">Echo:</span>
             <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">EF:</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={formData.echo_ef}
-                    onChange={(e) => handleChange('echo_ef', e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded-md font-bold text-slate-900"
-                  />
-                  <span className="font-semibold text-slate-600">%</span>
-                </div>
+                <label className="font-bold text-slate-700 block mb-1">EF (%):</label>
+                <input
+                  type="number"
+                  value={formData.echo_ef}
+                  onChange={(e) => handleChange('echo_ef', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md font-bold text-slate-900"
+                />
+                <ClinicalMetricBadge metricId="echo_ef" value={formData.echo_ef} />
               </div>
               <div>
                 <label className="font-bold text-slate-700 block mb-1">LV Function:</label>
@@ -1862,7 +1858,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">E:</label>
+                <label className="font-bold text-slate-700 block mb-1">E (m/s):</label>
                 <input
                   type="number"
                   step="0.01"
@@ -1870,9 +1866,10 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   onChange={(e) => handleChange('echo_e', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
+                <ClinicalMetricBadge metricId="echo_e" value={formData.echo_e} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">A:</label>
+                <label className="font-bold text-slate-700 block mb-1">A (m/s):</label>
                 <input
                   type="number"
                   step="0.01"
@@ -1880,18 +1877,20 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   onChange={(e) => handleChange('echo_a', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
+                <ClinicalMetricBadge metricId="echo_a" value={formData.echo_a} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">DT:</label>
+                <label className="font-bold text-slate-700 block mb-1">DT (ms):</label>
                 <input
                   type="number"
                   value={formData.echo_dt}
                   onChange={(e) => handleChange('echo_dt', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
+                <ClinicalMetricBadge metricId="echo_dt" value={formData.echo_dt} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">E':</label>
+                <label className="font-bold text-slate-700 block mb-1">E' (cm/s):</label>
                 <input
                   type="number"
                   step="0.1"
@@ -1899,9 +1898,10 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   onChange={(e) => handleChange('echo_e_prime', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
+                <ClinicalMetricBadge metricId="echo_e_prime" value={formData.echo_e_prime} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">TAPSV:</label>
+                <label className="font-bold text-slate-700 block mb-1">TAPSV (mm):</label>
                 <input
                   type="number"
                   step="0.1"
@@ -1909,6 +1909,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   onChange={(e) => handleChange('echo_tapsv', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
+                <ClinicalMetricBadge metricId="echo_tapsv" value={formData.echo_tapsv} />
               </div>
             </div>
             <div>
@@ -1924,62 +1925,61 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
           <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">Blood Investigations:</span>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Hemoglobin:</label>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={formData.hemoglobin}
-                    onChange={(e) => handleChange('hemoglobin', e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded-md"
-                  />
-                  <span>gm%</span>
-                </div>
+                <label className="font-bold text-slate-700 block mb-1">Hemoglobin (gm%):</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={formData.hemoglobin}
+                  onChange={(e) => handleChange('hemoglobin', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                />
+                <ClinicalMetricBadge metricId="hemoglobin" value={formData.hemoglobin} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Creat:</label>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.creatinine}
-                    onChange={(e) => handleChange('creatinine', e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded-md font-bold"
-                  />
-                  <span>mg/dl</span>
-                </div>
+                <label className="font-bold text-slate-700 block mb-1">Creat (mg/dl):</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.creatinine}
+                  onChange={(e) => handleChange('creatinine', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md font-bold"
+                />
+                <ClinicalMetricBadge metricId="creatinine" value={formData.creatinine} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Trop-I:</label>
+                <label className="font-bold text-slate-700 block mb-1">Trop-I (ng/ml):</label>
                 <input
                   type="text"
                   value={formData.troponin_i}
                   onChange={(e) => handleChange('troponin_i', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
+                <ClinicalMetricBadge metricId="troponin_i" value={formData.troponin_i} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">CPK:</label>
+                <label className="font-bold text-slate-700 block mb-1">CPK (U/L):</label>
                 <input
                   type="text"
                   value={formData.cpk}
                   onChange={(e) => handleChange('cpk', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
+                <ClinicalMetricBadge metricId="cpk" value={formData.cpk} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">CK-MB:</label>
+                <label className="font-bold text-slate-700 block mb-1">CK-MB (U/L):</label>
                 <input
                   type="text"
                   value={formData.ck_mb}
                   onChange={(e) => handleChange('ck_mb', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
+                <ClinicalMetricBadge metricId="ck_mb" value={formData.ck_mb} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Na:</label>
+                <label className="font-bold text-slate-700 block mb-1">Na (mEq/L):</label>
                 <input
                   type="number"
                   step="0.1"
@@ -1987,9 +1987,10 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   onChange={(e) => handleChange('sodium', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
+                <ClinicalMetricBadge metricId="sodium" value={formData.sodium} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">K:</label>
+                <label className="font-bold text-slate-700 block mb-1">K (mEq/L):</label>
                 <input
                   type="number"
                   step="0.1"
@@ -1997,15 +1998,17 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   onChange={(e) => handleChange('potassium', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
+                <ClinicalMetricBadge metricId="potassium" value={formData.potassium} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">RBS at admission:</label>
+                <label className="font-bold text-slate-700 block mb-1">RBS at admission (mg/dl):</label>
                 <input
                   type="number"
                   value={formData.rbs_admission}
                   onChange={(e) => handleChange('rbs_admission', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
+                <ClinicalMetricBadge metricId="rbs_admission" value={formData.rbs_admission} />
               </div>
             </div>
           </div>

@@ -118,6 +118,8 @@ async function createNstemiRecord(req, res) {
       return v;
     };
 
+    const toStr = (v) => (v !== undefined && v !== null && v !== '' ? String(v) : null);
+
     // Helper to convert boolean/string to 1 or 0 for BIT columns
     const bitVal = (key) => {
       const v = payload[key];
@@ -356,9 +358,9 @@ async function createNstemiRecord(req, res) {
     // Blood Labs
     reqDiag.input('hemoglobin', sql.Decimal(5, 2), val('hemoglobin') ? parseFloat(val('hemoglobin')) : null);
     reqDiag.input('creatinine', sql.Decimal(5, 2), val('creatinine') ? parseFloat(val('creatinine')) : null);
-    reqDiag.input('troponin_i', sql.VarChar(50), val('troponin_i'));
-    reqDiag.input('cpk', sql.VarChar(50), val('cpk'));
-    reqDiag.input('ck_mb', sql.VarChar(50), val('ck_mb'));
+    reqDiag.input('troponin_i', sql.VarChar(50), toStr(val('troponin_i')));
+    reqDiag.input('cpk', sql.VarChar(50), toStr(val('cpk')));
+    reqDiag.input('ck_mb', sql.VarChar(50), toStr(val('ck_mb')));
     reqDiag.input('sodium', sql.Decimal(5, 2), val('sodium') ? parseFloat(val('sodium')) : null);
     reqDiag.input('potassium', sql.Decimal(5, 2), val('potassium') ? parseFloat(val('potassium')) : null);
     reqDiag.input('rbs_admission', sql.Decimal(5, 2), val('rbs_admission') ? parseFloat(val('rbs_admission')) : null);
@@ -1146,6 +1148,8 @@ async function updateNstemiRecord(req, res) {
       return v;
     };
 
+    const toStr = (v) => (v !== undefined && v !== null && v !== '' ? String(v) : null);
+
     const bitVal = (key) => {
       const v = payload[key];
       if (v === true || v === 1 || v === '1' || v === 'Yes' || v === 'yes' || v === 'True') return 1;
@@ -1371,9 +1375,9 @@ async function updateNstemiRecord(req, res) {
     reqDiag.input('echo_other', sql.NVarChar(sql.MAX), val('echo_other'));
     reqDiag.input('hemoglobin', sql.Decimal(5, 2), val('hemoglobin') ? parseFloat(val('hemoglobin')) : null);
     reqDiag.input('creatinine', sql.Decimal(5, 2), val('creatinine') ? parseFloat(val('creatinine')) : null);
-    reqDiag.input('troponin_i', sql.VarChar(50), val('troponin_i'));
-    reqDiag.input('cpk', sql.VarChar(50), val('cpk'));
-    reqDiag.input('ck_mb', sql.VarChar(50), val('ck_mb'));
+    reqDiag.input('troponin_i', sql.VarChar(50), toStr(val('troponin_i')));
+    reqDiag.input('cpk', sql.VarChar(50), toStr(val('cpk')));
+    reqDiag.input('ck_mb', sql.VarChar(50), toStr(val('ck_mb')));
     reqDiag.input('sodium', sql.Decimal(5, 2), val('sodium') ? parseFloat(val('sodium')) : null);
     reqDiag.input('potassium', sql.Decimal(5, 2), val('potassium') ? parseFloat(val('potassium')) : null);
     reqDiag.input('rbs_admission', sql.Decimal(5, 2), val('rbs_admission') ? parseFloat(val('rbs_admission')) : null);

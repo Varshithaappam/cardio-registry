@@ -1,8 +1,9 @@
 import React, { useState, forwardRef, useImperativeHandle, useMemo } from 'react';
+import { Sparkles } from 'lucide-react';
 import SectionCard from './common/SectionCard';
 import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
-import { Sparkles, Layers, ArrowUpRight } from 'lucide-react';
 import { useAlert } from '../../context/AlertContext';
+import ClinicalMetricBadge from './common/ClinicalMetricBadge';
 
 const proceduresList = [
   { label: 'Indication for ICCU admission', key: 'appr_iccu_admission' },
@@ -133,29 +134,6 @@ const getFollowupInitialState = (followupArray, baseDate) => {
   return state;
 };
 
-// 19 Sections Navigation Anchors
-const SECTIONS_LIST = [
-  { id: 'section-1', title: '1. Demographic Information', short: '1. Demographics' },
-  { id: 'section-2', title: '2. Clinical Information', short: '2. Clinical Info' },
-  { id: 'section-3', title: '3. Risk Stratification - TIMI Risk score', short: '3. TIMI Score' },
-  { id: 'section-4', title: '4. Other Risk Factors', short: '4. Risk Factors' },
-  { id: 'section-5', title: '5. Treatment Strategy', short: '5. Treatment Strategy' },
-  { id: 'section-6', title: '6. PAMI details, if done', short: '6. PAMI Details' },
-  { id: 'section-7', title: '7. Thrombolysis details', short: '7. Thrombolysis' },
-  { id: 'section-8', title: '8. Drugs', short: '8. Acute Drugs' },
-  { id: 'section-9', title: '9. Diagnostic Procedures', short: '9. Diagnostics' },
-  { id: 'section-10', title: '10. Reports (ECG, Echo, Labs, CAG)', short: '10. Reports' },
-  { id: 'section-11', title: '11. Invasive Procedures', short: '11. Invasive Proc.' },
-  { id: 'section-12', title: '12. Out-comes', short: '12. Outcomes' },
-  { id: 'section-13', title: '13. Discharge Medications', short: '13. Discharge Meds' },
-  { id: 'section-14', title: '14. Appropriateness for various procedures', short: '14. Appr. Procedures' },
-  { id: 'section-15', title: '15. Appropriateness for various investigations', short: '15. Appr. Labs' },
-  { id: 'section-16', title: '16. Appropriateness for various drugs', short: '16. Appr. Drugs' },
-  { id: 'section-17', title: '17. Length of Stay', short: '17. Length of Stay' },
-  { id: 'section-18', title: '18. Cost of care', short: '18. Cost of Care' },
-  { id: 'section-19', title: '19. Follow-up Matrix', short: '19. Follow-up' }
-];
-
 const STEMIForm = forwardRef(function STEMIForm(
   { patientRecord, patient: directPatient, editingRecord, readOnly = false },
   ref
@@ -177,7 +155,6 @@ const STEMIForm = forwardRef(function STEMIForm(
     return isNaN(age) ? (patient.age || 0) : age;
   }, [patient.dob, patient.date_of_birth, patient.age]);
 
-  // Initial State mapping precisely to database schemas and UI form elements
   const [formData, setFormData] = useState({
     // Section 1: Demographic Information
     reg_patient_id: patient.id || patient.reg_patient_id || 1,
@@ -424,7 +401,6 @@ const STEMIForm = forwardRef(function STEMIForm(
     appr_other_drug_name: editingRecord?.appr_other_drug_name || '',
     appr_other_drug_appropriateness: editingRecord?.appr_other_drug_appropriateness || 'Inappropriate',
 
-    // Appropriateness Notes
     appr_iccu_admission_note: editingRecord?.appr_iccu_admission_note ?? editingRecord?.appropriateness?.iccu_admission_note ?? editingRecord?.iccu_admission_note ?? '',
     appr_iccu_transfer_out_note: editingRecord?.appr_iccu_transfer_out_note ?? editingRecord?.appropriateness?.iccu_transfer_out_note ?? editingRecord?.iccu_transfer_out_note ?? '',
     appr_thrombolysis_indication_note: editingRecord?.appr_thrombolysis_indication_note ?? editingRecord?.appr_tlt_note ?? editingRecord?.appropriateness?.tlt_note ?? editingRecord?.tlt_note ?? '',
@@ -478,27 +454,31 @@ const STEMIForm = forwardRef(function STEMIForm(
     )
   });
 
-  // Function to fill complete dummy test data across all 19 sections
+  const [formErrors, setFormErrors] = useState({});
+
   const fillDummyData = () => {
     const todayStr = new Date().toISOString().split('T')[0];
     const d = new Date();
     d.setDate(d.getDate() + 5);
     const dischargeVal = d.toISOString().split('T')[0];
-
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const dummy = {
-      // Section 1: Demographics
+
+    setFormData({
+      reg_patient_id: patient.id || patient.reg_patient_id || 1,
+      name: patient.name || patient.patient_name || 'Dummy Patient',
+      age: patientAge || 58,
+      gender: patient.gender || 'M',
+      mr_no: patient.mrNo || patient.mr_no || 'MR-DEMO-001',
       ip_no: `IP-2026-${randomSuffix}`,
       acs_no: editingRecord?.acs_no || `ACS-STEMI-2026-${randomSuffix}`,
       admission_date: todayStr,
       discharge_date: dischargeVal,
       primary_consultant: 'Dr. K. Sridhar (Cardiologist)',
-      phone: patient.phone || patient.contact_phone || '+91 98765 43210',
-      email: patient.email || patient.contact_email || 'patient.stemi@example.com',
+      phone: patient.phone || '+91 98765 43210',
+      email: patient.email || 'patient.stemi@example.com',
 
-      // Section 2: Clinical Info
       hypertension: 'Yes',
-      diabetes: 'Yes',
+      diabetes: 'No',
       smoking: 'Yes',
       renal_failure: 'No',
       copd: 'No',
@@ -506,45 +486,42 @@ const STEMIForm = forwardRef(function STEMIForm(
       prior_acs: 'No',
       prior_ptca: 'No',
       prior_cabg: 'No',
-      other_background: 'Dyslipidemia, Family History of CAD',
+      other_background: 'Dyslipidemia, Family H/o CAD',
 
       typical_angina: 'Yes',
       atypical_chest_pain: 'No',
       breathlessness: 'Yes',
       syncope_presyncope: 'No',
-      pulse_rate: 104,
-      systolic_bp: 95,
-      diastolic_bp: 65,
+      pulse_rate: 88,
+      systolic_bp: 134,
+      diastolic_bp: 86,
 
-      // Section 3: TIMI Risk score
       age_gt_75: 'No',
-      age_65_to_74: 'Yes',
+      age_65_to_74: 'No',
       history_dm_htn_angina: 'Yes',
-      sbp_lt_100: 'Yes',
-      heart_rate_gt_100: 'Yes',
+      sbp_lt_100: 'No',
+      heart_rate_gt_100: 'No',
       killip_class_ii_to_iv: 'Yes',
       anterior_mi_or_lbbb: 'Yes',
-      weight_lt_67kg: 'Yes',
-      reperfusion_gt_4hrs: 'Yes',
+      weight_lt_67kg: 'No',
+      reperfusion_gt_4hrs: 'No',
+      timi_total_score: 4,
 
-      // Section 4: Other Risk Factors
       lvf: 'Yes',
       vt_vf: 'No',
-      bbb_chb: 'Yes',
+      bbb_chb: 'No',
       elevated_bnp: 'Yes',
       elevated_crp: 'Yes',
 
-      // Section 5: Treatment Strategy
       treatment_strategy: 'PAMI',
       pami: 'Yes',
       thrombolysis: 'No',
       conservative: 'No',
 
-      // Section 6: PAMI details
-      door_to_balloon_time: 45,
+      door_to_balloon_time: 55,
       vessel_lmca: false,
       vessel_lad: true,
-      vessel_diagonal: true,
+      vessel_diagonal: false,
       vessel_lcx: false,
       vessel_ramus: false,
       vessel_om: false,
@@ -554,7 +531,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       thrombosuction_done: 'Done',
       stent_type: 'DES',
       stent_diameter: 3.5,
-      stent_length: 28.0,
+      stent_length: 28,
       procedural_success: 'Yes',
       timi_flow: 3,
       complication_none: true,
@@ -566,34 +543,31 @@ const STEMIForm = forwardRef(function STEMIForm(
       complication_death: false,
       complication_emergency_cabg: false,
 
-      // Section 7: Thrombolysis details
       door_to_needle_time: 25,
-      drug_tenecteplase: true,
       drug_stk: false,
       drug_uk: false,
       drug_reteplase: false,
-      thrombolysis_dose: '40 mg IV Single Bolus',
+      drug_tenecteplase: true,
+      thrombolysis_dose: '40 mg IV bolus',
 
-      // Section 8: Drugs
       beta_blocker: 'Yes',
       calcium_channel_blocker: 'No',
       nitrate: 'Yes',
-      nicorandil: 'Yes',
+      nicorandil: 'No',
       ivabradine: 'No',
-      ranolazine: 'Yes',
+      ranolazine: 'No',
       trimetazidine: 'No',
       aspirin: 'Yes',
       clopidogrel: 'No',
       prasugrel: 'No',
       ticagrelor: 'Yes',
-      heparin_strategy: 'UFH i.v + LMWH',
+      heparin_strategy: 'LMWH alone',
       gp2b3a: 'Yes',
       bivaluridin: 'No',
       statin: 'Yes',
-      statin_dose: '80 mg',
-      other_drugs: 'Pantoprazole 40mg IV, Ondansetron 4mg',
+      statin_dose: '40 mg',
+      other_drugs: 'Pantoprazole 40 mg IV, Ondansetron 4 mg',
 
-      // Section 9: Diagnostic Procedures
       bedside_echo: 'Yes',
       departmental_echo: 'Yes',
       stress_testing: 'No',
@@ -607,57 +581,64 @@ const STEMIForm = forwardRef(function STEMIForm(
       electrolytes: 'Yes',
       hemogram: 'Yes',
       cxr: 'Yes',
-      diagnostic_other: 'Coronary Angiography (CAG), 12-Lead Holter',
+      diagnostic_other: 'Continuous telemetry, Blood Gas Analysis',
 
-      // Section 10: Reports
-      ecg_heart_rate: 104,
-      av_block: '1-degree',
-      bbb: 'LBBB',
+      ecg_heart_rate: 88,
+      av_block: 'None',
+      bbb: 'None',
       qwaves_none: false,
-      qwaves_anterior: true,
+      qwaves_inferior: false,
       qwaves_anteroseptal: true,
-      st_depression_none: false,
-      st_depression_lateral: true,
+      qwaves_anterior: true,
+      qwaves_anterolateral: false,
+      qwaves_lateral: false,
+      st_depression_none: true,
+      st_depression_inferior: false,
+      st_depression_anteroseptal: false,
+      st_depression_anterior: false,
+      st_depression_anterolateral: false,
+      st_depression_lateral: false,
       t_inversion_none: false,
-      t_inversion_anterior: true,
+      t_inversion_inferior: false,
       t_inversion_anteroseptal: true,
+      t_inversion_anterior: true,
+      t_inversion_anterolateral: false,
+      t_inversion_lateral: false,
       rhythm: 'NSR',
-      ecg_other: 'ST elevation 4mm in V1-V4, reciprocal ST depression in II, III, aVF',
+      ecg_other: 'ST elevation 3mm V1-V4 with Q waves V1-V3',
 
-      echo_ef: 40,
-      lv_function: 'Mod. LVD',
+      echo_ef: 42,
+      lv_function: 'Mild LVD',
       rwma_lad: true,
       rwma_rca: false,
       rwma_lcx: false,
       mr_grade: 'Mild',
       echo_e: 0.85,
       echo_a: 0.65,
-      echo_dt: 180,
-      echo_e_prime: 7.5,
-      echo_tapsv: 16.5,
-      echo_other: 'Antero-septal hypokinesia, LVEDD 54mm',
+      echo_dt: 190,
+      echo_e_prime: 8.5,
+      echo_tapsv: 18,
+      echo_other: 'Antero-septal hypokinesia, LVEDD 52mm',
 
-      hemoglobin: 13.8,
-      creatinine: 1.1,
-      troponin_i: '14.5 ng/ml (High Positive)',
-      cpk: '1250 IU/L',
-      ck_mb: '120 IU/L',
-      sodium: 138,
+      hemoglobin: 14.2,
+      creatinine: 1.05,
+      troponin_i: 'Positive (12.4 ng/ml)',
+      cpk: 1250,
+      ck_mb: 85,
+      sodium: 139,
       potassium: 4.3,
-      rbs_admission: 168,
+      rbs_admission: 148,
 
       angiogram_done: 'Yes',
       angiogram_finding: '1VD',
 
-      // Section 11: Invasive Procedures
       cag: 'Yes',
-      ptca: 'Yes',
       iabp: 'No',
       invasive_ventilation: 'No',
+      ptca: 'Yes',
       cabg: 'No',
-      other_procedure: 'Radial Artery Hemostasis Banding',
+      other_procedure: 'Thrombosuction & Primary PCI to LAD',
 
-      // Section 12: Outcomes
       death: 'No',
       stemi_for_nonstemi: 'No',
       remi_for_stemi: 'No',
@@ -665,82 +646,110 @@ const STEMIForm = forwardRef(function STEMIForm(
       cva_thrombotic: 'No',
       cva_hemorrhagic: 'No',
       major_bleeding: 'No',
-      outcome_other: 'Uneventful recovery, Haemodynamically stable',
+      outcome_other: 'Hemodynamically stable at discharge, Killip Class I',
 
-      // Section 13: Discharge Medications
       discharge_beta_blocker: 'Yes',
       discharge_calcium_channel_blocker: 'No',
-      discharge_nitrate: 'Yes',
-      discharge_nicorandil: 'Yes',
+      discharge_nitrate: 'No',
+      discharge_nicorandil: 'No',
       discharge_ivabradine: 'No',
-      discharge_ranolazine: 'Yes',
+      discharge_ranolazine: 'No',
       discharge_trimetazidine: 'No',
       discharge_aspirin: 'Yes',
       discharge_clopidogrel: 'No',
       discharge_prasugrel: 'No',
       discharge_ticagrelor: 'Yes',
       discharge_statin: 'Yes',
-      discharge_statin_dose: '80 mg',
-      discharge_other_medication: 'Metoprolol Succinate 50mg OD, Ramipril 2.5mg OD, Atorvastatin 80mg HS',
+      discharge_statin_dose: '40 mg',
+      discharge_other_medication: 'Ramipril 2.5 mg OD, Pantoprazole 40 mg OD',
 
-      // Section 14, 15, 16: Appropriateness Assessment
       appr_iccu_admission: 'Appropriate',
+      appr_iccu_admission_note: 'Acute STEMI requiring emergency monitoring',
       appr_iccu_transfer_out: 'Appropriate',
+      appr_iccu_transfer_out_note: 'Stable post-PAMI 48 hrs',
       appr_thrombolysis_indication: 'Appropriate',
+      appr_thrombolysis_indication_note: '',
       appr_ptca_indication: 'Appropriate',
+      appr_ptca_indication_note: 'Primary PCI for acute anterior STEMI',
       appr_invasive_monitoring: 'Appropriate',
+      appr_invasive_monitoring_note: 'Arterial line during PCI',
       appr_iabp_indication: 'Inappropriate',
+      appr_iabp_indication_note: 'No cardiogenic shock',
       appr_invasive_ventilation: 'Inappropriate',
+      appr_invasive_ventilation_note: 'Adequate spo2 on nasal prongs',
       appr_dialysis_indication: 'Inappropriate',
-      appr_other_procedure_name: 'CABG',
+      appr_dialysis_indication_note: 'Normal renal function',
+      appr_other_procedure_name: '',
       appr_other_procedure_appropriateness: 'Inappropriate',
+      appr_other_procedure_appropriateness_note: '',
 
       appr_cardiac_enzymes: 'Appropriate',
+      appr_cardiac_enzymes_note: 'Confirm acute myocardial necrosis',
       appr_bnp: 'Appropriate',
-      appr_crp: 'Appropriate',
+      appr_bnp_note: 'Assess baseline HF risk',
+      appr_crp: 'Inappropriate',
+      appr_crp_note: '',
       appr_lipid_profile: 'Appropriate',
+      appr_lipid_profile_note: 'Fasting lipid workup',
       appr_bedside_echo: 'Appropriate',
+      appr_bedside_echo_note: 'Baseline LVEF & wall motion evaluation',
       appr_chest_xray: 'Appropriate',
+      appr_chest_xray_note: 'Rule out pulmonary congestion',
 
       appr_beta_blockers: 'Appropriate',
+      appr_beta_blockers_note: 'Cardioprotective post-MI',
       appr_aspirin: 'Appropriate',
+      appr_aspirin_note: 'Antiplatelet loading',
       appr_clopidogrel: 'Appropriate',
+      appr_clopidogrel_note: '',
       appr_ace_inhibitor: 'Appropriate',
+      appr_ace_inhibitor_note: 'LV remodeling prevention',
       appr_arb: 'Inappropriate',
+      appr_arb_note: 'Patient tolerated ACEI',
       appr_statin: 'Appropriate',
+      appr_statin_note: 'High-intensity statin therapy',
       appr_diuretic: 'Inappropriate',
+      appr_diuretic_note: '',
       appr_lanoxin: 'Inappropriate',
+      appr_lanoxin_note: '',
       appr_anticoagulant: 'Appropriate',
+      appr_anticoagulant_note: 'Periprocedural heparinization',
       appr_amiodarone: 'Inappropriate',
-      appr_other_drug_name: 'ARNI',
+      appr_amiodarone_note: '',
+      appr_other_drug_name: '',
       appr_other_drug_appropriateness: 'Inappropriate',
+      appr_other_drug_appropriateness_note: '',
 
-      // Section 17: Length of Stay
       iccu_hours: 48,
       stepdown_icu_hours: 24,
-      floor_days: 3,
-      total_hospital_stay_days: 6,
+      floor_days: 2,
+      total_hospital_stay_days: 5,
 
-      // Section 18: Cost of care
-      bed_charges: 18000,
-      drugs_disposables_cost: 42000,
-      package_cost: 110000,
-      laboratory_cost: 9500,
-      non_invasive_lab_cost: 3500,
-      consultation_cost: 8500,
-      radiology_cost: 4000,
-      miscellaneous_cost: 2500,
-      total_cost: 198000,
+      bed_charges: 18500,
+      drugs_disposables_cost: 32000,
+      package_cost: 145000,
+      laboratory_cost: 12500,
+      non_invasive_lab_cost: 6500,
+      consultation_cost: 15000,
+      radiology_cost: 4500,
+      miscellaneous_cost: 5000,
+      total_cost: 239000,
 
-      // Section 19: Followup Matrix
-      enabled_1m: true, enabled_3m: true, enabled_6m: true, enabled_12m: true,
-      date_1m: calculateExpectedDate(dischargeVal, 1),
-      date_3m: calculateExpectedDate(dischargeVal, 3),
-      date_6m: calculateExpectedDate(dischargeVal, 6),
-      date_12m: calculateExpectedDate(dischargeVal, 12),
+      enabled_1m: true,
+      enabled_3m: true,
+      enabled_6m: true,
+      enabled_12m: true,
+      date_1m: calculateExpectedDate(dischargeVal, 1) || '',
+      date_3m: calculateExpectedDate(dischargeVal, 3) || '',
+      date_6m: calculateExpectedDate(dischargeVal, 6) || '',
+      date_12m: calculateExpectedDate(dischargeVal, 12) || '',
+      custom_date_1m: false,
+      custom_date_3m: false,
+      custom_date_6m: false,
+      custom_date_12m: false,
       angina_1m: 'No', angina_3m: 'No', angina_6m: 'No', angina_12m: 'No',
-      func_1m: 'Class I', func_3m: 'Class I', func_6m: 'None', func_12m: 'None',
-      antiang_1m: '1', antiang_3m: '1', antiang_6m: '1', antiang_12m: '1',
+      func_1m: 'None', func_3m: 'None', func_6m: 'None', func_12m: 'None',
+      antiang_1m: '0', antiang_3m: '0', antiang_6m: '0', antiang_12m: '0',
       dapt_1m: 'Yes', dapt_3m: 'Yes', dapt_6m: 'Yes', dapt_12m: 'Yes',
       statin_1m: 'Yes', statin_3m: 'Yes', statin_6m: 'Yes', statin_12m: 'Yes',
       beta_1m: 'Yes', beta_3m: 'Yes', beta_6m: 'Yes', beta_12m: 'Yes',
@@ -750,18 +759,79 @@ const STEMIForm = forwardRef(function STEMIForm(
       ptca_1m: 'No', ptca_3m: 'No', ptca_6m: 'No', ptca_12m: 'No',
       cabg_1m: 'No', cabg_3m: 'No', cabg_6m: 'No', cabg_12m: 'No',
       death_1m: 'No', death_3m: 'No', death_6m: 'No', death_12m: 'No',
-      other_1m: 'Patient doing well on DAPT',
-      other_3m: 'Lipid LDL 55 mg/dL',
-      other_6m: 'Echo EF improved to 50%',
-      other_12m: 'Completed 1yr DAPT audit',
+      other_1m: 'Routine 1-month checkup', other_3m: '', other_6m: '', other_12m: '',
       visit_mode: 'In-Person',
-      special_instructions: 'Follow up in cardiology OPD with repeat lipid profile, LFT, and 12-lead ECG.'
-    };
-
-    setFormData(prev => ({ ...prev, ...dummy }));
+      special_instructions: 'Strict compliance with Dual Antiplatelet Therapy (DAPT). Low salt diet, no heavy weight lifting for 4 weeks.'
+    });
   };
 
-  // Calculate STEMI TIMI Risk Score (0 to 16 pts)
+  const handleChange = (field, value) => {
+    setFormData((prev) => {
+      const updated = { ...prev, [field]: value };
+
+      if (field === 'treatment_strategy') {
+        updated.pami = value === 'PAMI' ? 'Yes' : 'No';
+        updated.thrombolysis = value === 'Thrombolysis' ? 'Yes' : 'No';
+        updated.conservative = value === 'Conservative' ? 'Yes' : 'No';
+      }
+
+      if (field === 'admission_date' || field === 'discharge_date') {
+        const base = updated.discharge_date || updated.admission_date;
+        if (base) {
+          ['1m', '3m', '6m', '12m'].forEach((k, idx) => {
+            const months = [1, 3, 6, 12][idx];
+            if (!updated[`custom_date_${k}`]) {
+              updated[`date_${k}`] = calculateExpectedDate(base, months) || '';
+            }
+          });
+        }
+      }
+
+      return updated;
+    });
+
+    if (formErrors[field]) {
+      setFormErrors((prev) => {
+        const newErr = { ...prev };
+        delete newErr[field];
+        return newErr;
+      });
+    }
+  };
+
+  const validateField = (field, value) => {
+    if (field === 'admission_date' && !value) {
+      return 'Date of Admission is required';
+    }
+    if (field === 'discharge_date' && value && formData.admission_date) {
+      if (new Date(value) <= new Date(formData.admission_date)) {
+        return 'Discharge date must be after admission date';
+      }
+    }
+    return null;
+  };
+
+  const validateAllFields = () => {
+    const errors = {};
+    const errAdm = validateField('admission_date', formData.admission_date);
+    if (errAdm) errors.admission_date = errAdm;
+
+    const errDis = validateField('discharge_date', formData.discharge_date);
+    if (errDis) errors.discharge_date = errDis;
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const renderFieldError = (field) => {
+    if (!formErrors[field]) return null;
+    return (
+      <span className="text-[10px] font-bold text-red-600 mt-1 block animate-shake">
+        ⚠️ {formErrors[field]}
+      </span>
+    );
+  };
+
   const timiCalculatedScore = useMemo(() => {
     let score = 0;
     if (formData.age_gt_75 === 'Yes') score += 3;
@@ -786,190 +856,78 @@ const STEMIForm = forwardRef(function STEMIForm(
     formData.reperfusion_gt_4hrs
   ]);
 
-  const timiRiskCategory = useMemo(() => {
-    if (timiCalculatedScore <= 2) return { label: 'Low Risk', color: 'bg-emerald-100 text-emerald-800 border-emerald-300', mortality: '1.6% - 2.2% 30-Day Mortality' };
-    if (timiCalculatedScore <= 5) return { label: 'Intermediate Risk', color: 'bg-rose-100 text-rose-800 border-rose-300', mortality: '4.4% - 7.3% 30-Day Mortality' };
-    if (timiCalculatedScore <= 8) return { label: 'High Risk', color: 'bg-red-100 text-red-800 border-red-300', mortality: '12.4% - 26.8% 30-Day Mortality' };
-    return { label: 'Very High / Critical Risk', color: 'bg-red-200 text-red-950 border-red-400 font-extrabold', mortality: '35.9% 30-Day Mortality' };
-  }, [timiCalculatedScore]);
-
-  // Auto-calculated sum of hospitalization costs
   const autoSumCost = useMemo(() => {
-    const fields = [
-      'bed_charges', 'drugs_disposables_cost', 'package_cost', 'laboratory_cost',
-      'non_invasive_lab_cost', 'consultation_cost', 'radiology_cost', 'miscellaneous_cost'
+    const costs = [
+      formData.bed_charges,
+      formData.drugs_disposables_cost,
+      formData.package_cost,
+      formData.laboratory_cost,
+      formData.non_invasive_lab_cost,
+      formData.consultation_cost,
+      formData.radiology_cost,
+      formData.miscellaneous_cost
     ];
-    let sum = 0;
-    let hasAny = false;
-    fields.forEach(f => {
-      const val = parseFloat(formData[f]);
-      if (!isNaN(val)) {
-        sum += val;
-        hasAny = true;
-      }
-    });
-    return hasAny ? sum : null;
+
+    const hasAny = costs.some(c => c !== '' && c !== null && c !== undefined && !isNaN(parseFloat(c)));
+    if (!hasAny) return null;
+
+    return costs.reduce((sum, val) => {
+      const num = parseFloat(val);
+      return sum + (isNaN(num) ? 0 : num);
+    }, 0);
   }, [
-    formData.bed_charges, formData.drugs_disposables_cost, formData.package_cost,
-    formData.laboratory_cost, formData.non_invasive_lab_cost, formData.consultation_cost,
-    formData.radiology_cost, formData.miscellaneous_cost
+    formData.bed_charges,
+    formData.drugs_disposables_cost,
+    formData.package_cost,
+    formData.laboratory_cost,
+    formData.non_invasive_lab_cost,
+    formData.consultation_cost,
+    formData.radiology_cost,
+    formData.miscellaneous_cost
   ]);
 
-  // Real-time Field Validation State
-  const [formErrors, setFormErrors] = useState({});
-
-  const NUMERIC_FIELDS = [
-    'age', 'pulse_rate', 'systolic_bp', 'diastolic_bp', 'door_to_balloon_time',
-    'door_to_needle_time', 'lvef', 'serum_creatinine', 'hb', 'wbc', 'platelets',
-    'troponin_i_t', 'iccu_hours', 'stepdown_icu_hours', 'floor_days',
-    'total_hospital_stay_days', 'bed_charges', 'drugs_disposables_cost',
-    'package_cost', 'laboratory_cost', 'non_invasive_lab_cost', 'consultation_cost',
-    'radiology_cost', 'miscellaneous_cost', 'total_cost'
-  ];
-
-  const TEXT_ONLY_FIELDS = ['name'];
-
-  const validateFieldValue = (field, value, currentFormData = formData) => {
-    if (value === undefined || value === null || String(value).trim() === '') {
-      return '';
-    }
-    const strVal = String(value).trim();
-    if (field === 'phone') {
-      if (/[a-zA-Z]/.test(strVal) || !/^[0-9+\-\s()]+$/.test(strVal)) {
-        return 'Phone number must contain numbers only';
-      }
-    } else if (NUMERIC_FIELDS.includes(field)) {
-      if (!/^\d+(\.\d+)?$/.test(strVal)) {
-        return 'Must be a valid number';
-      }
-    } else if (TEXT_ONLY_FIELDS.includes(field)) {
-      if (!/^[A-Za-z\s.\-']+$/.test(strVal)) {
-        return 'Must contain letters only';
-      }
-    } else if (field === 'discharge_date') {
-      const adm = currentFormData.admission_date;
-      if (adm && strVal) {
-        if (new Date(strVal) <= new Date(adm)) {
-          return 'Discharge date must be greater than admission date';
-        }
-      }
-    }
-    return '';
-  };
-
-  const validateAllFields = () => {
-    const newErrors = {};
-    Object.keys(formData).forEach((field) => {
-      const err = validateFieldValue(field, formData[field], formData);
-      if (err) {
-        newErrors[field] = err;
-      }
-    });
-    setFormErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const renderFieldError = (field) => {
-    if (!formErrors[field]) return null;
-    return (
-      <p className="text-red-500 text-[11px] font-semibold mt-1 flex items-center gap-1 animate-fadeIn">
-        <span>⚠️</span>
-        <span>{formErrors[field]}</span>
-      </p>
-    );
-  };
-
-  const handleChange = (field, value) => {
-    setFormData(prev => {
-      const updated = { ...prev, [field]: value };
-
-      if ((field === 'admission_date' || field === 'discharge_date') && value) {
-        const baseDate = updated.discharge_date || updated.admission_date;
-        ['1m', '3m', '6m', '12m'].forEach(k => {
-          if (!prev[`custom_date_${k}`]) {
-            const months = k === '1m' ? 1 : k === '3m' ? 3 : k === '6m' ? 6 : 12;
-            updated[`date_${k}`] = calculateExpectedDate(baseDate, months) || '';
-          }
-        });
-      }
-
-      return updated;
-    });
-
-    setFormErrors((prev) => {
-      const copy = { ...prev };
-      const updatedData = { ...formData, [field]: value };
-      const err = validateFieldValue(field, value, updatedData);
-      if (err) copy[field] = err;
-      else delete copy[field];
-
-      if (field === 'admission_date' || field === 'discharge_date') {
-        const disErr = validateFieldValue('discharge_date', updatedData.discharge_date, updatedData);
-        if (disErr) copy['discharge_date'] = disErr;
-        else delete copy['discharge_date'];
-      }
-
-      return copy;
-    });
-  };
-
   const getFlattenedData = () => {
-    const strategy = formData.treatment_strategy;
-    const isPami = strategy === 'PAMI';
-    const isTb = strategy === 'Thrombolysis';
-    const isCons = strategy === 'Conservative';
-
-    const intervals = [
-      { key: '1m', monthLabel: '1-Month', months: 1 },
-      { key: '3m', monthLabel: '3-Month', months: 3 },
-      { key: '6m', monthLabel: '6-Month', months: 6 },
-      { key: '12m', monthLabel: '12-Month', months: 12 }
-    ];
-
     const followupArray = [];
-    const baseFollowupDate = formData.discharge_date || formData.admission_date;
+    const mapping = { '1m': '1-Month', '3m': '3-Month', '6m': '6-Month', '12m': '12-Month' };
 
-    intervals.forEach(({ key, monthLabel, months }) => {
-      if (formData[`enabled_${key}`]) {
-        const finalDate = formData[`date_${key}`] || calculateExpectedDate(baseFollowupDate, months);
+    ['1m', '3m', '6m', '12m'].forEach(k => {
+      if (formData[`enabled_${k}`]) {
         followupArray.push({
-          followup_month: monthLabel,
-          followup_date: finalDate,
-          angina: formData[`angina_${key}`] || 'No',
-          functional_class: formData[`func_${key}`] || 'None',
-          number_of_antianginals: formData[`antiang_${key}`] !== '' ? parseInt(formData[`antiang_${key}`], 10) : null,
-          dual_antiplatelets: formData[`dapt_${key}`] || 'No',
-          statins: formData[`statin_${key}`] || 'No',
-          beta_blocker: formData[`beta_${key}`] || 'No',
-          acei_arb: formData[`ace_${key}`] || 'No',
-          aldosterone_antagonist: formData[`aldo_${key}`] || 'No',
-          acs_hospitalization: formData[`acs_${key}`] || 'No',
-          ptca: formData[`ptca_${key}`] || 'No',
-          cabg: formData[`cabg_${key}`] || 'No',
-          death: formData[`death_${key}`] || 'No',
-          other_event: formData[`other_${key}`] || '',
+          followup_month: mapping[k],
+          followup_date: formData[`date_${k}`] || null,
+          angina: formData[`angina_${k}`] || 'No',
+          functional_class: formData[`func_${k}`] || 'None',
+          number_of_antianginals: formData[`antiang_${k}`] !== '' ? parseInt(formData[`antiang_${k}`], 10) : null,
+          dual_antiplatelets: formData[`dapt_${k}`] || 'No',
+          statins: formData[`statin_${k}`] || 'No',
+          beta_blocker: formData[`beta_${k}`] || 'No',
+          acei_arb: formData[`ace_${k}`] || 'No',
+          aldosterone_antagonist: formData[`aldo_${k}`] || 'No',
+          acs_hospitalization: formData[`acs_${k}`] || 'No',
+          ptca: formData[`ptca_${k}`] || 'No',
+          cabg: formData[`cabg_${k}`] || 'No',
+          death: formData[`death_${k}`] || 'No',
+          other_event: formData[`other_${k}`] || null,
           visit_mode: formData.visit_mode || 'In-Person',
-          special_instructions: formData.special_instructions || ''
+          special_instructions: formData.special_instructions || null
         });
       }
     });
 
     return {
-      // 1. Demographic Information
-      reg_patient_id: patient.id || patient.reg_patient_id || formData.reg_patient_id || 1,
-      name: formData.name,
+      reg_patient_id: formData.reg_patient_id,
+      patient_name: formData.name,
       age: formData.age ? parseInt(formData.age, 10) : null,
       gender: formData.gender,
       mr_no: formData.mr_no,
-      acs_no: formData.acs_no || formData.ip_no || 'STEMI-' + Date.now(),
-      ip_no: formData.ip_no || 'IP' + Date.now().toString().slice(-5),
+      ip_no: formData.ip_no,
       admission_date: formData.admission_date,
       discharge_date: formData.discharge_date || null,
-      primary_consultant: formData.primary_consultant || 'Dr. K. Sridhar (Cardiologist)',
-      phone: formData.phone || null,
-      email: formData.email || null,
+      primary_consultant: formData.primary_consultant,
+      phone: formData.phone,
+      email: formData.email,
+      acs_no: formData.acs_no,
 
-      // 2. Clinical Information (Background & Presentation & Vitals)
       hypertension: formData.hypertension,
       diabetes: formData.diabetes,
       smoking: formData.smoking,
@@ -989,7 +947,6 @@ const STEMIForm = forwardRef(function STEMIForm(
       systolic_bp: formData.systolic_bp ? parseInt(formData.systolic_bp, 10) : null,
       diastolic_bp: formData.diastolic_bp ? parseInt(formData.diastolic_bp, 10) : null,
 
-      // 3. Risk Stratification - TIMI Risk score
       age_gt_75: formData.age_gt_75,
       age_65_to_74: formData.age_65_to_74,
       history_dm_htn_angina: formData.history_dm_htn_angina,
@@ -1001,20 +958,18 @@ const STEMIForm = forwardRef(function STEMIForm(
       reperfusion_gt_4hrs: formData.reperfusion_gt_4hrs,
       timi_total_score: timiCalculatedScore,
 
-      // 4. Other Risk Factors
       lvf: formData.lvf,
       vt_vf: formData.vt_vf,
       bbb_chb: formData.bbb_chb,
       elevated_bnp: formData.elevated_bnp,
       elevated_crp: formData.elevated_crp,
 
-      // 5. Treatment Strategy
-      pami: isPami ? 'Yes' : 'No',
-      thrombolysis: isTb ? 'Yes' : 'No',
-      conservative: isCons ? 'Yes' : 'No',
+      treatment_strategy: formData.treatment_strategy,
+      pami: formData.treatment_strategy === 'PAMI' ? 'Yes' : 'No',
+      thrombolysis: formData.treatment_strategy === 'Thrombolysis' ? 'Yes' : 'No',
+      conservative: formData.treatment_strategy === 'Conservative' ? 'Yes' : 'No',
 
-      // 6. PAMI details
-      door_to_balloon_time: isPami && formData.door_to_balloon_time ? parseInt(formData.door_to_balloon_time, 10) : null,
+      door_to_balloon_time: formData.door_to_balloon_time ? parseInt(formData.door_to_balloon_time, 10) : null,
       vessel_lmca: formData.vessel_lmca ? 'Yes' : 'No',
       vessel_lad: formData.vessel_lad ? 'Yes' : 'No',
       vessel_diagonal: formData.vessel_diagonal ? 'Yes' : 'No',
@@ -1026,12 +981,12 @@ const STEMIForm = forwardRef(function STEMIForm(
       vessel_segment: formData.vessel_segment || null,
       thrombosuction_done: formData.thrombosuction_done === 'Done' ? 'Yes' : 'No',
       thrombosuction_not_done: formData.thrombosuction_done === 'Not done' ? 'Yes' : 'No',
-      stent_bms: formData.stent_type === 'BMS' ? 'Yes' : 'No',
       stent_des: formData.stent_type === 'DES' ? 'Yes' : 'No',
+      stent_bms: formData.stent_type === 'BMS' ? 'Yes' : 'No',
       stent_diameter: formData.stent_diameter ? parseFloat(formData.stent_diameter) : null,
       stent_length: formData.stent_length ? parseFloat(formData.stent_length) : null,
       procedural_success: formData.procedural_success,
-      timi_flow: parseInt(formData.timi_flow, 10),
+      timi_flow: formData.timi_flow !== null ? parseInt(formData.timi_flow, 10) : null,
       complication_none: formData.complication_none ? 'Yes' : 'No',
       complication_tamponade: formData.complication_tamponade ? 'Yes' : 'No',
       complication_major_bleed: formData.complication_major_bleed ? 'Yes' : 'No',
@@ -1041,15 +996,13 @@ const STEMIForm = forwardRef(function STEMIForm(
       complication_death: formData.complication_death ? 'Yes' : 'No',
       complication_emergency_cabg: formData.complication_emergency_cabg ? 'Yes' : 'No',
 
-      // 7. Thrombolysis details
-      door_to_needle_time: isTb && formData.door_to_needle_time ? parseInt(formData.door_to_needle_time, 10) : null,
+      door_to_needle_time: formData.door_to_needle_time ? parseInt(formData.door_to_needle_time, 10) : null,
       drug_stk: formData.drug_stk ? 'Yes' : 'No',
       drug_uk: formData.drug_uk ? 'Yes' : 'No',
       drug_reteplase: formData.drug_reteplase ? 'Yes' : 'No',
       drug_tenecteplase: formData.drug_tenecteplase ? 'Yes' : 'No',
       thrombolysis_dose: formData.thrombolysis_dose || null,
 
-      // 8. Acute Drugs
       beta_blocker: formData.beta_blocker,
       calcium_channel_blocker: formData.calcium_channel_blocker,
       nitrate: formData.nitrate,
@@ -1071,11 +1024,9 @@ const STEMIForm = forwardRef(function STEMIForm(
       statin: formData.statin,
       statin_10mg: formData.statin_dose === '10 mg' ? 'Yes' : 'No',
       statin_20mg: formData.statin_dose === '20 mg' ? 'Yes' : 'No',
-      statin_40mg: formData.statin_dose === '40 mg' ? 'Yes' : 'No',
       statin_80mg: formData.statin_dose === '80 mg' ? 'Yes' : 'No',
       other_drugs: formData.other_drugs || null,
 
-      // 9. Diagnostic Procedures
       bedside_echo: formData.bedside_echo,
       departmental_echo: formData.departmental_echo,
       stress_testing: formData.stress_testing,
@@ -1091,13 +1042,10 @@ const STEMIForm = forwardRef(function STEMIForm(
       cxr: formData.cxr,
       diagnostic_other: formData.diagnostic_other || null,
 
-      // 10. Reports (ECG, Echo, Blood Labs, CAG)
       ecg_heart_rate: formData.ecg_heart_rate ? parseInt(formData.ecg_heart_rate, 10) : null,
-      av_block_none: formData.av_block === 'None' ? 'Yes' : 'No',
       av_block_first_degree: formData.av_block === '1-degree' ? 'Yes' : 'No',
       av_block_second_degree: formData.av_block === '2-degree' ? 'Yes' : 'No',
       av_block_chb: formData.av_block === 'CHB' ? 'Yes' : 'No',
-      bbb_none: formData.bbb === 'None' ? 'Yes' : 'No',
       bbb_rbbb: formData.bbb === 'RBBB' ? 'Yes' : 'No',
       bbb_lbbb: formData.bbb === 'LBBB' ? 'Yes' : 'No',
       bbb_indeterminate: formData.bbb === 'Indeterminate' ? 'Yes' : 'No',
@@ -1119,7 +1067,6 @@ const STEMIForm = forwardRef(function STEMIForm(
       t_inversion_anterior: formData.t_inversion_anterior ? 'Yes' : 'No',
       t_inversion_anterolateral: formData.t_inversion_anterolateral ? 'Yes' : 'No',
       t_inversion_lateral: formData.t_inversion_lateral ? 'Yes' : 'No',
-      rhythm_nsr: formData.rhythm === 'NSR' ? 'Yes' : 'No',
       rhythm_af: formData.rhythm === 'AF' ? 'Yes' : 'No',
       rhythm_svt: formData.rhythm === 'SVT' ? 'Yes' : 'No',
       rhythm_vt: formData.rhythm === 'VT' ? 'Yes' : 'No',
@@ -1127,14 +1074,12 @@ const STEMIForm = forwardRef(function STEMIForm(
       ecg_other: formData.ecg_other || null,
 
       echo_ef: formData.echo_ef ? parseFloat(formData.echo_ef) : null,
-      lv_function_normal: formData.lv_function === 'Normal' ? 'Yes' : 'No',
       lv_function_mild_lvd: formData.lv_function === 'Mild LVD' ? 'Yes' : 'No',
       lv_function_moderate_lvd: formData.lv_function === 'Moderate LVD' ? 'Yes' : 'No',
       lv_function_severe_lvd: formData.lv_function === 'Severe LVD' ? 'Yes' : 'No',
       rwma_lad: formData.rwma_lad ? 'Yes' : 'No',
       rwma_rca: formData.rwma_rca ? 'Yes' : 'No',
       rwma_lcx: formData.rwma_lcx ? 'Yes' : 'No',
-      mr_none: formData.mr_grade === 'None' ? 'Yes' : 'No',
       mr_mild: formData.mr_grade === 'Mild' ? 'Yes' : 'No',
       mr_moderate: formData.mr_grade === 'Moderate' ? 'Yes' : 'No',
       mr_severe: formData.mr_grade === 'Severe' ? 'Yes' : 'No',
@@ -1147,9 +1092,9 @@ const STEMIForm = forwardRef(function STEMIForm(
 
       hemoglobin: formData.hemoglobin ? parseFloat(formData.hemoglobin) : null,
       creatinine: formData.creatinine ? parseFloat(formData.creatinine) : null,
-      troponin_i: formData.troponin_i || null,
-      cpk: formData.cpk || null,
-      ck_mb: formData.ck_mb || null,
+      troponin_i: formData.troponin_i !== undefined && formData.troponin_i !== null && formData.troponin_i !== '' ? String(formData.troponin_i) : null,
+      cpk: formData.cpk !== undefined && formData.cpk !== null && formData.cpk !== '' ? String(formData.cpk) : null,
+      ck_mb: formData.ck_mb !== undefined && formData.ck_mb !== null && formData.ck_mb !== '' ? String(formData.ck_mb) : null,
       sodium: formData.sodium ? parseFloat(formData.sodium) : null,
       potassium: formData.potassium ? parseFloat(formData.potassium) : null,
       rbs_admission: formData.rbs_admission ? parseFloat(formData.rbs_admission) : null,
@@ -1161,7 +1106,6 @@ const STEMIForm = forwardRef(function STEMIForm(
       angiogram_3vd: formData.angiogram_finding === '3VD' ? 'Yes' : 'No',
       angiogram_lmca: formData.angiogram_finding === 'LMCA' ? 'Yes' : 'No',
 
-      // 11. Invasive Procedures
       cag: formData.cag,
       iabp: formData.iabp,
       invasive_ventilation: formData.invasive_ventilation,
@@ -1169,7 +1113,6 @@ const STEMIForm = forwardRef(function STEMIForm(
       cabg: formData.cabg,
       other_procedure: formData.other_procedure || null,
 
-      // 12. Outcomes
       death: formData.death,
       stemi_for_nonstemi: formData.stemi_for_nonstemi,
       remi_for_stemi: formData.remi_for_stemi,
@@ -1179,7 +1122,6 @@ const STEMIForm = forwardRef(function STEMIForm(
       major_bleeding: formData.major_bleeding,
       outcome_other: formData.outcome_other || null,
 
-      // 13. Discharge Medications
       discharge_beta_blocker: formData.discharge_beta_blocker,
       discharge_calcium_channel_blocker: formData.discharge_calcium_channel_blocker,
       discharge_nitrate: formData.discharge_nitrate,
@@ -1194,11 +1136,9 @@ const STEMIForm = forwardRef(function STEMIForm(
       discharge_statin: formData.discharge_statin,
       discharge_statin_10mg: formData.discharge_statin_dose === '10 mg' ? 'Yes' : 'No',
       discharge_statin_20mg: formData.discharge_statin_dose === '20 mg' ? 'Yes' : 'No',
-      discharge_statin_40mg: formData.discharge_statin_dose === '40 mg' ? 'Yes' : 'No',
       discharge_statin_80mg: formData.discharge_statin_dose === '80 mg' ? 'Yes' : 'No',
       discharge_other_medication: formData.discharge_other_medication || null,
 
-      // 14, 15, 16. Appropriateness Assessment
       appr_iccu_admission: formData.appr_iccu_admission,
       appr_iccu_admission_note: formData.appr_iccu_admission_note || '',
       appr_iccu_transfer_out: formData.appr_iccu_transfer_out,
@@ -1256,13 +1196,11 @@ const STEMIForm = forwardRef(function STEMIForm(
       appr_other_drug_appropriateness: formData.appr_other_drug_appropriateness,
       appr_other_drug_appropriateness_note: formData.appr_other_drug_appropriateness_note || '',
 
-      // 17. Length of Stay
       iccu_hours: formData.iccu_hours ? parseInt(formData.iccu_hours, 10) : null,
       stepdown_icu_hours: formData.stepdown_icu_hours ? parseInt(formData.stepdown_icu_hours, 10) : null,
       floor_days: formData.floor_days ? parseInt(formData.floor_days, 10) : null,
       total_hospital_stay_days: formData.total_hospital_stay_days ? parseInt(formData.total_hospital_stay_days, 10) : null,
 
-      // 18. Cost of care
       bed_charges: formData.bed_charges ? parseFloat(formData.bed_charges) : null,
       drugs_disposables_cost: formData.drugs_disposables_cost ? parseFloat(formData.drugs_disposables_cost) : null,
       package_cost: formData.package_cost ? parseFloat(formData.package_cost) : null,
@@ -1273,7 +1211,6 @@ const STEMIForm = forwardRef(function STEMIForm(
       miscellaneous_cost: formData.miscellaneous_cost ? parseFloat(formData.miscellaneous_cost) : null,
       total_cost: formData.total_cost ? parseFloat(formData.total_cost) : (autoSumCost !== null ? autoSumCost : null),
 
-      // 19. Followup Matrix
       followup: followupArray
     };
   };
@@ -1403,13 +1340,6 @@ const STEMIForm = forwardRef(function STEMIForm(
     );
   };
 
-  const scrollToSection = (sectionId) => {
-    const el = document.getElementById(sectionId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
   return (
     <div className="space-y-6 text-slate-800">
       {/* Top Action Bar (Fill Dummy Data) */}
@@ -1420,7 +1350,7 @@ const STEMIForm = forwardRef(function STEMIForm(
             type="button"
             onClick={fillDummyData}
             className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm border border-red-500"
-            title="Autofill complete test data across all 19 STEMI sections"
+            title="Autofill complete test data across all STEMI sections"
           >
             <Sparkles className="w-3.5 h-3.5 text-rose-200 animate-pulse" />
             <span>Fill Dummy Data (Test STEMI)</span>
@@ -1428,581 +1358,584 @@ const STEMIForm = forwardRef(function STEMIForm(
         </div>
       )}
 
-      {/* ========================================================================= */}
-      {/* SECTION 1: Demographic Information                                        */}
-      {/* ========================================================================= */}
+      {/* Patient Profile & Administrative Details */}
       <div id="section-1">
-        <SectionCard title="1. Demographic Information">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+        <SectionCard title="Patient Profile & Administrative Details">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
             <div>
-              <label className={LABEL_STYLES}>Name</label>
+              <label className={LABEL_STYLES}>Patient Name:</label>
               <input
                 type="text"
                 readOnly
                 disabled
-                value={formData.name || ''}
-                className="w-full px-3 py-2 border border-slate-200 bg-gray-100 text-gray-500 rounded-lg text-xs cursor-not-allowed pointer-events-none font-medium"
+                value={patient.name || patient.patient_name || formData.name || '—'}
+                className={INPUT_DISABLED_STYLES}
               />
             </div>
             <div>
-              <label className={LABEL_STYLES}>Age (yrs)</label>
+              <label className={LABEL_STYLES}>Age:</label>
               <input
                 type="text"
                 readOnly
                 disabled
-                value={formData.age || ''}
-                className="w-full px-3 py-2 border border-slate-200 bg-gray-100 text-gray-500 rounded-lg text-xs cursor-not-allowed pointer-events-none font-bold"
+                value={patient.age ? `${patient.age} Yrs` : (patientAge ? `${patientAge} Yrs` : '—')}
+                className={INPUT_DISABLED_STYLES}
               />
             </div>
             <div>
-              <label className={LABEL_STYLES}>Gender (M/F)</label>
+              <label className={LABEL_STYLES}>Gender:</label>
               <input
                 type="text"
                 readOnly
                 disabled
-                value={formData.gender === 'M' ? 'Male (M)' : formData.gender === 'F' ? 'Female (F)' : (formData.gender || '')}
-                className="w-full px-3 py-2 border border-slate-200 bg-gray-100 text-gray-500 rounded-lg text-xs cursor-not-allowed pointer-events-none font-bold"
+                value={patient.gender === 'M' ? 'Male' : patient.gender === 'F' ? 'Female' : (patient.gender || '—')}
+                className={INPUT_DISABLED_STYLES}
               />
             </div>
             <div>
-              <label className={LABEL_STYLES}>MR No</label>
+              <label className={LABEL_STYLES}>MR No:</label>
               <input
                 type="text"
                 readOnly
                 disabled
-                value={formData.mr_no || ''}
-                className="w-full px-3 py-2 border border-slate-200 bg-gray-100 text-gray-500 rounded-lg text-xs cursor-not-allowed pointer-events-none font-mono"
+                value={patient.mrNo || patient.mr_no || formData.mr_no || '—'}
+                className={INPUT_DISABLED_STYLES}
               />
             </div>
             <div>
-              <label className={LABEL_STYLES}>IP No</label>
+              <label className={LABEL_STYLES}>IP No:</label>
               <input
                 type="text"
                 disabled={readOnly}
                 value={formData.ip_no}
                 onChange={(e) => handleChange('ip_no', e.target.value)}
-                placeholder="e.g. IP00123"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-mono bg-white"
+                placeholder="E.g. IP00001"
+                className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-red-500 focus:border-red-500"
               />
             </div>
             <div>
-              <label className={LABEL_STYLES}>ACS No</label>
+              <label className={LABEL_STYLES}>ACS No / Registry No:</label>
               <input
                 type="text"
                 disabled={readOnly}
                 value={formData.acs_no}
                 onChange={(e) => handleChange('acs_no', e.target.value)}
-                placeholder="e.g. ACS-2026-001"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-mono bg-white"
+                placeholder="E.g. ACS00001"
+                className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-red-500 focus:border-red-500"
               />
             </div>
             <div>
-              <label className={LABEL_STYLES}>Date of Admission *</label>
+              <label className="font-bold text-slate-700 block mb-1">Date of Admission:</label>
               <input
                 type="date"
                 disabled={readOnly}
                 value={formData.admission_date}
                 onChange={(e) => handleChange('admission_date', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg text-xs focus:ring-1 focus:ring-red-500 ${
-                  formErrors.admission_date ? 'border-red-500 bg-red-50/50 text-red-900 font-semibold' : 'border-slate-300 bg-white'
+                className={`w-full p-2 border rounded-md font-medium text-slate-900 ${
+                  formErrors.admission_date ? 'border-red-500 bg-red-50/50 text-red-900 font-semibold' : 'border-slate-300'
                 }`}
               />
               {renderFieldError('admission_date')}
             </div>
             <div>
-              <label className={LABEL_STYLES}>Date of Discharge</label>
+              <label className="font-bold text-slate-700 block mb-1">Date of Discharge:</label>
               <input
                 type="date"
                 disabled={readOnly}
                 value={formData.discharge_date}
                 min={formData.admission_date || undefined}
                 onChange={(e) => handleChange('discharge_date', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg text-xs focus:ring-1 focus:ring-red-500 ${
-                  formErrors.discharge_date ? 'border-red-500 bg-red-50/50 text-red-900 font-semibold' : 'border-slate-300 bg-white'
+                className={`w-full p-2 border rounded-md font-medium text-slate-900 ${
+                  formErrors.discharge_date ? 'border-red-500 bg-red-50/50 text-red-900 font-semibold' : 'border-slate-300'
                 }`}
               />
               {renderFieldError('discharge_date')}
             </div>
             <div>
-              <label className={LABEL_STYLES}>Primary Consultant</label>
-              <input
-                type="text"
+              <label className="font-bold text-slate-700 block mb-1">Primary Consultant:</label>
+              <select
                 disabled={readOnly}
                 value={formData.primary_consultant}
                 onChange={(e) => handleChange('primary_consultant', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-medium bg-white"
-              />
+                className="w-full p-2 border border-slate-300 rounded-md bg-white font-medium text-slate-900"
+              >
+                <option value="Dr. K. Sridhar (Cardiologist)">Dr. K. Sridhar (Cardiologist)</option>
+                <option value="Dr. Ananth Rao">Dr. Ananth Rao</option>
+                <option value="Dr. M. Sharma">Dr. M. Sharma</option>
+              </select>
             </div>
             <div>
-              <label className={LABEL_STYLES}>Contact details: Phone</label>
+              <label className={LABEL_STYLES}>Contact details: Phone:</label>
               <input
                 type="text"
                 readOnly
                 disabled
-                value={formData.phone || ''}
-                placeholder="e.g. +91 98765 43210"
-                className="w-full px-3 py-2 border border-slate-200 bg-gray-100 text-gray-500 rounded-lg text-xs cursor-not-allowed pointer-events-none"
+                value={patient.phone || patient.contact_phone || formData.phone || '—'}
+                className={INPUT_DISABLED_STYLES}
               />
             </div>
             <div>
-              <label className={LABEL_STYLES}>Contact details: E-mail</label>
+              <label className={LABEL_STYLES}>E-mail:</label>
               <input
-                type="email"
+                type="text"
                 readOnly
                 disabled
-                value={formData.email || ''}
-                placeholder="e.g. patient@example.com"
-                className="w-full px-3 py-2 border border-slate-200 bg-gray-100 text-gray-500 rounded-lg text-xs cursor-not-allowed pointer-events-none"
+                value={patient.email || patient.contact_email || formData.email || '—'}
+                className={INPUT_DISABLED_STYLES}
               />
             </div>
           </div>
         </SectionCard>
       </div>
 
-      {/* ========================================================================= */}
-      {/* SECTION 2: Clinical Information                                          */}
-      {/* ========================================================================= */}
-      <div id="section-2" className="space-y-6">
-        <SectionCard title="2. Clinical Information - Background History">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {renderRadio('hypertension', 'Hypertension')}
-            {renderRadio('diabetes', 'Diabetes')}
-            {renderRadio('smoking', 'Smoking')}
-            {renderRadio('renal_failure', 'Renal Failure')}
-            {renderRadio('copd', 'COPD')}
-            {renderRadio('cva', 'CVA')}
-            {renderRadio('prior_acs', 'Prior ACS')}
-            {renderRadio('prior_ptca', 'Prior PTCA')}
-            {renderRadio('prior_cabg', 'Prior CABG')}
-          </div>
-          <div className="mt-4">
-            <label className={LABEL_STYLES}>Any other</label>
-            <input
-              type="text"
-              disabled={readOnly}
-              value={formData.other_background}
-              onChange={(e) => handleChange('other_background', e.target.value)}
-              placeholder="e.g. Dyslipidemia, Peripheral vascular disease"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
-            />
-          </div>
-        </SectionCard>
-
-        <SectionCard title="2. Clinical Information - Presentation & Vitals">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-            {renderRadio('typical_angina', 'Typical angina', ['Yes', 'No'])}
-            {renderRadio('atypical_chest_pain', 'Atypical chest pain', ['Yes', 'No'])}
-            {renderRadio('breathlessness', 'Breathlessness', ['Yes', 'No'])}
-            {renderRadio('syncope_presyncope', 'Syncope/ Pre-syncope', ['Yes', 'No'])}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-slate-100">
-            <div>
-              <label className={LABEL_STYLES}>Pulse rate</label>
-              <input
-                type="text"
-                disabled={readOnly}
-                value={formData.pulse_rate}
-                onChange={(e) => handleChange('pulse_rate', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold ${
-                  formErrors.pulse_rate ? 'border-red-500 bg-red-50/50 text-red-900' : 'border-slate-300'
-                }`}
-              />
-              {renderFieldError('pulse_rate')}
+      {/* Clinical Information - Background */}
+      <div id="section-2">
+        <SectionCard title="Clinical Information">
+          <div className="space-y-4 text-xs">
+            <div className="font-bold text-slate-800 border-b pb-1 text-sm">Background:</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {renderRadio('hypertension', 'Hypertension')}
+              {renderRadio('diabetes', 'Diabetes')}
+              {renderRadio('smoking', 'Smoking')}
+              {renderRadio('renal_failure', 'Renal Failure')}
+              {renderRadio('copd', 'COPD')}
+              {renderRadio('cva', 'CVA')}
+              {renderRadio('prior_acs', 'Prior ACS')}
+              {renderRadio('prior_ptca', 'Prior PTCA')}
+              {renderRadio('prior_cabg', 'Prior CABG')}
             </div>
             <div>
-              <label className={LABEL_STYLES}>SBP</label>
+              <label className="font-bold text-slate-700 block mb-1">Any other</label>
               <input
                 type="text"
                 disabled={readOnly}
-                value={formData.systolic_bp}
-                onChange={(e) => handleChange('systolic_bp', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold ${
-                  formErrors.systolic_bp ? 'border-red-500 bg-red-50/50 text-red-900' : 'border-slate-300'
-                }`}
+                value={formData.other_background}
+                onChange={(e) => handleChange('other_background', e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded-md"
+                placeholder="Specify additional clinical history..."
               />
-              {renderFieldError('systolic_bp')}
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>DBP</label>
-              <input
-                type="text"
-                disabled={readOnly}
-                value={formData.diastolic_bp}
-                onChange={(e) => handleChange('diastolic_bp', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold ${
-                  formErrors.diastolic_bp ? 'border-red-500 bg-red-50/50 text-red-900' : 'border-slate-300'
-                }`}
-              />
-              {renderFieldError('diastolic_bp')}
             </div>
           </div>
         </SectionCard>
       </div>
 
-      {/* ========================================================================= */}
-      {/* SECTION 3: Risk Stratification - TIMI Risk score                         */}
-      {/* ========================================================================= */}
+      {/* Clinical Information - Presentation */}
+      <div id="section-2-presentation">
+        <SectionCard title="Clinical Information">
+          <div className="space-y-4 text-xs">
+            <div className="font-bold text-slate-800 border-b pb-1 text-sm">Presentation:</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {renderRadio('typical_angina', 'Typical angina', ['Yes', 'No'])}
+              {renderRadio('atypical_chest_pain', 'Atypical chest pain', ['Yes', 'No'])}
+              {renderRadio('breathlessness', 'Breathlessness', ['Yes', 'No'])}
+              {renderRadio('syncope_presyncope', 'Syncope/ Pre-syncope', ['Yes', 'No'])}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Pulse Rate (bpm):</label>
+                <input
+                  type="number"
+                  disabled={readOnly}
+                  value={formData.pulse_rate}
+                  onChange={(e) => handleChange('pulse_rate', e.target.value)}
+                  className={`w-full p-2 border rounded-md font-bold ${
+                    formErrors.pulse_rate ? 'border-red-500 bg-red-50/50 text-red-900' : 'border-slate-300'
+                  }`}
+                />
+                {renderFieldError('pulse_rate')}
+                <ClinicalMetricBadge metricId="pulse_rate" value={formData.pulse_rate} />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">SBP (mmHg):</label>
+                <input
+                  type="number"
+                  disabled={readOnly}
+                  value={formData.systolic_bp}
+                  onChange={(e) => handleChange('systolic_bp', e.target.value)}
+                  className={`w-full p-2 border rounded-md font-bold ${
+                    formErrors.systolic_bp ? 'border-red-500 bg-red-50/50 text-red-900' : 'border-slate-300'
+                  }`}
+                />
+                {renderFieldError('systolic_bp')}
+                <ClinicalMetricBadge metricId="systolic_bp" value={formData.systolic_bp} />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">DBP (mmHg):</label>
+                <input
+                  type="number"
+                  disabled={readOnly}
+                  value={formData.diastolic_bp}
+                  onChange={(e) => handleChange('diastolic_bp', e.target.value)}
+                  className={`w-full p-2 border rounded-md font-bold ${
+                    formErrors.diastolic_bp ? 'border-red-500 bg-red-50/50 text-red-900' : 'border-slate-300'
+                  }`}
+                />
+                {renderFieldError('diastolic_bp')}
+                <ClinicalMetricBadge metricId="diastolic_bp" value={formData.diastolic_bp} />
+              </div>
+            </div>
+          </div>
+        </SectionCard>
+      </div>
+
+      {/* Risk Stratification- TIMI Risk score & Other Risk Factors */}
       <div id="section-3">
-        <SectionCard title="3. Risk Stratification - TIMI Risk score">
-          <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg flex justify-between items-center mb-4">
-            <div>
-              <span className="font-bold text-orange-950 block text-xs uppercase tracking-wide">TOTAL CALCULATED TIMI SCORE</span>
-              <span className="text-[10px] text-orange-800 block">Dynamic score calculation matching point weights</span>
+        <SectionCard title="Risk Stratification- TIMI Risk score: Points">
+          <div className="space-y-4 text-xs">
+            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg flex justify-between items-center mb-4">
+              <div>
+                <span className="font-bold text-orange-950 block text-xs uppercase tracking-wide">Total Calculated TIMI Score</span>
+                <span className="text-[10px] text-orange-800">Dynamic score calculation matching point weights</span>
+              </div>
+              <span className="text-3xl font-black text-orange-600 pr-4">{timiCalculatedScore} Points</span>
             </div>
-            <span className="text-2xl font-bold text-orange-500 pr-4">{timiCalculatedScore} Points</span>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            {renderRadio('age_gt_75', 'Age >75 years (3 Points)', ['Yes', 'No'])}
-            {renderRadio('age_65_to_74', 'Age 65 to 74 years (2 Points)', ['Yes', 'No'])}
-            {renderRadio('history_dm_htn_angina', 'H/o DM/ HTN/Angina (1 Point)', ['Yes', 'No'])}
-            {renderRadio('sbp_lt_100', 'SBP < 100 mmHg (3 Points)', ['Yes', 'No'])}
-            {renderRadio('heart_rate_gt_100', 'Heart Rate > 100/ min (2 Points)', ['Yes', 'No'])}
-            {renderRadio('killip_class_ii_to_iv', 'Killip Class II to IV (2 Points)', ['Yes', 'No'])}
-            {renderRadio('anterior_mi_or_lbbb', 'Ant MI/LBBBB (1 Point)', ['Yes', 'No'])}
-            {renderRadio('weight_lt_67kg', 'Weight < 67 kg (1 Point)', ['Yes', 'No'])}
-            {renderRadio('reperfusion_gt_4hrs', 'Time to reperfusion > 4 hrs (1 Point)', ['Yes', 'No'])}
-          </div>
-        </SectionCard>
-      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 border border-slate-100 p-3 rounded-xl bg-white shadow-sm">
+              {renderRadio('age_gt_75', 'Age >75 years (+3)', ['Yes', 'No'])}
+              {renderRadio('age_65_to_74', 'Age 65 to 74 years (+2)', ['Yes', 'No'])}
+              {renderRadio('history_dm_htn_angina', 'H/o DM/ HTN/ Angina (+1)', ['Yes', 'No'])}
+              {renderRadio('sbp_lt_100', 'SBP < 100 mmHg (+3)', ['Yes', 'No'])}
+              {renderRadio('heart_rate_gt_100', 'Heart Rate > 100/ min (+2)', ['Yes', 'No'])}
+              {renderRadio('killip_class_ii_to_iv', 'Killip Class II to IV (+2)', ['Yes', 'No'])}
+              {renderRadio('anterior_mi_or_lbbb', 'Ant MI/ LBBB (+1)', ['Yes', 'No'])}
+              {renderRadio('weight_lt_67kg', 'Weight < 67 kg (+1)', ['Yes', 'No'])}
+              {renderRadio('reperfusion_gt_4hrs', 'Time to reperfusion > 4 hrs (+1)', ['Yes', 'No'])}
+            </div>
 
-      {/* ========================================================================= */}
-      {/* SECTION 4: Other Risk Factors                                             */}
-      {/* ========================================================================= */}
-      <div id="section-4">
-        <SectionCard title="4. Other Risk Factors">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-            {renderRadio('lvf', 'LVF', ['Yes', 'No'])}
-            {renderRadio('vt_vf', 'VT/VF', ['Yes', 'No'])}
-            {renderRadio('bbb_chb', 'BBB/CHB', ['Yes', 'No'])}
-            {renderRadio('elevated_bnp', 'Elevated BNP', ['Yes', 'No'])}
-            {renderRadio('elevated_crp', 'Elevated CRP', ['Yes', 'No'])}
+            <div id="section-4" className="font-bold text-slate-800 border-t border-slate-200 pt-3 text-sm">Other Risk Factors:</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {renderRadio('lvf', 'LVF', ['Yes', 'No'])}
+              {renderRadio('vt_vf', 'VT/VF', ['Yes', 'No'])}
+              {renderRadio('bbb_chb', 'BBB/CHB', ['Yes', 'No'])}
+              {renderRadio('elevated_bnp', 'Elevated BNP', ['Yes', 'No'])}
+              {renderRadio('elevated_crp', 'Elevated CRP', ['Yes', 'No'])}
+            </div>
           </div>
         </SectionCard>
       </div>
 
-      {/* ========================================================================= */}
-      {/* SECTION 5: Treatment Strategy                                            */}
-      {/* ========================================================================= */}
+      {/* Treatment Strategy */}
       <div id="section-5">
-        <SectionCard title="5. Treatment Strategy">
-          <div className="flex flex-wrap gap-4 p-4 bg-white rounded-xl border border-slate-200">
-            {['PAMI', 'Thrombolysis', 'Conservative'].map((strat) => (
-              <label key={strat} className="flex items-center gap-2 cursor-pointer font-bold text-xs text-slate-800">
-                <input
-                  type="radio"
-                  disabled={readOnly}
-                  name="treatment_strategy"
-                  checked={formData.treatment_strategy === strat}
-                  onChange={() => handleChange('treatment_strategy', strat)}
-                  className="text-red-600 focus:ring-red-500 w-4 h-4"
-                />
-                <span>{strat}</span>
-              </label>
-            ))}
-          </div>
-        </SectionCard>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 6: PAMI details, if done                                         */}
-      {/* ========================================================================= */}
-      <div id="section-6">
-        <SectionCard title="6. PAMI details, if done">
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-              <div>
-                <label className={LABEL_STYLES}>Door to Balloon Time (min)</label>
-                <input
-                  type="number"
-                  disabled={readOnly}
-                  value={formData.door_to_balloon_time}
-                  onChange={(e) => handleChange('door_to_balloon_time', e.target.value)}
-                  placeholder="e.g. 60"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold"
-                />
-              </div>
-              <div>
-                <label className={LABEL_STYLES}>Segment</label>
-                <input
-                  type="text"
-                  disabled={readOnly}
-                  value={formData.vessel_segment}
-                  onChange={(e) => handleChange('vessel_segment', e.target.value)}
-                  placeholder="e.g. Proximal LAD"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
-                />
-              </div>
-              <div>
-                <label className={LABEL_STYLES}>Thrombosuction</label>
-                <select
-                  disabled={readOnly}
-                  value={formData.thrombosuction_done}
-                  onChange={(e) => handleChange('thrombosuction_done', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white"
-                >
-                  <option value="Done">Done</option>
-                  <option value="Not done">Not done</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className={LABEL_STYLES}>Vessel(s)</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                {[
-                  { key: 'vessel_lmca', label: 'LMCA' },
-                  { key: 'vessel_lad', label: 'LAD' },
-                  { key: 'vessel_diagonal', label: 'Diagonal' },
-                  { key: 'vessel_lcx', label: 'LCX' },
-                  { key: 'vessel_ramus', label: 'Ramus' },
-                  { key: 'vessel_om', label: 'OM' },
-                  { key: 'vessel_rca', label: 'RCA' },
-                  { key: 'vessel_pda', label: 'PDA' }
-                ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
-                    <input
-                      type="checkbox"
-                      disabled={readOnly}
-                      checked={formData[key] || false}
-                      onChange={(e) => handleChange(key, e.target.checked)}
-                      className="text-red-600 rounded"
-                    />
-                    <span>{label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-              <div>
-                <label className={LABEL_STYLES}>Stent(s)</label>
-                <select
-                  disabled={readOnly}
-                  value={formData.stent_type}
-                  onChange={(e) => handleChange('stent_type', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-bold"
-                >
-                  <option value="DES">DES</option>
-                  <option value="BMS">BMS</option>
-                </select>
-              </div>
-              <div>
-                <label className={LABEL_STYLES}>Dimensions: Diameter</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  disabled={readOnly}
-                  value={formData.stent_diameter}
-                  onChange={(e) => handleChange('stent_diameter', e.target.value)}
-                  placeholder="e.g. 3.0"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
-                />
-              </div>
-              <div>
-                <label className={LABEL_STYLES}>Dimensions: Length</label>
-                <input
-                  type="number"
-                  step="0.5"
-                  disabled={readOnly}
-                  value={formData.stent_length}
-                  onChange={(e) => handleChange('stent_length', e.target.value)}
-                  placeholder="e.g. 24.0"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
-                />
-              </div>
-              <div>
-                <label className={LABEL_STYLES}>Result: Post-procedure TIMI flow</label>
-                <select
-                  disabled={readOnly}
-                  value={formData.timi_flow}
-                  onChange={(e) => handleChange('timi_flow', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-bold"
-                >
-                  <option value={3}>3</option>
-                  <option value={2}>2</option>
-                  <option value={1}>1</option>
-                  <option value={0}>0</option>
-                </select>
-              </div>
-            </div>
-
-            {renderRadio('procedural_success', 'Result: Procedural success', ['Yes', 'No'])}
-
-            <div>
-              <label className={LABEL_STYLES}>Major Complications</label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                {[
-                  { key: 'complication_none', label: 'None' },
-                  { key: 'complication_tamponade', label: 'Tamponade' },
-                  { key: 'complication_major_bleed', label: 'Major bleed' },
-                  { key: 'complication_stroke', label: 'Stroke' },
-                  { key: 'complication_stent_thrombosis', label: 'Stent thrombosis' },
-                  { key: 'complication_mi', label: 'MI' },
-                  { key: 'complication_death', label: 'Death' },
-                  { key: 'complication_emergency_cabg', label: 'Emergency CABG' }
-                ].map(({ key, label }) => (
-                  <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
-                    <input
-                      type="checkbox"
-                      disabled={readOnly}
-                      checked={formData[key] || false}
-                      onChange={(e) => {
-                        if (key === 'complication_none' && e.target.checked) {
-                          setFormData(prev => ({
-                            ...prev,
-                            complication_none: true,
-                            complication_tamponade: false,
-                            complication_major_bleed: false,
-                            complication_stroke: false,
-                            complication_stent_thrombosis: false,
-                            complication_mi: false,
-                            complication_death: false,
-                            complication_emergency_cabg: false
-                          }));
-                        } else {
-                          setFormData(prev => ({
-                            ...prev,
-                            [key]: e.target.checked,
-                            complication_none: false
-                          }));
-                        }
-                      }}
-                      className="text-red-600 rounded"
-                    />
-                    <span>{label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        </SectionCard>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 7: Thrombolysis details                                          */}
-      {/* ========================================================================= */}
-      <div id="section-7">
-        <SectionCard title="7. Thrombolysis details">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs mb-4">
-            <div>
-              <label className={LABEL_STYLES}>Door to Needle Time (min)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.door_to_needle_time}
-                onChange={(e) => handleChange('door_to_needle_time', e.target.value)}
-                placeholder="e.g. 30"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Dose</label>
-              <input
-                type="text"
-                disabled={readOnly}
-                value={formData.thrombolysis_dose}
-                onChange={(e) => handleChange('thrombolysis_dose', e.target.value)}
-                placeholder="e.g. 40 mg IV bolus"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className={LABEL_STYLES}>Drug</label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+        <SectionCard title="Treatment Strategy">
+          <div className="space-y-4 text-xs">
+            <div className="flex gap-6 p-2 bg-white border border-slate-200 rounded-lg">
+              <span className="font-bold text-slate-700 pt-1">Strategy:</span>
               {[
-                { key: 'drug_stk', label: 'STK' },
-                { key: 'drug_uk', label: 'UK' },
-                { key: 'drug_reteplase', label: 'Reteplase' },
-                { key: 'drug_tenecteplase', label: 'Tenectaplase' }
-              ].map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
+                { key: 'PAMI', label: 'PAMI' },
+                { key: 'Thrombolysis', label: 'Thrombolysis' },
+                { key: 'Conservative', label: 'Conservative' }
+              ].map(op => (
+                <label key={op.key} className="flex items-center gap-2 cursor-pointer font-bold">
                   <input
-                    type="checkbox"
+                    type="radio"
                     disabled={readOnly}
-                    checked={formData[key] || false}
-                    onChange={(e) => handleChange(key, e.target.checked)}
-                    className="text-red-600 rounded"
+                    name="treatment_strategy"
+                    checked={formData.treatment_strategy === op.key}
+                    onChange={() => handleChange('treatment_strategy', op.key)}
+                    className="text-red-600 focus:ring-red-500"
                   />
-                  <span>{label}</span>
+                  <span>{op.label}</span>
                 </label>
               ))}
             </div>
-          </div>
-        </SectionCard>
-      </div>
 
-      {/* ========================================================================= */}
-      {/* SECTION 8: Drugs                                                          */}
-      {/* ========================================================================= */}
-      <div id="section-8" className="space-y-6">
-        <SectionCard title="8. Drugs - Acute Drugs">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-            {renderRadio('beta_blocker', 'Beta-blocker', ['Yes', 'No'])}
-            {renderRadio('calcium_channel_blocker', 'Calcium-channel blocker', ['Yes', 'No'])}
-            {renderRadio('nitrate', 'Nitrate', ['Yes', 'No'])}
-            {renderRadio('nicorandil', 'Nicorandil', ['Yes', 'No'])}
-            {renderRadio('ivabradine', 'Ivabradine', ['Yes', 'No'])}
-            {renderRadio('ranolazine', 'Ranozolidine', ['Yes', 'No'])}
-            {renderRadio('trimetazidine', 'Trimetazidine', ['Yes', 'No'])}
-            {renderRadio('aspirin', 'Aspirin', ['Yes', 'No'])}
-            {renderRadio('clopidogrel', 'Clopidigrel', ['Yes', 'No'])}
-            {renderRadio('prasugrel', 'Prasugrel', ['Yes', 'No'])}
-            {renderRadio('ticagrelor', 'Ticagralor', ['Yes', 'No'])}
-          </div>
-        </SectionCard>
+            {/* PAMI details */}
+            <div id="section-6" className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+              <div className="font-bold text-slate-800 text-sm">PAMI details, if done:</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Door to Balloon Time (min):</label>
+                  <input
+                    type="number"
+                    disabled={readOnly}
+                    value={formData.door_to_balloon_time}
+                    onChange={(e) => handleChange('door_to_balloon_time', e.target.value)}
+                    className="w-full p-2 border border-slate-300 rounded-md font-bold"
+                  />
+                  <ClinicalMetricBadge metricId="door_to_balloon_time" value={formData.door_to_balloon_time} />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Segment:</label>
+                  <input
+                    type="text"
+                    disabled={readOnly}
+                    value={formData.vessel_segment}
+                    onChange={(e) => handleChange('vessel_segment', e.target.value)}
+                    placeholder="e.g. Proximal LAD"
+                    className="w-full p-2 border border-slate-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Thrombosuction:</label>
+                  <div className="flex gap-4 mt-2">
+                    {['Done', 'Not done'].map(opt => (
+                      <label key={opt} className="flex items-center gap-2 cursor-pointer font-bold">
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="thrombosuction_done"
+                          checked={formData.thrombosuction_done === opt}
+                          onChange={() => handleChange('thrombosuction_done', opt)}
+                          className="text-red-600 focus:ring-red-500"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
-        <SectionCard title="8. Drugs - Heparin Strategy & Other Drugs">
-          <div className="space-y-4">
-            <div>
-              <label className={LABEL_STYLES}>Heparin strategy</label>
-              <select
-                disabled={readOnly}
-                value={formData.heparin_strategy}
-                onChange={(e) => handleChange('heparin_strategy', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-semibold"
-              >
-                <option value="UFH i.v alone">UFH i.v alone</option>
-                <option value="UFH s.c alone">UFH s.c alone</option>
-                <option value="LMWH alone">LMWH alone</option>
-                <option value="UFH i.v+UFHs.c">UFH i.v+UFHs.c</option>
-                <option value="UFH i.v + LMWH">UFH i.v + LMWH</option>
-              </select>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Vessel(s):</label>
+                <div className="flex flex-wrap gap-2.5">
+                  {[
+                    { key: 'vessel_lmca', label: 'LMCA' },
+                    { key: 'vessel_lad', label: 'LAD' },
+                    { key: 'vessel_diagonal', label: 'Diagonal' },
+                    { key: 'vessel_lcx', label: 'LCX' },
+                    { key: 'vessel_ramus', label: 'Ramus' },
+                    { key: 'vessel_om', label: 'OM' },
+                    { key: 'vessel_rca', label: 'RCA' },
+                    { key: 'vessel_pda', label: 'PDA' }
+                  ].map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer font-medium">
+                      <input
+                        type="checkbox"
+                        disabled={readOnly}
+                        checked={formData[key] || false}
+                        onChange={(e) => handleChange(key, e.target.checked)}
+                        className="rounded text-red-600 focus:ring-red-500"
+                      />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Stent(s):</label>
+                  <div className="flex items-center gap-6 p-2 bg-white border rounded-lg">
+                    {['BMS', 'DES'].map(opt => (
+                      <label key={opt} className="flex items-center gap-2 cursor-pointer font-bold">
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="stent_type"
+                          checked={formData.stent_type === opt}
+                          onChange={() => handleChange('stent_type', opt)}
+                          className="text-red-600 focus:ring-red-500"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Diameter (mm):</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      disabled={readOnly}
+                      value={formData.stent_diameter}
+                      onChange={(e) => handleChange('stent_diameter', e.target.value)}
+                      placeholder="e.g. 3.5"
+                      className="w-full p-2 border border-slate-300 rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Length (mm):</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      disabled={readOnly}
+                      value={formData.stent_length}
+                      onChange={(e) => handleChange('stent_length', e.target.value)}
+                      placeholder="e.g. 28"
+                      className="w-full p-2 border border-slate-300 rounded-md"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-2 border-t border-slate-100">
+                <span className="font-bold text-slate-800 block text-xs">Result:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {renderRadio('procedural_success', 'Procedural success:', ['Yes', 'No'])}
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Post-procedure TIMI flow:</label>
+                    <div className="flex gap-4 mt-2">
+                      {[0, 1, 2, 3].map(grade => (
+                        <label key={grade} className="flex items-center gap-2 cursor-pointer font-bold">
+                          <input
+                            type="radio"
+                            disabled={readOnly}
+                            name="timi_flow"
+                            checked={formData.timi_flow === grade}
+                            onChange={() => handleChange('timi_flow', grade)}
+                            className="text-red-600 focus:ring-red-500"
+                          />
+                          <span>{grade}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Major Complications:</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {[
+                      { key: 'complication_none', label: 'None' },
+                      { key: 'complication_tamponade', label: 'Tamponade' },
+                      { key: 'complication_major_bleed', label: 'Major bleed' },
+                      { key: 'complication_stroke', label: 'Stroke' },
+                      { key: 'complication_stent_thrombosis', label: 'Stent thrombosis' },
+                      { key: 'complication_mi', label: 'MI' },
+                      { key: 'complication_death', label: 'Death' },
+                      { key: 'complication_emergency_cabg', label: 'Emergency CABG' }
+                    ].map(op => (
+                      <label key={op.key} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer text-[10px]">
+                        <input
+                          type="checkbox"
+                          disabled={readOnly}
+                          checked={formData[op.key] || false}
+                          onChange={(e) => handleChange(op.key, e.target.checked)}
+                          className="rounded text-red-600 focus:ring-red-500"
+                        />
+                        <span>{op.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            {/* Thrombolysis details */}
+            <div id="section-7" className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+              <div className="font-bold text-slate-800 text-sm">Thrombolysis details</div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Door to Needle Time (min):</label>
+                  <input
+                    type="number"
+                    disabled={readOnly}
+                    value={formData.door_to_needle_time}
+                    onChange={(e) => handleChange('door_to_needle_time', e.target.value)}
+                    placeholder="e.g. 30"
+                    className="w-full p-2 border border-slate-300 rounded-md font-bold"
+                  />
+                  <ClinicalMetricBadge metricId="door_to_needle_time" value={formData.door_to_needle_time} />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Drug:</label>
+                  <div className="flex flex-wrap gap-3 mt-2">
+                    {[
+                      { key: 'drug_stk', label: 'STK' },
+                      { key: 'drug_tenecteplase', label: 'Tenecteplase' },
+                      { key: 'drug_uk', label: 'UK' },
+                      { key: 'drug_reteplase', label: 'Reteplase' }
+                    ].map(op => (
+                      <label key={op.key} className="flex items-center gap-1.5 cursor-pointer font-bold">
+                        <input
+                          type="checkbox"
+                          disabled={readOnly}
+                          checked={formData[op.key] === 'Yes' || formData[op.key] === true}
+                          onChange={(e) => handleChange(op.key, e.target.checked ? 'Yes' : 'No')}
+                          className="rounded text-red-600 focus:ring-red-500"
+                        />
+                        <span>{op.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 block mb-1">Dose:</label>
+                  <input
+                    type="text"
+                    disabled={readOnly}
+                    value={formData.thrombolysis_dose}
+                    onChange={(e) => handleChange('thrombolysis_dose', e.target.value)}
+                    placeholder="e.g. 40 mg IV bolus"
+                    className="w-full p-2 border border-slate-300 rounded-md"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Drugs Section */}
+            <div id="section-8" className="font-bold text-slate-800 border-t border-slate-200 pt-3 text-sm">Drugs:</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {renderRadio('beta_blocker', 'Beta-blocker', ['Yes', 'No'])}
+              {renderRadio('calcium_channel_blocker', 'Calcium-channel blocker', ['Yes', 'No'])}
+              {renderRadio('nitrate', 'Nitrate', ['Yes', 'No'])}
+              {renderRadio('nicorandil', 'Nicorandil', ['Yes', 'No'])}
+              {renderRadio('ivabradine', 'Ivabradine', ['Yes', 'No'])}
+              {renderRadio('ranolazine', 'Ranozolidine', ['Yes', 'No'])}
+              {renderRadio('trimetazidine', 'Trimetazidine', ['Yes', 'No'])}
+              {renderRadio('aspirin', 'Aspirin', ['Yes', 'No'])}
+              {renderRadio('clopidogrel', 'Clopidogrel', ['Yes', 'No'])}
+              {renderRadio('prasugrel', 'Prasugrel', ['Yes', 'No'])}
+              {renderRadio('ticagrelor', 'Ticagrelor', ['Yes', 'No'])}
               {renderRadio('gp2b3a', 'Gp2b3a', ['Yes', 'No'])}
               {renderRadio('bivaluridin', 'Bivaluridin', ['Yes', 'No'])}
-              {renderRadio('statin', 'Statin', ['Yes', 'No'])}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-100">
               <div>
-                <label className={LABEL_STYLES}>Statin Dose</label>
-                <select
-                  disabled={readOnly}
-                  value={formData.statin_dose}
-                  onChange={(e) => handleChange('statin_dose', e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-bold"
-                >
-                  <option value="10 mg">10 mg</option>
-                  <option value="20 mg">20 mg</option>
-                  <option value="40 mg">40 mg</option>
-                  <option value="80 mg">80 mg</option>
-                </select>
+                <label className="font-bold text-slate-700 block mb-1">Heparin strategy:</label>
+                <div className="space-y-1">
+                  {[
+                    'UFH i.v alone',
+                    'UFH s.c alone',
+                    'LMWH alone',
+                    'UFH i.v+UFHs.c',
+                    'UFH i.v + LMWH'
+                  ].map(op => (
+                    <label key={op} className="flex items-center gap-2 cursor-pointer text-xs">
+                      <input
+                        type="radio"
+                        disabled={readOnly}
+                        name="heparin_strategy"
+                        checked={formData.heparin_strategy === op}
+                        onChange={() => handleChange('heparin_strategy', op)}
+                        className="text-red-600 focus:ring-red-500"
+                      />
+                      <span>{op}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div>
-                <label className={LABEL_STYLES}>Any Other</label>
+                <label className="font-bold text-slate-700 block mb-1">Statin:</label>
+                {renderRadio('statin', 'Statin Prescribed', ['Yes', 'No'])}
+                {formData.statin === 'Yes' && (
+                  <div className="flex gap-3 mt-2 pl-2">
+                    <span className="font-bold text-slate-500">Dose:</span>
+                    {['10 mg', '20 mg', '40 mg', '80 mg'].map(dose => (
+                      <label key={dose} className="flex items-center gap-1">
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="statin_dose"
+                          checked={formData.statin_dose === dose}
+                          onChange={() => handleChange('statin_dose', dose)}
+                          className="text-red-600 focus:ring-red-500"
+                        />
+                        <span>{dose}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Any Other</label>
                 <input
                   type="text"
                   disabled={readOnly}
                   value={formData.other_drugs}
                   onChange={(e) => handleChange('other_drugs', e.target.value)}
-                  placeholder="e.g. Fondaparinux, ARNI, Digoxin"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
+                  className="w-full p-2 border border-slate-300 rounded-md"
                 />
               </div>
             </div>
@@ -2010,753 +1943,757 @@ const STEMIForm = forwardRef(function STEMIForm(
         </SectionCard>
       </div>
 
-      {/* ========================================================================= */}
-      {/* SECTION 9: Diagnostic Procedures                                         */}
-      {/* ========================================================================= */}
+      {/* Diagnostic Procedures */}
       <div id="section-9">
-        <SectionCard title="9. Diagnostic Procedures">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-            {renderRadio('bedside_echo', 'Bed-side echo', ['Yes', 'No'])}
-            {renderRadio('departmental_echo', 'Departmental echo', ['Yes', 'No'])}
-            {renderRadio('stress_testing', 'Stress Testing', ['Yes', 'No'])}
-            {renderRadio('lipid_profile', 'Lipid profile', ['Yes', 'No'])}
-            {renderRadio('bnp', 'BNP', ['Yes', 'No'])}
-            {renderRadio('crp', 'CRP', ['Yes', 'No'])}
-            {renderRadio('troponin_test', 'Trop-T/I', ['Yes', 'No'])}
-            {renderRadio('cpk_ckmb', 'CPK/CPK-MB', ['Yes', 'No'])}
-            {renderRadio('rft', 'RFT', ['Yes', 'No'])}
-            {renderRadio('lft', 'LFT', ['Yes', 'No'])}
-            {renderRadio('electrolytes', 'Electrolytes', ['Yes', 'No'])}
-            {renderRadio('hemogram', 'Hemogram', ['Yes', 'No'])}
-            {renderRadio('cxr', 'CXR', ['Yes', 'No'])}
-          </div>
-          <div className="mt-4">
-            <label className={LABEL_STYLES}>Others</label>
-            <input
-              type="text"
-              disabled={readOnly}
-              value={formData.diagnostic_other}
-              onChange={(e) => handleChange('diagnostic_other', e.target.value)}
-              placeholder="e.g. Holter monitoring, CT Coronary Angiogram"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
-            />
-          </div>
-        </SectionCard>
-      </div>
+        <SectionCard title="Diagnostic Procedures">
+          <div className="space-y-4 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {renderRadio('bedside_echo', 'Bed-side echo', ['Yes', 'No'])}
+              {renderRadio('departmental_echo', 'Departmental echo', ['Yes', 'No'])}
+              {renderRadio('stress_testing', 'Stress Testing', ['Yes', 'No'])}
+              {renderRadio('lipid_profile', 'Lipid profile', ['Yes', 'No'])}
+              {renderRadio('bnp', 'BNP', ['Yes', 'No'])}
+              {renderRadio('crp', 'CRP', ['Yes', 'No'])}
+              {renderRadio('troponin_test', 'Trop-T / I', ['Yes', 'No'])}
+              {renderRadio('cpk_ckmb', 'CPK/ CPK-MB', ['Yes', 'No'])}
+              {renderRadio('rft', 'RFT', ['Yes', 'No'])}
+              {renderRadio('lft', 'LFT', ['Yes', 'No'])}
+              {renderRadio('electrolytes', 'Electrolytes', ['Yes', 'No'])}
+              {renderRadio('hemogram', 'Hemogram', ['Yes', 'No'])}
+              {renderRadio('cxr', 'CXR', ['Yes', 'No'])}
+            </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Others</label>
+              <input
+                type="text"
+                disabled={readOnly}
+                value={formData.diagnostic_other}
+                onChange={(e) => handleChange('diagnostic_other', e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded-md"
+              />
+            </div>
 
-      {/* ========================================================================= */}
-      {/* ========================================================================= */}
-      {/* SECTION 10: Reports (ECG, Echo, Blood Investigations, Angiogram)         */}
-      {/* ========================================================================= */}
-      <div id="section-10">
-        <SectionCard title="10. Reports">
-          <div className="space-y-6">
-            {/* Subsection: ECG */}
-            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
-              <span className="font-bold text-slate-800 text-xs block border-b pb-2 uppercase tracking-wide">ECG</span>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                <div>
-                  <label className={LABEL_STYLES}>HR (bpm)</label>
-                  <input
-                    type="number"
-                    disabled={readOnly}
-                    value={formData.ecg_heart_rate}
-                    onChange={(e) => handleChange('ecg_heart_rate', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold bg-white"
-                  />
-                </div>
-                <div>
-                  <label className={LABEL_STYLES}>AV Block</label>
-                  <select
-                    disabled={readOnly}
-                    value={formData.av_block}
-                    onChange={(e) => handleChange('av_block', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white"
-                  >
-                    <option value="None">None</option>
-                    <option value="1-degree">1-degree</option>
-                    <option value="2-degree">2-degree</option>
-                    <option value="CHB">CHB</option>
-                  </select>
-                </div>
-                <div>
-                  <label className={LABEL_STYLES}>BBB</label>
-                  <select
-                    disabled={readOnly}
-                    value={formData.bbb}
-                    onChange={(e) => handleChange('bbb', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white"
-                  >
-                    <option value="None">None</option>
-                    <option value="RBBB">RBBB</option>
-                    <option value="LBBB">LBBB</option>
-                    <option value="Indeterminate">Inderminate</option>
-                  </select>
-                </div>
-              </div>
+            <div id="section-10" className="space-y-4 pt-2">
+              <div className="font-bold text-slate-800 border-t border-slate-200 pt-3 text-sm">Reports:</div>
 
-              <div>
-                <label className={LABEL_STYLES}>Q waves</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
-                  {[
-                    { key: 'qwaves_none', label: 'None' },
-                    { key: 'qwaves_inferior', label: 'Inferior' },
-                    { key: 'qwaves_anteroseptal', label: 'Antero-septal' },
-                    { key: 'qwaves_anterior', label: 'Anterior' },
-                    { key: 'qwaves_anterolateral', label: 'Anterolateral' },
-                    { key: 'qwaves_lateral', label: 'Lateral' }
-                  ].map(({ key, label }) => (
-                    <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
-                      <input
-                        type="checkbox"
-                        disabled={readOnly}
-                        checked={formData[key] || false}
-                        onChange={(e) => handleChange(key, e.target.checked)}
-                        className="text-red-600 rounded"
-                      />
-                      <span>{label}</span>
-                    </label>
-                  ))}
+              {/* ECG */}
+              <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+                <span className="font-bold text-slate-800 text-xs block border-b pb-1">ECG:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">HR (bpm):</label>
+                    <input
+                      type="number"
+                      disabled={readOnly}
+                      value={formData.ecg_heart_rate}
+                      onChange={(e) => handleChange('ecg_heart_rate', e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-md font-bold"
+                    />
+                    <ClinicalMetricBadge metricId="ecg_heart_rate" value={formData.ecg_heart_rate} />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">AV Block:</label>
+                    <div className="flex flex-wrap gap-3 mt-1.5">
+                      {['None', '1-degree', '2-degree', 'CHB'].map(opt => (
+                        <label key={opt} className="flex items-center gap-1.5 cursor-pointer font-semibold">
+                          <input
+                            type="radio"
+                            disabled={readOnly}
+                            name="av_block"
+                            checked={formData.av_block === opt}
+                            onChange={() => handleChange('av_block', opt)}
+                            className="text-red-600 focus:ring-red-500"
+                          />
+                          <span>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">BBB:</label>
+                    <div className="flex flex-wrap gap-3 mt-1.5">
+                      {['RBBB', 'LBBB', 'Indeterminate', 'None'].map(opt => (
+                        <label key={opt} className="flex items-center gap-1.5 cursor-pointer font-semibold">
+                          <input
+                            type="radio"
+                            disabled={readOnly}
+                            name="bbb"
+                            checked={formData.bbb === opt}
+                            onChange={() => handleChange('bbb', opt)}
+                            className="text-red-600 focus:ring-red-500"
+                          />
+                          <span>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className={LABEL_STYLES}>ST dep</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
-                  {[
-                    { key: 'st_depression_none', label: 'None' },
-                    { key: 'st_depression_inferior', label: 'Inferior' },
-                    { key: 'st_depression_anteroseptal', label: 'Antero-septal' },
-                    { key: 'st_depression_anterior', label: 'Anterior' },
-                    { key: 'st_depression_anterolateral', label: 'Anterolateral' },
-                    { key: 'st_depression_lateral', label: 'Lateral' }
-                  ].map(({ key, label }) => (
-                    <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
-                      <input
-                        type="checkbox"
-                        disabled={readOnly}
-                        checked={formData[key] || false}
-                        onChange={(e) => handleChange(key, e.target.checked)}
-                        className="text-red-600 rounded"
-                      />
-                      <span>{label}</span>
-                    </label>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Q waves:</label>
+                    <div className="grid grid-cols-2 gap-1.5 mt-1">
+                      {['None', 'Inferior', 'Antero-septal', 'Anterior', 'Anterolateral', 'Lateral'].map(loc => {
+                        const key = `qwaves_${loc.toLowerCase().replace('-', '')}`;
+                        return (
+                          <label key={loc} className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              disabled={readOnly}
+                              checked={formData[key] || false}
+                              onChange={(e) => handleChange(key, e.target.checked)}
+                              className="rounded text-red-600 focus:ring-red-500"
+                            />
+                            <span className="text-[10px] font-medium">{loc}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">ST dep:</label>
+                    <div className="grid grid-cols-2 gap-1.5 mt-1">
+                      {['None', 'Inferior', 'Antero-septal', 'Anterior', 'Anterolateral', 'Lateral'].map(loc => {
+                        const key = `st_depression_${loc.toLowerCase().replace('-', '')}`;
+                        return (
+                          <label key={loc} className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              disabled={readOnly}
+                              checked={formData[key] || false}
+                              onChange={(e) => handleChange(key, e.target.checked)}
+                              className="rounded text-red-600 focus:ring-red-500"
+                            />
+                            <span className="text-[10px] font-medium">{loc}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">T inversion:</label>
+                    <div className="grid grid-cols-2 gap-1.5 mt-1">
+                      {['None', 'Inferior', 'Antero-septal', 'Anterior', 'Anterolateral', 'Lateral'].map(loc => {
+                        const key = `t_inversion_${loc.toLowerCase().replace('-', '')}`;
+                        return (
+                          <label key={loc} className="flex items-center gap-1 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              disabled={readOnly}
+                              checked={formData[key] || false}
+                              onChange={(e) => handleChange(key, e.target.checked)}
+                              className="rounded text-red-600 focus:ring-red-500"
+                            />
+                            <span className="text-[10px] font-medium">{loc}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Rhythm:</label>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {['NSR', 'AF', 'SVT', 'VT', 'VF'].map(r => (
+                        <label key={r} className="flex items-center gap-1 cursor-pointer font-bold">
+                          <input
+                            type="radio"
+                            disabled={readOnly}
+                            name="rhythm"
+                            checked={formData.rhythm === r}
+                            onChange={() => handleChange('rhythm', r)}
+                            className="text-red-600 focus:ring-red-500"
+                          />
+                          <span>{r}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label className={LABEL_STYLES}>T inv</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
-                  {[
-                    { key: 't_inversion_none', label: 'None' },
-                    { key: 't_inversion_inferior', label: 'Inferior' },
-                    { key: 't_inversion_anteroseptal', label: 'Antero-septal' },
-                    { key: 't_inversion_anterior', label: 'Anterior' },
-                    { key: 't_inversion_anterolateral', label: 'Anterolateral' },
-                    { key: 't_inversion_lateral', label: 'Lateral' }
-                  ].map(({ key, label }) => (
-                    <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
-                      <input
-                        type="checkbox"
-                        disabled={readOnly}
-                        checked={formData[key] || false}
-                        onChange={(e) => handleChange(key, e.target.checked)}
-                        className="text-red-600 rounded"
-                      />
-                      <span>{label}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label className={LABEL_STYLES}>Rhythm</label>
-                  <select
-                    disabled={readOnly}
-                    value={formData.rhythm}
-                    onChange={(e) => handleChange('rhythm', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-bold"
-                  >
-                    <option value="NSR">NSR</option>
-                    <option value="AF">AF</option>
-                    <option value="SVT">SVT</option>
-                    <option value="VT">VT</option>
-                    <option value="VF">VF</option>
-                  </select>
-                </div>
-                <div>
-                  <label className={LABEL_STYLES}>Any other</label>
+                  <label className="font-bold text-slate-700 block mb-1">Others (ECG):</label>
                   <input
                     type="text"
                     disabled={readOnly}
                     value={formData.ecg_other}
                     onChange={(e) => handleChange('ecg_other', e.target.value)}
-                    placeholder="e.g. S1Q3T3 pattern, PR depression"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white"
+                    placeholder="Specify other ECG findings..."
+                    className="w-full p-2 border border-slate-300 rounded-md"
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Subsection: Echo */}
-            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
-              <span className="font-bold text-slate-800 text-xs block border-b pb-2 uppercase tracking-wide">Echo</span>
-              <div className="space-y-4 text-xs">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Echo */}
+              <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+                <span className="font-bold text-slate-800 text-xs block border-b pb-1">Echo:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   <div>
-                    <label className={LABEL_STYLES}>EF (%)</label>
+                    <label className="font-bold text-slate-700 block mb-1">EF (%):</label>
                     <input
                       type="number"
                       disabled={readOnly}
                       value={formData.echo_ef}
                       onChange={(e) => handleChange('echo_ef', e.target.value)}
-                      placeholder="e.g. 50"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 font-bold bg-white"
+                      className="w-full p-2 border border-slate-300 rounded-md font-bold text-slate-900"
                     />
+                    <ClinicalMetricBadge metricId="echo_ef" value={formData.echo_ef} />
                   </div>
                   <div>
-                    <label className={LABEL_STYLES}>LV Function</label>
-                    <select
-                      disabled={readOnly}
-                      value={formData.lv_function}
-                      onChange={(e) => handleChange('lv_function', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-semibold"
-                    >
-                      <option value="Normal">Normal</option>
-                      <option value="Mild LVD">Mild LVD</option>
-                      <option value="Mod. LVD">Mod. LVD</option>
-                      <option value="Sev.LVD">Sev.LVD</option>
-                    </select>
+                    <label className="font-bold text-slate-700 block mb-1">LV Function:</label>
+                    <div className="flex flex-wrap gap-3 mt-1.5">
+                      {['Normal', 'Mild LVD', 'Moderate LVD', 'Severe LVD'].map(opt => (
+                        <label key={opt} className="flex items-center gap-1 cursor-pointer font-medium">
+                          <input
+                            type="radio"
+                            disabled={readOnly}
+                            name="lv_function"
+                            checked={formData.lv_function === opt}
+                            onChange={() => handleChange('lv_function', opt)}
+                            className="text-red-600 focus:ring-red-500"
+                          />
+                          <span>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                   <div>
-                    <label className={LABEL_STYLES}>MR</label>
-                    <select
-                      disabled={readOnly}
-                      value={formData.mr_grade}
-                      onChange={(e) => handleChange('mr_grade', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-semibold"
-                    >
-                      <option value="None">None</option>
-                      <option value="Mild">Mild</option>
-                      <option value="Mod">Mod</option>
-                      <option value="Severe">Severe</option>
-                    </select>
+                    <label className="font-bold text-slate-700 block mb-1">RWMA:</label>
+                    <div className="flex flex-wrap gap-3 mt-1.5">
+                      {['LAD', 'RCA', 'LCX'].map(opt => {
+                        const key = `rwma_${opt.toLowerCase()}`;
+                        return (
+                          <label key={opt} className="flex items-center gap-1 cursor-pointer font-medium">
+                            <input
+                              type="checkbox"
+                              disabled={readOnly}
+                              checked={formData[key] || false}
+                              onChange={(e) => handleChange(key, e.target.checked)}
+                              className="rounded text-red-600 focus:ring-red-500"
+                            />
+                            <span>{opt} territory</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">MR:</label>
+                    <div className="flex flex-wrap gap-3 mt-1.5">
+                      {['None', 'Mild', 'Moderate', 'Severe'].map(opt => (
+                        <label key={opt} className="flex items-center gap-1 cursor-pointer font-medium">
+                          <input
+                            type="radio"
+                            disabled={readOnly}
+                            name="mr_grade"
+                            checked={formData.mr_grade === opt}
+                            onChange={() => handleChange('mr_grade', opt)}
+                            className="text-red-600 focus:ring-red-500"
+                          />
+                          <span>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className={LABEL_STYLES}>RWMA</label>
-                  <div className="grid grid-cols-3 gap-2 pt-1 max-w-md">
-                    {[
-                      { key: 'rwma_lad', label: 'LAD territory' },
-                      { key: 'rwma_rca', label: 'RCA territory' },
-                      { key: 'rwma_lcx', label: 'LCX territory' }
-                    ].map(({ key, label }) => (
-                      <label key={key} className="flex items-center gap-2 p-2 bg-white border border-slate-200 rounded-lg cursor-pointer text-xs font-semibold">
-                        <input
-                          type="checkbox"
-                          disabled={readOnly}
-                          checked={formData[key] || false}
-                          onChange={(e) => handleChange(key, e.target.checked)}
-                          className="text-red-600 rounded"
-                        />
-                        <span>{label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <div>
-                    <label className={LABEL_STYLES}>E</label>
+                    <label className="font-bold text-slate-700 block mb-1">E (m/s):</label>
                     <input
                       type="number"
-                      step="0.1"
+                      step="0.01"
                       disabled={readOnly}
                       value={formData.echo_e}
                       onChange={(e) => handleChange('echo_e', e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
+                      className="w-full p-2 border border-slate-300 rounded-md"
                     />
+                    <ClinicalMetricBadge metricId="echo_e" value={formData.echo_e} />
                   </div>
                   <div>
-                    <label className={LABEL_STYLES}>A</label>
+                    <label className="font-bold text-slate-700 block mb-1">A (m/s):</label>
                     <input
                       type="number"
-                      step="0.1"
+                      step="0.01"
                       disabled={readOnly}
                       value={formData.echo_a}
                       onChange={(e) => handleChange('echo_a', e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
+                      className="w-full p-2 border border-slate-300 rounded-md"
                     />
+                    <ClinicalMetricBadge metricId="echo_a" value={formData.echo_a} />
                   </div>
                   <div>
-                    <label className={LABEL_STYLES}>DT</label>
+                    <label className="font-bold text-slate-700 block mb-1">DT (ms):</label>
                     <input
                       type="number"
-                      step="1"
                       disabled={readOnly}
                       value={formData.echo_dt}
                       onChange={(e) => handleChange('echo_dt', e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
+                      className="w-full p-2 border border-slate-300 rounded-md"
                     />
+                    <ClinicalMetricBadge metricId="echo_dt" value={formData.echo_dt} />
                   </div>
                   <div>
-                    <label className={LABEL_STYLES}>E'</label>
+                    <label className="font-bold text-slate-700 block mb-1">E' (cm/s):</label>
                     <input
                       type="number"
                       step="0.1"
                       disabled={readOnly}
                       value={formData.echo_e_prime}
                       onChange={(e) => handleChange('echo_e_prime', e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
+                      className="w-full p-2 border border-slate-300 rounded-md"
                     />
+                    <ClinicalMetricBadge metricId="echo_e_prime" value={formData.echo_e_prime} />
                   </div>
                   <div>
-                    <label className={LABEL_STYLES}>TAPSV</label>
+                    <label className="font-bold text-slate-700 block mb-1">TAPSV (mm):</label>
                     <input
                       type="number"
                       step="0.1"
                       disabled={readOnly}
                       value={formData.echo_tapsv}
                       onChange={(e) => handleChange('echo_tapsv', e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white"
+                      className="w-full p-2 border border-slate-300 rounded-md"
                     />
+                    <ClinicalMetricBadge metricId="echo_tapsv" value={formData.echo_tapsv} />
                   </div>
                 </div>
 
                 <div>
-                  <label className={LABEL_STYLES}>Others</label>
+                  <label className="font-bold text-slate-700 block mb-1">Others (Echo):</label>
                   <input
                     type="text"
                     disabled={readOnly}
                     value={formData.echo_other}
                     onChange={(e) => handleChange('echo_other', e.target.value)}
                     placeholder="e.g. Mild TR, PASP 35 mmHg"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white"
+                    className="w-full p-2 border border-slate-300 rounded-md"
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Subsection: Blood Investigations */}
-            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
-              <span className="font-bold text-slate-800 text-xs block border-b pb-2 uppercase tracking-wide">Blood Investigations (Numeric fields)</span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                <div>
-                  <label className={LABEL_STYLES}>Hemoglobin (gm%)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    disabled={readOnly}
-                    value={formData.hemoglobin}
-                    onChange={(e) => handleChange('hemoglobin', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold bg-white"
-                  />
-                </div>
-                <div>
-                  <label className={LABEL_STYLES}>Creat (mg/dl)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    disabled={readOnly}
-                    value={formData.creatinine}
-                    onChange={(e) => handleChange('creatinine', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold bg-white"
-                  />
-                </div>
-                <div>
-                  <label className={LABEL_STYLES}>Trop-I</label>
-                  <input
-                    type="text"
-                    disabled={readOnly}
-                    value={formData.troponin_i}
-                    onChange={(e) => handleChange('troponin_i', e.target.value)}
-                    placeholder="e.g. Positive / 2.5 ng/ml"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                  />
-                </div>
-                <div>
-                  <label className={LABEL_STYLES}>CPK</label>
-                  <input
-                    type="text"
-                    disabled={readOnly}
-                    value={formData.cpk}
-                    onChange={(e) => handleChange('cpk', e.target.value)}
-                    placeholder="e.g. 450 IU/L"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                  />
-                </div>
-                <div>
-                  <label className={LABEL_STYLES}>CK-MB</label>
-                  <input
-                    type="text"
-                    disabled={readOnly}
-                    value={formData.ck_mb}
-                    onChange={(e) => handleChange('ck_mb', e.target.value)}
-                    placeholder="e.g. 45 ng/ml"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                  />
-                </div>
-                <div>
-                  <label className={LABEL_STYLES}>Na</label>
-                  <input
-                    type="number"
-                    disabled={readOnly}
-                    value={formData.sodium}
-                    onChange={(e) => handleChange('sodium', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                  />
-                </div>
-                <div>
-                  <label className={LABEL_STYLES}>K</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    disabled={readOnly}
-                    value={formData.potassium}
-                    onChange={(e) => handleChange('potassium', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                  />
-                </div>
-                <div>
-                  <label className={LABEL_STYLES}>RBS at admission</label>
-                  <input
-                    type="number"
-                    disabled={readOnly}
-                    value={formData.rbs_admission}
-                    onChange={(e) => handleChange('rbs_admission', e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Subsection: Coronary Angiogram */}
-            <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
-              <span className="font-bold text-slate-800 text-xs block border-b pb-2 uppercase tracking-wide">Coronary Angiogram</span>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                {renderRadio('angiogram_done', 'Coronary Angiogram', ['Yes', 'No'])}
-                {formData.angiogram_done === 'Yes' && (
+              {/* Blood Investigations */}
+              <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+                <span className="font-bold text-slate-800 text-xs block border-b pb-1">Blood Investigations:</span>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div>
-                    <label className={LABEL_STYLES}>If done</label>
-                    <select
+                    <label className="font-bold text-slate-700 block mb-1">Hemoglobin (gm%):</label>
+                    <input
+                      type="number"
+                      step="0.1"
                       disabled={readOnly}
-                      value={formData.angiogram_finding}
-                      onChange={(e) => handleChange('angiogram_finding', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-bold"
-                    >
-                      <option value="Normal">Normal</option>
-                      <option value="1VD">1-VD</option>
-                      <option value="2VD">2-VD</option>
-                      <option value="3VD">3-VD</option>
-                      <option value="LMCA">LMCA</option>
-                    </select>
+                      value={formData.hemoglobin}
+                      onChange={(e) => handleChange('hemoglobin', e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-md font-bold"
+                    />
+                    <ClinicalMetricBadge metricId="hemoglobin" value={formData.hemoglobin} />
                   </div>
-                )}
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Creat (mg/dl):</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      disabled={readOnly}
+                      value={formData.creatinine}
+                      onChange={(e) => handleChange('creatinine', e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-md font-bold"
+                    />
+                    <ClinicalMetricBadge metricId="creatinine" value={formData.creatinine} />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Trop-I (ng/ml):</label>
+                    <input
+                      type="text"
+                      disabled={readOnly}
+                      value={formData.troponin_i}
+                      onChange={(e) => handleChange('troponin_i', e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-md"
+                    />
+                    <ClinicalMetricBadge metricId="troponin_i" value={formData.troponin_i} />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">CPK (U/L):</label>
+                    <input
+                      type="text"
+                      disabled={readOnly}
+                      value={formData.cpk}
+                      onChange={(e) => handleChange('cpk', e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-md"
+                    />
+                    <ClinicalMetricBadge metricId="cpk" value={formData.cpk} />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">CK-MB (U/L):</label>
+                    <input
+                      type="text"
+                      disabled={readOnly}
+                      value={formData.ck_mb}
+                      onChange={(e) => handleChange('ck_mb', e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-md"
+                    />
+                    <ClinicalMetricBadge metricId="ck_mb" value={formData.ck_mb} />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">Na (mEq/L):</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      disabled={readOnly}
+                      value={formData.sodium}
+                      onChange={(e) => handleChange('sodium', e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-md"
+                    />
+                    <ClinicalMetricBadge metricId="sodium" value={formData.sodium} />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">K (mEq/L):</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      disabled={readOnly}
+                      value={formData.potassium}
+                      onChange={(e) => handleChange('potassium', e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-md"
+                    />
+                    <ClinicalMetricBadge metricId="potassium" value={formData.potassium} />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 block mb-1">RBS at admission (mg/dl):</label>
+                    <input
+                      type="number"
+                      disabled={readOnly}
+                      value={formData.rbs_admission}
+                      onChange={(e) => handleChange('rbs_admission', e.target.value)}
+                      className="w-full p-2 border border-slate-300 rounded-md"
+                    />
+                    <ClinicalMetricBadge metricId="rbs_admission" value={formData.rbs_admission} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Coronary Angiogram */}
+              <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+                <span className="font-bold text-slate-800 text-xs block border-b pb-1">Coronary Angiogram:</span>
+                <div className="flex flex-wrap items-center gap-6">
+                  <div className="flex gap-4 p-2 bg-white border rounded-lg">
+                    {['Done', 'Not done'].map(opt => (
+                      <label key={opt} className="flex items-center gap-2 cursor-pointer font-bold">
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="angiogram_done"
+                          checked={formData.angiogram_done === (opt === 'Done' ? 'Yes' : 'No')}
+                          onChange={() => handleChange('angiogram_done', opt === 'Done' ? 'Yes' : 'No')}
+                          className="text-red-600 focus:ring-red-500"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {formData.angiogram_done === 'Yes' && (
+                    <div className="flex flex-wrap items-center gap-3 animate-fadeIn">
+                      <span className="font-bold text-slate-500">If done:</span>
+                      {['Normal', '1VD', '2VD', '3VD', 'LMCA'].map(opt => (
+                        <label key={opt} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer font-medium">
+                          <input
+                            type="radio"
+                            disabled={readOnly}
+                            name="angiogram_finding"
+                            checked={formData.angiogram_finding === opt}
+                            onChange={() => handleChange('angiogram_finding', opt)}
+                            className="text-red-600 focus:ring-red-500"
+                          />
+                          <span>{opt}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </SectionCard>
-      </div>
 
-      {/* ========================================================================= */}
-      {/* SECTION 11: Invasive Procedures                                          */}
-      {/* ========================================================================= */}
-      <div id="section-11">
-        <SectionCard title="11. Invasive Procedures">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-            {renderRadio('iabp', 'IABP', ['Yes', 'No'])}
-            {renderRadio('cag', 'CAG', ['Yes', 'No'])}
-            {renderRadio('invasive_ventilation', 'Invasive Ventilation', ['Yes', 'No'])}
-            {renderRadio('ptca', 'PTCA', ['Yes', 'No'])}
-            {renderRadio('cabg', 'CABG', ['Yes', 'No'])}
-          </div>
-          <div className="mt-4">
-            <label className={LABEL_STYLES}>Other</label>
-            <input
-              type="text"
-              disabled={readOnly}
-              value={formData.other_procedure}
-              onChange={(e) => handleChange('other_procedure', e.target.value)}
-              placeholder="e.g. Pericardiocentesis, TPI"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
-            />
-          </div>
-        </SectionCard>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 12: Out-comes                                                   */}
-      {/* ========================================================================= */}
-      <div id="section-12">
-        <SectionCard title="12. Out-comes">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            {renderRadio('death', 'Death', ['Yes', 'No'])}
-            {renderRadio('stemi_for_nonstemi', 'STEMI for NONSTEMI subjects', ['Yes', 'No'])}
-            {renderRadio('remi_for_stemi', 'Re-MI for STEMI subjects', ['Yes', 'No'])}
-            {renderRadio('revascularization_recurrent_ischemia', 'Revascularization for recurrent ischemia', ['Yes', 'No'])}
-            {renderRadio('cva_thrombotic', 'CVA-thrombotic', ['Yes', 'No'])}
-            {renderRadio('cva_hemorrhagic', 'CVA-hemorrhagic', ['Yes', 'No'])}
-            {renderRadio('major_bleeding', 'Major Bleeding', ['Yes', 'No'])}
-          </div>
-          <div className="mt-4">
-            <label className={LABEL_STYLES}>Any other</label>
-            <input
-              type="text"
-              disabled={readOnly}
-              value={formData.outcome_other}
-              onChange={(e) => handleChange('outcome_other', e.target.value)}
-              placeholder="e.g. Cardiogenic shock resolved, Heart failure hospitalization"
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
-            />
-          </div>
-        </SectionCard>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 13: Discharge Medications                                         */}
-      {/* ========================================================================= */}
-      <div id="section-13">
-        <SectionCard title="13. Discharge Medications">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-xs mb-4">
-            {renderRadio('discharge_beta_blocker', 'Beta-blocker', ['Yes', 'No'])}
-            {renderRadio('discharge_calcium_channel_blocker', 'Calcium-channel blocker', ['Yes', 'No'])}
-            {renderRadio('discharge_nitrate', 'Nitrate', ['Yes', 'No'])}
-            {renderRadio('discharge_nicorandil', 'Nicorandil', ['Yes', 'No'])}
-            {renderRadio('discharge_ivabradine', 'Ivabradine', ['Yes', 'No'])}
-            {renderRadio('discharge_ranolazine', 'Ranozolidine', ['Yes', 'No'])}
-            {renderRadio('discharge_trimetazidine', 'Trimetazidine', ['Yes', 'No'])}
-            {renderRadio('discharge_aspirin', 'Aspirin', ['Yes', 'No'])}
-            {renderRadio('discharge_clopidogrel', 'Clopidigrel', ['Yes', 'No'])}
-            {renderRadio('discharge_prasugrel', 'Prasugrel', ['Yes', 'No'])}
-            {renderRadio('discharge_ticagrelor', 'Ticagralor', ['Yes', 'No'])}
-            {renderRadio('discharge_statin', 'Statin', ['Yes', 'No'])}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            <div>
-              <label className={LABEL_STYLES}>Statin Dose</label>
-              <select
-                disabled={readOnly}
-                value={formData.discharge_statin_dose}
-                onChange={(e) => handleChange('discharge_statin_dose', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500 bg-white font-bold"
-              >
-                <option value="10 mg">10 mg</option>
-                <option value="20 mg">20 mg</option>
-                <option value="40 mg">40 mg</option>
-                <option value="80 mg">80 mg</option>
-              </select>
+            <div id="section-11" className="font-bold text-slate-800 border-t border-slate-200 pt-3 text-sm">Invasive Procedures:</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {renderRadio('cag', 'CAG', ['Yes', 'No'])}
+              {renderRadio('iabp', 'IABP', ['Yes', 'No'])}
+              {renderRadio('invasive_ventilation', 'Invasive Ventilation', ['Yes', 'No'])}
+              {renderRadio('ptca', 'PTCA', ['Yes', 'No'])}
+              {renderRadio('cabg', 'CABG', ['Yes', 'No'])}
             </div>
             <div>
-              <label className={LABEL_STYLES}>Any Other</label>
+              <label className="font-bold text-slate-700 block mb-1">Other</label>
               <input
                 type="text"
                 disabled={readOnly}
-                value={formData.discharge_other_medication}
-                onChange={(e) => handleChange('discharge_other_medication', e.target.value)}
-                placeholder="e.g. Ramipril 2.5 mg, Spironolactone 25 mg"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-1 focus:ring-red-500"
+                value={formData.other_procedure}
+                onChange={(e) => handleChange('other_procedure', e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded-md"
               />
             </div>
           </div>
         </SectionCard>
       </div>
 
-      {/* ========================================================================= */}
-      {/* SECTION 14: Appropriateness for various procedures                       */}
-      {/* ========================================================================= */}
+      {/* Out-comes */}
+      <div id="section-12">
+        <SectionCard title="Out-comes">
+          <div className="space-y-4 text-xs">
+            <div className="font-bold text-slate-800 text-sm">Clinical:</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 border p-3 rounded-xl bg-white shadow-sm">
+              {renderRadio('death', 'Death', ['Yes', 'No'])}
+              {renderRadio('stemi_for_nonstemi', 'STEMI for NONSTEMI subjects', ['Yes', 'No'])}
+              {renderRadio('remi_for_stemi', 'Re-MI for STEMI subjects', ['Yes', 'No'])}
+              {renderRadio('revascularization_recurrent_ischemia', 'Revascularization for recurrent ischemia', ['Yes', 'No'])}
+              {renderRadio('cva_thrombotic', 'CVA-thrombotic', ['Yes', 'No'])}
+              {renderRadio('cva_hemorrhagic', 'CVA-hemorrhagic', ['Yes', 'No'])}
+              {renderRadio('major_bleeding', 'Major Bleeding', ['Yes', 'No'])}
+            </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">Any other</label>
+              <input
+                type="text"
+                disabled={readOnly}
+                value={formData.outcome_other}
+                onChange={(e) => handleChange('outcome_other', e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded-md"
+              />
+            </div>
+
+            <div id="section-13" className="font-bold text-slate-800 border-t border-slate-200 pt-3 text-sm">Discharge Medications:</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {renderRadio('discharge_beta_blocker', 'Beta-blocker', ['Yes', 'No'])}
+              {renderRadio('discharge_calcium_channel_blocker', 'Calcium-channel blocker', ['Yes', 'No'])}
+              {renderRadio('discharge_nitrate', 'Nitrate', ['Yes', 'No'])}
+              {renderRadio('discharge_nicorandil', 'Nicorandil', ['Yes', 'No'])}
+              {renderRadio('discharge_ivabradine', 'Ivabradine', ['Yes', 'No'])}
+              {renderRadio('discharge_ranolazine', 'Ranozolidine', ['Yes', 'No'])}
+              {renderRadio('discharge_trimetazidine', 'Trimetazidine', ['Yes', 'No'])}
+              {renderRadio('discharge_aspirin', 'Aspirin', ['Yes', 'No'])}
+              {renderRadio('discharge_clopidogrel', 'Clopidogrel', ['Yes', 'No'])}
+              {renderRadio('discharge_prasugrel', 'Prasugrel', ['Yes', 'No'])}
+              {renderRadio('discharge_ticagrelor', 'Ticagrelor', ['Yes', 'No'])}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-2">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Statin:</label>
+                {renderRadio('discharge_statin', 'Statin Prescribed', ['Yes', 'No'])}
+                {formData.discharge_statin === 'Yes' && (
+                  <div className="flex gap-3 mt-2 pl-2">
+                    <span className="font-bold text-slate-500">Dose:</span>
+                    {['10 mg', '20 mg', '40 mg', '80 mg'].map(dose => (
+                      <label key={dose} className="flex items-center gap-1 cursor-pointer">
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="discharge_statin_dose"
+                          checked={formData.discharge_statin_dose === dose}
+                          onChange={() => handleChange('discharge_statin_dose', dose)}
+                          className="text-red-600 focus:ring-red-500"
+                        />
+                        <span>{dose}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Any Other</label>
+                <input
+                  type="text"
+                  disabled={readOnly}
+                  value={formData.discharge_other_medication}
+                  onChange={(e) => handleChange('discharge_other_medication', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                />
+              </div>
+            </div>
+          </div>
+        </SectionCard>
+      </div>
+
+      {/* Appropriateness Assessment */}
       <div id="section-14">
-        <SectionCard title="14. Appropriateness for various procedures">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            {proceduresList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
+        <SectionCard title="Appropriateness Assessment">
+          <div className="space-y-6 text-xs">
+            <div>
+              <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various procedures</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                {proceduresList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
+              </div>
+            </div>
+
+            <div id="section-15" className="pt-4 border-t border-slate-200">
+              <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various investigations</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                {investigationsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
+              </div>
+            </div>
+
+            <div id="section-16" className="pt-4 border-t border-slate-200">
+              <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various drugs</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                {drugsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
+              </div>
+            </div>
           </div>
         </SectionCard>
       </div>
 
-      {/* ========================================================================= */}
-      {/* SECTION 15: Appropriateness for various investigations                   */}
-      {/* ========================================================================= */}
-      <div id="section-15">
-        <SectionCard title="15. Appropriateness for various investigations">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            {investigationsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
-          </div>
-        </SectionCard>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 16: Appropriateness for various drugs                            */}
-      {/* ========================================================================= */}
-      <div id="section-16">
-        <SectionCard title="16. Appropriateness for various drugs">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-            {drugsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
-          </div>
-        </SectionCard>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 17: Length of Stay                                                */}
-      {/* ========================================================================= */}
+      {/* Hospitalization Details */}
       <div id="section-17">
-        <SectionCard title="17. Length of Stay">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-            <div>
-              <label className={LABEL_STYLES}>ICCU (hours)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.iccu_hours}
-                onChange={(e) => handleChange('iccu_hours', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold"
-              />
+        <SectionCard title="Hospitalization Details">
+          <div className="space-y-4 text-xs">
+            <div className="font-bold text-slate-800">Length of Stay:</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">ICCU</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    disabled={readOnly}
+                    value={formData.iccu_hours}
+                    onChange={(e) => handleChange('iccu_hours', e.target.value)}
+                    className="w-full p-2 border border-slate-300 rounded-md"
+                  />
+                  <span className="font-semibold text-slate-500">hours</span>
+                </div>
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Step-down ICU</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    disabled={readOnly}
+                    value={formData.stepdown_icu_hours}
+                    onChange={(e) => handleChange('stepdown_icu_hours', e.target.value)}
+                    className="w-full p-2 border border-slate-300 rounded-md"
+                  />
+                  <span className="font-semibold text-slate-500">hours</span>
+                </div>
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Floors</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    disabled={readOnly}
+                    value={formData.floor_days}
+                    onChange={(e) => handleChange('floor_days', e.target.value)}
+                    className="w-full p-2 border border-slate-300 rounded-md"
+                  />
+                  <span className="font-semibold text-slate-500">days</span>
+                </div>
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Total Hospital stay</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    disabled
+                    value={formData.total_hospital_stay_days || '0'}
+                    className={INPUT_DISABLED_STYLES + " font-bold text-slate-950"}
+                  />
+                  <span className="font-semibold text-slate-500">days</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className={LABEL_STYLES}>Step-down ICU (hours)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.stepdown_icu_hours}
-                onChange={(e) => handleChange('stepdown_icu_hours', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Floors (days)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.floor_days}
-                onChange={(e) => handleChange('floor_days', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Total Hospital stay (days)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.total_hospital_stay_days}
-                onChange={(e) => handleChange('total_hospital_stay_days', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-bold text-red-700 bg-red-50/30"
-              />
+
+            <div id="section-18" className="font-bold text-slate-800 border-t pt-3">Cost of care:</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Bed charges</label>
+                <input
+                  type="number"
+                  disabled={readOnly}
+                  value={formData.bed_charges}
+                  onChange={(e) => handleChange('bed_charges', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Drugs & Disposables</label>
+                <input
+                  type="number"
+                  disabled={readOnly}
+                  value={formData.drugs_disposables_cost}
+                  onChange={(e) => handleChange('drugs_disposables_cost', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Packages</label>
+                <input
+                  type="number"
+                  disabled={readOnly}
+                  value={formData.package_cost}
+                  onChange={(e) => handleChange('package_cost', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md font-bold text-slate-900 bg-white"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Lab Investigations</label>
+                <input
+                  type="number"
+                  disabled={readOnly}
+                  value={formData.laboratory_cost}
+                  onChange={(e) => handleChange('laboratory_cost', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Non-invasive labs</label>
+                <input
+                  type="number"
+                  disabled={readOnly}
+                  value={formData.non_invasive_lab_cost}
+                  onChange={(e) => handleChange('non_invasive_lab_cost', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Consults</label>
+                <input
+                  type="number"
+                  disabled={readOnly}
+                  value={formData.consultation_cost}
+                  onChange={(e) => handleChange('consultation_cost', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Radiology</label>
+                <input
+                  type="number"
+                  disabled={readOnly}
+                  value={formData.radiology_cost}
+                  onChange={(e) => handleChange('radiology_cost', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                />
+              </div>
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Miscellaneous</label>
+                <input
+                  type="number"
+                  disabled={readOnly}
+                  value={formData.miscellaneous_cost}
+                  onChange={(e) => handleChange('miscellaneous_cost', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md"
+                />
+              </div>
+              <div className="col-span-2 p-3 bg-teal-50 border border-teal-200 rounded-lg flex flex-col justify-center items-center">
+                <span className="font-bold text-teal-900 uppercase text-[10px] tracking-wider">Total:</span>
+                <span className="text-xl font-extrabold text-teal-700">₹ {formData.total_cost !== '' ? formData.total_cost : (autoSumCost !== null ? autoSumCost : '0')}</span>
+              </div>
             </div>
           </div>
         </SectionCard>
       </div>
 
-      {/* ========================================================================= */}
-      {/* SECTION 18: Cost of care                                                  */}
-      {/* ========================================================================= */}
-      <div id="section-18">
-        <SectionCard title="18. Cost of care">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-            <div>
-              <label className={LABEL_STYLES}>Bed charges (₹)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.bed_charges}
-                onChange={(e) => handleChange('bed_charges', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Drugs & Disposables (₹)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.drugs_disposables_cost}
-                onChange={(e) => handleChange('drugs_disposables_cost', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Packages (₹)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.package_cost}
-                onChange={(e) => handleChange('package_cost', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Lab Investigations (₹)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.laboratory_cost}
-                onChange={(e) => handleChange('laboratory_cost', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Non-invasive labs (₹)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.non_invasive_lab_cost}
-                onChange={(e) => handleChange('non_invasive_lab_cost', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Consults (₹)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.consultation_cost}
-                onChange={(e) => handleChange('consultation_cost', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Radiology (₹)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.radiology_cost}
-                onChange={(e) => handleChange('radiology_cost', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Miscellaneous (₹)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.miscellaneous_cost}
-                onChange={(e) => handleChange('miscellaneous_cost', e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs"
-              />
-            </div>
-            <div>
-              <label className={LABEL_STYLES}>Total (₹)</label>
-              <input
-                type="number"
-                disabled={readOnly}
-                value={formData.total_cost !== '' ? formData.total_cost : (autoSumCost !== null ? autoSumCost : '')}
-                onChange={(e) => handleChange('total_cost', e.target.value)}
-                placeholder={autoSumCost !== null ? `Auto-sum: ₹${autoSumCost}` : '₹ Total'}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs font-black text-red-700 bg-red-50/40"
-              />
-            </div>
-          </div>
-        </SectionCard>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 19: Follow-up Matrix Grid                                         */}
-      {/* ========================================================================= */}
-      {/* ========================================================================= */}
-      {/* SECTION 19: Follow-up Matrix Grid & Instructions                         */}
-      {/* ========================================================================= */}
+      {/* Follow-up Matrix Grid & Instructions */}
       <div id="section-19">
-        <SectionCard title="FOLLOW-UP MATRIX">
+        <SectionCard title="Follow-up Matrix">
           <div className="space-y-6 text-xs">
             <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white shadow-2xs">
               <table className="w-full text-left text-xs border-collapse min-w-[750px]">
