@@ -136,7 +136,7 @@ const config = {
   database,
   user: process.env.DB_USER || 'dbuser',
   password: process.env.DB_PASSWORD || 'Admin123!',
-  pool: { max: 10, min: 0, idleTimeoutMillis: 30000 },
+  pool: { max: 100, min: 0, idleTimeoutMillis: 30000 },
   options: {
     trustedConnection: authMode === 'windows',
     encrypt: process.env.DB_ENCRYPT === 'true',
