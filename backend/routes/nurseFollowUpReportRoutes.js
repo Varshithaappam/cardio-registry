@@ -43,7 +43,12 @@ const getPatientCentricTasks = async (req, res) => {
     request.input('endDate', db.sql.Date, endDate);
 
     const queryStr = `
-      WITH RankedTasks AS (
+      WITH LatestHF AS (
+        SELECT reg_patient_id, MAX(followup_id) AS max_followup_id
+        FROM hf_followup_assessments WITH (NOLOCK)
+        GROUP BY reg_patient_id
+      ),
+      RankedTasks AS (
         SELECT 
           t.task_id,
           t.reg_patient_id,
@@ -91,12 +96,12 @@ const getPatientCentricTasks = async (req, res) => {
               COALESCE(t.target_date, fa.scheduled_followup_date) ASC,
               t.task_id ASC
           ) AS row_num
-        FROM patient_followup_tasks t
-        INNER JOIN patient_demographics p ON t.reg_patient_id = p.reg_patient_id
-        LEFT JOIN hf_followup_assessments fa ON (
+        FROM patient_followup_tasks t WITH (NOLOCK)
+        INNER JOIN patient_demographics p WITH (NOLOCK) ON t.reg_patient_id = p.reg_patient_id
+        LEFT JOIN LatestHF lhf ON t.reg_patient_id = lhf.reg_patient_id
+        LEFT JOIN hf_followup_assessments fa WITH (NOLOCK) ON (
           t.source_registry LIKE '%Heart Failure%' AND (
-            t.source_record_id = fa.followup_id OR 
-            (t.reg_patient_id = fa.reg_patient_id AND fa.followup_id = (SELECT MAX(followup_id) FROM hf_followup_assessments WHERE reg_patient_id = t.reg_patient_id))
+            t.source_record_id = fa.followup_id OR fa.followup_id = lhf.max_followup_id
           )
         )
         WHERE t.status != 'No Follow-Up Needed'
