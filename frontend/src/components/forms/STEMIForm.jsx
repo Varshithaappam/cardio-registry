@@ -4,6 +4,7 @@ import SectionCard from './common/SectionCard';
 import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
 import { useAlert } from '../../context/AlertContext';
 import ClinicalMetricBadge from './common/ClinicalMetricBadge';
+import NoteInput from './common/NoteInput';
 
 const proceduresList = [
   { label: 'Indication for ICCU admission', key: 'appr_iccu_admission' },
@@ -250,20 +251,7 @@ const STEMIForm = forwardRef(function STEMIForm(
     thrombolysis_dose: editingRecord?.thrombolysis_dose || '',
 
     // Section 8: Acute Drugs
-    beta_blocker: editingRecord?.beta_blocker || 'No',
-    calcium_channel_blocker: editingRecord?.calcium_channel_blocker || 'No',
-    nitrate: editingRecord?.nitrate || 'No',
-    nicorandil: editingRecord?.nicorandil || 'No',
-    ivabradine: editingRecord?.ivabradine || 'No',
-    ranolazine: editingRecord?.ranolazine || 'No',
-    trimetazidine: editingRecord?.trimetazidine || 'No',
-    aspirin: editingRecord?.aspirin || 'No',
-    clopidogrel: editingRecord?.clopidogrel || 'No',
-    prasugrel: editingRecord?.prasugrel || 'No',
-    ticagrelor: editingRecord?.ticagrelor || 'No',
     heparin_strategy: editingRecord?.heparin_ufh_iv === 'Yes' ? 'UFH i.v alone' : (editingRecord?.heparin_ufh_sc === 'Yes' ? 'UFH s.c alone' : (editingRecord?.heparin_lmwh === 'Yes' ? 'LMWH alone' : (editingRecord?.heparin_ufh_iv_sc === 'Yes' ? 'UFH i.v+UFHs.c' : (editingRecord?.heparin_ufh_iv_lmwh === 'Yes' ? 'UFH i.v + LMWH' : 'LMWH alone')))),
-    gp2b3a: editingRecord?.gp2b3a || 'No',
-    bivaluridin: editingRecord?.bivaluridin || 'No',
     statin: editingRecord?.statin || 'No',
     statin_dose: editingRecord?.statin_10mg === 'Yes' ? '10 mg' : (editingRecord?.statin_20mg === 'Yes' ? '20 mg' : (editingRecord?.statin_80mg === 'Yes' ? '80 mg' : '40 mg')),
     other_drugs: editingRecord?.other_drugs || '',
@@ -550,20 +538,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       drug_tenecteplase: true,
       thrombolysis_dose: '40 mg IV bolus',
 
-      beta_blocker: 'Yes',
-      calcium_channel_blocker: 'No',
-      nitrate: 'Yes',
-      nicorandil: 'No',
-      ivabradine: 'No',
-      ranolazine: 'No',
-      trimetazidine: 'No',
-      aspirin: 'Yes',
-      clopidogrel: 'No',
-      prasugrel: 'No',
-      ticagrelor: 'Yes',
       heparin_strategy: 'LMWH alone',
-      gp2b3a: 'Yes',
-      bivaluridin: 'No',
       statin: 'Yes',
       statin_dose: '40 mg',
       other_drugs: 'Pantoprazole 40 mg IV, Ondansetron 4 mg',
@@ -664,56 +639,56 @@ const STEMIForm = forwardRef(function STEMIForm(
       discharge_other_medication: 'Ramipril 2.5 mg OD, Pantoprazole 40 mg OD',
 
       appr_iccu_admission: 'Appropriate',
-      appr_iccu_admission_note: 'Acute STEMI requiring emergency monitoring',
+      appr_iccu_admission_note: 'Acute STEMI care',
       appr_iccu_transfer_out: 'Appropriate',
-      appr_iccu_transfer_out_note: 'Stable post-PAMI 48 hrs',
+      appr_iccu_transfer_out_note: 'Stable post-PAMI',
       appr_thrombolysis_indication: 'Appropriate',
       appr_thrombolysis_indication_note: '',
       appr_ptca_indication: 'Appropriate',
-      appr_ptca_indication_note: 'Primary PCI for acute anterior STEMI',
+      appr_ptca_indication_note: 'Primary PCI anterior',
       appr_invasive_monitoring: 'Appropriate',
-      appr_invasive_monitoring_note: 'Arterial line during PCI',
+      appr_invasive_monitoring_note: 'Arterial line PCI',
       appr_iabp_indication: 'Inappropriate',
-      appr_iabp_indication_note: 'No cardiogenic shock',
+      appr_iabp_indication_note: 'No shock',
       appr_invasive_ventilation: 'Inappropriate',
-      appr_invasive_ventilation_note: 'Adequate spo2 on nasal prongs',
+      appr_invasive_ventilation_note: 'Spo2 ok nasal prong',
       appr_dialysis_indication: 'Inappropriate',
-      appr_dialysis_indication_note: 'Normal renal function',
+      appr_dialysis_indication_note: 'Normal renal func',
       appr_other_procedure_name: '',
       appr_other_procedure_appropriateness: 'Inappropriate',
       appr_other_procedure_appropriateness_note: '',
 
       appr_cardiac_enzymes: 'Appropriate',
-      appr_cardiac_enzymes_note: 'Confirm acute myocardial necrosis',
+      appr_cardiac_enzymes_note: 'Confirm MI necrosis',
       appr_bnp: 'Appropriate',
-      appr_bnp_note: 'Assess baseline HF risk',
+      appr_bnp_note: 'Assess HF risk',
       appr_crp: 'Inappropriate',
       appr_crp_note: '',
       appr_lipid_profile: 'Appropriate',
       appr_lipid_profile_note: 'Fasting lipid workup',
       appr_bedside_echo: 'Appropriate',
-      appr_bedside_echo_note: 'Baseline LVEF & wall motion evaluation',
+      appr_bedside_echo_note: 'LVEF wall motion',
       appr_chest_xray: 'Appropriate',
-      appr_chest_xray_note: 'Rule out pulmonary congestion',
+      appr_chest_xray_note: 'Rule out congestion',
 
       appr_beta_blockers: 'Appropriate',
-      appr_beta_blockers_note: 'Cardioprotective post-MI',
+      appr_beta_blockers_note: 'Cardioprotect postMI',
       appr_aspirin: 'Appropriate',
-      appr_aspirin_note: 'Antiplatelet loading',
+      appr_aspirin_note: 'Antiplatelet load',
       appr_clopidogrel: 'Appropriate',
       appr_clopidogrel_note: '',
       appr_ace_inhibitor: 'Appropriate',
-      appr_ace_inhibitor_note: 'LV remodeling prevention',
+      appr_ace_inhibitor_note: 'LV remodel prevent',
       appr_arb: 'Inappropriate',
-      appr_arb_note: 'Patient tolerated ACEI',
+      appr_arb_note: 'Tolerates ACE',
       appr_statin: 'Appropriate',
-      appr_statin_note: 'High-intensity statin therapy',
+      appr_statin_note: 'High-intensity statin',
       appr_diuretic: 'Inappropriate',
       appr_diuretic_note: '',
       appr_lanoxin: 'Inappropriate',
       appr_lanoxin_note: '',
       appr_anticoagulant: 'Appropriate',
-      appr_anticoagulant_note: 'Periprocedural heparinization',
+      appr_anticoagulant_note: 'Periproc heparin',
       appr_amiodarone: 'Inappropriate',
       appr_amiodarone_note: '',
       appr_other_drug_name: '',
@@ -1003,24 +978,11 @@ const STEMIForm = forwardRef(function STEMIForm(
       drug_tenecteplase: formData.drug_tenecteplase ? 'Yes' : 'No',
       thrombolysis_dose: formData.thrombolysis_dose || null,
 
-      beta_blocker: formData.beta_blocker,
-      calcium_channel_blocker: formData.calcium_channel_blocker,
-      nitrate: formData.nitrate,
-      nicorandil: formData.nicorandil,
-      ivabradine: formData.ivabradine,
-      ranolazine: formData.ranolazine,
-      trimetazidine: formData.trimetazidine,
-      aspirin: formData.aspirin,
-      clopidogrel: formData.clopidogrel,
-      prasugrel: formData.prasugrel,
-      ticagrelor: formData.ticagrelor,
       heparin_ufh_iv: formData.heparin_strategy === 'UFH i.v alone' ? 'Yes' : 'No',
       heparin_ufh_sc: formData.heparin_strategy === 'UFH s.c alone' ? 'Yes' : 'No',
       heparin_lmwh: formData.heparin_strategy === 'LMWH alone' ? 'Yes' : 'No',
       heparin_ufh_iv_sc: formData.heparin_strategy === 'UFH i.v+UFHs.c' ? 'Yes' : 'No',
       heparin_ufh_iv_lmwh: formData.heparin_strategy === 'UFH i.v + LMWH' ? 'Yes' : 'No',
-      gp2b3a: formData.gp2b3a,
-      bivaluridin: formData.bivaluridin,
       statin: formData.statin,
       statin_10mg: formData.statin_dose === '10 mg' ? 'Yes' : 'No',
       statin_20mg: formData.statin_dose === '20 mg' ? 'Yes' : 'No',
@@ -1140,61 +1102,61 @@ const STEMIForm = forwardRef(function STEMIForm(
       discharge_other_medication: formData.discharge_other_medication || null,
 
       appr_iccu_admission: formData.appr_iccu_admission,
-      appr_iccu_admission_note: formData.appr_iccu_admission_note || '',
+      appr_iccu_admission_note: (formData.appr_iccu_admission_note || '').slice(0, 150),
       appr_iccu_transfer_out: formData.appr_iccu_transfer_out,
-      appr_iccu_transfer_out_note: formData.appr_iccu_transfer_out_note || '',
+      appr_iccu_transfer_out_note: (formData.appr_iccu_transfer_out_note || '').slice(0, 150),
       appr_thrombolysis_indication: formData.appr_thrombolysis_indication,
-      appr_thrombolysis_indication_note: formData.appr_thrombolysis_indication_note || '',
+      appr_thrombolysis_indication_note: (formData.appr_thrombolysis_indication_note || '').slice(0, 150),
       appr_ptca_indication: formData.appr_ptca_indication,
-      appr_ptca_indication_note: formData.appr_ptca_indication_note || '',
+      appr_ptca_indication_note: (formData.appr_ptca_indication_note || '').slice(0, 150),
       appr_invasive_monitoring: formData.appr_invasive_monitoring,
-      appr_invasive_monitoring_note: formData.appr_invasive_monitoring_note || '',
+      appr_invasive_monitoring_note: (formData.appr_invasive_monitoring_note || '').slice(0, 150),
       appr_iabp_indication: formData.appr_iabp_indication,
-      appr_iabp_indication_note: formData.appr_iabp_indication_note || '',
+      appr_iabp_indication_note: (formData.appr_iabp_indication_note || '').slice(0, 150),
       appr_invasive_ventilation: formData.appr_invasive_ventilation,
-      appr_invasive_ventilation_note: formData.appr_invasive_ventilation_note || '',
+      appr_invasive_ventilation_note: (formData.appr_invasive_ventilation_note || '').slice(0, 150),
       appr_dialysis_indication: formData.appr_dialysis_indication,
-      appr_dialysis_indication_note: formData.appr_dialysis_indication_note || '',
-      appr_other_procedure_name: formData.appr_other_procedure_name || null,
+      appr_dialysis_indication_note: (formData.appr_dialysis_indication_note || '').slice(0, 150),
+      appr_other_procedure_name: (formData.appr_other_procedure_name || '').slice(0, 150),
       appr_other_procedure_appropriateness: formData.appr_other_procedure_appropriateness,
-      appr_other_procedure_appropriateness_note: formData.appr_other_procedure_appropriateness_note || '',
+      appr_other_procedure_appropriateness_note: (formData.appr_other_procedure_appropriateness_note || '').slice(0, 150),
 
       appr_cardiac_enzymes: formData.appr_cardiac_enzymes,
-      appr_cardiac_enzymes_note: formData.appr_cardiac_enzymes_note || '',
+      appr_cardiac_enzymes_note: (formData.appr_cardiac_enzymes_note || '').slice(0, 150),
       appr_bnp: formData.appr_bnp,
-      appr_bnp_note: formData.appr_bnp_note || '',
+      appr_bnp_note: (formData.appr_bnp_note || '').slice(0, 150),
       appr_crp: formData.appr_crp,
-      appr_crp_note: formData.appr_crp_note || '',
+      appr_crp_note: (formData.appr_crp_note || '').slice(0, 150),
       appr_lipid_profile: formData.appr_lipid_profile,
-      appr_lipid_profile_note: formData.appr_lipid_profile_note || '',
+      appr_lipid_profile_note: (formData.appr_lipid_profile_note || '').slice(0, 150),
       appr_bedside_echo: formData.appr_bedside_echo,
-      appr_bedside_echo_note: formData.appr_bedside_echo_note || '',
+      appr_bedside_echo_note: (formData.appr_bedside_echo_note || '').slice(0, 150),
       appr_chest_xray: formData.appr_chest_xray,
-      appr_chest_xray_note: formData.appr_chest_xray_note || '',
+      appr_chest_xray_note: (formData.appr_chest_xray_note || '').slice(0, 150),
 
       appr_beta_blockers: formData.appr_beta_blockers,
-      appr_beta_blockers_note: formData.appr_beta_blockers_note || '',
+      appr_beta_blockers_note: (formData.appr_beta_blockers_note || '').slice(0, 150),
       appr_aspirin: formData.appr_aspirin,
-      appr_aspirin_note: formData.appr_aspirin_note || '',
+      appr_aspirin_note: (formData.appr_aspirin_note || '').slice(0, 150),
       appr_clopidogrel: formData.appr_clopidogrel,
-      appr_clopidogrel_note: formData.appr_clopidogrel_note || '',
+      appr_clopidogrel_note: (formData.appr_clopidogrel_note || '').slice(0, 150),
       appr_ace_inhibitor: formData.appr_ace_inhibitor,
-      appr_ace_inhibitor_note: formData.appr_ace_inhibitor_note || '',
+      appr_ace_inhibitor_note: (formData.appr_ace_inhibitor_note || '').slice(0, 150),
       appr_arb: formData.appr_arb,
-      appr_arb_note: formData.appr_arb_note || '',
+      appr_arb_note: (formData.appr_arb_note || '').slice(0, 150),
       appr_statin: formData.appr_statin,
-      appr_statin_note: formData.appr_statin_note || '',
+      appr_statin_note: (formData.appr_statin_note || '').slice(0, 150),
       appr_diuretic: formData.appr_diuretic,
-      appr_diuretic_note: formData.appr_diuretic_note || '',
+      appr_diuretic_note: (formData.appr_diuretic_note || '').slice(0, 150),
       appr_lanoxin: formData.appr_lanoxin,
-      appr_lanoxin_note: formData.appr_lanoxin_note || '',
+      appr_lanoxin_note: (formData.appr_lanoxin_note || '').slice(0, 150),
       appr_anticoagulant: formData.appr_anticoagulant,
-      appr_anticoagulant_note: formData.appr_anticoagulant_note || '',
+      appr_anticoagulant_note: (formData.appr_anticoagulant_note || '').slice(0, 150),
       appr_amiodarone: formData.appr_amiodarone,
-      appr_amiodarone_note: formData.appr_amiodarone_note || '',
-      appr_other_drug_name: formData.appr_other_drug_name || null,
+      appr_amiodarone_note: (formData.appr_amiodarone_note || '').slice(0, 150),
+      appr_other_drug_name: (formData.appr_other_drug_name || '').slice(0, 150),
       appr_other_drug_appropriateness: formData.appr_other_drug_appropriateness,
-      appr_other_drug_appropriateness_note: formData.appr_other_drug_appropriateness_note || '',
+      appr_other_drug_appropriateness_note: (formData.appr_other_drug_appropriateness_note || '').slice(0, 150),
 
       iccu_hours: formData.iccu_hours ? parseInt(formData.iccu_hours, 10) : null,
       stepdown_icu_hours: formData.stepdown_icu_hours ? parseInt(formData.stepdown_icu_hours, 10) : null,
@@ -1291,49 +1253,64 @@ const STEMIForm = forwardRef(function STEMIForm(
 
   const renderAppropriatenessRadio = (field, label, specifyKey = null) => {
     const noteKey = `${field}_note`;
+    const specifyVal = formData[specifyKey] || '';
+    const noteVal = formData[noteKey] || '';
 
     return (
-      <div key={field} className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 p-2.5 bg-white border border-slate-200 rounded-lg text-xs min-h-[52px]">
-        <div className="flex-1 font-semibold text-slate-700 min-w-0">
+      <div key={field} className="grid grid-cols-12 gap-3 items-center w-full min-w-0 p-3 bg-white border border-slate-200 rounded-lg text-xs min-h-[52px]">
+        {/* Column 1: Label / Specify Area (4 Cols) */}
+        <div className="col-span-12 md:col-span-4 min-w-0 pr-2">
           {specifyKey ? (
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="whitespace-nowrap flex-shrink-0">{label}:</span>
-              <input
-                type="text"
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0 w-full">
+              <span className="font-semibold text-slate-700 whitespace-nowrap flex-shrink-0">{label}:</span>
+              <NoteInput
+                value={specifyVal}
+                onChange={(val) => handleChange(specifyKey, val)}
+                maxLength={150}
                 disabled={readOnly}
-                value={formData[specifyKey] || ''}
-                onChange={(e) => handleChange(specifyKey, e.target.value)}
+                readOnly={readOnly}
                 placeholder="Specify name"
-                className="px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-red-500 w-full sm:w-36 bg-white font-normal min-w-0 flex-1"
+                className="w-full min-w-0 flex-1"
+                focusRingClass="focus:ring-red-500"
               />
             </div>
           ) : (
-            <span className="leading-tight block">{label}</span>
+            <span className="font-semibold text-slate-700 leading-tight block break-words whitespace-normal min-w-0">
+              {label}
+            </span>
           )}
         </div>
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 flex-shrink-0">
-          <div className="flex gap-2.5 flex-shrink-0">
+
+        {/* Column 2: Radio Buttons (3 Cols) */}
+        <div className="col-span-12 md:col-span-3 min-w-0 flex items-center justify-start md:justify-center">
+          <div className="flex gap-4 flex-shrink-0 min-w-0">
             {['Appropriate', 'Inappropriate'].map((opt) => (
-              <label key={opt} className="flex items-center gap-1 cursor-pointer text-xs select-none">
+              <label key={opt} className="flex items-center gap-1.5 cursor-pointer text-xs select-none whitespace-nowrap">
                 <input
                   type="radio"
                   disabled={readOnly}
                   name={`${field}-${label}`}
                   checked={formData[field] === opt}
                   onChange={() => handleAppropriatenessChange(field, opt, noteKey)}
-                  className="text-red-600 focus:ring-red-500 cursor-pointer"
+                  className="text-red-600 focus:ring-red-500 cursor-pointer flex-shrink-0"
                 />
                 <span className={`font-semibold ${opt === 'Appropriate' ? 'text-emerald-700' : 'text-slate-600'}`}>{opt}</span>
               </label>
             ))}
           </div>
-          <input
-            type="text"
+        </div>
+
+        {/* Column 3: Note Input Block (5 Cols) */}
+        <div className="col-span-12 md:col-span-5 min-w-0">
+          <NoteInput
+            value={noteVal}
+            onChange={(val) => handleChange(noteKey, val)}
+            maxLength={150}
             disabled={readOnly}
-            value={formData[noteKey] || ''}
-            onChange={(e) => handleChange(noteKey, e.target.value)}
+            readOnly={readOnly}
             placeholder="Add note..."
-            className="w-28 sm:w-36 px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400 disabled:border-gray-200 transition-all bg-white font-normal"
+            className="w-full min-w-0"
+            focusRingClass="focus:ring-red-500"
           />
         </div>
       </div>
@@ -1403,22 +1380,46 @@ const STEMIForm = forwardRef(function STEMIForm(
               />
             </div>
             <div>
-              <label className={LABEL_STYLES}>IP No:</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className={LABEL_STYLES}>IP No:</label>
+                {!readOnly && (
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 30 - (formData.ip_no || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 30 - (formData.ip_no || '').length)} left
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 disabled={readOnly}
                 value={formData.ip_no}
+                maxLength={30}
                 onChange={(e) => handleChange('ip_no', e.target.value)}
                 placeholder="E.g. IP00001"
                 className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-red-500 focus:border-red-500"
               />
             </div>
             <div>
-              <label className={LABEL_STYLES}>ACS No / Registry No:</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className={LABEL_STYLES}>ACS No / Registry No:</label>
+                {!readOnly && (
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 50 - (formData.acs_no || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 50 - (formData.acs_no || '').length)} left
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 disabled={readOnly}
                 value={formData.acs_no}
+                maxLength={50}
                 onChange={(e) => handleChange('acs_no', e.target.value)}
                 placeholder="E.g. ACS00001"
                 className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-red-500 focus:border-red-500"
@@ -1505,11 +1506,23 @@ const STEMIForm = forwardRef(function STEMIForm(
               {renderRadio('prior_cabg', 'Prior CABG')}
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Any other</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="font-bold text-slate-700 block">Any other</label>
+                {!readOnly && (
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 255 - (formData.other_background || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 255 - (formData.other_background || '').length)} left
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 disabled={readOnly}
                 value={formData.other_background}
+                maxLength={255}
                 onChange={(e) => handleChange('other_background', e.target.value)}
                 className="w-full p-2 border border-slate-300 rounded-md"
                 placeholder="Specify additional clinical history..."
@@ -1655,11 +1668,23 @@ const STEMIForm = forwardRef(function STEMIForm(
                   <ClinicalMetricBadge metricId="door_to_balloon_time" value={formData.door_to_balloon_time} />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Segment:</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="font-bold text-slate-700 block">Segment:</label>
+                    {!readOnly && (
+                      <span className={`text-[10px] select-none ${
+                        Math.max(0, 100 - (formData.vessel_segment || '').length) <= 5
+                          ? 'text-rose-500 font-bold animate-pulse'
+                          : 'text-slate-400 font-medium'
+                      }`}>
+                        {Math.max(0, 100 - (formData.vessel_segment || '').length)} left
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     disabled={readOnly}
                     value={formData.vessel_segment}
+                    maxLength={100}
                     onChange={(e) => handleChange('vessel_segment', e.target.value)}
                     placeholder="e.g. Proximal LAD"
                     className="w-full p-2 border border-slate-300 rounded-md"
@@ -1850,11 +1875,23 @@ const STEMIForm = forwardRef(function STEMIForm(
                   </div>
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Dose:</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="font-bold text-slate-700 block">Dose:</label>
+                    {!readOnly && (
+                      <span className={`text-[10px] select-none ${
+                        Math.max(0, 100 - (formData.thrombolysis_dose || '').length) <= 5
+                          ? 'text-rose-500 font-bold animate-pulse'
+                          : 'text-slate-400 font-medium'
+                      }`}>
+                        {Math.max(0, 100 - (formData.thrombolysis_dose || '').length)} left
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     disabled={readOnly}
                     value={formData.thrombolysis_dose}
+                    maxLength={100}
                     onChange={(e) => handleChange('thrombolysis_dose', e.target.value)}
                     placeholder="e.g. 40 mg IV bolus"
                     className="w-full p-2 border border-slate-300 rounded-md"
@@ -1863,25 +1900,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               </div>
             </div>
 
-            {/* Drugs Section */}
-            <div id="section-8" className="font-bold text-slate-800 border-t border-slate-200 pt-3 text-sm">Drugs:</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {renderRadio('beta_blocker', 'Beta-blocker', ['Yes', 'No'])}
-              {renderRadio('calcium_channel_blocker', 'Calcium-channel blocker', ['Yes', 'No'])}
-              {renderRadio('nitrate', 'Nitrate', ['Yes', 'No'])}
-              {renderRadio('nicorandil', 'Nicorandil', ['Yes', 'No'])}
-              {renderRadio('ivabradine', 'Ivabradine', ['Yes', 'No'])}
-              {renderRadio('ranolazine', 'Ranozolidine', ['Yes', 'No'])}
-              {renderRadio('trimetazidine', 'Trimetazidine', ['Yes', 'No'])}
-              {renderRadio('aspirin', 'Aspirin', ['Yes', 'No'])}
-              {renderRadio('clopidogrel', 'Clopidogrel', ['Yes', 'No'])}
-              {renderRadio('prasugrel', 'Prasugrel', ['Yes', 'No'])}
-              {renderRadio('ticagrelor', 'Ticagrelor', ['Yes', 'No'])}
-              {renderRadio('gp2b3a', 'Gp2b3a', ['Yes', 'No'])}
-              {renderRadio('bivaluridin', 'Bivaluridin', ['Yes', 'No'])}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-100">
+            <div id="section-8" className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-100">
               <div>
                 <label className="font-bold text-slate-700 block mb-1">Heparin strategy:</label>
                 <div className="space-y-1">
@@ -1929,11 +1948,23 @@ const STEMIForm = forwardRef(function STEMIForm(
                 )}
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Any Other</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="font-bold text-slate-700 block">Any Other</label>
+                  {!readOnly && (
+                    <span className={`text-[10px] select-none ${
+                      Math.max(0, 255 - (formData.other_drugs || '').length) <= 5
+                        ? 'text-rose-500 font-bold animate-pulse'
+                        : 'text-slate-400 font-medium'
+                    }`}>
+                      {Math.max(0, 255 - (formData.other_drugs || '').length)} left
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   disabled={readOnly}
                   value={formData.other_drugs}
+                  maxLength={255}
                   onChange={(e) => handleChange('other_drugs', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
@@ -1963,11 +1994,23 @@ const STEMIForm = forwardRef(function STEMIForm(
               {renderRadio('cxr', 'CXR', ['Yes', 'No'])}
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Others</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="font-bold text-slate-700 block">Others</label>
+                {!readOnly && (
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 255 - (formData.diagnostic_other || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 255 - (formData.diagnostic_other || '').length)} left
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 disabled={readOnly}
                 value={formData.diagnostic_other}
+                maxLength={255}
                 onChange={(e) => handleChange('diagnostic_other', e.target.value)}
                 className="w-full p-2 border border-slate-300 rounded-md"
               />
@@ -2111,12 +2154,24 @@ const STEMIForm = forwardRef(function STEMIForm(
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Others (ECG):</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="font-bold text-slate-700 block">Others (ECG):</label>
+                    {!readOnly && (
+                      <span className={`text-[10px] select-none ${
+                        Math.max(0, 255 - (formData.ecg_other || '').length) <= 5
+                          ? 'text-rose-500 font-bold animate-pulse'
+                          : 'text-slate-400 font-medium'
+                      }`}>
+                        {Math.max(0, 255 - (formData.ecg_other || '').length)} left
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     disabled={readOnly}
-                    value={formData.ecg_other}
-                    onChange={(e) => handleChange('ecg_other', e.target.value)}
+                    value={formData.ecg_other || ''}
+                    maxLength={255}
+                    onChange={(e) => handleChange('ecg_other', e.target.value.slice(0, 255))}
                     placeholder="Specify other ECG findings..."
                     className="w-full p-2 border border-slate-300 rounded-md"
                   />
@@ -2259,12 +2314,24 @@ const STEMIForm = forwardRef(function STEMIForm(
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Others (Echo):</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="font-bold text-slate-700 block">Others (Echo):</label>
+                    {!readOnly && (
+                      <span className={`text-[10px] select-none ${
+                        Math.max(0, 255 - (formData.echo_other || '').length) <= 5
+                          ? 'text-rose-500 font-bold animate-pulse'
+                          : 'text-slate-400 font-medium'
+                      }`}>
+                        {Math.max(0, 255 - (formData.echo_other || '').length)} left
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     disabled={readOnly}
-                    value={formData.echo_other}
-                    onChange={(e) => handleChange('echo_other', e.target.value)}
+                    value={formData.echo_other || ''}
+                    maxLength={255}
+                    onChange={(e) => handleChange('echo_other', e.target.value.slice(0, 255))}
                     placeholder="e.g. Mild TR, PASP 35 mmHg"
                     className="w-full p-2 border border-slate-300 rounded-md"
                   />
@@ -2300,34 +2367,70 @@ const STEMIForm = forwardRef(function STEMIForm(
                     <ClinicalMetricBadge metricId="creatinine" value={formData.creatinine} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Trop-I (ng/ml):</label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="font-bold text-slate-700 block">Trop-I (ng/ml):</label>
+                      {!readOnly && (
+                        <span className={`text-[10px] select-none ${
+                          Math.max(0, 50 - (formData.troponin_i || '').length) <= 5
+                            ? 'text-rose-500 font-bold animate-pulse'
+                            : 'text-slate-400 font-medium'
+                        }`}>
+                          {Math.max(0, 50 - (formData.troponin_i || '').length)} left
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="text"
                       disabled={readOnly}
-                      value={formData.troponin_i}
-                      onChange={(e) => handleChange('troponin_i', e.target.value)}
+                      value={formData.troponin_i || ''}
+                      maxLength={50}
+                      onChange={(e) => handleChange('troponin_i', e.target.value.slice(0, 50))}
                       className="w-full p-2 border border-slate-300 rounded-md"
                     />
                     <ClinicalMetricBadge metricId="troponin_i" value={formData.troponin_i} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">CPK (U/L):</label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="font-bold text-slate-700 block">CPK (U/L):</label>
+                      {!readOnly && (
+                        <span className={`text-[10px] select-none ${
+                          Math.max(0, 50 - (formData.cpk || '').length) <= 5
+                            ? 'text-rose-500 font-bold animate-pulse'
+                            : 'text-slate-400 font-medium'
+                        }`}>
+                          {Math.max(0, 50 - (formData.cpk || '').length)} left
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="text"
                       disabled={readOnly}
-                      value={formData.cpk}
-                      onChange={(e) => handleChange('cpk', e.target.value)}
+                      value={formData.cpk || ''}
+                      maxLength={50}
+                      onChange={(e) => handleChange('cpk', e.target.value.slice(0, 50))}
                       className="w-full p-2 border border-slate-300 rounded-md"
                     />
                     <ClinicalMetricBadge metricId="cpk" value={formData.cpk} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">CK-MB (U/L):</label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="font-bold text-slate-700 block">CK-MB (U/L):</label>
+                      {!readOnly && (
+                        <span className={`text-[10px] select-none ${
+                          Math.max(0, 50 - (formData.ck_mb || '').length) <= 5
+                            ? 'text-rose-500 font-bold animate-pulse'
+                            : 'text-slate-400 font-medium'
+                        }`}>
+                          {Math.max(0, 50 - (formData.ck_mb || '').length)} left
+                        </span>
+                      )}
+                    </div>
                     <input
                       type="text"
                       disabled={readOnly}
-                      value={formData.ck_mb}
-                      onChange={(e) => handleChange('ck_mb', e.target.value)}
+                      value={formData.ck_mb || ''}
+                      maxLength={50}
+                      onChange={(e) => handleChange('ck_mb', e.target.value.slice(0, 50))}
                       className="w-full p-2 border border-slate-300 rounded-md"
                     />
                     <ClinicalMetricBadge metricId="ck_mb" value={formData.ck_mb} />
@@ -2421,11 +2524,23 @@ const STEMIForm = forwardRef(function STEMIForm(
               {renderRadio('cabg', 'CABG', ['Yes', 'No'])}
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Other</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="font-bold text-slate-700 block">Other</label>
+                {!readOnly && (
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 255 - (formData.other_procedure || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 255 - (formData.other_procedure || '').length)} left
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 disabled={readOnly}
                 value={formData.other_procedure}
+                maxLength={255}
                 onChange={(e) => handleChange('other_procedure', e.target.value)}
                 className="w-full p-2 border border-slate-300 rounded-md"
               />
@@ -2449,11 +2564,23 @@ const STEMIForm = forwardRef(function STEMIForm(
               {renderRadio('major_bleeding', 'Major Bleeding', ['Yes', 'No'])}
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Any other</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="font-bold text-slate-700 block">Any other</label>
+                {!readOnly && (
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 255 - (formData.outcome_other || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 255 - (formData.outcome_other || '').length)} left
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
                 disabled={readOnly}
                 value={formData.outcome_other}
+                maxLength={255}
                 onChange={(e) => handleChange('outcome_other', e.target.value)}
                 className="w-full p-2 border border-slate-300 rounded-md"
               />
@@ -2498,11 +2625,23 @@ const STEMIForm = forwardRef(function STEMIForm(
                 )}
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Any Other</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="font-bold text-slate-700 block">Any Other</label>
+                  {!readOnly && (
+                    <span className={`text-[10px] select-none ${
+                      Math.max(0, 255 - (formData.discharge_other_medication || '').length) <= 5
+                        ? 'text-rose-500 font-bold animate-pulse'
+                        : 'text-slate-400 font-medium'
+                    }`}>
+                      {Math.max(0, 255 - (formData.discharge_other_medication || '').length)} left
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   disabled={readOnly}
                   value={formData.discharge_other_medication}
+                  maxLength={255}
                   onChange={(e) => handleChange('discharge_other_medication', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
@@ -2518,21 +2657,21 @@ const STEMIForm = forwardRef(function STEMIForm(
           <div className="space-y-6 text-xs">
             <div>
               <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various procedures</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 gap-3 text-xs w-full">
                 {proceduresList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
               </div>
             </div>
 
             <div id="section-15" className="pt-4 border-t border-slate-200">
               <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various investigations</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 gap-3 text-xs w-full">
                 {investigationsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
               </div>
             </div>
 
             <div id="section-16" className="pt-4 border-t border-slate-200">
               <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various drugs</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 gap-3 text-xs w-full">
                 {drugsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
               </div>
             </div>
@@ -2936,9 +3075,11 @@ const STEMIForm = forwardRef(function STEMIForm(
                         <input
                           type="text"
                           disabled={readOnly || !formData[`enabled_${t}`]}
-                          value={formData[`other_${t}`]}
-                          onChange={(e) => handleChange(`other_${t}`, e.target.value)}
-                          className="p-1 border border-slate-300 rounded w-24 text-center"
+                          value={formData[`other_${t}`] || ''}
+                          maxLength={255}
+                          onChange={(e) => handleChange(`other_${t}`, e.target.value.slice(0, 255))}
+                          className="p-1 border border-slate-300 rounded w-24 text-center text-xs"
+                          placeholder="Specify..."
                         />
                       </td>
                     ))}

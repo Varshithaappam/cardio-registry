@@ -4,6 +4,7 @@ import SectionCard from './common/SectionCard';
 import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
 import { useAlert } from '../../context/AlertContext';
 import ClinicalMetricBadge from './common/ClinicalMetricBadge';
+import NoteInput from './common/NoteInput';
 
 const proceduresList = [
   { label: 'Indication for ICCU admission', key: 'appr_iccu_admission' },
@@ -257,20 +258,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     thrombolysis_dose: editingRecord?.thrombolysis_dose || '',
 
     // Drugs (Yes/No)
-    beta_blocker: editingRecord?.beta_blocker || 'No',
-    calcium_channel_blocker: editingRecord?.calcium_channel_blocker || 'No',
-    nitrate: editingRecord?.nitrate || 'No',
-    nicorandil: editingRecord?.nicorandil || 'No',
-    ivabradine: editingRecord?.ivabradine || 'No',
-    ranolazine: editingRecord?.ranolazine || 'No',
-    trimetazidine: editingRecord?.trimetazidine || 'No',
-    aspirin: editingRecord?.aspirin || 'Yes',
-    clopidogrel: editingRecord?.clopidogrel || 'No',
-    prasugrel: editingRecord?.prasugrel || 'No',
-    ticagrelor: editingRecord?.ticagrelor || 'Yes',
     heparin_strategy: editingRecord?.heparin_ufh_iv === 'Yes' ? 'UFH i.v alone' : (editingRecord?.heparin_ufh_sc === 'Yes' ? 'UFH s.c alone' : (editingRecord?.heparin_lmwh === 'Yes' ? 'LMWH alone' : (editingRecord?.heparin_ufh_iv_sc === 'Yes' ? 'UFH i.v+UFHs.c' : (editingRecord?.heparin_ufh_iv_lmwh === 'Yes' ? 'UFH i.v + LMWH' : 'LMWH alone')))),
-    gp2b3a: editingRecord?.gp2b3a || 'No',
-    bivaluridin: editingRecord?.bivaluridin || 'No',
     statin: editingRecord?.statin || 'Yes',
     statin_dose: editingRecord?.statin_10mg === 'Yes' ? '10 mg' : (editingRecord?.statin_20mg === 'Yes' ? '20 mg' : (editingRecord?.statin_80mg === 'Yes' ? '80 mg' : '40 mg')),
     other_drugs: editingRecord?.other_drugs || '',
@@ -659,61 +647,61 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
     // Map Appropriateness Assessment (prefixed to avoid naming collisions in backend):
     payload.appr_iccu_admission = formData.appr_iccu_admission;
-    payload.appr_iccu_admission_note = formData.appr_iccu_admission_note || '';
+    payload.appr_iccu_admission_note = (formData.appr_iccu_admission_note || '').slice(0, 150);
     payload.appr_iccu_transfer_out = formData.appr_iccu_transfer_out;
-    payload.appr_iccu_transfer_out_note = formData.appr_iccu_transfer_out_note || '';
+    payload.appr_iccu_transfer_out_note = (formData.appr_iccu_transfer_out_note || '').slice(0, 150);
     payload.appr_thrombolysis_indication = formData.appr_thrombolysis_indication;
-    payload.appr_thrombolysis_indication_note = formData.appr_thrombolysis_indication_note || '';
+    payload.appr_thrombolysis_indication_note = (formData.appr_thrombolysis_indication_note || '').slice(0, 150);
     payload.appr_ptca_indication = formData.appr_ptca_indication;
-    payload.appr_ptca_indication_note = formData.appr_ptca_indication_note || '';
+    payload.appr_ptca_indication_note = (formData.appr_ptca_indication_note || '').slice(0, 150);
     payload.appr_invasive_monitoring = formData.appr_invasive_monitoring;
-    payload.appr_invasive_monitoring_note = formData.appr_invasive_monitoring_note || '';
+    payload.appr_invasive_monitoring_note = (formData.appr_invasive_monitoring_note || '').slice(0, 150);
     payload.appr_iabp_indication = formData.appr_iabp_indication;
-    payload.appr_iabp_indication_note = formData.appr_iabp_indication_note || '';
+    payload.appr_iabp_indication_note = (formData.appr_iabp_indication_note || '').slice(0, 150);
     payload.appr_invasive_ventilation = formData.appr_invasive_ventilation;
-    payload.appr_invasive_ventilation_note = formData.appr_invasive_ventilation_note || '';
+    payload.appr_invasive_ventilation_note = (formData.appr_invasive_ventilation_note || '').slice(0, 150);
     payload.appr_dialysis_indication = formData.appr_dialysis_indication;
-    payload.appr_dialysis_indication_note = formData.appr_dialysis_indication_note || '';
-    payload.appr_other_procedure_name = formData.appr_other_procedure_name;
+    payload.appr_dialysis_indication_note = (formData.appr_dialysis_indication_note || '').slice(0, 150);
+    payload.appr_other_procedure_name = (formData.appr_other_procedure_name || '').slice(0, 150);
     payload.appr_other_procedure_appropriateness = formData.appr_other_procedure_appropriateness;
-    payload.appr_other_procedure_appropriateness_note = formData.appr_other_procedure_appropriateness_note || '';
+    payload.appr_other_procedure_appropriateness_note = (formData.appr_other_procedure_appropriateness_note || '').slice(0, 150);
 
     payload.appr_cardiac_enzymes = formData.appr_cardiac_enzymes;
-    payload.appr_cardiac_enzymes_note = formData.appr_cardiac_enzymes_note || '';
+    payload.appr_cardiac_enzymes_note = (formData.appr_cardiac_enzymes_note || '').slice(0, 150);
     payload.appr_bnp = formData.appr_bnp;
-    payload.appr_bnp_note = formData.appr_bnp_note || '';
+    payload.appr_bnp_note = (formData.appr_bnp_note || '').slice(0, 150);
     payload.appr_crp = formData.appr_crp;
-    payload.appr_crp_note = formData.appr_crp_note || '';
+    payload.appr_crp_note = (formData.appr_crp_note || '').slice(0, 150);
     payload.appr_lipid_profile = formData.appr_lipid_profile;
-    payload.appr_lipid_profile_note = formData.appr_lipid_profile_note || '';
+    payload.appr_lipid_profile_note = (formData.appr_lipid_profile_note || '').slice(0, 150);
     payload.appr_bedside_echo = formData.appr_bedside_echo;
-    payload.appr_bedside_echo_note = formData.appr_bedside_echo_note || '';
+    payload.appr_bedside_echo_note = (formData.appr_bedside_echo_note || '').slice(0, 150);
     payload.appr_chest_xray = formData.appr_chest_xray;
-    payload.appr_chest_xray_note = formData.appr_chest_xray_note || '';
+    payload.appr_chest_xray_note = (formData.appr_chest_xray_note || '').slice(0, 150);
 
     payload.appr_beta_blockers = formData.appr_beta_blockers;
-    payload.appr_beta_blockers_note = formData.appr_beta_blockers_note || '';
+    payload.appr_beta_blockers_note = (formData.appr_beta_blockers_note || '').slice(0, 150);
     payload.appr_aspirin = formData.appr_aspirin;
-    payload.appr_aspirin_note = formData.appr_aspirin_note || '';
+    payload.appr_aspirin_note = (formData.appr_aspirin_note || '').slice(0, 150);
     payload.appr_clopidogrel = formData.appr_clopidogrel;
-    payload.appr_clopidogrel_note = formData.appr_clopidogrel_note || '';
+    payload.appr_clopidogrel_note = (formData.appr_clopidogrel_note || '').slice(0, 150);
     payload.appr_ace_inhibitor = formData.appr_ace_inhibitor;
-    payload.appr_ace_inhibitor_note = formData.appr_ace_inhibitor_note || '';
+    payload.appr_ace_inhibitor_note = (formData.appr_ace_inhibitor_note || '').slice(0, 150);
     payload.appr_arb = formData.appr_arb;
-    payload.appr_arb_note = formData.appr_arb_note || '';
+    payload.appr_arb_note = (formData.appr_arb_note || '').slice(0, 150);
     payload.appr_statin = formData.appr_statin;
-    payload.appr_statin_note = formData.appr_statin_note || '';
+    payload.appr_statin_note = (formData.appr_statin_note || '').slice(0, 150);
     payload.appr_diuretic = formData.appr_diuretic;
-    payload.appr_diuretic_note = formData.appr_diuretic_note || '';
+    payload.appr_diuretic_note = (formData.appr_diuretic_note || '').slice(0, 150);
     payload.appr_lanoxin = formData.appr_lanoxin;
-    payload.appr_lanoxin_note = formData.appr_lanoxin_note || '';
+    payload.appr_lanoxin_note = (formData.appr_lanoxin_note || '').slice(0, 150);
     payload.appr_anticoagulant = formData.appr_anticoagulant;
-    payload.appr_anticoagulant_note = formData.appr_anticoagulant_note || '';
+    payload.appr_anticoagulant_note = (formData.appr_anticoagulant_note || '').slice(0, 150);
     payload.appr_amiodarone = formData.appr_amiodarone;
-    payload.appr_amiodarone_note = formData.appr_amiodarone_note || '';
-    payload.appr_other_drug_name = formData.appr_other_drug_name;
+    payload.appr_amiodarone_note = (formData.appr_amiodarone_note || '').slice(0, 150);
+    payload.appr_other_drug_name = (formData.appr_other_drug_name || '').slice(0, 150);
     payload.appr_other_drug_appropriateness = formData.appr_other_drug_appropriateness;
-    payload.appr_other_drug_appropriateness_note = formData.appr_other_drug_appropriateness_note || '';
+    payload.appr_other_drug_appropriateness_note = (formData.appr_other_drug_appropriateness_note || '').slice(0, 150);
 
     // Follow-up visit mode & special instructions
     payload.visit_mode = formData.visit_mode || 'In-Person';
@@ -809,20 +797,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       drug_tenecteplase: true,
       thrombolysis_dose: '40 mg',
 
-      beta_blocker: 'Yes',
-      calcium_channel_blocker: 'No',
-      nitrate: 'Yes',
-      nicorandil: 'No',
-      ivabradine: 'No',
-      ranolazine: 'Yes',
-      trimetazidine: 'No',
-      aspirin: 'Yes',
-      clopidogrel: 'No',
-      prasugrel: 'No',
-      ticagrelor: 'Yes',
       heparin_strategy: 'LMWH alone',
-      gp2b3a: 'No',
-      bivaluridin: 'No',
       statin: 'Yes',
       statin_dose: '40 mg',
       other_drugs: 'None',
@@ -1057,49 +1032,64 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
   const renderAppropriatenessRadio = (field, label, specifyKey = null) => {
     const noteKey = `${field}_note`;
+    const specifyVal = formData[specifyKey] || '';
+    const noteVal = formData[noteKey] || '';
 
     return (
-      <div key={field} className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 p-2.5 bg-white border border-slate-200 rounded-lg text-xs min-h-[52px]">
-        <div className="flex-1 font-semibold text-slate-700 min-w-0">
+      <div key={field} className="grid grid-cols-12 gap-3 items-center w-full min-w-0 p-3 bg-white border border-slate-200 rounded-lg text-xs min-h-[52px]">
+        {/* Column 1: Label / Specify Area (4 Cols) */}
+        <div className="col-span-12 md:col-span-4 min-w-0 pr-2">
           {specifyKey ? (
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="whitespace-nowrap flex-shrink-0">{label}:</span>
-              <input
-                type="text"
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0 w-full">
+              <span className="font-semibold text-slate-700 whitespace-nowrap flex-shrink-0">{label}:</span>
+              <NoteInput
+                value={specifyVal}
+                onChange={(val) => handleChange(specifyKey, val)}
+                maxLength={150}
                 disabled={readOnly}
-                value={formData[specifyKey] || ''}
-                onChange={(e) => handleChange(specifyKey, e.target.value)}
+                readOnly={readOnly}
                 placeholder="Specify name"
-                className="px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-orange-500 w-full sm:w-36 bg-white font-normal min-w-0 flex-1"
+                className="w-full min-w-0 flex-1"
+                focusRingClass="focus:ring-orange-500"
               />
             </div>
           ) : (
-            <span className="leading-tight block">{label}</span>
+            <span className="font-semibold text-slate-700 leading-tight block break-words whitespace-normal min-w-0">
+              {label}
+            </span>
           )}
         </div>
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 flex-shrink-0">
-          <div className="flex gap-2.5 flex-shrink-0">
+
+        {/* Column 2: Radio Buttons (3 Cols) */}
+        <div className="col-span-12 md:col-span-3 min-w-0 flex items-center justify-start md:justify-center">
+          <div className="flex gap-4 flex-shrink-0 min-w-0">
             {['Appropriate', 'Inappropriate'].map((opt) => (
-              <label key={opt} className="flex items-center gap-1 cursor-pointer text-xs select-none">
+              <label key={opt} className="flex items-center gap-1.5 cursor-pointer text-xs select-none whitespace-nowrap">
                 <input
                   type="radio"
                   disabled={readOnly}
                   name={`${field}-${label}`}
                   checked={formData[field] === opt}
                   onChange={() => handleAppropriatenessChange(field, opt, noteKey)}
-                  className="text-orange-600 focus:ring-orange-500 cursor-pointer"
+                  className="text-orange-600 focus:ring-orange-500 cursor-pointer flex-shrink-0"
                 />
                 <span className={`font-semibold ${opt === 'Appropriate' ? 'text-emerald-700' : 'text-slate-600'}`}>{opt}</span>
               </label>
             ))}
           </div>
-          <input
-            type="text"
+        </div>
+
+        {/* Column 3: Note Input Block (5 Cols) */}
+        <div className="col-span-12 md:col-span-5 min-w-0">
+          <NoteInput
+            value={noteVal}
+            onChange={(val) => handleChange(noteKey, val)}
+            maxLength={150}
             disabled={readOnly}
-            value={formData[noteKey] || ''}
-            onChange={(e) => handleChange(noteKey, e.target.value)}
+            readOnly={readOnly}
             placeholder="Add note..."
-            className="w-28 sm:w-36 px-2 py-1 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-400 disabled:border-gray-200 transition-all bg-white font-normal"
+            className="w-full min-w-0"
+            focusRingClass="focus:ring-orange-500"
           />
         </div>
       </div>
@@ -1153,20 +1143,46 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             />
           </div>
           <div>
-            <label className={LABEL_STYLES}>IP No:</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className={LABEL_STYLES}>IP No:</label>
+              {!readOnly && (
+                <span className={`text-[10px] select-none ${
+                  Math.max(0, 30 - (formData.ip_no || '').length) <= 5
+                    ? 'text-rose-500 font-bold animate-pulse'
+                    : 'text-slate-400 font-medium'
+                }`}>
+                  {Math.max(0, 30 - (formData.ip_no || '').length)} left
+                </span>
+              )}
+            </div>
             <input
               type="text"
+              disabled={readOnly}
               value={formData.ip_no || ''}
+              maxLength={30}
               onChange={(e) => handleChange('ip_no', e.target.value)}
               placeholder="E.g. IP00001"
               className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
           <div>
-            <label className={LABEL_STYLES}>ACS No / Registry No:</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className={LABEL_STYLES}>ACS No / Registry No:</label>
+              {!readOnly && (
+                <span className={`text-[10px] select-none ${
+                  Math.max(0, 50 - (formData.acs_no || '').length) <= 5
+                    ? 'text-rose-500 font-bold animate-pulse'
+                    : 'text-slate-400 font-medium'
+                }`}>
+                  {Math.max(0, 50 - (formData.acs_no || '').length)} left
+                </span>
+              )}
+            </div>
             <input
               type="text"
+              disabled={readOnly}
               value={formData.acs_no || ''}
+              maxLength={50}
               onChange={(e) => handleChange('acs_no', e.target.value)}
               placeholder="E.g. ACS00001"
               className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-orange-500 focus:border-orange-500"
@@ -1242,10 +1258,23 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             {renderRadio('prior_cabg', 'Prior CABG', ['Yes', 'No', 'Unknown'])}
           </div>
           <div>
-            <label className="font-bold text-slate-700 block mb-1">Any other</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="font-bold text-slate-700 block">Any other</label>
+              {!readOnly && (
+                <span className={`text-[10px] select-none ${
+                  Math.max(0, 255 - (formData.other_background || '').length) <= 5
+                    ? 'text-rose-500 font-bold animate-pulse'
+                    : 'text-slate-400 font-medium'
+                }`}>
+                  {Math.max(0, 255 - (formData.other_background || '').length)} left
+                </span>
+              )}
+            </div>
             <input
               type="text"
-              value={formData.other_background}
+              disabled={readOnly}
+              value={formData.other_background || ''}
+              maxLength={255}
               onChange={(e) => handleChange('other_background', e.target.value)}
               className="w-full p-2 border border-slate-300 rounded-md"
               placeholder="Specify additional clinical history..."
@@ -1374,10 +1403,23 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 <ClinicalMetricBadge metricId="door_to_balloon_time" value={formData.door_to_balloon_time} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Segment:</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="font-bold text-slate-700 block">Segment:</label>
+                  {!readOnly && (
+                    <span className={`text-[10px] select-none ${
+                      Math.max(0, 100 - (formData.vessel_segment || '').length) <= 5
+                        ? 'text-rose-500 font-bold animate-pulse'
+                        : 'text-slate-400 font-medium'
+                    }`}>
+                      {Math.max(0, 100 - (formData.vessel_segment || '').length)} left
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
-                  value={formData.vessel_segment}
+                  disabled={readOnly}
+                  value={formData.vessel_segment || ''}
+                  maxLength={100}
                   onChange={(e) => handleChange('vessel_segment', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
@@ -1544,33 +1586,28 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Dose:</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="font-bold text-slate-700 block">Dose:</label>
+                  {!readOnly && (
+                    <span className={`text-[10px] select-none ${
+                      Math.max(0, 100 - (formData.thrombolysis_dose || '').length) <= 5
+                        ? 'text-rose-500 font-bold animate-pulse'
+                        : 'text-slate-400 font-medium'
+                    }`}>
+                      {Math.max(0, 100 - (formData.thrombolysis_dose || '').length)} left
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
-                  value={formData.thrombolysis_dose}
+                  disabled={readOnly}
+                  value={formData.thrombolysis_dose || ''}
+                  maxLength={100}
                   onChange={(e) => handleChange('thrombolysis_dose', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
               </div>
             </div>
-          </div>
-
-          {/* Drugs Section */}
-          <div className="font-bold text-slate-800 border-t border-slate-200 pt-3 text-sm">Drugs:</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {renderRadio('beta_blocker', 'Beta-blocker')}
-            {renderRadio('calcium_channel_blocker', 'Calcium-channel blocker')}
-            {renderRadio('nitrate', 'Nitrate')}
-            {renderRadio('nicorandil', 'Nicorandil')}
-            {renderRadio('ivabradine', 'Ivabradine')}
-            {renderRadio('ranolazine', 'Ranozolidine')}
-            {renderRadio('trimetazidine', 'Trimetazidine')}
-            {renderRadio('aspirin', 'Aspirin')}
-            {renderRadio('clopidogrel', 'Clopidigrel')}
-            {renderRadio('prasugrel', 'Prasugrel')}
-            {renderRadio('ticagrelor', 'Ticagralor')}
-            {renderRadio('gp2b3a', 'Gp2b3a')}
-            {renderRadio('bivaluridin', 'Bivaluridin')}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t">
@@ -1617,10 +1654,23 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               )}
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Any Other</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="font-bold text-slate-700 block">Any Other</label>
+                {!readOnly && (
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 255 - (formData.other_drugs || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 255 - (formData.other_drugs || '').length)} left
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
-                value={formData.other_drugs}
+                disabled={readOnly}
+                value={formData.other_drugs || ''}
+                maxLength={255}
                 onChange={(e) => handleChange('other_drugs', e.target.value)}
                 className="w-full p-2 border border-slate-300 rounded-md"
               />
@@ -1648,10 +1698,23 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             {renderRadio('cxr', 'CXR')}
           </div>
           <div>
-            <label className="font-bold text-slate-700 block mb-1">Others</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="font-bold text-slate-700 block">Others</label>
+              {!readOnly && (
+                <span className={`text-[10px] select-none ${
+                  Math.max(0, 255 - (formData.diagnostic_other || '').length) <= 5
+                    ? 'text-rose-500 font-bold animate-pulse'
+                    : 'text-slate-400 font-medium'
+                }`}>
+                  {Math.max(0, 255 - (formData.diagnostic_other || '').length)} left
+                </span>
+              )}
+            </div>
             <input
               type="text"
-              value={formData.diagnostic_other}
+              disabled={readOnly}
+              value={formData.diagnostic_other || ''}
+              maxLength={255}
               onChange={(e) => handleChange('diagnostic_other', e.target.value)}
               className="w-full p-2 border border-slate-300 rounded-md"
             />
@@ -1781,10 +1844,23 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </div>
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Any other</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="font-bold text-slate-700 block">Any other</label>
+                {!readOnly && (
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 255 - (formData.ecg_other || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 255 - (formData.ecg_other || '').length)} left
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
-                value={formData.ecg_other}
+                disabled={readOnly}
+                value={formData.ecg_other || ''}
+                maxLength={255}
                 onChange={(e) => handleChange('ecg_other', e.target.value)}
                 className="w-full p-2 border border-slate-300 rounded-md"
               />
@@ -1913,10 +1989,23 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </div>
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Others:</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="font-bold text-slate-700 block">Others:</label>
+                {!readOnly && (
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 255 - (formData.echo_other || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 255 - (formData.echo_other || '').length)} left
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
-                value={formData.echo_other}
+                disabled={readOnly}
+                value={formData.echo_other || ''}
+                maxLength={255}
                 onChange={(e) => handleChange('echo_other', e.target.value)}
                 className="w-full p-2 border border-slate-300 rounded-md"
               />
@@ -1949,30 +2038,69 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 <ClinicalMetricBadge metricId="creatinine" value={formData.creatinine} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Trop-I (ng/ml):</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="font-bold text-slate-700 block">Trop-I (ng/ml):</label>
+                  {!readOnly && (
+                    <span className={`text-[10px] select-none ${
+                      Math.max(0, 50 - (formData.troponin_i || '').length) <= 5
+                        ? 'text-rose-500 font-bold animate-pulse'
+                        : 'text-slate-400 font-medium'
+                    }`}>
+                      {Math.max(0, 50 - (formData.troponin_i || '').length)} left
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
-                  value={formData.troponin_i}
+                  disabled={readOnly}
+                  value={formData.troponin_i || ''}
+                  maxLength={50}
                   onChange={(e) => handleChange('troponin_i', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
                 <ClinicalMetricBadge metricId="troponin_i" value={formData.troponin_i} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">CPK (U/L):</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="font-bold text-slate-700 block">CPK (U/L):</label>
+                  {!readOnly && (
+                    <span className={`text-[10px] select-none ${
+                      Math.max(0, 50 - (formData.cpk || '').length) <= 5
+                        ? 'text-rose-500 font-bold animate-pulse'
+                        : 'text-slate-400 font-medium'
+                    }`}>
+                      {Math.max(0, 50 - (formData.cpk || '').length)} left
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
-                  value={formData.cpk}
+                  disabled={readOnly}
+                  value={formData.cpk || ''}
+                  maxLength={50}
                   onChange={(e) => handleChange('cpk', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
                 <ClinicalMetricBadge metricId="cpk" value={formData.cpk} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">CK-MB (U/L):</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="font-bold text-slate-700 block">CK-MB (U/L):</label>
+                  {!readOnly && (
+                    <span className={`text-[10px] select-none ${
+                      Math.max(0, 50 - (formData.ck_mb || '').length) <= 5
+                        ? 'text-rose-500 font-bold animate-pulse'
+                        : 'text-slate-400 font-medium'
+                    }`}>
+                      {Math.max(0, 50 - (formData.ck_mb || '').length)} left
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
-                  value={formData.ck_mb}
+                  disabled={readOnly}
+                  value={formData.ck_mb || ''}
+                  maxLength={50}
                   onChange={(e) => handleChange('ck_mb', e.target.value)}
                   className="w-full p-2 border border-slate-300 rounded-md"
                 />
@@ -2061,10 +2189,23 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             {renderRadio('cabg', 'CABG')}
           </div>
           <div>
-            <label className="font-bold text-slate-700 block mb-1">Other</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="font-bold text-slate-700 block">Other</label>
+              {!readOnly && (
+                <span className={`text-[10px] select-none ${
+                  Math.max(0, 255 - (formData.other_procedure || '').length) <= 5
+                    ? 'text-rose-500 font-bold animate-pulse'
+                    : 'text-slate-400 font-medium'
+                }`}>
+                  {Math.max(0, 255 - (formData.other_procedure || '').length)} left
+                </span>
+              )}
+            </div>
             <input
               type="text"
-              value={formData.other_procedure}
+              disabled={readOnly}
+              value={formData.other_procedure || ''}
+              maxLength={255}
               onChange={(e) => handleChange('other_procedure', e.target.value)}
               className="w-full p-2 border border-slate-300 rounded-md"
             />
@@ -2086,10 +2227,23 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             {renderRadio('major_bleeding', 'Major Bleeding')}
           </div>
           <div>
-            <label className="font-bold text-slate-700 block mb-1">Any other</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className="font-bold text-slate-700 block">Any other</label>
+              {!readOnly && (
+                <span className={`text-[10px] select-none ${
+                  Math.max(0, 255 - (formData.outcome_other || '').length) <= 5
+                    ? 'text-rose-500 font-bold animate-pulse'
+                    : 'text-slate-400 font-medium'
+                }`}>
+                  {Math.max(0, 255 - (formData.outcome_other || '').length)} left
+                </span>
+              )}
+            </div>
             <input
               type="text"
-              value={formData.outcome_other}
+              disabled={readOnly}
+              value={formData.outcome_other || ''}
+              maxLength={255}
               onChange={(e) => handleChange('outcome_other', e.target.value)}
               className="w-full p-2 border border-slate-300 rounded-md"
             />
@@ -2132,10 +2286,23 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               )}
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Any Other</label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="font-bold text-slate-700 block">Any Other</label>
+                {!readOnly && (
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 255 - (formData.discharge_other_medication || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 255 - (formData.discharge_other_medication || '').length)} left
+                  </span>
+                )}
+              </div>
               <input
                 type="text"
-                value={formData.discharge_other_medication}
+                disabled={readOnly}
+                value={formData.discharge_other_medication || ''}
+                maxLength={255}
                 onChange={(e) => handleChange('discharge_other_medication', e.target.value)}
                 className="w-full p-2 border border-slate-300 rounded-md"
               />
@@ -2149,21 +2316,21 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
         <div className="space-y-6 text-xs">
           <div>
             <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various procedures</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 gap-3 text-xs w-full">
               {proceduresList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
             </div>
           </div>
 
           <div className="pt-4 border-t border-slate-200">
             <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various investigations</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 gap-3 text-xs w-full">
               {investigationsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
             </div>
           </div>
 
           <div className="pt-4 border-t border-slate-200">
             <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various drugs</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div className="grid grid-cols-1 gap-3 text-xs w-full">
               {drugsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
             </div>
           </div>
@@ -2547,9 +2714,10 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   >
                     <input
                       type="text"
-                      value={formData[`other_${t}`]}
+                      disabled={!formData[`enabled_${t}`] || readOnly}
+                      value={formData[`other_${t}`] || ''}
+                      maxLength={255}
                       onChange={(e) => handleChange(`other_${t}`, e.target.value)}
-                      disabled={!formData[`enabled_${t}`]}
                       className="p-1 border rounded w-24 text-center"
                     />
                   </td>
@@ -2581,6 +2749,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   >
                     <input
                       type="radio"
+                      disabled={readOnly}
                       name="visit_mode"
                       value={mode}
                       checked={formData.visit_mode === mode}
@@ -2599,13 +2768,20 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Special Clinical Instructions For Patient/Caregiver
                 </label>
-                <span className="text-[11px] font-mono text-slate-400">
-                  {(formData.special_instructions?.length || 0)}/500
-                </span>
+                {!readOnly && (
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 500 - (formData.special_instructions || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 500 - (formData.special_instructions || '').length)} left
+                  </span>
+                )}
               </div>
               <div className="relative">
                 <textarea
                   rows={3}
+                  disabled={readOnly}
                   maxLength={500}
                   value={formData.special_instructions || ''}
                   onChange={(e) => handleChange('special_instructions', e.target.value)}

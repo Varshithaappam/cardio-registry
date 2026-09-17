@@ -1,6 +1,5 @@
 import React from 'react';
-import FormField from './FormField';
-import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
+import ValidatedTextField from './ValidatedTextField';
 
 export default function TextArea({
   label,
@@ -10,33 +9,35 @@ export default function TextArea({
   required = false,
   rows = 3,
   id,
+  name,
   className = '',
   readOnly = false,
   disabled = false,
   maxLength = 1500,
-  error = null
+  warningThreshold = 10,
+  error = null,
+  showCounter = true,
+  ...rest
 }) {
-  const isDisabled = disabled || readOnly;
-  const currentLength = (value ?? '').length;
-
   return (
-    <FormField label={label} required={required} error={error} className={className}>
-      <div className="relative w-full">
-        <textarea
-          id={id}
-          rows={rows}
-          value={value ?? ''}
-          placeholder={placeholder}
-          maxLength={maxLength}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={isDisabled}
-          readOnly={readOnly}
-          className={`${error ? INPUT_ERROR_STYLES : isDisabled ? INPUT_DISABLED_STYLES : INPUT_NORMAL_STYLES} pb-6`}
-        />
-        <div className="absolute bottom-2 right-2.5 text-[10px] font-medium text-slate-400 select-none pointer-events-none bg-white/90 px-1 rounded">
-          {currentLength}/{maxLength}
-        </div>
-      </div>
-    </FormField>
+    <ValidatedTextField
+      label={label}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      required={required}
+      rows={rows}
+      id={id}
+      name={name}
+      className={className}
+      disabled={disabled}
+      readOnly={readOnly}
+      maxLength={maxLength}
+      warningThreshold={warningThreshold}
+      error={error}
+      showCounter={showCounter}
+      multiline={true}
+      {...rest}
+    />
   );
 }

@@ -1,6 +1,5 @@
 import React from 'react';
-import FormField from './FormField';
-import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
+import ValidatedTextField from './ValidatedTextField';
 
 export default function TextInput({
   label,
@@ -9,27 +8,36 @@ export default function TextInput({
   placeholder = '',
   required = false,
   id,
+  name,
   className = '',
   disabled = false,
   readOnly = false,
   maxLength = 255,
-  error = null
+  warningThreshold = 5,
+  error = null,
+  showCounter = true,
+  type = 'text',
+  ...rest
 }) {
-  const isDisabled = disabled || readOnly;
   return (
-    <FormField label={label} required={required} error={error} className={className}>
-      <input
-        id={id}
-        type="text"
-        required={required}
-        value={value ?? ''}
-        placeholder={placeholder}
-        maxLength={maxLength}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={isDisabled}
-        readOnly={readOnly}
-        className={error ? INPUT_ERROR_STYLES : isDisabled ? INPUT_DISABLED_STYLES : INPUT_NORMAL_STYLES}
-      />
-    </FormField>
+    <ValidatedTextField
+      label={label}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      required={required}
+      id={id}
+      name={name}
+      className={className}
+      disabled={disabled}
+      readOnly={readOnly}
+      maxLength={maxLength}
+      warningThreshold={warningThreshold}
+      error={error}
+      showCounter={showCounter}
+      type={type}
+      multiline={false}
+      {...rest}
+    />
   );
 }

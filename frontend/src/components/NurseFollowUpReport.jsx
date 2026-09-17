@@ -1387,13 +1387,23 @@ export default function NurseFollowUpReport() {
 
               {/* Assigned Nurse Name */}
               <div className="space-y-1.5">
-                <label className="block text-[11px] font-black text-slate-700">
-                  Assigned Nurse Name <span className="text-red-500">*</span>
-                </label>
+                <div className="flex justify-between items-center">
+                  <label className="block text-[11px] font-black text-slate-700">
+                    Assigned Nurse Name <span className="text-red-500">*</span>
+                  </label>
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 100 - (formData.assigned_nurse || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 100 - (formData.assigned_nurse || '').length)} left
+                  </span>
+                </div>
                 <input
                   type="text"
-                  value={formData.assigned_nurse}
-                  onChange={(e) => setFormData({ ...formData, assigned_nurse: e.target.value })}
+                  maxLength={100}
+                  value={formData.assigned_nurse || ''}
+                  onChange={(e) => setFormData({ ...formData, assigned_nurse: e.target.value.slice(0, 100) })}
                   placeholder="e.g. Nurse Anitha R., RN"
                   className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none"
                   required
@@ -1402,13 +1412,23 @@ export default function NurseFollowUpReport() {
 
               {/* Offline Outreach Log Notes */}
               <div className="space-y-1.5">
-                <label className="block text-[11px] font-black text-slate-700">
-                  Offline Outreach Log Notes / Detailed Feedback <span className="text-red-500">*</span>
-                </label>
+                <div className="flex justify-between items-center">
+                  <label className="block text-[11px] font-black text-slate-700">
+                    Offline Outreach Log Notes / Detailed Feedback <span className="text-red-500">*</span>
+                  </label>
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 1000 - (formData.notes || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 1000 - (formData.notes || '').length)} left
+                  </span>
+                </div>
                 <textarea
                   rows={3}
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  maxLength={1000}
+                  value={formData.notes || ''}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value.slice(0, 1000) })}
                   placeholder="Record patient response, weight measurement notes, medication titration feedback..."
                   className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none resize-y"
                   required

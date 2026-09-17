@@ -3,9 +3,21 @@ const { logAuditTrail } = require('../utils/logAuditTrail');
 
 async function saveAppropriatenessHelper(transaction, tableName, idField, idVal, isUpdate, getVal) {
   const colRes = await new sql.Request(transaction).query(
-    `SELECT name FROM sys.columns WHERE object_id = OBJECT_ID('dbo.${tableName}')`
+    `SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH 
+     FROM INFORMATION_SCHEMA.COLUMNS 
+     WHERE TABLE_NAME = '${tableName}'`
   );
-  let existingCols = new Set(colRes.recordset ? colRes.recordset.map(r => r.name) : []);
+  let colLimits = {};
+  let existingCols = new Set();
+  if (colRes.recordset) {
+    colRes.recordset.forEach(r => {
+      if (r.COLUMN_NAME) {
+        const cName = r.COLUMN_NAME.toLowerCase();
+        colLimits[cName] = r.CHARACTER_MAXIMUM_LENGTH;
+        existingCols.add(cName);
+      }
+    });
+  }
 
   const candidateInputs = {
     iccu_admission: { type: sql.NVarChar(50), val: getVal('appr_iccu_admission') },
@@ -71,9 +83,15 @@ async function saveAppropriatenessHelper(transaction, tableName, idField, idVal,
 
   const activeCols = [];
   for (const [colName, colMeta] of Object.entries(candidateInputs)) {
-    if (existingCols.has(colName)) {
+    const keyLower = colName.toLowerCase();
+    if (keyLower in colLimits) {
       activeCols.push(colName);
-      reqAppr.input(colName, colMeta.type, colMeta.val !== undefined ? colMeta.val : null);
+      let rawVal = colMeta.val !== undefined && colMeta.val !== null ? String(colMeta.val) : null;
+      const maxLen = colLimits[keyLower];
+      if (typeof rawVal === 'string' && maxLen && maxLen > 0 && rawVal.length > maxLen) {
+        rawVal = rawVal.substring(0, maxLen);
+      }
+      reqAppr.input(colName, colMeta.type, rawVal);
     }
   }
 
@@ -457,24 +475,11 @@ async function createNstemiRecord(req, res) {
     reqTx.input('thrombolysis_dose', sql.VarChar(100), val('thrombolysis_dose'));
 
     // Medical Therapy
-    reqTx.input('beta_blocker', sql.NVarChar(3), strVal('beta_blocker'));
-    reqTx.input('calcium_channel_blocker', sql.NVarChar(3), strVal('calcium_channel_blocker'));
-    reqTx.input('nitrate', sql.NVarChar(3), strVal('nitrate'));
-    reqTx.input('nicorandil', sql.NVarChar(3), strVal('nicorandil'));
-    reqTx.input('ivabradine', sql.NVarChar(3), strVal('ivabradine'));
-    reqTx.input('ranolazine', sql.NVarChar(3), strVal('ranolazine'));
-    reqTx.input('trimetazidine', sql.NVarChar(3), strVal('trimetazidine'));
-    reqTx.input('aspirin', sql.NVarChar(3), strVal('aspirin'));
-    reqTx.input('clopidogrel', sql.NVarChar(3), strVal('clopidogrel'));
-    reqTx.input('prasugrel', sql.NVarChar(3), strVal('prasugrel'));
-    reqTx.input('ticagrelor', sql.NVarChar(3), strVal('ticagrelor'));
     reqTx.input('heparin_ufh_iv', sql.NVarChar(3), strVal('heparin_ufh_iv'));
     reqTx.input('heparin_ufh_sc', sql.NVarChar(3), strVal('heparin_ufh_sc'));
     reqTx.input('heparin_lmwh', sql.NVarChar(3), strVal('heparin_lmwh'));
     reqTx.input('heparin_ufh_iv_sc', sql.NVarChar(3), strVal('heparin_ufh_iv_sc'));
     reqTx.input('heparin_ufh_iv_lmwh', sql.NVarChar(3), strVal('heparin_ufh_iv_lmwh'));
-    reqTx.input('gp2b3a', sql.NVarChar(3), strVal('gp2b3a'));
-    reqTx.input('bivaluridin', sql.NVarChar(3), strVal('bivaluridin')); // database spelling with 'u'
     reqTx.input('statin', sql.NVarChar(3), strVal('statin'));
     reqTx.input('statin_10mg', sql.NVarChar(3), strVal('statin_10mg'));
     reqTx.input('statin_20mg', sql.NVarChar(3), strVal('statin_20mg'));
@@ -499,10 +504,8 @@ async function createNstemiRecord(req, res) {
         [complication_none], [complication_tamponade], [complication_major_bleed], [complication_stroke],
         [complication_stent_thrombosis], [complication_mi], [complication_death], [complication_emergency_cabg],
         [door_to_needle_time], [drug_stk], [drug_uk], [drug_reteplase], [drug_tenecteplase], [thrombolysis_dose],
-        [beta_blocker], [calcium_channel_blocker], [nitrate], [nicorandil], [ivabradine], [ranolazine],
-        [trimetazidine], [aspirin], [clopidogrel], [prasugrel], [ticagrelor], [heparin_ufh_iv],
-        [heparin_ufh_sc], [heparin_lmwh], [heparin_ufh_iv_sc], [heparin_ufh_iv_lmwh], [gp2b3a],
-        [bivaluridin], [statin], [statin_10mg], [statin_20mg], [statin_40mg], [statin_80mg], [other_drugs],
+        [heparin_ufh_iv], [heparin_ufh_sc], [heparin_lmwh], [heparin_ufh_iv_sc], [heparin_ufh_iv_lmwh],
+        [statin], [statin_10mg], [statin_20mg], [statin_40mg], [statin_80mg], [other_drugs],
         [cag], [iabp], [invasive_ventilation], [ptca], [cabg], [other_procedure]
       ) VALUES (
         @nstemi_id, @pami, @thrombolysis, @conservative, @door_to_balloon_time,
@@ -512,10 +515,8 @@ async function createNstemiRecord(req, res) {
         @complication_none, @complication_tamponade, @complication_major_bleed, @complication_stroke,
         @complication_stent_thrombosis, @complication_mi, @complication_death, @complication_emergency_cabg,
         @door_to_needle_time, @drug_stk, @drug_uk, @drug_reteplase, @drug_tenecteplase, @thrombolysis_dose,
-        @beta_blocker, @calcium_channel_blocker, @nitrate, @nicorandil, @ivabradine, @ranolazine,
-        @trimetazidine, @aspirin, @clopidogrel, @prasugrel, @ticagrelor, @heparin_ufh_iv,
-        @heparin_ufh_sc, @heparin_lmwh, @heparin_ufh_iv_sc, @heparin_ufh_iv_lmwh, @gp2b3a,
-        @bivaluridin, @statin, @statin_10mg, @statin_20mg, @statin_40mg, @statin_80mg, @other_drugs,
+        @heparin_ufh_iv, @heparin_ufh_sc, @heparin_lmwh, @heparin_ufh_iv_sc, @heparin_ufh_iv_lmwh,
+        @statin, @statin_10mg, @statin_20mg, @statin_40mg, @statin_80mg, @other_drugs,
         @cag, @iabp, @invasive_ventilation, @ptca, @cabg, @other_procedure
       );
     `);
@@ -1459,24 +1460,11 @@ async function updateNstemiRecord(req, res) {
     reqTx.input('drug_reteplase', sql.NVarChar(3), strVal('drug_reteplase'));
     reqTx.input('drug_tenecteplase', sql.NVarChar(3), strVal('drug_tenecteplase'));
     reqTx.input('thrombolysis_dose', sql.VarChar(100), val('thrombolysis_dose'));
-    reqTx.input('beta_blocker', sql.NVarChar(3), strVal('beta_blocker'));
-    reqTx.input('calcium_channel_blocker', sql.NVarChar(3), strVal('calcium_channel_blocker'));
-    reqTx.input('nitrate', sql.NVarChar(3), strVal('nitrate'));
-    reqTx.input('nicorandil', sql.NVarChar(3), strVal('nicorandil'));
-    reqTx.input('ivabradine', sql.NVarChar(3), strVal('ivabradine'));
-    reqTx.input('ranolazine', sql.NVarChar(3), strVal('ranolazine'));
-    reqTx.input('trimetazidine', sql.NVarChar(3), strVal('trimetazidine'));
-    reqTx.input('aspirin', sql.NVarChar(3), strVal('aspirin'));
-    reqTx.input('clopidogrel', sql.NVarChar(3), strVal('clopidogrel'));
-    reqTx.input('prasugrel', sql.NVarChar(3), strVal('prasugrel'));
-    reqTx.input('ticagrelor', sql.NVarChar(3), strVal('ticagrelor'));
     reqTx.input('heparin_ufh_iv', sql.NVarChar(3), strVal('heparin_ufh_iv'));
     reqTx.input('heparin_ufh_sc', sql.NVarChar(3), strVal('heparin_ufh_sc'));
     reqTx.input('heparin_lmwh', sql.NVarChar(3), strVal('heparin_lmwh'));
     reqTx.input('heparin_ufh_iv_sc', sql.NVarChar(3), strVal('heparin_ufh_iv_sc'));
     reqTx.input('heparin_ufh_iv_lmwh', sql.NVarChar(3), strVal('heparin_ufh_iv_lmwh'));
-    reqTx.input('gp2b3a', sql.NVarChar(3), strVal('gp2b3a'));
-    reqTx.input('bivaluridin', sql.NVarChar(3), strVal('bivaluridin'));
     reqTx.input('statin', sql.NVarChar(3), strVal('statin'));
     reqTx.input('statin_10mg', sql.NVarChar(3), strVal('statin_10mg'));
     reqTx.input('statin_20mg', sql.NVarChar(3), strVal('statin_20mg'));
@@ -1505,12 +1493,8 @@ async function updateNstemiRecord(req, res) {
           [complication_death] = @complication_death, [complication_emergency_cabg] = @complication_emergency_cabg,
           [door_to_needle_time] = @door_to_needle_time, [drug_stk] = @drug_stk, [drug_uk] = @drug_uk,
           [drug_reteplase] = @drug_reteplase, [drug_tenecteplase] = @drug_tenecteplase, [thrombolysis_dose] = @thrombolysis_dose,
-          [beta_blocker] = @beta_blocker, [calcium_channel_blocker] = @calcium_channel_blocker, [nitrate] = @nitrate,
-          [nicorandil] = @nicorandil, [ivabradine] = @ivabradine, [ranolazine] = @ranolazine,
-          [trimetazidine] = @trimetazidine, [aspirin] = @aspirin, [clopidogrel] = @clopidogrel,
-          [prasugrel] = @prasugrel, [ticagrelor] = @ticagrelor, [heparin_ufh_iv] = @heparin_ufh_iv,
-          [heparin_ufh_sc] = @heparin_ufh_sc, [heparin_lmwh] = @heparin_lmwh, [heparin_ufh_iv_sc] = @heparin_ufh_iv_sc,
-          [heparin_ufh_iv_lmwh] = @heparin_ufh_iv_lmwh, [gp2b3a] = @gp2b3a, [bivaluridin] = @bivaluridin,
+          [heparin_ufh_iv] = @heparin_ufh_iv, [heparin_ufh_sc] = @heparin_ufh_sc, [heparin_lmwh] = @heparin_lmwh,
+          [heparin_ufh_iv_sc] = @heparin_ufh_iv_sc, [heparin_ufh_iv_lmwh] = @heparin_ufh_iv_lmwh,
           [statin] = @statin, [statin_10mg] = @statin_10mg, [statin_20mg] = @statin_20mg,
           [statin_40mg] = @statin_40mg, [statin_80mg] = @statin_80mg, [other_drugs] = @other_drugs,
           [cag] = @cag, [iabp] = @iabp, [invasive_ventilation] = @invasive_ventilation,
