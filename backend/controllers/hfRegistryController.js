@@ -1,5 +1,4 @@
 const db = require('../config/db');
-const { logAudit } = require('../utils/auditLogger');
 const { logAuditTrail } = require('../utils/logAuditTrail');
 
 /**
@@ -48,7 +47,6 @@ const createRecord = async (req, res) => {
     conn.release();
 
     // 3. Log Audit Action
-    logAudit(newRecordId, userId, 'CREATE', null, req.body).catch(err => console.error('Legacy logAudit error:', err));
     logAuditTrail(req, 'CREATE', 'HF', hf_registry_no, reg_patient_id, null, req.body).catch(err => console.error('logAuditTrail error:', err));
 
     return res.status(201).json({
@@ -109,7 +107,6 @@ const updateRecord = async (req, res) => {
     };
 
     // 4. Log Audit Action with old and new values
-    logAudit(recordId, userId, 'UPDATE', previousData, updatedData).catch(err => console.error('Legacy logAudit error:', err));
     logAuditTrail(req, 'UPDATE', 'HF', previousData.hf_registry_no || recordId, previousData.reg_patient_id, previousData, updatedData).catch(err => console.error('logAuditTrail error:', err));
 
     return res.status(200).json({
@@ -163,7 +160,6 @@ const deleteRecord = async (req, res) => {
     const softDeletedData = updatedRows[0] || { ...previousData, is_deleted: 1, deleted_by: userId, deleted_at: new Date() };
 
     // 3. Execute logAudit entry with action_type = 'DELETE'
-    logAudit(recordId, userId, 'DELETE', previousData, softDeletedData).catch(err => console.error('Legacy logAudit error:', err));
     logAuditTrail(req, 'DELETE', 'HF', previousData.hf_registry_no || recordId, previousData.reg_patient_id, previousData, softDeletedData).catch(err => console.error('logAuditTrail error:', err));
 
     return res.status(200).json({
@@ -213,9 +209,8 @@ const undeleteRecord = async (req, res) => {
     const { recordset: updatedRows } = await db.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @recordId;', { recordId });
     const restoredData = updatedRows[0] || { ...previousData, is_deleted: 0, deleted_by: null, deleted_at: null };
 
-    // 3. Execute audit log with action_type = 'UPDATE'
-    logAudit(recordId, userId, 'UPDATE', previousData, restoredData).catch(err => console.error('Legacy logAudit error:', err));
-    logAuditTrail(req, 'UPDATE', 'HF', previousData.hf_registry_no || recordId, previousData.reg_patient_id, previousData, restoredData).catch(err => console.error('logAuditTrail error:', err));
+    // 3. Execute audit log with action_type = 'RESTORE'
+    logAuditTrail(req, 'RESTORE', 'HF', previousData.hf_registry_no || recordId, previousData.reg_patient_id, previousData, restoredData).catch(err => console.error('logAuditTrail error:', err));
 
     return res.status(200).json({
       success: true,
@@ -252,7 +247,7 @@ const getPatientAuditLog = async (req, res) => {
       SELECT 
         s.audit_id, 
         s.registry_type,
-        COALESCE(s.record_identifier, s.record_id) AS record_identifier,
+        COALESCE(s.record_identifier, CAST(s.record_id AS VARCHAR(100))) AS record_identifier,
         s.patient_id AS reg_patient_id, 
         s.user_id AS username, 
         s.action_type, 
@@ -269,9 +264,12 @@ const getPatientAuditLog = async (req, res) => {
       UNION ALL
 
       SELECT 
-        a.audit_id, 
+        a.audit_id + 1000000 AS audit_id, 
         'HF' AS registry_type,
-        CAST(a.hf_id AS VARCHAR(100)) AS record_identifier,
+        CASE 
+          WHEN hf.hf_registry_no IS NOT NULL AND hf.hf_registry_no <> '' THEN hf.hf_registry_no
+          ELSE 'HF #' + CAST(a.hf_id AS VARCHAR(100))
+        END AS record_identifier,
         p.reg_patient_id, 
         COALESCE(u.username, CAST(a.user_id AS VARCHAR(100))) AS username, 
         a.action_type, 
@@ -286,6 +284,12 @@ const getPatientAuditLog = async (req, res) => {
       LEFT JOIN hf_registry hf ON a.hf_id = hf.hf_id 
       LEFT JOIN patient_demographics p ON hf.reg_patient_id = p.reg_patient_id 
       WHERE p.reg_patient_id = @regPatientId
+        AND NOT EXISTS (
+          SELECT 1 FROM system_audit_log s 
+          WHERE s.patient_id = p.reg_patient_id 
+            AND s.registry_type = 'HF'
+            AND ABS(DATEDIFF(second, s.timestamp, a.timestamp)) <= 5
+        )
       ORDER BY timestamp DESC;
     `;
     const { recordset: rows } = await db.query(query, { regPatientId: reg_patient_id });

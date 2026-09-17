@@ -143,11 +143,45 @@ function getChangedFields(oldObj, newObj) {
 }
 
 /**
+ * Dynamically formats record identifiers based on registry type.
+ * HF records: "HF00001" or "HF #<id>"
+ * STEMI / NSTEMI records: "IP-<no>" or "IP00001"
+ */
+function formatRecordIdentifier(registryType, identifier, dataObj = null) {
+  const reg = String(registryType || '').toUpperCase();
+  let id = identifier;
+
+  if (dataObj) {
+    if (reg === 'HF' && (dataObj.hf_registry_no || dataObj.hf_id)) {
+      id = dataObj.hf_registry_no || dataObj.hf_id;
+    } else if ((reg === 'STEMI' || reg === 'NSTEMI') && (dataObj.ip_no || dataObj.acs_no)) {
+      id = dataObj.ip_no || dataObj.acs_no;
+    }
+  }
+
+  if (id === null || id === undefined || id === '' || id === 'null' || id === 'undefined') {
+    return '—';
+  }
+
+  const strId = String(id).trim();
+
+  if (reg === 'HF') {
+    if (strId.startsWith('HF')) return strId;
+    return `HF #${strId}`;
+  } else if (reg === 'STEMI' || reg === 'NSTEMI') {
+    if (strId.startsWith('IP')) return strId;
+    return `IP-${strId}`;
+  }
+
+  return strId;
+}
+
+/**
  * Reusable Express Audit Logger Utility
  * Writes immutable action record into system_audit_log table
  *
  * @param {Object} req - Express request object (containing req.user)
- * @param {string} actionType - 'CREATE' | 'UPDATE' | 'DELETE'
+ * @param {string} actionType - 'CREATE' | 'UPDATE' | 'DELETE' | 'RESTORE'
  * @param {string} registryType - 'HF' | 'STEMI' | 'NSTEMI'
  * @param {string|number} recordIdentifier - HF ID for HF, or IP No for STEMI/NSTEMI
  * @param {number} patientId - Associated Patient DB Primary Key ID
@@ -160,7 +194,7 @@ async function logAuditTrail(req, actionType, registryType, recordIdentifier, pa
     const username = req?.user?.username || req?.user?.name || req?.user?.email || req?.user?.user_id || 'Dr. Alex V.';
     const normalizedAction = String(actionType).toUpperCase();
     const normalizedRegistry = String(registryType).toUpperCase();
-    const normalizedRecordId = String(recordIdentifier);
+    const formattedRecordId = formatRecordIdentifier(normalizedRegistry, recordIdentifier, newData || oldData);
 
     let changedFieldsJSON = null;
 
@@ -181,7 +215,7 @@ async function logAuditTrail(req, actionType, registryType, recordIdentifier, pa
 
     await db.query(query, {
       registryType: normalizedRegistry,
-      recordIdentifier: normalizedRecordId,
+      recordIdentifier: formattedRecordId,
       patientId: patientId ? Number(patientId) : null,
       username: String(username),
       actionType: normalizedAction,
@@ -194,7 +228,7 @@ async function logAuditTrail(req, actionType, registryType, recordIdentifier, pa
   }
 }
 
-module.exports = { logAuditTrail, getChangedFields };
+module.exports = { logAuditTrail, getChangedFields, formatRecordIdentifier };
 
 
 

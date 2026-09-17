@@ -144,10 +144,20 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
   const renderDescriptionText = (log) => {
     const regType = String(log.registry_type || 'Registry').toUpperCase();
     const action = String(log.action_type || '').toUpperCase();
-    const recId = log.record_identifier || log.record_id || '—';
+    let recId = log.record_identifier || log.record_id || '—';
     const user = log.username || log.user_id || 'User';
 
-    if (action === 'CREATE') {
+    if (regType === 'HF') {
+      if (recId !== '—' && !String(recId).startsWith('HF')) {
+        recId = `HF #${recId}`;
+      }
+    } else if (regType === 'STEMI' || regType === 'NSTEMI') {
+      if (recId !== '—' && !String(recId).startsWith('IP')) {
+        recId = `IP-${recId}`;
+      }
+    }
+
+    if (action === 'CREATE' || action === 'CREATION') {
       if (regType === 'HF') {
         return <span className="font-bold text-slate-800">Heart Failure (HF) Record ID: {recId} Created</span>;
       }
@@ -155,14 +165,20 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
     }
 
     if (action === 'DELETE' || action === 'DELETION') {
+      if (regType === 'HF') {
+        return <span className="font-bold text-rose-700">Heart Failure (HF) Record ID: {recId} has been Deleted</span>;
+      }
       return <span className="font-bold text-rose-700">{regType} Record (IP No: {recId}) has been Deleted</span>;
     }
 
     if (action === 'RESTORE' || action === 'RESTORED' || action === 'UNDELETE') {
-      return <span className="font-bold text-teal-700">{user} restored the {regType} Record ({recId})</span>;
+      if (regType === 'HF') {
+        return <span className="font-bold text-teal-700">{user} restored Heart Failure (HF) Record ID: {recId}</span>;
+      }
+      return <span className="font-bold text-teal-700">{user} restored {regType} Record (IP No: {recId})</span>;
     }
 
-    if (action === 'UPDATE') {
+    if (action === 'UPDATE' || action === 'UPDATED') {
       if (regType === 'HF') {
         return <span className="font-bold text-slate-800">Heart Failure (HF) Record ID: {recId} Updated</span>;
       }
