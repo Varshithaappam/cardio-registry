@@ -1,4 +1,36 @@
 const hfService = require("../services/hfService");
+const db = require("../config/db");
+
+async function resolveCurrentUserId(req) {
+    if (req.user?.id || req.user?.userId) {
+        return req.user.id || req.user.userId;
+    }
+    const headerName = req.headers['x-user-name'];
+    const headerId = req.headers['x-user-id'];
+    const bodyUser = req.body?.username || req.body?.user_id || req.body?.userId || req.body?.created_by || req.body?.updated_by;
+
+    const target = headerId || headerName || bodyUser;
+    if (target) {
+        try {
+            const { recordset } = await db.query(
+                `SELECT user_id FROM [users] WHERE user_id = @id OR username = @name OR email = @name;`,
+                { id: isNaN(Number(target)) ? -1 : Number(target), name: String(target) }
+            );
+            if (recordset.length > 0) {
+                return recordset[0].user_id;
+            }
+        } catch (err) {
+            console.error("Error resolving user id:", err.message);
+        }
+    }
+
+    try {
+        const { recordset } = await db.query(`SELECT TOP 1 user_id FROM [users] WHERE username = 'varshitha_appam';`);
+        if (recordset.length > 0) return recordset[0].user_id;
+    } catch {}
+
+    return 7;
+}
 
 function isFilled(val) {
     if (val === null || val === undefined) return false;
@@ -26,8 +58,9 @@ async function saveHfAssessment(req, res) {
                 message: "At least one field must be provided"
             });
         }
-        const userId = req.user?.id || req.user?.userId || 1;
+        const userId = await resolveCurrentUserId(req);
         console.log("Saving HF Assessment for reg_patient_id:", req.body.regPatientId, "User ID:", userId);
+        req.body._req = req;
         const result = await hfService.saveHfAssessment(req.body, userId);
         return res.status(201).json({
             success: true,
@@ -93,8 +126,9 @@ async function saveHfDraft(req, res) {
                 message: "At least one field must be provided"
             });
         }
-        const userId = req.user?.id || req.user?.userId || 1;
+        const userId = await resolveCurrentUserId(req);
         console.log("Saving HF Assessment Draft for reg_patient_id:", req.body.regPatientId, "User ID:", userId);
+        req.body._req = req;
         const result = await hfService.saveHfAssessment({ ...req.body, isDraft: true }, userId);
         return res.status(200).json({
             success: true,

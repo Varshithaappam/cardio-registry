@@ -1,11 +1,58 @@
 const db = require('../config/db');
 
+const INTERNAL_AUDIT_KEYS = new Set(['_req', '_requser']);
+
+/**
+ * Strips internal/non-serializable keys (e.g. Express req) before audit persistence.
+ */
+function sanitizeAuditPayload(obj) {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj !== 'object') return obj;
+  if (obj instanceof Date) return obj;
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => sanitizeAuditPayload(item));
+  }
+
+  const cleaned = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (INTERNAL_AUDIT_KEYS.has(key)) continue;
+    cleaned[key] = sanitizeAuditPayload(value);
+  }
+  return cleaned;
+}
+
+/**
+ * Formats Date objects and ISO date strings to YYYY-MM-DD for comparison.
+ */
+function normalizeDateValue(val) {
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    return val.toISOString().split('T')[0];
+  }
+
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    if (/^\d{4}-\d{2}-\d{2}T/.test(trimmed)) {
+      return trimmed.split('T')[0];
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+  }
+
+  return null;
+}
+
 /**
  * Normalizes values for strict data comparison.
  * Treats null, undefined, "", "null", "undefined" as equal (empty string "").
  */
 function normalizeVal(val) {
   if (val === null || val === undefined) return '';
+
+  const normalizedDate = normalizeDateValue(val);
+  if (normalizedDate) return normalizedDate;
+
   let s = String(val).trim();
   if (s === 'null' || s === 'undefined' || s === '') return '';
 
@@ -30,112 +77,330 @@ function normalizeVal(val) {
   return s;
 }
 
+const FIELD_LABEL_MAP = {
+  weight: 'Weight (kg)',
+  weight_kg: 'Weight (kg)',
+  height: 'Height (cm)',
+  height_cm: 'Height (cm)',
+  pulse_rate: 'Pulse Rate (bpm)',
+  sbp: 'SBP (mmHg)',
+  systolic_bp: 'SBP (mmHg)',
+  dbp: 'DBP (mmHg)',
+  diastolic_bp: 'DBP (mmHg)',
+  ef: 'Ejection Fraction (%)',
+  echo_ef: 'EF (%)',
+  primary_diagnosis: 'Primary Diagnosis',
+  primary_consultant: 'Primary Consultant',
+  discharge_status: 'Discharge Status',
+  nyha_class: 'NYHA Class',
+  stent_type: 'Stent Type',
+  heparin_strategy: 'Heparin Strategy',
+  thrombolysis_dose: 'Thrombolysis Dose',
+  troponin_i: 'Trop-I',
+  creatinine: 'Creatinine (mg/dl)',
+  hemoglobin: 'Hemoglobin (gm%)',
+  hypertension: 'Hypertension',
+  diabetes: 'Diabetes',
+  smoking: 'Smoking',
+  renal_failure: 'Renal Failure',
+  copd: 'COPD',
+  cva: 'CVA',
+  prior_acs: 'Prior ACS',
+  prior_ptca: 'Prior PTCA',
+  prior_cabg: 'Prior CABG',
+  admission_date: 'Admission Date',
+  discharge_date: 'Discharge Date',
+  assessmentdate: 'Assessment Date',
+  visit_date: 'Visit Date',
+  visitdate: 'Visit Date',
+  age_gt_75: 'Age > 75',
+  timi_total_score: 'TIMI Total Score',
+  av_block: 'AV Block',
+  bbb: 'BBB',
+  rhythm: 'ECG Rhythm',
+  ecg_rhythm: 'ECG Rhythm',
+  lv_function: 'LV Function',
+  mr: 'MR',
+  treatment_strategy: 'Treatment Strategy',
+  statin_dose: 'Statin Dose',
+  discharge_statin_dose: 'Discharge Statin Dose'
+};
+
+function formatFieldLabel(key) {
+  if (!key) return '';
+  const leaf = String(key).split('.').pop();
+  const lowerLeaf = leaf.toLowerCase();
+  if (FIELD_LABEL_MAP[lowerLeaf]) return FIELD_LABEL_MAP[lowerLeaf];
+  return leaf
+    .replace(/^appr_/, '')
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/**
+ * Maps raw constituent boolean database flags (e.g. av_block_none: 'Yes', rhythm_nsr: 'Yes', pami: 'Yes')
+ * into canonical group fields (av_block: 'None', rhythm: 'NSR', treatment_strategy: 'PAMI') so diffing
+ * against incoming grouped frontend payload strings does not produce ghost updates.
+ */
+function resolveCanonicalObject(obj) {
+  if (!obj || typeof obj !== 'object') return {};
+  const flat = { ...obj };
+
+  // 1. AV Block
+  if (!flat.av_block) {
+    if (flat.av_block_none === 'Yes') flat.av_block = 'None';
+    else if (flat.av_block_first_degree === 'Yes') flat.av_block = 'First Degree';
+    else if (flat.av_block_second_degree === 'Yes') flat.av_block = 'Second Degree';
+    else if (flat.av_block_chb === 'Yes') flat.av_block = 'CHB';
+  }
+
+  // 2. BBB
+  if (!flat.bbb) {
+    if (flat.bbb_none === 'Yes') flat.bbb = 'None';
+    else if (flat.bbb_lbbb === 'Yes') flat.bbb = 'LBBB';
+    else if (flat.bbb_rbbb === 'Yes') flat.bbb = 'RBBB';
+    else if (flat.bbb_indeterminate === 'Yes') flat.bbb = 'Indeterminate';
+  }
+
+  // 3. Rhythm
+  let rhythmVal = flat.rhythm || flat.ecg_rhythm;
+  if (!rhythmVal) {
+    if (flat.rhythm_nsr === 'Yes') rhythmVal = 'NSR';
+    else if (flat.rhythm_af === 'Yes') rhythmVal = 'AF';
+    else if (flat.rhythm_svt === 'Yes') rhythmVal = 'SVT';
+    else if (flat.rhythm_vt === 'Yes') rhythmVal = 'VT';
+    else if (flat.rhythm_vf === 'Yes') rhythmVal = 'VF';
+  }
+  if (rhythmVal) {
+    flat.rhythm = rhythmVal;
+    flat.ecg_rhythm = rhythmVal;
+  }
+
+  // 4. LV Function
+  if (!flat.lv_function) {
+    if (flat.lv_function_normal === 'Yes') flat.lv_function = 'Normal';
+    else if (flat.lv_function_mild_lvd === 'Yes') flat.lv_function = 'Mild LVD';
+    else if (flat.lv_function_moderate_lvd === 'Yes') flat.lv_function = 'Moderate LVD';
+    else if (flat.lv_function_severe_lvd === 'Yes') flat.lv_function = 'Severe LVD';
+  }
+
+  // 5. MR
+  if (!flat.mr) {
+    if (flat.mr_none === 'Yes') flat.mr = 'None';
+    else if (flat.mr_mild === 'Yes') flat.mr = 'Mild';
+    else if (flat.mr_moderate === 'Yes') flat.mr = 'Moderate';
+    else if (flat.mr_severe === 'Yes') flat.mr = 'Severe';
+  }
+
+  // 6. Treatment Strategy
+  if (!flat.treatment_strategy) {
+    if (flat.pami === 'Yes') flat.treatment_strategy = 'PAMI';
+    else if (flat.thrombolysis === 'Yes') flat.treatment_strategy = 'Thrombolysis';
+    else if (flat.conservative === 'Yes') flat.treatment_strategy = 'Conservative';
+  }
+
+  // 7. Stent Type
+  if (!flat.stent_type) {
+    if (flat.stent_des === 'Yes') flat.stent_type = 'DES';
+    else if (flat.stent_bms === 'Yes') flat.stent_type = 'BMS';
+  }
+
+  // 8. Heparin Strategy
+  if (!flat.heparin_strategy) {
+    if (flat.heparin_lmwh === 'Yes') flat.heparin_strategy = 'LMWH alone';
+    else if (flat.heparin_ufh_iv === 'Yes') flat.heparin_strategy = 'UFH IV';
+    else if (flat.heparin_ufh_sc === 'Yes') flat.heparin_strategy = 'UFH SC';
+  }
+
+  // 9. Statin Dose
+  if (!flat.statin_dose) {
+    if (flat.statin_10mg === 'Yes') flat.statin_dose = '10 mg';
+    else if (flat.statin_20mg === 'Yes') flat.statin_dose = '20 mg';
+    else if (flat.statin_40mg === 'Yes') flat.statin_dose = '40 mg';
+    else if (flat.statin_80mg === 'Yes') flat.statin_dose = '80 mg';
+  }
+
+  // 10. Discharge Statin Dose
+  if (!flat.discharge_statin_dose) {
+    if (flat.discharge_statin_10mg === 'Yes') flat.discharge_statin_dose = '10 mg';
+    else if (flat.discharge_statin_20mg === 'Yes') flat.discharge_statin_dose = '20 mg';
+    else if (flat.discharge_statin_40mg === 'Yes') flat.discharge_statin_dose = '40 mg';
+    else if (flat.discharge_statin_80mg === 'Yes') flat.discharge_statin_dose = '80 mg';
+  }
+
+  return flat;
+}
+
+/**
+ * Flattens nested HF form payloads (patient, inpatientDetails, investigations, etc.)
+ * into dot-notation keys for reliable deep comparison.
+ */
+function flattenObject(obj, prefix = '') {
+  const res = {};
+  if (!obj || typeof obj !== 'object') return res;
+
+  for (const key of Object.keys(obj)) {
+    const val = obj[key];
+    const newKey = prefix ? `${prefix}.${key}` : key;
+
+    if (val === null || val === undefined) continue;
+
+    if (Array.isArray(val)) {
+      if (val.length === 0) {
+        res[newKey] = '';
+      } else if (val.every(item => typeof item !== 'object' || item === null)) {
+        res[newKey] = [...val].map(item => normalizeVal(item)).sort().join(', ');
+      } else {
+        val.forEach((item, idx) => {
+          if (item !== null && typeof item === 'object') {
+            Object.assign(res, flattenObject(item, `${newKey}[${idx}]`));
+          } else {
+            res[`${newKey}[${idx}]`] = item;
+          }
+        });
+      }
+    } else if (typeof val === 'object' && !(val instanceof Date)) {
+      Object.assign(res, flattenObject(val, newKey));
+    } else {
+      res[newKey] = val;
+    }
+  }
+
+  return res;
+}
+
+function formatAuditDisplayValue(val) {
+  const normalizedDate = normalizeDateValue(val);
+  if (normalizedDate) return normalizedDate;
+
+  if (val === null || val === undefined) return '—';
+  const norm = normalizeVal(val);
+  if (norm === '') return '—';
+  return val;
+}
+
 /**
  * Deeply compares oldData (DB) vs newData (req.body) for UPDATE actions.
- * ONLY includes keys present in oldObj where the normalized value has strictly changed.
+ * Flattens nested HF payloads, resolves canonical group fields, and normalizes dates before comparison.
  */
 function getChangedFields(oldObj, newObj) {
   if (!oldObj || !newObj) return [];
-  const changes = [];
 
-  // Ignore Metadata & Internal keys
   const excludedKeys = new Set([
-    'id', 'created_at', 'updated_at', 'patient_id', 'reg_patient_id',
-    'is_deleted', 'deleted_at', 'deleted_by', 'status', 'created_by', 'updated_by',
-    'stemi_id', 'nstemi_id', 'hf_id', 'acs_no', 'ip_no', 'hf_registry_no',
-    'followup', 'appropriateness', 'stemi_appropriateness', 'nstemi_appropriateness',
-    'appropriateness_id'
+    'id', 'created_at', 'updated_at', 'patient_id', 'reg_patient_id', 'regpatientid',
+    'is_deleted', 'isdeleted', 'deleted_at', 'deleted_by', 'deletedby', 'status',
+    'created_by', 'createdby', 'updated_by', 'updatedby', 'stemi_id', 'nstemi_id',
+    'hf_id', 'hfid', 'temphfid', 'acs_no', 'acsno', 'ip_no', 'ipno',
+    'hf_registry_no', 'hfregistryno', 'followup', 'appropriateness',
+    'stemi_appropriateness', 'nstemi_appropriateness', 'appropriateness_id',
+    'care_mr_no', 'caremrno', 'mr_no', 'mrno', 'encounterid', 'encounter_id',
+    'assessed_by', 'assessedby', 'visit_id', 'visitid', 'isdraft', 'is_draft',
+    '_req', 'deleted_by_user', 'deletedbyuser',
+    // Demographic read-only & auto-computed follow-up fields
+    'patient_name', 'patientname', 'name', 'age', 'gender', 'phone', 'email',
+    'date_1m', 'date_3m', 'date_6m', 'date_12m', 'date_1month', 'date_3month', 'date_6month', 'date_12month',
+    'target_date', 'timeframe', 'followup_date', 'followup_month', 'followup_id', 'task_id',
+    'source_record_id', 'source_registry', 'clinic_location', 'address', 'patient',
+    // Followup form-default fields (sent with defaults like 'None'/'In-Person' even when DB has null)
+    'func_1m', 'func_3m', 'func_6m', 'func_12m',
+    'visit_mode', 'visitmode', 'special_instructions',
+    'functional_class',
+    // Grouped constituent raw boolean flags
+    'av_block_none', 'av_block_first_degree', 'av_block_second_degree', 'av_block_chb',
+    'bbb_none', 'bbb_lbbb', 'bbb_rbbb', 'bbb_indeterminate',
+    'rhythm_nsr', 'rhythm_af', 'rhythm_svt', 'rhythm_vt', 'rhythm_vf',
+    'lv_function_normal', 'lv_function_mild_lvd', 'lv_function_moderate_lvd', 'lv_function_severe_lvd',
+    'mr_none', 'mr_mild', 'mr_moderate', 'mr_severe',
+    'pami', 'thrombolysis', 'conservative',
+    'stent_des', 'stent_bms',
+    'heparin_lmwh', 'heparin_ufh_iv', 'heparin_ufh_sc',
+    'statin_10mg', 'statin_20mg', 'statin_40mg', 'statin_80mg',
+    'discharge_statin_10mg', 'discharge_statin_20mg', 'discharge_statin_40mg', 'discharge_statin_80mg'
   ]);
 
-  const fieldLabelMap = {
-    weight: 'Weight (kg)',
-    weight_kg: 'Weight (kg)',
-    height: 'Height (cm)',
-    height_cm: 'Height (cm)',
-    pulse_rate: 'Pulse Rate (bpm)',
-    sbp: 'SBP (mmHg)',
-    systolic_bp: 'SBP (mmHg)',
-    dbp: 'DBP (mmHg)',
-    diastolic_bp: 'DBP (mmHg)',
-    ef: 'Ejection Fraction (%)',
-    echo_ef: 'EF (%)',
-    primary_diagnosis: 'Primary Diagnosis',
-    primary_consultant: 'Primary Consultant',
-    discharge_status: 'Discharge Status',
-    nyha_class: 'NYHA Class',
-    stent_type: 'Stent Type',
-    heparin_strategy: 'Heparin Strategy',
-    thrombolysis_dose: 'Thrombolysis Dose',
-    troponin_i: 'Trop-I',
-    creatinine: 'Creatinine (mg/dl)',
-    hemoglobin: 'Hemoglobin (gm%)',
-    hypertension: 'Hypertension',
-    diabetes: 'Diabetes',
-    smoking: 'Smoking',
-    renal_failure: 'Renal Failure',
-    copd: 'COPD',
-    cva: 'CVA',
-    prior_acs: 'Prior ACS',
-    prior_ptca: 'Prior PTCA',
-    prior_cabg: 'Prior CABG',
-    admission_date: 'Admission Date',
-    discharge_date: 'Discharge Date'
+  // Keys that are synthetically created by resolveCanonicalObject — if these only exist
+  // on one side, skip diffing (the other side simply didn't include them in its payload).
+  const canonicalGroupKeys = new Set([
+    'av_block', 'bbb', 'rhythm', 'ecg_rhythm', 'lv_function', 'mr',
+    'treatment_strategy', 'stent_type', 'heparin_strategy',
+    'statin_dose', 'discharge_statin_dose'
+  ]);
+
+  const flatOld = resolveCanonicalObject(flattenObject(sanitizeAuditPayload(oldObj)));
+  const flatNew = resolveCanonicalObject(flattenObject(sanitizeAuditPayload(newObj)));
+  const oldKeys = new Set(Object.keys(flatOld));
+  const newKeys = new Set(Object.keys(flatNew));
+  const allFullKeys = new Set([...oldKeys, ...newKeys]);
+  const allKeyArray = Array.from(allFullKeys);
+
+  const hasNestedCounterpart = (topKey) => {
+    if (topKey.includes('.')) return false;
+    const lowerTop = topKey.toLowerCase();
+    return allKeyArray.some(k => k.includes('.') && k.toLowerCase().endsWith('.' + lowerTop));
   };
 
-  const formatFieldLabel = (key) => {
-    const lowerKey = key.toLowerCase();
-    if (fieldLabelMap[lowerKey]) return fieldLabelMap[lowerKey];
-    return key
-      .replace(/^appr_/, '')
-      .replace(/([A-Z])/g, ' $1')
-      .replace(/_/g, ' ')
-      .trim()
-      .replace(/\b\w/g, c => c.toUpperCase());
-  };
+  const changes = [];
 
-  // Iterate through keys of incoming newData (from req.body)
-  for (const key of Object.keys(newObj)) {
-    const lowerKey = key.toLowerCase();
-    if (excludedKeys.has(lowerKey) || key.startsWith('appr_') || lowerKey.endsWith('_id') || lowerKey.endsWith('id')) {
+  for (const key of allFullKeys) {
+    const leaf = key.split('.').pop();
+    const lowerLeaf = leaf.toLowerCase();
+    const lowerFullKey = key.toLowerCase();
+
+    if (
+      excludedKeys.has(lowerLeaf) ||
+      excludedKeys.has(lowerFullKey) ||
+      leaf.startsWith('appr_') ||
+      lowerLeaf.endsWith('_id') ||
+      (lowerLeaf.endsWith('id') && lowerLeaf !== 'visitid')
+    ) {
       continue;
     }
 
-    const newVal = newObj[key];
-    if (typeof newVal === 'object' && newVal !== null) {
-      continue; // Skip nested objects/arrays
+    if (!key.includes('.') && hasNestedCounterpart(key)) {
+      continue;
     }
 
-    // Find matching key in oldObj (case-insensitive)
-    let matchedOldKey = Object.keys(oldObj).find(k => k.toLowerCase() === key.toLowerCase());
-    if (!matchedOldKey) {
-      continue; // Skip fields not present in existing DB record
+    // Skip canonical group fields that only exist on one side.
+    // This happens when the DB has boolean flags (resolved to group) but the form
+    // payload didn't include the group field at all (or vice versa).
+    if (canonicalGroupKeys.has(lowerLeaf)) {
+      if (!oldKeys.has(key) || !newKeys.has(key)) {
+        continue;
+      }
     }
 
-    const prevVal = oldObj[matchedOldKey];
-
-    // Edge Case Handling: Normalize null, "", undefined, numbers, dates, booleans
+    const prevVal = flatOld[key];
+    const newVal = flatNew[key];
     const normPrev = normalizeVal(prevVal);
     const normNew = normalizeVal(newVal);
 
-    // Treat null (DB) and "" (frontend empty string) as equal
-    if (normPrev === normNew) {
-      continue;
-    }
+    if (normPrev === normNew) continue;
 
-    // Ignore transitions from null/empty/false/0 to default form values (e.g. "" or "No" or "Unknown" or "0")
     if ((normPrev === '' || normPrev === 'No') && (normNew === 'No' || normNew === 'Unknown' || normNew === '' || normNew === '0')) {
       continue;
     }
 
-    // Push object ONLY if values are strictly different
     changes.push({
       field: formatFieldLabel(key),
-      previous: prevVal !== null && prevVal !== undefined && normPrev !== '' ? prevVal : '—',
-      new: newVal !== null && newVal !== undefined && normNew !== '' ? newVal : '—'
+      previous: formatAuditDisplayValue(prevVal),
+      new: formatAuditDisplayValue(newVal)
     });
   }
 
-  return changes;
+  const uniqueChanges = [];
+  const seen = new Set();
+  for (const change of changes) {
+    const dedupeKey = `${change.field}|${change.previous}|${change.new}`;
+    if (!seen.has(dedupeKey)) {
+      seen.add(dedupeKey);
+      uniqueChanges.push(change);
+    }
+  }
+
+  return uniqueChanges;
 }
 
 /**
@@ -186,21 +451,23 @@ function formatRecordIdentifier(registryType, identifier, dataObj = null) {
  */
 async function logAuditTrail(req, actionType, registryType, recordIdentifier, patientId, oldData = null, newData = null) {
   try {
-    // Extract logged-in user from req.user
-    const username = req?.user?.username || req?.user?.name || req?.user?.email || req?.user?.user_id || 'Dr. Alex V.';
+    // Extract logged-in user from req.user or request headers
+    const username = req?.user?.username || req?.user?.name || req?.user?.email || req?.headers?.['x-user-name'] || req?.body?.username || 'varshitha_appam';
     const normalizedAction = String(actionType).toUpperCase();
     const normalizedRegistry = String(registryType).toUpperCase();
-    const formattedRecordId = formatRecordIdentifier(normalizedRegistry, recordIdentifier, newData || oldData);
+    const safeOldData = sanitizeAuditPayload(oldData);
+    const safeNewData = sanitizeAuditPayload(newData);
+    const formattedRecordId = formatRecordIdentifier(normalizedRegistry, recordIdentifier, safeNewData || safeOldData);
 
     let changedFieldsJSON = null;
 
-    if (normalizedAction === 'UPDATE' && oldData && newData) {
-      const changedArray = getChangedFields(oldData, newData);
+    if (normalizedAction === 'UPDATE' && safeOldData && safeNewData) {
+      const changedArray = getChangedFields(safeOldData, safeNewData);
       changedFieldsJSON = JSON.stringify(changedArray);
     }
 
-    const prevJSON = oldData ? JSON.stringify(oldData) : null;
-    const newJSON = newData ? JSON.stringify(newData) : null;
+    const prevJSON = safeOldData ? JSON.stringify(safeOldData) : null;
+    const newJSON = safeNewData ? JSON.stringify(safeNewData) : null;
 
     const query = `
       INSERT INTO [system_audit_log] 
@@ -224,7 +491,14 @@ async function logAuditTrail(req, actionType, registryType, recordIdentifier, pa
   }
 }
 
-module.exports = { logAuditTrail, getChangedFields, formatRecordIdentifier };
+module.exports = {
+  logAuditTrail,
+  getChangedFields,
+  formatRecordIdentifier,
+  sanitizeAuditPayload,
+  normalizeVal,
+  flattenObject
+};
 
 
 

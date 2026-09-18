@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const { logAuditTrail } = require('../utils/logAuditTrail');
+const { generateAuditExcel } = require('../utils/auditExcelGenerator');
 
 /**
  * Format registry number e.g., HF00001
@@ -434,6 +435,131 @@ const getAuditLog = async (req, res) => {
   }
 };
 
+/**
+ * Expose Patient Audit Excel Export Endpoint (POST /api/hf-registry/export-audit-excel)
+ */
+const exportPatientAuditExcel = async (req, res) => {
+  try {
+    let logs = req.body?.logs;
+    const patientName = req.body?.patientName || req.query?.patientName || '';
+    const patientMr = req.body?.patientMr || req.query?.patientMr || '';
+    const patientId = req.body?.patientId || req.query?.patientId || req.params?.regPatientId || '';
+    const startDate = req.body?.startDate || req.query?.startDate || '';
+    const endDate = req.body?.endDate || req.query?.endDate || '';
+    const actionFilter = req.body?.actionFilter || req.query?.actionFilter || 'ALL';
+
+    if (!logs || !Array.isArray(logs) || logs.length === 0) {
+      const reg_patient_id = Number(patientId || req.params?.regPatientId);
+      if (reg_patient_id && !isNaN(reg_patient_id)) {
+        if (db.ensureAuditTable) {
+          await db.ensureAuditTable();
+        }
+        const query = `
+          SELECT 
+            s.audit_id, 
+            s.registry_type,
+            COALESCE(s.record_identifier, CAST(s.record_id AS VARCHAR(100))) AS record_identifier,
+            s.patient_id AS reg_patient_id, 
+            s.user_id AS username, 
+            s.action_type, 
+            s.changed_fields,
+            s.previous_values,
+            s.new_values,
+            s.timestamp, 
+            p.patient_name, 
+            p.mr_no 
+          FROM system_audit_log s
+          LEFT JOIN patient_demographics p ON s.patient_id = p.reg_patient_id 
+          WHERE s.patient_id = @regPatientId
+
+          UNION ALL
+
+          SELECT 
+            a.audit_id + 1000000 AS audit_id, 
+            'HF' AS registry_type,
+            CASE 
+              WHEN hf.hf_registry_no IS NOT NULL AND hf.hf_registry_no <> '' THEN hf.hf_registry_no
+              ELSE 'HF #' + CAST(a.hf_id AS VARCHAR(100))
+            END AS record_identifier,
+            p.reg_patient_id, 
+            COALESCE(u.username, CAST(a.user_id AS VARCHAR(100))) AS username, 
+            a.action_type, 
+            a.changed_fields,
+            a.previous_values,
+            a.new_values, 
+            a.timestamp, 
+            p.patient_name, 
+            p.mr_no 
+          FROM hf_registry_audit a 
+          LEFT JOIN users u ON a.user_id = u.user_id 
+          LEFT JOIN hf_registry hf ON a.hf_id = hf.hf_id 
+          LEFT JOIN patient_demographics p ON hf.reg_patient_id = p.reg_patient_id 
+          WHERE p.reg_patient_id = @regPatientId
+            AND NOT EXISTS (
+              SELECT 1 FROM system_audit_log s 
+              WHERE s.patient_id = p.reg_patient_id 
+                AND s.registry_type = 'HF'
+                AND ABS(DATEDIFF(second, s.timestamp, a.timestamp)) <= 5
+            )
+          ORDER BY timestamp DESC;
+        `;
+        const { recordset: rows } = await db.query(query, { regPatientId: reg_patient_id });
+        logs = rows.map(row => ({
+          audit_id: row.audit_id,
+          registry_type: row.registry_type || 'HF',
+          record_identifier: row.record_identifier || '—',
+          reg_patient_id: row.reg_patient_id,
+          patient_name: row.patient_name,
+          mr_no: row.mr_no,
+          username: row.username || 'User',
+          action_type: row.action_type,
+          previous_values: row.previous_values,
+          new_values: row.new_values,
+          changed_fields: row.changed_fields || null,
+          timestamp: row.timestamp
+        }));
+
+        if (startDate) {
+          const start = new Date(startDate);
+          start.setHours(0, 0, 0, 0);
+          logs = logs.filter(l => new Date(String(l.timestamp).replace(' ', 'T')) >= start);
+        }
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          logs = logs.filter(l => new Date(String(l.timestamp).replace(' ', 'T')) <= end);
+        }
+        if (actionFilter && actionFilter !== 'ALL') {
+          logs = logs.filter(l => {
+            const act = String(l.action_type || '').toUpperCase();
+            if (actionFilter === 'CREATE') return act === 'CREATE' || act === 'CREATION';
+            if (actionFilter === 'UPDATE') return act === 'UPDATE' || act === 'UPDATED';
+            if (actionFilter === 'DELETE') return act === 'DELETE' || act === 'DELETION';
+            if (actionFilter === 'RESTORE') return act === 'RESTORE' || act === 'RESTORED';
+            return act === actionFilter;
+          });
+        }
+      }
+    }
+
+    return await generateAuditExcel({
+      logs: logs || [],
+      patientName,
+      patientMr,
+      patientId: patientId || (logs && logs[0]?.reg_patient_id ? String(logs[0].reg_patient_id) : ''),
+      startDate,
+      endDate,
+      actionFilter
+    }, res);
+  } catch (error) {
+    console.error('Error generating audit excel report:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate Excel audit report.'
+    });
+  }
+};
+
 module.exports = {
   createRecord,
   updateRecord,
@@ -441,5 +567,6 @@ module.exports = {
   undeleteRecord,
   softDeleteRegistryRecord: deleteRecord,
   getAuditLog,
-  getPatientAuditLog
+  getPatientAuditLog,
+  exportPatientAuditExcel
 };

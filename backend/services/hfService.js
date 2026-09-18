@@ -1,6 +1,7 @@
 const db = require("../config/db");
 const hfModel = require("../models/hfModel");
 const { logAudit } = require("../utils/auditLogger");
+const { logAuditTrail, sanitizeAuditPayload } = require("../utils/logAuditTrail");
 
 /**
  * Format an HF registry number from the database insert ID.
@@ -24,10 +25,12 @@ const toSqlDate = (dateVal) => {
 
 async function saveHfAssessment(data, userId = 1) {
     let previousAssessment = null;
-    const isEdit = !!(data.id && !String(data.id).startsWith("hfa-") && !isNaN(Number(data.id)));
+    const rawTargetId = data.id || data.hf_id || data.hfId || data.targetHfId;
+    const isEdit = !!(rawTargetId && !String(rawTargetId).startsWith("hfa-") && !isNaN(Number(rawTargetId)));
     if (isEdit) {
+        data.id = Number(rawTargetId);
         try {
-            previousAssessment = await getHfAssessment(Number(data.id));
+            previousAssessment = await getHfAssessment(Number(rawTargetId));
         } catch (prevErr) {
             console.error("Failed to fetch previous assessment for audit:", prevErr);
         }
@@ -664,8 +667,25 @@ async function saveHfAssessment(data, userId = 1) {
 
         try {
             const actionType = isEdit ? 'UPDATE' : 'CREATE';
-            const activeUserId = userId || data.user_id || data.userId || 1;
-            await logAudit(hf_id, activeUserId, actionType, previousAssessment, data);
+            const activeUserId = userId || data.user_id || data.userId || 7;
+            const auditReq = data._req;
+            const auditNewData = sanitizeAuditPayload(data);
+            const auditOldData = sanitizeAuditPayload(previousAssessment);
+
+            await logAudit(hf_id, activeUserId, actionType, auditOldData, auditNewData);
+
+            if (auditReq) {
+                const targetPatientId = data.regPatientId || data.reg_patient_id || previousAssessment?.regPatientId || previousAssessment?.reg_patient_id;
+                logAuditTrail(
+                    auditReq,
+                    actionType,
+                    'HF',
+                    hf_registry_no || `HF #${hf_id}`,
+                    targetPatientId,
+                    auditOldData,
+                    auditNewData
+                ).catch(e => console.error('[hfService] logAuditTrail error:', e.message));
+            }
         } catch (auditErr) {
             console.error("Error writing audit log in saveHfAssessment:", auditErr);
         }

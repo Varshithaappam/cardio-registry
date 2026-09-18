@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import ExcelJS from 'exceljs';
+import api from '../api/axiosInstance';
 import { 
   RotateCw, RotateCcw, Trash2, Shield, Clock, UserCheck, 
   Download, Calendar, Filter, Info, FileSpreadsheet 
@@ -108,7 +110,18 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
     prior_ptca: 'Prior PTCA',
     prior_cabg: 'Prior CABG',
     admission_date: 'Admission Date',
-    discharge_date: 'Discharge Date'
+    discharge_date: 'Discharge Date',
+    age_gt_75: 'Age > 75',
+    timi_total_score: 'TIMI Total Score',
+    av_block: 'AV Block',
+    bbb: 'BBB',
+    rhythm: 'ECG Rhythm',
+    ecg_rhythm: 'ECG Rhythm',
+    lv_function: 'LV Function',
+    mr: 'MR',
+    treatment_strategy: 'Treatment Strategy',
+    statin_dose: 'Statin Dose',
+    discharge_statin_dose: 'Discharge Statin Dose'
   };
 
   const formatFieldLabel = (key) => {
@@ -120,6 +133,7 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
       .replace(/^appr_/, '')
       .replace(/([A-Z])/g, ' $1')
       .replace(/_/g, ' ')
+      .replace(/\s+/g, ' ')
       .trim()
       .replace(/\b\w/g, c => c.toUpperCase());
   };
@@ -141,6 +155,95 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
       if (!isNaN(num)) return String(num);
     }
     return s;
+  };
+
+  const resolveCanonicalObject = (obj) => {
+    if (!obj || typeof obj !== 'object') return {};
+    const flat = { ...obj };
+
+    // 1. AV Block
+    if (!flat.av_block) {
+      if (flat.av_block_none === 'Yes') flat.av_block = 'None';
+      else if (flat.av_block_first_degree === 'Yes') flat.av_block = 'First Degree';
+      else if (flat.av_block_second_degree === 'Yes') flat.av_block = 'Second Degree';
+      else if (flat.av_block_chb === 'Yes') flat.av_block = 'CHB';
+    }
+
+    // 2. BBB
+    if (!flat.bbb) {
+      if (flat.bbb_none === 'Yes') flat.bbb = 'None';
+      else if (flat.bbb_lbbb === 'Yes') flat.bbb = 'LBBB';
+      else if (flat.bbb_rbbb === 'Yes') flat.bbb = 'RBBB';
+      else if (flat.bbb_indeterminate === 'Yes') flat.bbb = 'Indeterminate';
+    }
+
+    // 3. Rhythm
+    let rhythmVal = flat.rhythm || flat.ecg_rhythm;
+    if (!rhythmVal) {
+      if (flat.rhythm_nsr === 'Yes') rhythmVal = 'NSR';
+      else if (flat.rhythm_af === 'Yes') rhythmVal = 'AF';
+      else if (flat.rhythm_svt === 'Yes') rhythmVal = 'SVT';
+      else if (flat.rhythm_vt === 'Yes') rhythmVal = 'VT';
+      else if (flat.rhythm_vf === 'Yes') rhythmVal = 'VF';
+    }
+    if (rhythmVal) {
+      flat.rhythm = rhythmVal;
+      flat.ecg_rhythm = rhythmVal;
+    }
+
+    // 4. LV Function
+    if (!flat.lv_function) {
+      if (flat.lv_function_normal === 'Yes') flat.lv_function = 'Normal';
+      else if (flat.lv_function_mild_lvd === 'Yes') flat.lv_function = 'Mild LVD';
+      else if (flat.lv_function_moderate_lvd === 'Yes') flat.lv_function = 'Moderate LVD';
+      else if (flat.lv_function_severe_lvd === 'Yes') flat.lv_function = 'Severe LVD';
+    }
+
+    // 5. MR
+    if (!flat.mr) {
+      if (flat.mr_none === 'Yes') flat.mr = 'None';
+      else if (flat.mr_mild === 'Yes') flat.mr = 'Mild';
+      else if (flat.mr_moderate === 'Yes') flat.mr = 'Moderate';
+      else if (flat.mr_severe === 'Yes') flat.mr = 'Severe';
+    }
+
+    // 6. Treatment Strategy
+    if (!flat.treatment_strategy) {
+      if (flat.pami === 'Yes') flat.treatment_strategy = 'PAMI';
+      else if (flat.thrombolysis === 'Yes') flat.treatment_strategy = 'Thrombolysis';
+      else if (flat.conservative === 'Yes') flat.treatment_strategy = 'Conservative';
+    }
+
+    // 7. Stent Type
+    if (!flat.stent_type) {
+      if (flat.stent_des === 'Yes') flat.stent_type = 'DES';
+      else if (flat.stent_bms === 'Yes') flat.stent_type = 'BMS';
+    }
+
+    // 8. Heparin Strategy
+    if (!flat.heparin_strategy) {
+      if (flat.heparin_lmwh === 'Yes') flat.heparin_strategy = 'LMWH alone';
+      else if (flat.heparin_ufh_iv === 'Yes') flat.heparin_strategy = 'UFH IV';
+      else if (flat.heparin_ufh_sc === 'Yes') flat.heparin_strategy = 'UFH SC';
+    }
+
+    // 9. Statin Dose
+    if (!flat.statin_dose) {
+      if (flat.statin_10mg === 'Yes') flat.statin_dose = '10 mg';
+      else if (flat.statin_20mg === 'Yes') flat.statin_dose = '20 mg';
+      else if (flat.statin_40mg === 'Yes') flat.statin_dose = '40 mg';
+      else if (flat.statin_80mg === 'Yes') flat.statin_dose = '80 mg';
+    }
+
+    // 10. Discharge Statin Dose
+    if (!flat.discharge_statin_dose) {
+      if (flat.discharge_statin_10mg === 'Yes') flat.discharge_statin_dose = '10 mg';
+      else if (flat.discharge_statin_20mg === 'Yes') flat.discharge_statin_dose = '20 mg';
+      else if (flat.discharge_statin_40mg === 'Yes') flat.discharge_statin_dose = '40 mg';
+      else if (flat.discharge_statin_80mg === 'Yes') flat.discharge_statin_dose = '80 mg';
+    }
+
+    return flat;
   };
 
   const flattenObject = (obj, prefix = '') => {
@@ -179,8 +282,8 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
   const computeObjectDiff = (oldObj, newObj) => {
     if (!oldObj || !newObj || typeof oldObj !== 'object' || typeof newObj !== 'object') return [];
 
-    const flatOld = flattenObject(oldObj);
-    const flatNew = flattenObject(newObj);
+    const flatOld = resolveCanonicalObject(flattenObject(oldObj));
+    const flatNew = resolveCanonicalObject(flattenObject(newObj));
 
     const diffs = [];
     const excludedKeys = new Set([
@@ -190,10 +293,39 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
       'acs_no', 'acsno', 'ip_no', 'ipno', 'hf_registry_no', 'hfregistryno', 'followup',
       'appropriateness', 'stemi_appropriateness', 'nstemi_appropriateness', 'appropriateness_id',
       'care_mr_no', 'caremrno', 'mr_no', 'mrno', 'encounterid', 'encounter_id',
-      'assessed_by', 'assessedby', 'visit_id', 'visitid', 'isdraft'
+      'assessed_by', 'assessedby', 'visit_id', 'visitid', 'isdraft', 'is_draft',
+      '_req', 'deleted_by_user', 'deletedbyuser',
+      // Demographic read-only & auto-computed follow-up fields
+      'patient_name', 'patientname', 'name', 'age', 'gender', 'phone', 'email',
+      'date_1m', 'date_3m', 'date_6m', 'date_12m', 'date_1month', 'date_3month', 'date_6month', 'date_12month',
+      'target_date', 'timeframe', 'followup_date', 'followup_month', 'followup_id', 'task_id',
+      'source_record_id', 'source_registry', 'clinic_location', 'address', 'patient',
+      // Followup form-default fields
+      'func_1m', 'func_3m', 'func_6m', 'func_12m',
+      'visit_mode', 'visitmode', 'special_instructions',
+      'functional_class',
+      // Grouped constituent raw boolean flags
+      'av_block_none', 'av_block_first_degree', 'av_block_second_degree', 'av_block_chb',
+      'bbb_none', 'bbb_lbbb', 'bbb_rbbb', 'bbb_indeterminate',
+      'rhythm_nsr', 'rhythm_af', 'rhythm_svt', 'rhythm_vt', 'rhythm_vf',
+      'lv_function_normal', 'lv_function_mild_lvd', 'lv_function_moderate_lvd', 'lv_function_severe_lvd',
+      'mr_none', 'mr_mild', 'mr_moderate', 'mr_severe',
+      'pami', 'thrombolysis', 'conservative',
+      'stent_des', 'stent_bms',
+      'heparin_lmwh', 'heparin_ufh_iv', 'heparin_ufh_sc',
+      'statin_10mg', 'statin_20mg', 'statin_40mg', 'statin_80mg',
+      'discharge_statin_10mg', 'discharge_statin_20mg', 'discharge_statin_40mg', 'discharge_statin_80mg'
     ]);
 
-    const allFullKeys = new Set([...Object.keys(flatOld), ...Object.keys(flatNew)]);
+    const canonicalGroupKeys = new Set([
+      'av_block', 'bbb', 'rhythm', 'ecg_rhythm', 'lv_function', 'mr',
+      'treatment_strategy', 'stent_type', 'heparin_strategy',
+      'statin_dose', 'discharge_statin_dose'
+    ]);
+
+    const oldKeys = new Set(Object.keys(flatOld));
+    const newKeys = new Set(Object.keys(flatNew));
+    const allFullKeys = new Set([...oldKeys, ...newKeys]);
     const allKeyArray = Array.from(allFullKeys);
 
     // Helper to check if a top-level key has a nested counterpart (e.g. "address" vs "patient.address")
@@ -214,7 +346,7 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
         excludedKeys.has(lowerFullKey) ||
         leaf.startsWith('appr_') ||
         lowerLeaf.endsWith('_id') ||
-        lowerLeaf.endsWith('id')
+        (lowerLeaf.endsWith('id') && lowerLeaf !== 'visitid')
       ) {
         continue;
       }
@@ -222,6 +354,13 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
       // If top-level key and a nested counterpart exists, skip top-level key
       if (!key.includes('.') && hasNestedCounterpart(key)) {
         continue;
+      }
+
+      // Skip canonical group fields that only exist on one side
+      if (canonicalGroupKeys.has(lowerLeaf)) {
+        if (!oldKeys.has(key) || !newKeys.has(key)) {
+          continue;
+        }
       }
 
       const p = flatOld[key];
@@ -337,8 +476,161 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
     return logs.filter(log => isWithinPastWeek(log.timestamp));
   }, [logs]);
 
-  // Download filtered Excel/CSV Audit report
-  const handleDownloadExcel = () => {
+  // Client-side ExcelJS generator fallback
+  const generateClientSideExcel = async (filteredLogs) => {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'CARE HEALTH SYSTEM';
+    workbook.created = new Date();
+
+    const worksheet = workbook.addWorksheet('Audit Trail', {
+      pageSetup: { paperSize: 9, orientation: 'landscape' }
+    });
+
+    worksheet.columns = [
+      { key: 'audit_id', width: 12 },
+      { key: 'timestamp', width: 24 },
+      { key: 'action_type', width: 16 },
+      { key: 'registry_type', width: 16 },
+      { key: 'record_identifier', width: 24 },
+      { key: 'user_name', width: 20 },
+      { key: 'modified_fields', width: 48 },
+      { key: 'raw_values', width: 48 }
+    ];
+
+    // Row 1 Title Banner
+    worksheet.mergeCells('A1:H1');
+    const titleCell = worksheet.getCell('A1');
+    titleCell.value = 'CARE HEALTH SYSTEM — AUDIT & VERIFICATION TRAIL REPORT';
+    titleCell.font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+    titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4B0082' } };
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    worksheet.getRow(1).height = 32;
+
+    // Row 2 Metadata Header Banner
+    worksheet.mergeCells('A2:H2');
+    const metaCell = worksheet.getCell('A2');
+    const pName = patientName || 'Patient';
+    const pMr = patientMr || '—';
+    const pId = patientMr || '—';
+    const dateStr = (startDate && endDate) ? `${startDate} to ${endDate}` : (startDate ? `From ${startDate}` : (endDate ? `Until ${endDate}` : 'All Actions'));
+    const actStr = (actionFilter && actionFilter !== 'ALL') ? actionFilter : 'All Actions';
+    const totalRecs = filteredLogs.length;
+
+    metaCell.value = `Patient Name: ${pName} | MR No: ${pMr} | Patient ID: ${pId} | Date Range: ${dateStr} | Action: ${actStr} | Total Records: ${totalRecs}`;
+    metaCell.font = { name: 'Calibri', size: 10, bold: true, italic: true, color: { argb: 'FF4B0082' } };
+    metaCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
+    metaCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    worksheet.getRow(2).height = 22;
+
+    // Row 3 Spacer
+    worksheet.getRow(3).height = 12;
+
+    // Row 4 Table Headers
+    const headers = [
+      'Audit ID', 'Timestamp (IST)', 'Action Type', 'Registry Type',
+      'Record Identifier', 'User Name', 'Modified Fields / Details', 'Raw Values'
+    ];
+    const headerRow = worksheet.getRow(4);
+    headerRow.values = headers;
+    headerRow.height = 24;
+
+    headerRow.eachCell((cell) => {
+      cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4B0082' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    });
+
+    const actionStyles = {
+      CREATE: { fill: 'FFD1FAE5', fontColor: 'FF065F46' },
+      CREATION: { fill: 'FFD1FAE5', fontColor: 'FF065F46' },
+      UPDATE: { fill: 'FFFEF3C7', fontColor: 'FF92400E' },
+      UPDATED: { fill: 'FFFEF3C7', fontColor: 'FF92400E' },
+      DELETE: { fill: 'FFFEE2E2', fontColor: 'FF991B1B' },
+      DELETION: { fill: 'FFFEE2E2', fontColor: 'FF991B1B' },
+      RESTORE: { fill: 'FFCCFBF1', fontColor: 'FF115E59' },
+      RESTORED: { fill: 'FFCCFBF1', fontColor: 'FF115E59' }
+    };
+
+    const thinBorder = {
+      top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+      left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+      bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+      right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+    };
+
+    filteredLogs.forEach((log) => {
+      const auditId = log.audit_id || '';
+      const ts = formatTimestamp(log.timestamp);
+      const action = String(log.action_type || '').toUpperCase();
+      const regType = String(log.registry_type || 'HF').toUpperCase();
+      const recId = log.record_identifier || log.record_id || '—';
+      const userName = log.username || log.user_id || 'User';
+
+      const parsedChanges = parseChangedFields(log);
+      const modifiedFields = parsedChanges.length > 0
+        ? parsedChanges.map(chg => `${chg.field}: "${chg.previous ?? '—'}" -> "${chg.new ?? '—'}"`).join('\n')
+        : '—';
+
+      let rawValues = 'Prev:';
+      let prevStr = '';
+      if (log.previous_values) {
+        try {
+          const parsed = typeof log.previous_values === 'string' ? JSON.parse(log.previous_values) : log.previous_values;
+          prevStr = JSON.stringify(parsed);
+        } catch {
+          prevStr = String(log.previous_values);
+        }
+      }
+      if (action === 'CREATE' || action === 'CREATION') {
+        rawValues = 'Prev: null | New:';
+      } else if (prevStr) {
+        rawValues = `Prev:\n${prevStr}`;
+      }
+
+      const dataRow = worksheet.addRow([
+        auditId,
+        ts,
+        action,
+        regType,
+        recId,
+        userName,
+        modifiedFields,
+        rawValues
+      ]);
+
+      dataRow.eachCell((cell, colNumber) => {
+        cell.border = thinBorder;
+        cell.font = { name: 'Calibri', size: 10 };
+
+        if (colNumber === 3) {
+          const style = actionStyles[action] || { fill: 'FFF3F4F6', fontColor: 'FF1F2937' };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: style.fill } };
+          cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: style.fontColor } };
+          cell.alignment = { horizontal: 'center', vertical: 'top' };
+        } else if (colNumber === 7 || colNumber === 8) {
+          cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+        } else {
+          cell.alignment = { vertical: 'top', horizontal: 'center' };
+        }
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const cleanMr = String(patientMr).replace(/[^a-zA-Z0-9_-]/g, '');
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    link.setAttribute('download', `Audit_Report_${cleanMr}_${dateStamp}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Download filtered Excel Audit report
+  const handleDownloadExcel = async () => {
     let filtered = [...logs];
 
     if (startDate) {
@@ -375,63 +667,45 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
       return;
     }
 
-    // Build CSV with BOM for seamless UTF-8 Excel compatibility
-    const headers = ['Audit ID', 'Timestamp (IST)', 'Action Type', 'Registry Type', 'Record Identifier', 'User', 'Field Modified', 'Previous Value', 'New Value'];
-    const csvRows = [headers.join(',')];
+    try {
+      const response = await api.post(
+        '/hf-registry/export-audit-excel',
+        {
+          logs: filtered,
+          patientMr,
+          patientName,
+          patientId: patientMr,
+          startDate,
+          endDate,
+          actionFilter
+        },
+        {
+          responseType: 'blob'
+        }
+      );
 
-    filtered.forEach(log => {
-      const auditId = log.audit_id || '';
-      const ts = formatTimestamp(log.timestamp);
-      const action = String(log.action_type || '').toUpperCase();
-      const regType = String(log.registry_type || 'Registry').toUpperCase();
-      const recId = log.record_identifier || log.record_id || '';
-      const user = log.username || log.user_id || 'User';
-
-      const parsedChanges = parseChangedFields(log);
-
-      if (parsedChanges.length > 0) {
-        parsedChanges.forEach(chg => {
-          const row = [
-            `"${auditId}"`,
-            `"${ts}"`,
-            `"${action}"`,
-            `"${regType}"`,
-            `"${recId}"`,
-            `"${user}"`,
-            `"${String(chg.field || '').replace(/"/g, '""')}"`,
-            `"${String(chg.previous ?? '—').replace(/"/g, '""')}"`,
-            `"${String(chg.new ?? '—').replace(/"/g, '""')}"`
-          ];
-          csvRows.push(row.join(','));
-        });
-      } else {
-        const row = [
-          `"${auditId}"`,
-          `"${ts}"`,
-          `"${action}"`,
-          `"${regType}"`,
-          `"${recId}"`,
-          `"${user}"`,
-          `"—"`,
-          `"—"`,
-          `"—"`
-        ];
-        csvRows.push(row.join(','));
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const cleanMr = String(patientMr).replace(/[^a-zA-Z0-9_-]/g, '');
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      link.setAttribute('download', `Audit_Report_${cleanMr}_${dateStamp}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.warn('Backend export failed or unreachable, generating Excel file via ExcelJS client fallback...', err);
+      try {
+        await generateClientSideExcel(filtered);
+      } catch (fallbackErr) {
+        console.error('Error generating Excel report fallback:', fallbackErr);
+        alert('Failed to download Excel report. Please try again.');
       }
-    });
-
-    const csvContent = '\uFEFF' + csvRows.join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    const cleanMr = String(patientMr).replace(/[^a-zA-Z0-9_-]/g, '');
-    const dateStamp = new Date().toISOString().slice(0, 10);
-    link.setAttribute('download', `Audit_Report_${cleanMr}_${dateStamp}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    }
   };
 
   // Action badge renderer

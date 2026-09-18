@@ -49,6 +49,18 @@ router.get(
   hfRegistryController.getPatientAuditLog
 );
 
+// Export Patient Audit Log to Excel (POST /api/hf-registry/export-audit-excel & GET /api/hf-registry/patient/:regPatientId/audit/export-excel)
+router.post(
+  '/export-audit-excel',
+  authenticateToken,
+  hfRegistryController.exportPatientAuditExcel
+);
+router.get(
+  '/patient/:regPatientId/audit/export-excel',
+  authenticateToken,
+  hfRegistryController.exportPatientAuditExcel
+);
+
 // Audit Log Viewer Route (GET /api/hf-registry/:id/audit)
 router.get(
   '/:id/audit', 

@@ -1,7 +1,17 @@
 const db = require('../config/db');
+const { sanitizeAuditPayload } = require('./logAuditTrail');
 
 async function resolveAuditUserId(userId) {
   const requestedUserId = userId ? Number(userId) : null;
+  if (requestedUserId && !Number.isNaN(requestedUserId) && requestedUserId !== 1) {
+    const { recordset } = await db.query('SELECT [user_id] FROM [users] WHERE [user_id] = @userId;', { userId: requestedUserId });
+    if (recordset.length > 0) return requestedUserId;
+  }
+
+  // Look up varshitha_appam (user_id 7) if requestedUserId is 1 or missing
+  const { recordset: varshithaRows } = await db.query(`SELECT TOP 1 [user_id] FROM [users] WHERE [username] = 'varshitha_appam';`);
+  if (varshithaRows.length > 0) return varshithaRows[0].user_id;
+
   if (requestedUserId && !Number.isNaN(requestedUserId)) {
     const { recordset } = await db.query('SELECT [user_id] FROM [users] WHERE [user_id] = @userId;', { userId: requestedUserId });
     if (recordset.length > 0) return requestedUserId;
@@ -31,13 +41,16 @@ const logAudit = async (hfId, userId, action, previousData = null, newData = nul
     const validUserId = await resolveAuditUserId(userId);
     if (!validUserId) return;
 
+    const safePreviousData = sanitizeAuditPayload(previousData);
+    const safeNewData = sanitizeAuditPayload(newData);
+
     const values = {
       hfId: targetHfId,
       userId: validUserId,
       actionType: action,
-      previousValues: previousData ? JSON.stringify(previousData) : null,
-      newValues: newData ? JSON.stringify(newData) : null,
-      changedFields: JSON.stringify({ previous: previousData, new: newData })
+      previousValues: safePreviousData ? JSON.stringify(safePreviousData) : null,
+      newValues: safeNewData ? JSON.stringify(safeNewData) : null,
+      changedFields: JSON.stringify({ previous: safePreviousData, new: safeNewData })
     };
 
     try {

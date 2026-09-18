@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const hfController = require("../controllers/hfController");
+const { authenticateToken } = require("../middleware/authMiddleware");
+
+router.use(authenticateToken);
 
 router.post("/draft", hfController.saveHfDraft);
 router.put("/draft", hfController.saveHfDraft);
