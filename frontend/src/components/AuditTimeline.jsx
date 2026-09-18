@@ -53,6 +53,207 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
     }
   };
 
+  // Helper map for user-friendly field labels
+  const FIELD_LABEL_MAP = {
+    department: 'Department',
+    doctor: 'Doctor',
+    treatingcardiologist: 'Treating Cardiologist',
+    referringdoctor: 'Referring Doctor',
+    insurancemode: 'Insurance Mode',
+    highesteducation: 'Education Level',
+    monthlyincome: 'Monthly Income',
+    occupation: 'Occupation',
+    caregivername: 'Caregiver Name',
+    caregiverrelationship: 'Caregiver Relationship',
+    caregiverphone: 'Caregiver Phone',
+    referredfrom: 'Referred From',
+    presentdiagnosis: 'Present Diagnosis',
+    dischargedate: 'Discharge Date',
+    precipitatingfactors: 'Precipitating Factors',
+    dayshospitalized: 'Days Hospitalized',
+    typeofhf: 'Type of Heart Failure',
+    finaltypeofhf: 'Type of Heart Failure',
+    nyhaclass: 'NYHA Class',
+    stageofhf: 'Stage of Heart Failure',
+    lvefpercent: 'LVEF (%)',
+    weight: 'Weight (kg)',
+    weight_kg: 'Weight (kg)',
+    height: 'Height (cm)',
+    height_cm: 'Height (cm)',
+    pulse_rate: 'Pulse Rate (bpm)',
+    sbp: 'SBP (mmHg)',
+    systolic_bp: 'SBP (mmHg)',
+    dbp: 'DBP (mmHg)',
+    diastolic_bp: 'DBP (mmHg)',
+    ef: 'Ejection Fraction (%)',
+    echo_ef: 'EF (%)',
+    monthly_income: 'Monthly Income',
+    primary_diagnosis: 'Primary Diagnosis',
+    primary_consultant: 'Primary Consultant',
+    discharge_status: 'Discharge Status',
+    nyha_class: 'NYHA Class',
+    stent_type: 'Stent Type',
+    heparin_strategy: 'Heparin Strategy',
+    thrombolysis_dose: 'Thrombolysis Dose',
+    troponin_i: 'Trop-I',
+    creatinine: 'Creatinine (mg/dl)',
+    hemoglobin: 'Hemoglobin (gm%)',
+    hypertension: 'Hypertension',
+    diabetes: 'Diabetes',
+    smoking: 'Smoking',
+    renal_failure: 'Renal Failure',
+    copd: 'COPD',
+    cva: 'CVA',
+    prior_acs: 'Prior ACS',
+    prior_ptca: 'Prior PTCA',
+    prior_cabg: 'Prior CABG',
+    admission_date: 'Admission Date',
+    discharge_date: 'Discharge Date'
+  };
+
+  const formatFieldLabel = (key) => {
+    if (!key) return '';
+    const leaf = String(key).split('.').pop();
+    const lowerLeaf = leaf.toLowerCase();
+    if (FIELD_LABEL_MAP[lowerLeaf]) return FIELD_LABEL_MAP[lowerLeaf];
+    return leaf
+      .replace(/^appr_/, '')
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/_/g, ' ')
+      .trim()
+      .replace(/\b\w/g, c => c.toUpperCase());
+  };
+
+  const normalizeValue = (val) => {
+    if (val === null || val === undefined) return '';
+    let s = String(val).trim();
+    if (s === 'null' || s === 'undefined' || s === '') return '';
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+      s = s.split('T')[0];
+    }
+    const lower = s.toLowerCase();
+    if (['no', 'false', '0'].includes(lower)) return 'No';
+    if (['yes', 'true', '1'].includes(lower)) return 'Yes';
+    if (['unknown'].includes(lower)) return 'Unknown';
+    if (['referred from (department / practice)', 'referred from (department/practice)', 'referred from'].includes(lower)) return '';
+    if (!isNaN(s) && s !== '') {
+      const num = Number(s);
+      if (!isNaN(num)) return String(num);
+    }
+    return s;
+  };
+
+  const flattenObject = (obj, prefix = '') => {
+    let res = {};
+    if (!obj || typeof obj !== 'object') return res;
+
+    for (const key of Object.keys(obj)) {
+      const val = obj[key];
+      const newKey = prefix ? `${prefix}.${key}` : key;
+
+      if (val !== null && val !== undefined) {
+        if (Array.isArray(val)) {
+          if (val.length === 0) {
+            res[newKey] = '';
+          } else if (val.every(item => typeof item !== 'object')) {
+            res[newKey] = [...val].sort().join(', ');
+          } else {
+            val.forEach((item, idx) => {
+              if (typeof item === 'object') {
+                Object.assign(res, flattenObject(item, `${newKey}[${idx}]`));
+              } else {
+                res[`${newKey}[${idx}]`] = item;
+              }
+            });
+          }
+        } else if (typeof val === 'object' && !(val instanceof Date)) {
+          Object.assign(res, flattenObject(val, newKey));
+        } else {
+          res[newKey] = val;
+        }
+      }
+    }
+    return res;
+  };
+
+  const computeObjectDiff = (oldObj, newObj) => {
+    if (!oldObj || !newObj || typeof oldObj !== 'object' || typeof newObj !== 'object') return [];
+
+    const flatOld = flattenObject(oldObj);
+    const flatNew = flattenObject(newObj);
+
+    const diffs = [];
+    const excludedKeys = new Set([
+      'id', 'created_at', 'updated_at', 'stemi_id', 'nstemi_id', 'hf_id', 'hfid', 'temphfid',
+      'patient_id', 'reg_patient_id', 'regpatientid', 'status', 'is_deleted', 'isdeleted',
+      'created_by', 'createdby', 'updated_by', 'updatedby', 'deleted_at', 'deleted_by', 'deletedby',
+      'acs_no', 'acsno', 'ip_no', 'ipno', 'hf_registry_no', 'hfregistryno', 'followup',
+      'appropriateness', 'stemi_appropriateness', 'nstemi_appropriateness', 'appropriateness_id',
+      'care_mr_no', 'caremrno', 'mr_no', 'mrno', 'encounterid', 'encounter_id',
+      'assessed_by', 'assessedby', 'visit_id', 'visitid', 'isdraft'
+    ]);
+
+    const allFullKeys = new Set([...Object.keys(flatOld), ...Object.keys(flatNew)]);
+    const allKeyArray = Array.from(allFullKeys);
+
+    // Helper to check if a top-level key has a nested counterpart (e.g. "address" vs "patient.address")
+    const hasNestedCounterpart = (topKey) => {
+      if (topKey.includes('.')) return false;
+      const lowerTop = topKey.toLowerCase();
+      return allKeyArray.some(k => k.includes('.') && k.toLowerCase().endsWith('.' + lowerTop));
+    };
+
+    for (const key of allFullKeys) {
+      const leaf = key.split('.').pop();
+      const lowerLeaf = leaf.toLowerCase();
+      const lowerFullKey = key.toLowerCase();
+
+      // Check exclusion criteria
+      if (
+        excludedKeys.has(lowerLeaf) ||
+        excludedKeys.has(lowerFullKey) ||
+        leaf.startsWith('appr_') ||
+        lowerLeaf.endsWith('_id') ||
+        lowerLeaf.endsWith('id')
+      ) {
+        continue;
+      }
+
+      // If top-level key and a nested counterpart exists, skip top-level key
+      if (!key.includes('.') && hasNestedCounterpart(key)) {
+        continue;
+      }
+
+      const p = flatOld[key];
+      const n = flatNew[key];
+
+      const normP = normalizeValue(p);
+      const normN = normalizeValue(n);
+
+      if (normP === normN) continue;
+      if ((normP === '' || normP === 'No') && (normN === 'No' || normN === 'Unknown' || normN === '' || normN === '0')) continue;
+
+      diffs.push({
+        field: formatFieldLabel(key),
+        previous: p !== null && p !== undefined && normP !== '' ? String(p) : '—',
+        new: n !== null && n !== undefined && normN !== '' ? String(n) : '—'
+      });
+    }
+
+    // Deduplicate diffs by field label + previous + new
+    const uniqueDiffs = [];
+    const seen = new Set();
+    for (const diff of diffs) {
+      const key = `${diff.field}|${diff.previous}|${diff.new}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueDiffs.push(diff);
+      }
+    }
+
+    return uniqueDiffs;
+  };
+
   // Helper to safely parse changed_fields or compare previous/new value objects
   const parseChangedFields = (log) => {
     if (!log) return [];
@@ -68,47 +269,47 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
           list = parsed;
         } else if (parsed && typeof parsed === 'object') {
           if (parsed.previous !== undefined || parsed.new !== undefined) {
-            list = [{ field: 'Record Details', previous: parsed.previous, new: parsed.new }];
-          }
-        }
-      } catch {}
-    }
-
-    // Fallback: If list is empty but previous_values and new_values exist, compute diff dynamically
-    if (list.length === 0 && (log.previous_values || log.new_values)) {
-      try {
-        const prevObj = typeof log.previous_values === 'string' ? JSON.parse(log.previous_values) : (log.previous_values || {});
-        const newObj = typeof log.new_values === 'string' ? JSON.parse(log.new_values) : (log.new_values || {});
-
-        if (prevObj && newObj && typeof prevObj === 'object' && typeof newObj === 'object') {
-          const allKeys = new Set([...Object.keys(prevObj), ...Object.keys(newObj)]);
-          const excluded = new Set([
-            'id', 'created_at', 'updated_at', 'stemi_id', 'nstemi_id', 'hf_id',
-            'patient_id', 'reg_patient_id', 'status', 'is_deleted', 'created_by', 'updated_by'
-          ]);
-
-          for (const k of allKeys) {
-            if (excluded.has(k.toLowerCase()) || k.startsWith('appr_')) continue;
-            const p = prevObj[k];
-            const n = newObj[k];
-            if (typeof p === 'object' || typeof n === 'object') continue;
-
-            const pStr = p === null || p === undefined ? '' : String(p).trim();
-            const nStr = n === null || n === undefined ? '' : String(n).trim();
-
-            if (pStr !== nStr && (pStr !== '' || nStr !== '')) {
-              list.push({
-                field: k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-                previous: p !== null && p !== undefined ? String(p) : '—',
-                new: n !== null && n !== undefined ? String(n) : '—'
-              });
+            if (typeof parsed.previous === 'object' || typeof parsed.new === 'object') {
+              list = computeObjectDiff(parsed.previous, parsed.new);
+            } else {
+              list = [{ field: 'Record Details', previous: parsed.previous, new: parsed.new }];
             }
           }
         }
       } catch {}
     }
 
-    return list;
+    let processedList = [];
+    for (const item of list) {
+      if (item && typeof item === 'object') {
+        const prevIsObj = item.previous && typeof item.previous === 'object';
+        const newIsObj = item.new && typeof item.new === 'object';
+        if (prevIsObj || newIsObj || item.field === 'Record Details') {
+          const diffs = computeObjectDiff(
+            prevIsObj ? item.previous : {},
+            newIsObj ? item.new : {}
+          );
+          processedList.push(...diffs);
+        } else {
+          processedList.push({
+            field: formatFieldLabel(item.field),
+            previous: item.previous !== null && item.previous !== undefined ? String(item.previous) : '—',
+            new: item.new !== null && item.new !== undefined ? String(item.new) : '—'
+          });
+        }
+      }
+    }
+
+    // Fallback: If processedList is empty but previous_values and new_values exist, compute diff dynamically
+    if (processedList.length === 0 && (log.previous_values || log.new_values)) {
+      try {
+        const prevObj = typeof log.previous_values === 'string' ? JSON.parse(log.previous_values) : (log.previous_values || {});
+        const newObj = typeof log.new_values === 'string' ? JSON.parse(log.new_values) : (log.new_values || {});
+        processedList = computeObjectDiff(prevObj, newObj);
+      } catch {}
+    }
+
+    return processedList;
   };
 
   // Check if log is from past 1 week (last 7 days)

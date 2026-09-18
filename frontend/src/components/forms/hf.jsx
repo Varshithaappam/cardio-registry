@@ -1025,7 +1025,7 @@ const hf = forwardRef(function hf(
                     '';
     return normalizeInsuranceModeForForm(rawMode);
   });
-  const [referredFrom, setReferredFrom] = useState(editingRecord?.patient?.referredFrom || editingRecord?.referredFrom || editingRecord?.inpatientDetails?.referredFrom || '');
+  const [referredFrom, setReferredFrom] = useState(patient.referredFrom || editingRecord?.patient?.referredFrom || editingRecord?.referredFrom || editingRecord?.inpatientDetails?.referredFrom || '');
   const [presentDiagnosis, setPresentDiagnosis] = useState(editingRecord?.patient?.presentDiagnosis ?? '');
 
   // 2. Inpatient Course Metrics
@@ -1077,19 +1077,19 @@ const hf = forwardRef(function hf(
   const [nsvtFrequency, setNsvtFrequency] = useState(editingRecord?.nsvt_frequency ?? '');
 
   // Vitals & Metrics
-  const [vWeight, setVWeight] = useState(editingRecord?.weight ?? 70);
+  const [vWeight, setVWeight] = useState(editingRecord?.weight ?? '');
   const [vUnableToWeigh, setVUnableToWeigh] = useState(editingRecord?.unable_to_weigh ?? 'No');
   const [vUnableToWeighReason, setVUnableToWeighReason] = useState(editingRecord?.unable_to_weigh_reason ?? '');
-  const [vHeight, setVHeight] = useState(editingRecord?.height ?? 170);
-  const [vHr, setVHr] = useState(editingRecord?.heart_rate ?? 72);
+  const [vHeight, setVHeight] = useState(editingRecord?.height ?? '');
+  const [vHr, setVHr] = useState(editingRecord?.heart_rate ?? '');
   const [vHrRegular, setVHrRegular] = useState(editingRecord?.heart_rate_regular ?? 'Yes');
   const [vHrIrregular, setVHrIrregular] = useState(editingRecord?.heart_rate_irregular ?? 'No');
-  const [vRr, setVRr] = useState(editingRecord?.respiratory_rate ?? 18);
-  const [vO2, setVO2] = useState(editingRecord?.oxygen_saturation ?? 98);
-  const [vBpSittingSystolic, setVBpSittingSystolic] = useState(editingRecord?.systolic_bp_sitting ?? 120);
-  const [vBpSittingDiastolic, setVBpSittingDiastolic] = useState(editingRecord?.diastolic_bp_sitting ?? 80);
-  const [vBpStandingSystolic, setVBpStandingSystolic] = useState(editingRecord?.systolic_bp_standing ?? 115);
-  const [vBpStandingDiastolic, setVBpStandingDiastolic] = useState(editingRecord?.diastolic_bp_standing ?? 76);
+  const [vRr, setVRr] = useState(editingRecord?.respiratory_rate ?? '');
+  const [vO2, setVO2] = useState(editingRecord?.oxygen_saturation ?? '');
+  const [vBpSittingSystolic, setVBpSittingSystolic] = useState(editingRecord?.systolic_bp_sitting ?? '');
+  const [vBpSittingDiastolic, setVBpSittingDiastolic] = useState(editingRecord?.diastolic_bp_sitting ?? '');
+  const [vBpStandingSystolic, setVBpStandingSystolic] = useState(editingRecord?.systolic_bp_standing ?? '');
+  const [vBpStandingDiastolic, setVBpStandingDiastolic] = useState(editingRecord?.diastolic_bp_standing ?? '');
   
   const [vMentalAlert, setVMentalAlert] = useState(editingRecord?.mental_status_alert ?? 'Yes');
   const [vMentalConfused, setVMentalConfused] = useState(editingRecord?.mental_status_confused ?? 'No');
@@ -2259,6 +2259,8 @@ const hf = forwardRef(function hf(
     assessed_by: activeUserId,
     assessmentDate,
     visitType,
+    referredFrom: referredFrom || undefined,
+    referred_from: referredFrom || undefined,
     patient: {
       mrNo: activeMrNo,
       mr_no: activeMrNo,
@@ -2269,13 +2271,16 @@ const hf = forwardRef(function hf(
       caregiverRelationship,
       caregiverPhone,
       insuranceMode,
-      referredFrom,
+      referredFrom: referredFrom || undefined,
+      referred_from: referredFrom || undefined,
       presentDiagnosis,
       address
     },
     inpatientDetails: {
       treatingCardiologist,
       referringDoctor,
+      referredFrom: referredFrom || undefined,
+      referred_from: referredFrom || undefined,
       dischargeDate: dischargeDate || undefined,
       encounterId: encounterId || undefined,
       precipitatingFactors,

@@ -193,6 +193,7 @@ const HFForm = forwardRef(function HFForm(
   const [caregiverName, setCaregiverName] = useState(patient.caregiverName ?? editingRecord?.patient?.caregiverName ?? '');
   const [caregiverRelationship, setCaregiverRelationship] = useState(patient.caregiverRelationship ?? editingRecord?.patient?.caregiverRelationship ?? '');
   const [insuranceMode, setInsuranceMode] = useState(patient.insuranceMode ?? editingRecord?.patient?.insuranceMode ?? '');
+  const [referredFrom, setReferredFrom] = useState(patient.referredFrom ?? editingRecord?.patient?.referredFrom ?? editingRecord?.referredFrom ?? editingRecord?.inpatientDetails?.referredFrom ?? '');
 
   // 2. Inpatient & Visit Details
   const [assessmentDate, setAssessmentDate] = useState(editingRecord?.assessmentDate ?? new Date().toISOString().split('T')[0]);
@@ -209,18 +210,18 @@ const HFForm = forwardRef(function HFForm(
   const [encounterId, setEncounterId] = useState(editingRecord?.inpatientDetails?.encounterId ?? editingRecord?.encounterId ?? '');
 
   // 3. Initial Clinical Assessment
-  const [vWeight, setVWeight] = useState(editingRecord?.vitals?.weightKg ?? 70);
+  const [vWeight, setVWeight] = useState(editingRecord?.vitals?.weightKg ?? '');
   const [vUnableToWeigh, setVUnableToWeigh] = useState(editingRecord?.vitals?.unableToWeigh ?? false);
   const [vUnableToWeighReason, setVUnableToWeighReason] = useState(editingRecord?.vitals?.unableToWeighReason ?? '');
-  const [vHeight, setVHeight] = useState(editingRecord?.vitals?.heightCm ?? 170);
-  const [vHr, setVHr] = useState(editingRecord?.vitals?.heartRate ?? 72);
+  const [vHeight, setVHeight] = useState(editingRecord?.vitals?.heightCm ?? '');
+  const [vHr, setVHr] = useState(editingRecord?.vitals?.heartRate ?? '');
   const [vHrVar, setVHrVar] = useState(editingRecord?.vitals?.hrVariability ?? 'Regular');
-  const [vRr, setVRr] = useState(editingRecord?.vitals?.respiratoryRate ?? 18);
-  const [vO2, setVO2] = useState(editingRecord?.vitals?.o2Saturation ?? 98);
-  const [vBpSystolic, setVBpSystolic] = useState(editingRecord?.vitals?.bpSittingSystolic ?? 120);
-  const [vBpDiastolic, setVBpDiastolic] = useState(editingRecord?.vitals?.bpSittingDiastolic ?? 80);
-  const [vBpStandingSystolic, setVBpStandingSystolic] = useState(editingRecord?.vitals?.bpStandingSystolic ?? 115);
-  const [vBpStandingDiastolic, setVBpStandingDiastolic] = useState(editingRecord?.vitals?.bpStandingDiastolic ?? 76);
+  const [vRr, setVRr] = useState(editingRecord?.vitals?.respiratoryRate ?? '');
+  const [vO2, setVO2] = useState(editingRecord?.vitals?.o2Saturation ?? '');
+  const [vBpSystolic, setVBpSystolic] = useState(editingRecord?.vitals?.bpSittingSystolic ?? '');
+  const [vBpDiastolic, setVBpDiastolic] = useState(editingRecord?.vitals?.bpSittingDiastolic ?? '');
+  const [vBpStandingSystolic, setVBpStandingSystolic] = useState(editingRecord?.vitals?.bpStandingSystolic ?? '');
+  const [vBpStandingDiastolic, setVBpStandingDiastolic] = useState(editingRecord?.vitals?.bpStandingDiastolic ?? '');
   const [vMental, setVMental] = useState(editingRecord?.vitals?.mentalStatus ?? 'Alert/Oriented');
 
   const [selectedSymptoms, setSelectedSymptoms] = useState(
@@ -254,7 +255,7 @@ const HFForm = forwardRef(function HFForm(
   const [hfRiskVtvf, setHfRiskVtvf] = useState(editingRecord?.vtvfRiskAssessment?.documentedVT_VF ?? false);
   const [hfRiskSyncope, setHfRiskSyncope] = useState(editingRecord?.vtvfRiskAssessment?.syncopeComplaints ?? false);
   const [hfRiskPvcs, setHfRiskPvcs] = useState(editingRecord?.vtvfRiskAssessment?.documentedPVCs ?? false);
-  const [hfRiskPvcCount, setHfRiskPvcCount] = useState(editingRecord?.vtvfRiskAssessment?.pvcCount ?? 0);
+  const [hfRiskPvcCount, setHfRiskPvcCount] = useState(editingRecord?.vtvfRiskAssessment?.pvcCount ?? '');
   const [hfRiskNsvt, setHfRiskNsvt] = useState(editingRecord?.vtvfRiskAssessment?.documentedNSVT ?? false);
 
   // 5. Investigations
@@ -347,6 +348,8 @@ const HFForm = forwardRef(function HFForm(
       assessed_by: activeUserId,
       assessmentDate,
       visitType,
+      referredFrom: referredFrom || undefined,
+      referred_from: referredFrom || undefined,
       patient: {
         mrNo: activeMrNo,
         mr_no: activeMrNo,
@@ -355,11 +358,15 @@ const HFForm = forwardRef(function HFForm(
         occupation,
         caregiverName,
         caregiverRelationship,
-        insuranceMode
+        insuranceMode,
+        referredFrom: referredFrom || undefined,
+        referred_from: referredFrom || undefined
       },
     inpatientDetails: {
       treatingCardiologist,
       referringDoctor,
+      referredFrom: referredFrom || undefined,
+      referred_from: referredFrom || undefined,
       admissionDate: admissionDate || undefined,
       dischargeDate: dischargeDate || undefined,
       wardUnit: wardUnit || undefined,

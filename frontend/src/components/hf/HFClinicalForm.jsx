@@ -182,23 +182,26 @@ const HFClinicalForm = forwardRef(function HFClinicalForm(
   const [referringDoctor, setReferringDoctor] = useState(
     editingRecord?.inpatientDetails?.referringDoctor ?? patient.referringDoctor ?? REFERRING_DOCTORS[0]
   );
+  const [referredFrom, setReferredFrom] = useState(
+    patient.referredFrom ?? editingRecord?.patient?.referredFrom ?? editingRecord?.referredFrom ?? editingRecord?.inpatientDetails?.referredFrom ?? ''
+  );
   const [admissionDate, setAdmissionDate] = useState(editingRecord?.inpatientDetails?.admissionDate ?? '');
   const [dischargeDate, setDischargeDate] = useState(editingRecord?.inpatientDetails?.dischargeDate ?? '');
   const [wardUnit, setWardUnit] = useState(editingRecord?.inpatientDetails?.wardUnit ?? '');
   const [encounterId, setEncounterId] = useState(editingRecord?.inpatientDetails?.encounterId ?? editingRecord?.encounterId ?? '');
 
-  const [vWeight, setVWeight] = useState(editingRecord?.vitals?.weightKg ?? 70);
+  const [vWeight, setVWeight] = useState(editingRecord?.vitals?.weightKg ?? '');
   const [vUnableToWeigh, setVUnableToWeigh] = useState(editingRecord?.vitals?.unableToWeigh ?? false);
   const [vUnableToWeighReason, setVUnableToWeighReason] = useState(editingRecord?.vitals?.unableToWeighReason ?? '');
-  const [vHeight, setVHeight] = useState(editingRecord?.vitals?.heightCm ?? 170);
-  const [vHr, setVHr] = useState(editingRecord?.vitals?.heartRate ?? 72);
+  const [vHeight, setVHeight] = useState(editingRecord?.vitals?.heightCm ?? '');
+  const [vHr, setVHr] = useState(editingRecord?.vitals?.heartRate ?? '');
   const [vHrVar, setVHrVar] = useState(editingRecord?.vitals?.hrVariability ?? 'Regular');
-  const [vRr, setVRr] = useState(editingRecord?.vitals?.respiratoryRate ?? 18);
-  const [vO2, setVO2] = useState(editingRecord?.vitals?.o2Saturation ?? 98);
-  const [vBpSystolic, setVBpSystolic] = useState(editingRecord?.vitals?.bpSittingSystolic ?? 120);
-  const [vBpDiastolic, setVBpDiastolic] = useState(editingRecord?.vitals?.bpSittingDiastolic ?? 80);
-  const [vBpStandingSystolic, setVBpStandingSystolic] = useState(editingRecord?.vitals?.bpStandingSystolic ?? 115);
-  const [vBpStandingDiastolic, setVBpStandingDiastolic] = useState(editingRecord?.vitals?.bpStandingDiastolic ?? 76);
+  const [vRr, setVRr] = useState(editingRecord?.vitals?.respiratoryRate ?? '');
+  const [vO2, setVO2] = useState(editingRecord?.vitals?.o2Saturation ?? '');
+  const [vBpSystolic, setVBpSystolic] = useState(editingRecord?.vitals?.bpSittingSystolic ?? '');
+  const [vBpDiastolic, setVBpDiastolic] = useState(editingRecord?.vitals?.bpSittingDiastolic ?? '');
+  const [vBpStandingSystolic, setVBpStandingSystolic] = useState(editingRecord?.vitals?.bpStandingSystolic ?? '');
+  const [vBpStandingDiastolic, setVBpStandingDiastolic] = useState(editingRecord?.vitals?.bpStandingDiastolic ?? '');
   const [vMental, setVMental] = useState(editingRecord?.vitals?.mentalStatus ?? 'Alert/Oriented');
 
   const [selectedSymptoms, setSelectedSymptoms] = useState(
@@ -222,6 +225,7 @@ const HFClinicalForm = forwardRef(function HFClinicalForm(
   const [hfEtiologyPulm, setHfEtiologyPulm] = useState(editingRecord?.hfEtiology?.pulmonary ?? []);
   const [initialClinicalNotes, setInitialClinicalNotes] = useState(editingRecord?.initialAssessment?.clinicalNotes ?? '');
 
+  // 4. Final Clinical Assessment
   const [finalNyha, setFinalNyha] = useState(editingRecord?.finalAssessment?.finalNyhaClass ?? editingRecord?.nyhaClass ?? 'NYHA Class II');
   const [finalStage, setFinalStage] = useState(editingRecord?.finalAssessment?.finalStage ?? editingRecord?.stageOfHF ?? 'Stage C');
   const [finalHfType, setFinalHfType] = useState(editingRecord?.finalAssessment?.finalTypeOfHF ?? editingRecord?.typeOfHF ?? 'Unknown');
@@ -231,7 +235,7 @@ const HFClinicalForm = forwardRef(function HFClinicalForm(
   const [hfRiskVtvf, setHfRiskVtvf] = useState(editingRecord?.vtvfRiskAssessment?.documentedVT_VF ?? false);
   const [hfRiskSyncope, setHfRiskSyncope] = useState(editingRecord?.vtvfRiskAssessment?.syncopeComplaints ?? false);
   const [hfRiskPvcs, setHfRiskPvcs] = useState(editingRecord?.vtvfRiskAssessment?.documentedPVCs ?? false);
-  const [hfRiskPvcCount, setHfRiskPvcCount] = useState(editingRecord?.vtvfRiskAssessment?.pvcCount ?? 0);
+  const [hfRiskPvcCount, setHfRiskPvcCount] = useState(editingRecord?.vtvfRiskAssessment?.pvcCount ?? '');
   const [hfRiskNsvt, setHfRiskNsvt] = useState(editingRecord?.vtvfRiskAssessment?.documentedNSVT ?? false);
 
   const [selectedInvestigations, setSelectedInvestigations] = useState(
@@ -307,9 +311,17 @@ const HFClinicalForm = forwardRef(function HFClinicalForm(
     encounterId: encounterId || editingRecord?.encounterId,
     assessmentDate,
     visitType,
+    referredFrom: referredFrom || undefined,
+    referred_from: referredFrom || undefined,
+    patient: {
+      referredFrom: referredFrom || undefined,
+      referred_from: referredFrom || undefined
+    },
     inpatientDetails: {
       treatingCardiologist,
       referringDoctor,
+      referredFrom: referredFrom || undefined,
+      referred_from: referredFrom || undefined,
       admissionDate: admissionDate || undefined,
       dischargeDate: dischargeDate || undefined,
       wardUnit: wardUnit || undefined,

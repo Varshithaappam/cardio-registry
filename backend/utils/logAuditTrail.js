@@ -6,12 +6,6 @@ const db = require('../config/db');
  */
 function normalizeVal(val) {
   if (val === null || val === undefined) return '';
-  if (val instanceof Date) {
-    const year = val.getUTCFullYear();
-    const month = String(val.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(val.getUTCDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
   let s = String(val).trim();
   if (s === 'null' || s === 'undefined' || s === '') return '';
 
@@ -20,17 +14,18 @@ function normalizeVal(val) {
     s = s.split('T')[0];
   }
 
+  // Boolean / string Yes/No/0/1/Unknown normalizations evaluated BEFORE raw number formatting
+  const lower = s.toLowerCase();
+  if (['no', 'false', '0'].includes(lower)) return 'No';
+  if (['yes', 'true', '1'].includes(lower)) return 'Yes';
+  if (['unknown'].includes(lower)) return 'Unknown';
+  if (['referred from (department / practice)', 'referred from (department/practice)', 'referred from'].includes(lower)) return '';
+
   // Numbers e.g. "120.00" -> "120", "3.50" -> "3.5"
   if (!isNaN(s) && s !== '') {
     const num = Number(s);
     if (!isNaN(num)) return String(num);
   }
-
-  // Boolean / string Yes/No/Unknown normalizations
-  const lower = s.toLowerCase();
-  if (['no', 'false', '0'].includes(lower)) return 'No';
-  if (['yes', 'true', '1'].includes(lower)) return 'Yes';
-  if (['unknown'].includes(lower)) return 'Unknown';
 
   return s;
 }
@@ -100,7 +95,8 @@ function getChangedFields(oldObj, newObj) {
 
   // Iterate through keys of incoming newData (from req.body)
   for (const key of Object.keys(newObj)) {
-    if (excludedKeys.has(key.toLowerCase()) || key.startsWith('appr_')) {
+    const lowerKey = key.toLowerCase();
+    if (excludedKeys.has(lowerKey) || key.startsWith('appr_') || lowerKey.endsWith('_id') || lowerKey.endsWith('id')) {
       continue;
     }
 
@@ -126,8 +122,8 @@ function getChangedFields(oldObj, newObj) {
       continue;
     }
 
-    // Ignore transitions from null/empty to default form values (e.g. "" to "No" or "" to "Unknown")
-    if (normPrev === '' && (normNew === 'No' || normNew === 'Unknown')) {
+    // Ignore transitions from null/empty/false/0 to default form values (e.g. "" or "No" or "Unknown" or "0")
+    if ((normPrev === '' || normPrev === 'No') && (normNew === 'No' || normNew === 'Unknown' || normNew === '' || normNew === '0')) {
       continue;
     }
 
