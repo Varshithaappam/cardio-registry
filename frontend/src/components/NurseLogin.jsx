@@ -4,12 +4,13 @@
  */
 
 import React, { useState } from 'react';
-import { Heart, ShieldAlert, User, Lock, Activity, RefreshCw } from 'lucide-react';
+import { Heart, ShieldAlert, User, Lock, Activity, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import api from '../api/axiosInstance';
 
 export default function NurseLogin({ onLogin, onLoginSuccess }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -113,13 +114,26 @@ export default function NurseLogin({ onLogin, onLoginSuccess }) {
               <div className="relative">
                 <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   placeholder="••••••••"
-                  className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                  className="w-full pl-9 pr-10 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -128,25 +142,18 @@ export default function NurseLogin({ onLogin, onLoginSuccess }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-xs font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Authorizing Shift Session...</span>
+                <span>Logging in...</span>
               </>
             ) : (
-              <>
-                <Activity className="w-4 h-4" />
-                <span>Initialize EHR & View Registry</span>
-              </>
+              <span>Login</span>
             )}
           </button>
         </form>
-
-        <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 text-[10px] text-slate-400 text-center">
-          ⚠️ <strong>Strict Security Mandate:</strong> Unauthorized access or failure to report shift handoffs triggers auto-auditing under national clinical safety guidelines.
-        </div>
       </div>
 
       {/* Footer info */}

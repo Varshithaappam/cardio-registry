@@ -151,48 +151,53 @@ function resolveCanonicalObject(obj) {
 
   // 1. AV Block
   if (!flat.av_block) {
-    if (flat.av_block_none === 'Yes') flat.av_block = 'None';
-    else if (flat.av_block_first_degree === 'Yes') flat.av_block = 'First Degree';
+    if (flat.av_block_chb === 'Yes') flat.av_block = 'CHB';
     else if (flat.av_block_second_degree === 'Yes') flat.av_block = 'Second Degree';
-    else if (flat.av_block_chb === 'Yes') flat.av_block = 'CHB';
+    else if (flat.av_block_first_degree === 'Yes') flat.av_block = 'First Degree';
+    else if (flat.av_block_none === 'Yes') flat.av_block = 'None';
   }
 
   // 2. BBB
   if (!flat.bbb) {
-    if (flat.bbb_none === 'Yes') flat.bbb = 'None';
-    else if (flat.bbb_lbbb === 'Yes') flat.bbb = 'LBBB';
+    if (flat.bbb_lbbb === 'Yes') flat.bbb = 'LBBB';
     else if (flat.bbb_rbbb === 'Yes') flat.bbb = 'RBBB';
     else if (flat.bbb_indeterminate === 'Yes') flat.bbb = 'Indeterminate';
+    else if (flat.bbb_none === 'Yes') flat.bbb = 'None';
   }
 
   // 3. Rhythm
   let rhythmVal = flat.rhythm || flat.ecg_rhythm;
   if (!rhythmVal) {
-    if (flat.rhythm_nsr === 'Yes') rhythmVal = 'NSR';
-    else if (flat.rhythm_af === 'Yes') rhythmVal = 'AF';
+    if (flat.rhythm_af === 'Yes') rhythmVal = 'AF';
     else if (flat.rhythm_svt === 'Yes') rhythmVal = 'SVT';
     else if (flat.rhythm_vt === 'Yes') rhythmVal = 'VT';
     else if (flat.rhythm_vf === 'Yes') rhythmVal = 'VF';
+    else if (flat.rhythm_nsr === 'Yes') rhythmVal = 'NSR';
   }
   if (rhythmVal) {
     flat.rhythm = rhythmVal;
     flat.ecg_rhythm = rhythmVal;
   }
 
-  // 4. LV Function
+  // 4. LV Function (check specific abnormal values first before normal)
   if (!flat.lv_function) {
-    if (flat.lv_function_normal === 'Yes') flat.lv_function = 'Normal';
-    else if (flat.lv_function_mild_lvd === 'Yes') flat.lv_function = 'Mild LVD';
+    if (flat.lv_function_severe_lvd === 'Yes') flat.lv_function = 'Severe LVD';
     else if (flat.lv_function_moderate_lvd === 'Yes') flat.lv_function = 'Moderate LVD';
-    else if (flat.lv_function_severe_lvd === 'Yes') flat.lv_function = 'Severe LVD';
+    else if (flat.lv_function_mild_lvd === 'Yes') flat.lv_function = 'Mild LVD';
+    else if (flat.lv_function_normal === 'Yes') flat.lv_function = 'Normal';
   }
 
-  // 5. MR
-  if (!flat.mr) {
-    if (flat.mr_none === 'Yes') flat.mr = 'None';
-    else if (flat.mr_mild === 'Yes') flat.mr = 'Mild';
-    else if (flat.mr_moderate === 'Yes') flat.mr = 'Moderate';
-    else if (flat.mr_severe === 'Yes') flat.mr = 'Severe';
+  // 5. MR (check specific abnormal values first before none)
+  let mrVal = flat.mr || flat.mr_grade;
+  if (!mrVal) {
+    if (flat.mr_severe === 'Yes') mrVal = 'Severe';
+    else if (flat.mr_moderate === 'Yes') mrVal = 'Moderate';
+    else if (flat.mr_mild === 'Yes') mrVal = 'Mild';
+    else if (flat.mr_none === 'Yes') mrVal = 'None';
+  }
+  if (mrVal) {
+    flat.mr = mrVal;
+    flat.mr_grade = mrVal;
   }
 
   // 6. Treatment Strategy
@@ -307,7 +312,7 @@ function getChangedFields(oldObj, newObj) {
     // Followup form-default fields (sent with defaults like 'None'/'In-Person' even when DB has null)
     'func_1m', 'func_3m', 'func_6m', 'func_12m',
     'visit_mode', 'visitmode', 'special_instructions',
-    'functional_class',
+    'functional_class', 'mr_grade',
     // Grouped constituent raw boolean flags
     'av_block_none', 'av_block_first_degree', 'av_block_second_degree', 'av_block_chb',
     'bbb_none', 'bbb_lbbb', 'bbb_rbbb', 'bbb_indeterminate',
@@ -348,6 +353,11 @@ function getChangedFields(oldObj, newObj) {
     const leaf = key.split('.').pop();
     const lowerLeaf = leaf.toLowerCase();
     const lowerFullKey = key.toLowerCase();
+
+    // Skip modular followup array items from primary registry audit trail
+    if (lowerFullKey.startsWith('followup') || lowerFullKey.includes('followup[')) {
+      continue;
+    }
 
     if (
       excludedKeys.has(lowerLeaf) ||

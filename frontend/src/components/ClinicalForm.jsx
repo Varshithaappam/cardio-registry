@@ -24,6 +24,7 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
   const formRef = useRef(null);
   const isHfForm = String(formType || '').toUpperCase() === 'HF';
   const isNstemiForm = String(formType || '').toUpperCase() === 'NSTEMI';
+  const isStemiForm = String(formType || '').toUpperCase() === 'STEMI';
   const [isDraft, setIsDraft] = useState(
     editingRecord?.isDraft ?? (editingRecord?.status === 'draft' || editingRecord?.status === 2)
   );
@@ -301,7 +302,7 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
           <div />
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            {SHOW_DEV_HELPERS && (isHfForm || isNstemiForm) && (
+            {SHOW_DEV_HELPERS && (isHfForm || isNstemiForm || isStemiForm) && (
               <button
                 id="btn-dummy-form"
                 type="button"

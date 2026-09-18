@@ -240,7 +240,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     stent_length: editingRecord?.stent_length || '',
     procedural_success: editingRecord?.procedural_success || 'Yes',
     timi_flow: editingRecord?.timi_flow !== undefined ? editingRecord?.timi_flow : 3,
-    complication_none: editingRecord?.complication_none === 'Yes' || editingRecord?.complication_none === true || true,
+    complication_none: editingRecord ? (editingRecord.complication_none === 'Yes' || editingRecord.complication_none === true) : true,
     complication_tamponade: editingRecord?.complication_tamponade === 'Yes' || editingRecord?.complication_tamponade === true,
     complication_major_bleed: editingRecord?.complication_major_bleed === 'Yes' || editingRecord?.complication_major_bleed === true,
     complication_stroke: editingRecord?.complication_stroke === 'Yes' || editingRecord?.complication_stroke === true,
@@ -283,19 +283,19 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     ecg_heart_rate: editingRecord?.ecg_heart_rate || '',
     av_block: editingRecord?.av_block_first_degree === 'Yes' ? '1-degree' : (editingRecord?.av_block_second_degree === 'Yes' ? '2-degree' : (editingRecord?.av_block_chb === 'Yes' ? 'CHB' : 'None')),
     bbb: editingRecord?.bbb_rbbb === 'Yes' ? 'RBBB' : (editingRecord?.bbb_lbbb === 'Yes' ? 'LBBB' : (editingRecord?.bbb_indeterminate === 'Yes' ? 'Indeterminate' : 'None')),
-    qwaves_none: editingRecord?.qwaves_none === 'Yes' || editingRecord?.qwaves_none === true || true,
+    qwaves_none: editingRecord ? (editingRecord.qwaves_none === 'Yes' || editingRecord.qwaves_none === true) : true,
     qwaves_inferior: editingRecord?.qwaves_inferior === 'Yes' || editingRecord?.qwaves_inferior === true,
     qwaves_anteroseptal: editingRecord?.qwaves_anteroseptal === 'Yes' || editingRecord?.qwaves_anteroseptal === true,
     qwaves_anterior: editingRecord?.qwaves_anterior === 'Yes' || editingRecord?.qwaves_anterior === true,
     qwaves_anterolateral: editingRecord?.qwaves_anterolateral === 'Yes' || editingRecord?.qwaves_anterolateral === true,
     qwaves_lateral: editingRecord?.qwaves_lateral === 'Yes' || editingRecord?.qwaves_lateral === true,
-    st_depression_none: editingRecord?.st_depression_none === 'Yes' || editingRecord?.st_depression_none === true || true,
+    st_depression_none: editingRecord ? (editingRecord.st_depression_none === 'Yes' || editingRecord.st_depression_none === true) : true,
     st_depression_inferior: editingRecord?.st_depression_inferior === 'Yes' || editingRecord?.st_depression_inferior === true,
     st_depression_anteroseptal: editingRecord?.st_depression_anteroseptal === 'Yes' || editingRecord?.st_depression_anteroseptal === true,
     st_depression_anterior: editingRecord?.st_depression_anterior === 'Yes' || editingRecord?.st_depression_anterior === true,
     st_depression_anterolateral: editingRecord?.st_depression_anterolateral === 'Yes' || editingRecord?.st_depression_anterolateral === true,
     st_depression_lateral: editingRecord?.st_depression_lateral === 'Yes' || editingRecord?.st_depression_lateral === true,
-    t_inversion_none: editingRecord?.t_inversion_none === 'Yes' || editingRecord?.t_inversion_none === true || true,
+    t_inversion_none: editingRecord ? (editingRecord.t_inversion_none === 'Yes' || editingRecord.t_inversion_none === true) : true,
     t_inversion_inferior: editingRecord?.t_inversion_inferior === 'Yes' || editingRecord?.t_inversion_inferior === true,
     t_inversion_anteroseptal: editingRecord?.t_inversion_anteroseptal === 'Yes' || editingRecord?.t_inversion_anteroseptal === true,
     t_inversion_anterior: editingRecord?.t_inversion_anterior === 'Yes' || editingRecord?.t_inversion_anterior === true,
@@ -970,6 +970,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
   };
 
   useImperativeHandle(ref, () => ({
+    fillDummyData,
     getSubmissionData: () => getFlattenedData(),
     validateForm: () => {
       if (formData.admission_date && formData.discharge_date) {
