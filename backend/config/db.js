@@ -298,6 +298,7 @@ async function ensureAuditTable() {
       END
       ELSE
       BEGIN
+      -- Ensure columns exist if missing
         IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.system_audit_log') AND name = 'record_identifier')
           ALTER TABLE dbo.[system_audit_log] ADD [record_identifier] VARCHAR(100) NULL;
         IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.system_audit_log') AND name = 'record_id')
@@ -309,12 +310,6 @@ async function ensureAuditTable() {
         IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.system_audit_log') AND name = 'new_values')
           ALTER TABLE dbo.[system_audit_log] ADD [new_values] NVARCHAR(MAX) NULL;
       END
-
-      -- Force existing columns to VARCHAR on the remote server
-      ALTER TABLE dbo.[system_audit_log] ALTER COLUMN [patient_id] VARCHAR(100) NULL;
-      ALTER TABLE dbo.[system_audit_log] ALTER COLUMN [record_id] VARCHAR(100) NULL;
-      ALTER TABLE dbo.[system_audit_log] ALTER COLUMN [record_identifier] VARCHAR(100) NULL;
-      ALTER TABLE dbo.[system_audit_log] ALTER COLUMN [user_id] VARCHAR(100) NULL;
     `;
     await query(checkTableQuery);
     console.log('✓ Verified/Initialized [system_audit_log] database table');

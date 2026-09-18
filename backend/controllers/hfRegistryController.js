@@ -239,11 +239,6 @@ const getPatientAuditLog = async (req, res) => {
   }
 
   try {
-    // Auto-create system_audit_log table if it doesn't exist yet
-    if (db.ensureAuditTable) {
-      await db.ensureAuditTable();
-    }
-
     const query = `
       SELECT 
         s.audit_id, 
@@ -289,7 +284,7 @@ const getPatientAuditLog = async (req, res) => {
           SELECT 1 FROM system_audit_log s 
           WHERE s.patient_id = p.reg_patient_id 
             AND s.registry_type = 'HF'
-            AND ABS(DATEDIFF(second, s.timestamp, a.timestamp)) <= 5
+            AND s.timestamp BETWEEN DATEADD(second, -5, a.timestamp) AND DATEADD(second, 5, a.timestamp)
         )
       ORDER BY timestamp DESC;
     `;
@@ -451,9 +446,6 @@ const exportPatientAuditExcel = async (req, res) => {
     if (!logs || !Array.isArray(logs) || logs.length === 0) {
       const reg_patient_id = Number(patientId || req.params?.regPatientId);
       if (reg_patient_id && !isNaN(reg_patient_id)) {
-        if (db.ensureAuditTable) {
-          await db.ensureAuditTable();
-        }
         const query = `
           SELECT 
             s.audit_id, 
@@ -499,7 +491,7 @@ const exportPatientAuditExcel = async (req, res) => {
               SELECT 1 FROM system_audit_log s 
               WHERE s.patient_id = p.reg_patient_id 
                 AND s.registry_type = 'HF'
-                AND ABS(DATEDIFF(second, s.timestamp, a.timestamp)) <= 5
+                AND s.timestamp BETWEEN DATEADD(second, -5, a.timestamp) AND DATEADD(second, 5, a.timestamp)
             )
           ORDER BY timestamp DESC;
         `;
