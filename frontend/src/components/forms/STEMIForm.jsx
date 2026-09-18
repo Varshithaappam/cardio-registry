@@ -1319,21 +1319,7 @@ const STEMIForm = forwardRef(function STEMIForm(
 
   return (
     <div className="space-y-6 text-slate-800">
-      {/* Top Action Bar (Fill Dummy Data) */}
-      {!readOnly && (
-        <div className="flex justify-end">
-          <button
-            id="btn-stemi-fill-dummy-data"
-            type="button"
-            onClick={fillDummyData}
-            className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm border border-red-500"
-            title="Autofill complete test data across all STEMI sections"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-rose-200 animate-pulse" />
-            <span>Fill Dummy Data (Test STEMI)</span>
-          </button>
-        </div>
-      )}
+      
 
       {/* Patient Profile & Administrative Details */}
       <div id="section-1">
