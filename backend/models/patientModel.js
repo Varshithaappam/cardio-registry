@@ -45,13 +45,48 @@ async function createPatient(patientData) {
   request.input('merged_into_patient_id', db.sql.Int, patientData.merged_into_patient_id || null);
   request.output('NewPatientId', db.sql.Int);
 
-  const res = await request.execute('dbo.usp_RegisterPatient');
-  const regPatientId = res.output?.NewPatientId || res.recordset?.[0]?.reg_patient_id;
+  try {
+    const res = await request.execute('dbo.usp_RegisterPatient');
+    const regPatientId = res.output?.NewPatientId || res.recordset?.[0]?.reg_patient_id;
 
-  return {
-    recordset: [{ reg_patient_id: regPatientId }],
-    rowsAffected: res.rowsAffected
-  };
+    return {
+      recordset: [{ reg_patient_id: regPatientId }],
+      rowsAffected: res.rowsAffected
+    };
+  } catch (spErr) {
+    console.warn('⚠️ Stored procedure usp_RegisterPatient execution notice:', spErr.message);
+    console.log('🔄 Executing fallback parameterized T-SQL insert for patient_demographics...');
+
+    const directInsertQuery = `
+      INSERT INTO dbo.patient_demographics (
+        mr_no, ip_no, patient_name, date_of_birth, gender, blood_group,
+        insurance_mode, phone_no, email, hypertension, smoking, diabetes,
+        diabetes_control_type, renal_failure, active_dialysis_status, address,
+        house_flat_no, street_locality, village_town, mandal, district, state, pincode,
+        higher_education, occupation, uhid, abha_number,
+        patient_status, date_of_death, merged_into_patient_id,
+        created_at, updated_at
+      )
+      OUTPUT INSERTED.reg_patient_id
+      VALUES (
+        @mr_no, @ip_no, @patient_name, @date_of_birth, @gender, @blood_group,
+        @insurance_mode, @phone_no, @email, @hypertension, @smoking, @diabetes,
+        @diabetes_control_type, @renal_failure, @active_dialysis_status, @address,
+        @house_flat_no, @street_locality, @village_town, @mandal, @district, @state, @pincode,
+        @higher_education, @occupation, @uhid, @abha_number,
+        ISNULL(@patient_status, 'ACTIVE'), @date_of_death, @merged_into_patient_id,
+        SYSDATETIME(), SYSDATETIME()
+      );
+    `;
+
+    const res = await request.query(directInsertQuery);
+    const regPatientId = res.recordset?.[0]?.reg_patient_id;
+
+    return {
+      recordset: [{ reg_patient_id: regPatientId }],
+      rowsAffected: res.rowsAffected
+    };
+  }
 }
 
 async function updatePatientNumbers(regPatientId, mr_no, ip_no) {

@@ -185,7 +185,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     other_background: editingRecord?.other_background ?? editingRecord?.administrative?.other_background ?? '',
 
     // Presentation: Yes/No
-    typical_angina: editingRecord?.typical_angina || 'Yes',
+    typical_angina: editingRecord?.typical_angina || 'No',
     atypical_chest_pain: editingRecord?.atypical_chest_pain || 'No',
     breathlessness: editingRecord?.breathlessness || 'No',
     syncope_presyncope: editingRecord?.syncope_presyncope || 'No',
@@ -207,8 +207,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     prior_coronary_stenosis_gt_50: editingRecord?.prior_coronary_stenosis_gt_50 || 'No',
     st_deviation_at_admission: editingRecord?.st_deviation_at_admission || 'No',
     anginal_episodes_ge_2_last_24hrs: editingRecord?.anginal_episodes_ge_2_last_24hrs || 'No',
-    elevated_serum_cardiac_markers: editingRecord?.elevated_serum_cardiac_markers || 'Yes',
-    timi_total_score: editingRecord?.timi_total_score || 1,
+    elevated_serum_cardiac_markers: editingRecord?.elevated_serum_cardiac_markers || 'No',
+    timi_total_score: editingRecord?.timi_total_score !== undefined ? editingRecord.timi_total_score : 0,
 
     // Other Risk Factors: Yes/No
     lvf: editingRecord?.lvf || 'No',
@@ -393,38 +393,38 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     special_instructions: editingRecord?.special_instructions || editingRecord?.followup?.[0]?.special_instructions || editingRecord?.special_clinical_instructions || '',
 
     // Appropriateness Assessment -> Procedures:
-    appr_iccu_admission: editingRecord?.appr_iccu_admission ?? editingRecord?.appropriateness?.iccu_admission ?? editingRecord?.iccu_admission ?? '',
-    appr_iccu_transfer_out: editingRecord?.appr_iccu_transfer_out ?? editingRecord?.appropriateness?.iccu_transfer_out ?? editingRecord?.iccu_transfer_out ?? '',
-    appr_thrombolysis_indication: editingRecord?.appr_thrombolysis_indication ?? editingRecord?.appropriateness?.thrombolysis_indication ?? editingRecord?.thrombolysis_indication ?? '',
-    appr_ptca_indication: editingRecord?.appr_ptca_indication ?? editingRecord?.appropriateness?.ptca_indication ?? editingRecord?.ptca_indication ?? '',
-    appr_invasive_monitoring: editingRecord?.appr_invasive_monitoring ?? editingRecord?.appropriateness?.invasive_monitoring ?? editingRecord?.invasive_monitoring ?? '',
-    appr_iabp_indication: editingRecord?.appr_iabp_indication ?? editingRecord?.appropriateness?.iabp_indication ?? editingRecord?.iabp_indication ?? '',
-    appr_invasive_ventilation: editingRecord?.appr_invasive_ventilation ?? editingRecord?.appropriateness?.invasive_ventilation ?? '',
-    appr_dialysis_indication: editingRecord?.appr_dialysis_indication ?? editingRecord?.appropriateness?.dialysis_indication ?? editingRecord?.dialysis_indication ?? '',
-    appr_other_procedure_name: editingRecord?.appr_other_procedure_name ?? editingRecord?.appropriateness?.other_procedure_name ?? editingRecord?.other_procedure_name ?? '',
-    appr_other_procedure_appropriateness: editingRecord?.appr_other_procedure_appropriateness ?? editingRecord?.appropriateness?.other_procedure_appropriateness ?? editingRecord?.other_procedure_appropriateness ?? '',
+    appr_iccu_admission: editingRecord?.appr_iccu_admission || editingRecord?.appropriateness?.iccu_admission || editingRecord?.iccu_admission || 'Appropriate',
+    appr_iccu_transfer_out: editingRecord?.appr_iccu_transfer_out || editingRecord?.appropriateness?.iccu_transfer_out || editingRecord?.iccu_transfer_out || 'Appropriate',
+    appr_thrombolysis_indication: editingRecord?.appr_thrombolysis_indication || editingRecord?.appropriateness?.thrombolysis_indication || editingRecord?.thrombolysis_indication || 'Appropriate',
+    appr_ptca_indication: editingRecord?.appr_ptca_indication || editingRecord?.appropriateness?.ptca_indication || editingRecord?.ptca_indication || 'Appropriate',
+    appr_invasive_monitoring: editingRecord?.appr_invasive_monitoring || editingRecord?.appropriateness?.invasive_monitoring || editingRecord?.invasive_monitoring || 'Appropriate',
+    appr_iabp_indication: editingRecord?.appr_iabp_indication || editingRecord?.appropriateness?.iabp_indication || editingRecord?.iabp_indication || 'Appropriate',
+    appr_invasive_ventilation: editingRecord?.appr_invasive_ventilation || editingRecord?.appropriateness?.invasive_ventilation || 'Appropriate',
+    appr_dialysis_indication: editingRecord?.appr_dialysis_indication || editingRecord?.appropriateness?.dialysis_indication || editingRecord?.dialysis_indication || 'Appropriate',
+    appr_other_procedure_name: editingRecord?.appr_other_procedure_name || editingRecord?.appropriateness?.other_procedure_name || editingRecord?.other_procedure_name || '',
+    appr_other_procedure_appropriateness: editingRecord?.appr_other_procedure_appropriateness || editingRecord?.appropriateness?.other_procedure_appropriateness || editingRecord?.other_procedure_appropriateness || 'Appropriate',
 
     // Appropriateness Assessment -> Investigations:
-    appr_cardiac_enzymes: editingRecord?.appr_cardiac_enzymes ?? editingRecord?.appropriateness?.cardiac_enzymes ?? editingRecord?.cardiac_enzymes ?? '',
-    appr_bnp: editingRecord?.appr_bnp ?? editingRecord?.appropriateness?.bnp ?? '',
-    appr_crp: editingRecord?.appr_crp ?? editingRecord?.appropriateness?.crp ?? '',
-    appr_lipid_profile: editingRecord?.appr_lipid_profile ?? editingRecord?.appropriateness?.lipid_profile ?? '',
-    appr_bedside_echo: editingRecord?.appr_bedside_echo ?? editingRecord?.appropriateness?.bedside_echo ?? '',
-    appr_chest_xray: editingRecord?.appr_chest_xray ?? editingRecord?.appropriateness?.chest_xray ?? editingRecord?.chest_xray ?? '',
+    appr_cardiac_enzymes: editingRecord?.appr_cardiac_enzymes || editingRecord?.appropriateness?.cardiac_enzymes || editingRecord?.cardiac_enzymes || 'Appropriate',
+    appr_bnp: editingRecord?.appr_bnp || editingRecord?.appropriateness?.bnp || 'Appropriate',
+    appr_crp: editingRecord?.appr_crp || editingRecord?.appropriateness?.crp || 'Appropriate',
+    appr_lipid_profile: editingRecord?.appr_lipid_profile || editingRecord?.appropriateness?.lipid_profile || 'Appropriate',
+    appr_bedside_echo: editingRecord?.appr_bedside_echo || editingRecord?.appropriateness?.bedside_echo || 'Appropriate',
+    appr_chest_xray: editingRecord?.appr_chest_xray || editingRecord?.appropriateness?.chest_xray || editingRecord?.chest_xray || 'Appropriate',
 
     // Appropriateness Assessment -> Drugs:
-    appr_beta_blockers: editingRecord?.appr_beta_blockers ?? editingRecord?.appropriateness?.beta_blockers ?? editingRecord?.beta_blockers ?? '',
-    appr_aspirin: editingRecord?.appr_aspirin ?? editingRecord?.appropriateness?.aspirin ?? '',
-    appr_clopidogrel: editingRecord?.appr_clopidogrel ?? editingRecord?.appropriateness?.clopidogrel ?? '',
-    appr_ace_inhibitor: editingRecord?.appr_ace_inhibitor ?? editingRecord?.appropriateness?.ace_inhibitor ?? editingRecord?.ace_inhibitor ?? '',
-    appr_arb: editingRecord?.appr_arb ?? editingRecord?.appropriateness?.arb ?? editingRecord?.arb ?? '',
-    appr_statin: editingRecord?.appr_statin ?? editingRecord?.appropriateness?.statin ?? '',
-    appr_diuretic: editingRecord?.appr_diuretic ?? editingRecord?.appropriateness?.diuretic ?? editingRecord?.diuretic ?? '',
-    appr_lanoxin: editingRecord?.appr_lanoxin ?? editingRecord?.appropriateness?.lanoxin ?? editingRecord?.lanoxin ?? '',
-    appr_anticoagulant: editingRecord?.appr_anticoagulant ?? editingRecord?.appropriateness?.anticoagulant ?? editingRecord?.anticoagulant ?? '',
-    appr_amiodarone: editingRecord?.appr_amiodarone ?? editingRecord?.appropriateness?.amiodarone ?? editingRecord?.amiodarone ?? '',
-    appr_other_drug_name: editingRecord?.appr_other_drug_name ?? editingRecord?.appropriateness?.other_drug_name ?? editingRecord?.other_drug_name ?? '',
-    appr_other_drug_appropriateness: editingRecord?.appr_other_drug_appropriateness ?? editingRecord?.appropriateness?.other_drug_appropriateness ?? editingRecord?.other_drug_appropriateness ?? '',
+    appr_beta_blockers: editingRecord?.appr_beta_blockers || editingRecord?.appropriateness?.beta_blockers || editingRecord?.beta_blockers || 'Appropriate',
+    appr_aspirin: editingRecord?.appr_aspirin || editingRecord?.appropriateness?.aspirin || 'Appropriate',
+    appr_clopidogrel: editingRecord?.appr_clopidogrel || editingRecord?.appropriateness?.clopidogrel || 'Appropriate',
+    appr_ace_inhibitor: editingRecord?.appr_ace_inhibitor || editingRecord?.appropriateness?.ace_inhibitor || editingRecord?.ace_inhibitor || 'Appropriate',
+    appr_arb: editingRecord?.appr_arb || editingRecord?.appropriateness?.arb || editingRecord?.arb || 'Appropriate',
+    appr_statin: editingRecord?.appr_statin || editingRecord?.appropriateness?.statin || 'Appropriate',
+    appr_diuretic: editingRecord?.appr_diuretic || editingRecord?.appropriateness?.diuretic || editingRecord?.diuretic || 'Appropriate',
+    appr_lanoxin: editingRecord?.appr_lanoxin || editingRecord?.appropriateness?.lanoxin || editingRecord?.lanoxin || 'Appropriate',
+    appr_anticoagulant: editingRecord?.appr_anticoagulant || editingRecord?.appropriateness?.anticoagulant || editingRecord?.anticoagulant || 'Appropriate',
+    appr_amiodarone: editingRecord?.appr_amiodarone || editingRecord?.appropriateness?.amiodarone || editingRecord?.amiodarone || 'Appropriate',
+    appr_other_drug_name: editingRecord?.appr_other_drug_name || editingRecord?.appropriateness?.other_drug_name || editingRecord?.other_drug_name || '',
+    appr_other_drug_appropriateness: editingRecord?.appr_other_drug_appropriateness || editingRecord?.appropriateness?.other_drug_appropriateness || editingRecord?.other_drug_appropriateness || 'Appropriate',
 
     // Appropriateness Notes:
     appr_iccu_admission_note: editingRecord?.appr_iccu_admission_note ?? editingRecord?.appropriateness?.iccu_admission_note ?? editingRecord?.iccu_admission_note ?? '',
@@ -465,7 +465,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     if (data.history_dm_htn_angina === 'Yes') score += 1;
     if (data.sbp_lt_100 === 'Yes') score += 3;
     if (data.heart_rate_gt_100 === 'Yes') score += 2;
-    if (data.killip_class_ii_to_iv === 'Yes') score += 2;
+    if (['I', 'II', 'III', 'IV', 'Yes'].includes(data.killip_class_ii_to_iv)) score += 2;
     if (data.anterior_mi_or_lbbb === 'Yes') score += 1;
     if (data.weight_lt_67kg === 'Yes') score += 1;
     if (data.reperfusion_gt_4hrs === 'Yes') score += 1;
@@ -1345,7 +1345,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             {renderRadio('history_dm_htn_angina', 'H/o DM/ HTN/ Angina (+1)', ['Yes', 'No'])}
             {renderRadio('sbp_lt_100', 'SBP < 100 mmHg (+3)', ['Yes', 'No'])}
             {renderRadio('heart_rate_gt_100', 'Heart Rate > 100/ min (+2)', ['Yes', 'No'])}
-            {renderRadio('killip_class_ii_to_iv', 'Killip Class II to IV (+2)', ['Yes', 'No'])}
+            {renderRadio('killip_class_ii_to_iv', 'Killip Class (+2)', ['No', 'I', 'II', 'III', 'IV'])}
             {renderRadio('anterior_mi_or_lbbb', 'Ant MI/ LBBBB (+1)', ['Yes', 'No'])}
             {renderRadio('weight_lt_67kg', 'Weight < 67 kg (+1)', ['Yes', 'No'])}
             {renderRadio('reperfusion_gt_4hrs', 'Time to reperfusion > 4 hrs (+1)', ['Yes', 'No'])}
@@ -2769,12 +2769,12 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   Special Clinical Instructions For Patient/Caregiver
                 </label>
                 {!readOnly && (
-                  <span className={`text-[10px] select-none ${
+                  <span className={`text-[10px] font-mono select-none ${
                     Math.max(0, 500 - (formData.special_instructions || '').length) <= 5
                       ? 'text-rose-500 font-bold animate-pulse'
                       : 'text-slate-400 font-medium'
                   }`}>
-                    {Math.max(0, 500 - (formData.special_instructions || '').length)} left
+                    {(formData.special_instructions?.length || 0)}/500
                   </span>
                 )}
               </div>

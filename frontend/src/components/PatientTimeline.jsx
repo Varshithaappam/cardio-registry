@@ -68,10 +68,12 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
   const [auditLogs, setAuditLogs] = useState([]);
   const [loadingAudit, setLoadingAudit] = useState(false);
 
+  const targetPatientId = record?.patient?.id || record?.patient?.reg_patient_id || record?.patient?.regPatientId || record?.reg_patient_id;
+
   const fetchAuditLogs = () => {
-    if (!record?.patient?.id) return;
+    if (!targetPatientId) return;
     setLoadingAudit(true);
-    api.get(`/hf-registry/patient/${record.patient.id}/audit`)
+    api.get(`/hf-registry/patient/${targetPatientId}/audit`)
       .then(res => {
         if (res.data && res.data.success) {
           setAuditLogs(res.data.data || []);
@@ -82,10 +84,10 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
   };
 
   useEffect(() => {
-    if (activeTab === 'audit' && record?.patient?.id) {
+    if (activeTab === 'audit' && targetPatientId) {
       fetchAuditLogs();
     }
-  }, [activeTab, record]);
+  }, [activeTab, targetPatientId, record]);
 
   const currentUser = (() => {
     try {

@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import FormField from './FormField';
 import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
 
 /**
  * ValidatedTextField Component
  * Reusable input / textarea wrapper enforcing strict maxLength attributes,
- * dynamic live "X characters left" counters, and Tailwind warning styles when approaching limits.
+ * auto-resizing height for textareas, dynamic live "{used}/{maxLength}" character counters,
+ * and Tailwind warning styles when approaching limits.
  */
 export default function ValidatedTextField({
   label,
@@ -18,7 +19,7 @@ export default function ValidatedTextField({
   disabled = false,
   readOnly = false,
   multiline = false,
-  rows = 3,
+  rows = 1,
   id,
   name,
   className = '',
@@ -31,13 +32,30 @@ export default function ValidatedTextField({
   const isDisabled = disabled || readOnly;
   const strVal = value !== undefined && value !== null ? String(value) : '';
   const currentLength = strVal.length;
-  const remaining = Math.max(0, maxLength - currentLength);
-  const isWarning = remaining <= warningThreshold;
+  const isWarning = maxLength - currentLength <= warningThreshold;
+  const textareaRef = useRef(null);
+
+  const adjustHeight = (el) => {
+    const target = el || textareaRef.current;
+    if (target) {
+      target.style.height = 'auto';
+      target.style.height = `${target.scrollHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    if (multiline || rows >= 1) {
+      adjustHeight();
+    }
+  }, [strVal, multiline, rows]);
 
   const handleChange = (e) => {
     const newVal = e && e.target !== undefined ? e.target.value : e;
     if (onChange) {
       onChange(newVal);
+    }
+    if (e && e.target) {
+      adjustHeight(e.target);
     }
   };
 
@@ -50,8 +68,9 @@ export default function ValidatedTextField({
   return (
     <FormField label={label} required={required} error={error} className={className}>
       <div className="relative w-full">
-        {multiline || rows > 1 ? (
+        {multiline || rows >= 1 ? (
           <textarea
+            ref={textareaRef}
             id={id || name}
             name={name || id}
             rows={rows}
@@ -59,9 +78,11 @@ export default function ValidatedTextField({
             placeholder={placeholder}
             maxLength={maxLength}
             onChange={handleChange}
+            onInput={(e) => adjustHeight(e.target)}
             disabled={isDisabled}
             readOnly={readOnly}
-            className={`${fieldStyles} ${inputClassName}`}
+            className={`${fieldStyles} ${inputClassName} resize-none overflow-hidden block transition-[height] duration-75`}
+            style={{ height: 'auto' }}
             {...restProps}
           />
         ) : (
@@ -84,13 +105,13 @@ export default function ValidatedTextField({
         {showCounter && !isDisabled && (
           <div className="flex justify-end items-center mt-1">
             <span
-              className={`text-[11px] transition-colors duration-200 select-none ${
+              className={`text-[11px] font-mono transition-colors duration-200 select-none ${
                 isWarning
                   ? 'text-rose-500 font-bold animate-pulse'
                   : 'text-slate-400 font-medium'
               }`}
             >
-              {remaining} characters left
+              {currentLength}/{maxLength}
             </span>
           </div>
         )}

@@ -1,15 +1,22 @@
-import React from 'react';
-import { RotateCw, RotateCcw, Trash2, Shield, Clock, UserCheck } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { 
+  RotateCw, RotateCcw, Trash2, Shield, Clock, UserCheck, 
+  Download, Calendar, Filter, Info, FileSpreadsheet 
+} from 'lucide-react';
 
 /**
  * AuditTimeline Component
  * Renders an immutable timeline of system_audit_log records matching the CARE HEALTH SYSTEM portal design.
+ * Features 7-day past event timeline filtering & full date-filtered Excel/CSV Audit Log Export.
  *
  * @param {Array} logs - Array of audit log objects fetched from backend system_audit_log table
  * @param {string} patientMr - Patient MR number (e.g., 'MR6243')
  * @param {string} patientName - Patient full name (e.g., 'John Doe')
  */
 export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patientName = '' }) {
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [actionFilter, setActionFilter] = useState('ALL');
 
   // Helper to format ISO/database timestamp in Indian Standard Time (Asia/Kolkata)
   const formatTimestamp = (ts) => {
@@ -104,6 +111,128 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
     return list;
   };
 
+  // Check if log is from past 1 week (last 7 days)
+  const isWithinPastWeek = (ts) => {
+    if (!ts) return false;
+    try {
+      let dateObj;
+      const str = String(ts).trim();
+      const isoStr = str.includes(' ') && !str.includes('T') ? str.replace(' ', 'T') : str;
+      dateObj = new Date(isoStr);
+      if (isNaN(dateObj.getTime())) return true;
+
+      const now = new Date();
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      sevenDaysAgo.setHours(0, 0, 0, 0);
+
+      return dateObj >= sevenDaysAgo;
+    } catch {
+      return true;
+    }
+  };
+
+  // Timeline displays strictly past 1 week logs
+  const timelineLogs = useMemo(() => {
+    return logs.filter(log => isWithinPastWeek(log.timestamp));
+  }, [logs]);
+
+  // Download filtered Excel/CSV Audit report
+  const handleDownloadExcel = () => {
+    let filtered = [...logs];
+
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(l => {
+        const d = new Date(String(l.timestamp).replace(' ', 'T'));
+        return !isNaN(d.getTime()) && d >= start;
+      });
+    }
+
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(l => {
+        const d = new Date(String(l.timestamp).replace(' ', 'T'));
+        return !isNaN(d.getTime()) && d <= end;
+      });
+    }
+
+    if (actionFilter && actionFilter !== 'ALL') {
+      filtered = filtered.filter(l => {
+        const act = String(l.action_type || '').toUpperCase();
+        if (actionFilter === 'CREATE') return act === 'CREATE' || act === 'CREATION';
+        if (actionFilter === 'UPDATE') return act === 'UPDATE' || act === 'UPDATED';
+        if (actionFilter === 'DELETE') return act === 'DELETE' || act === 'DELETION';
+        if (actionFilter === 'RESTORE') return act === 'RESTORE' || act === 'RESTORED' || act === 'UNDELETE';
+        return act === actionFilter;
+      });
+    }
+
+    if (filtered.length === 0) {
+      alert('No audit logs found matching the selected export filters.');
+      return;
+    }
+
+    // Build CSV with BOM for seamless UTF-8 Excel compatibility
+    const headers = ['Audit ID', 'Timestamp (IST)', 'Action Type', 'Registry Type', 'Record Identifier', 'User', 'Field Modified', 'Previous Value', 'New Value'];
+    const csvRows = [headers.join(',')];
+
+    filtered.forEach(log => {
+      const auditId = log.audit_id || '';
+      const ts = formatTimestamp(log.timestamp);
+      const action = String(log.action_type || '').toUpperCase();
+      const regType = String(log.registry_type || 'Registry').toUpperCase();
+      const recId = log.record_identifier || log.record_id || '';
+      const user = log.username || log.user_id || 'User';
+
+      const parsedChanges = parseChangedFields(log);
+
+      if (parsedChanges.length > 0) {
+        parsedChanges.forEach(chg => {
+          const row = [
+            `"${auditId}"`,
+            `"${ts}"`,
+            `"${action}"`,
+            `"${regType}"`,
+            `"${recId}"`,
+            `"${user}"`,
+            `"${String(chg.field || '').replace(/"/g, '""')}"`,
+            `"${String(chg.previous ?? '—').replace(/"/g, '""')}"`,
+            `"${String(chg.new ?? '—').replace(/"/g, '""')}"`
+          ];
+          csvRows.push(row.join(','));
+        });
+      } else {
+        const row = [
+          `"${auditId}"`,
+          `"${ts}"`,
+          `"${action}"`,
+          `"${regType}"`,
+          `"${recId}"`,
+          `"${user}"`,
+          `"—"`,
+          `"—"`,
+          `"—"`
+        ];
+        csvRows.push(row.join(','));
+      }
+    });
+
+    const csvContent = '\uFEFF' + csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const cleanMr = String(patientMr).replace(/[^a-zA-Z0-9_-]/g, '');
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    link.setAttribute('download', `Audit_Report_${cleanMr}_${dateStamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // Action badge renderer
   const renderActionBadge = (actionType) => {
     const action = String(actionType).toUpperCase();
@@ -189,8 +318,94 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
   };
 
   return (
-    <div className="w-full bg-white text-slate-800 p-5 sm:p-6 rounded-2xl border border-purple-200/80 shadow-sm space-y-5 font-sans">
+    <div className="w-full bg-white text-slate-800 p-5 sm:p-6 rounded-2xl border border-purple-200/80 shadow-sm space-y-6 font-sans">
       
+      {/* AUDIT LOG EXPORT CARD */}
+      <div className="bg-purple-50/50 border border-purple-200/90 rounded-2xl p-4 sm:p-5 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-purple-100 text-purple-700 rounded-xl border border-purple-200 shadow-2xs">
+            <FileSpreadsheet className="w-5 h-5 text-purple-700" />
+          </div>
+          <div>
+            <h3 className="text-xs sm:text-sm font-extrabold tracking-wide uppercase text-purple-950 flex items-center gap-2">
+              <span>AUDIT LOG EXPORT</span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5 font-medium">
+              Generate & download filtered .xlsx audit verification reports
+            </p>
+          </div>
+        </div>
+
+        {/* Controls Row: Start Date, End Date, Action Type, Download Button */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end pt-1">
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <Calendar className="w-3 h-3 text-purple-600" />
+              <span>Start Date</span>
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all shadow-2xs"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <Calendar className="w-3 h-3 text-purple-600" />
+              <span>End Date</span>
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all shadow-2xs"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <Filter className="w-3 h-3 text-purple-600" />
+              <span>Action Type</span>
+            </label>
+            <select
+              value={actionFilter}
+              onChange={(e) => setActionFilter(e.target.value)}
+              className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all shadow-2xs"
+            >
+              <option value="ALL">All Actions</option>
+              <option value="CREATE">Creation</option>
+              <option value="UPDATE">Update</option>
+              <option value="DELETE">Deletion</option>
+              <option value="RESTORE">Restored</option>
+            </select>
+          </div>
+
+          <div>
+            <button
+              onClick={handleDownloadExcel}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs py-2.5 px-4 rounded-xl shadow-xs hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download Excel Report</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* PROMPT NOTE DIRECTLY BELOW AUDIT LOG EXPORT */}
+      <div className="bg-purple-50/80 border border-purple-200/90 rounded-xl p-3.5 flex items-start gap-3 shadow-2xs">
+        <Info className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
+        <div className="text-xs text-purple-950 leading-relaxed">
+          <span className="font-extrabold text-purple-900 uppercase tracking-wider text-[11px] block sm:inline mr-1">
+            ℹ️ Audit Retention Notice:
+          </span>
+          The Chronological Event Timeline below displays audit log events from the <strong>past 1 week (last 7 days)</strong>.
+          To view, query, or export audit logs older than 1 week, please select your desired date range above and click <strong>"Download Excel Report"</strong>.
+        </div>
+      </div>
+
       {/* Timeline Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-100 pb-4">
         <div>
@@ -202,21 +417,23 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
             </span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Immutable record of modifications, creations, and deletions.
+            Immutable record of modifications, creations, and deletions (showing past 7 days).
           </p>
         </div>
       </div>
 
       {/* Cards List Container */}
       <div className="space-y-3">
-        {logs.length === 0 ? (
+        {timelineLogs.length === 0 ? (
           <div className="text-center py-12 border border-dashed border-purple-200 rounded-xl bg-purple-50/30">
             <Clock className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-            <p className="text-xs font-bold text-slate-700">No Audit Trail Records Found</p>
-            <p className="text-[11px] text-slate-500 mt-1">Actions performed on patient registries will be logged here automatically.</p>
+            <p className="text-xs font-bold text-slate-700">No Audit Trail Records in Past 7 Days</p>
+            <p className="text-[11px] text-slate-500 mt-1">
+              No modifications recorded within the past week. Use the <strong>Audit Log Export</strong> panel above to query and download older historical logs.
+            </p>
           </div>
         ) : (
-          logs.map((log, index) => {
+          timelineLogs.map((log, index) => {
             const parsedChanges = parseChangedFields(log);
             const username = log.username || log.user_id || 'User';
             const isUpdate = String(log.action_type).toUpperCase() === 'UPDATE';
@@ -302,5 +519,3 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
     </div>
   );
 }
-
-

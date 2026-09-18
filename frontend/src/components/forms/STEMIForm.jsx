@@ -187,9 +187,9 @@ const STEMIForm = forwardRef(function STEMIForm(
     atypical_chest_pain: editingRecord?.atypical_chest_pain ?? editingRecord?.clinical?.atypical_chest_pain ?? 'No',
     breathlessness: editingRecord?.breathlessness ?? editingRecord?.clinical?.breathlessness ?? 'No',
     syncope_presyncope: editingRecord?.syncope_presyncope ?? editingRecord?.clinical?.syncope_presyncope ?? 'No',
-    pulse_rate: editingRecord?.pulse_rate ?? editingRecord?.clinical?.pulse_rate ?? 72,
-    systolic_bp: editingRecord?.systolic_bp ?? editingRecord?.clinical?.systolic_bp ?? 120,
-    diastolic_bp: editingRecord?.diastolic_bp ?? editingRecord?.clinical?.diastolic_bp ?? 80,
+    pulse_rate: editingRecord?.pulse_rate ?? editingRecord?.clinical?.pulse_rate ?? '',
+    systolic_bp: editingRecord?.systolic_bp ?? editingRecord?.clinical?.systolic_bp ?? '',
+    diastolic_bp: editingRecord?.diastolic_bp ?? editingRecord?.clinical?.diastolic_bp ?? '',
 
     // Section 3: Risk Stratification - TIMI Risk score
     age_gt_75: editingRecord?.age_gt_75 || (patientAge >= 75 ? 'Yes' : 'No'),
@@ -273,7 +273,7 @@ const STEMIForm = forwardRef(function STEMIForm(
     diagnostic_other: editingRecord?.diagnostic_other || '',
 
     // Section 10: Reports -> ECG
-    ecg_heart_rate: editingRecord?.ecg_heart_rate || 72,
+    ecg_heart_rate: editingRecord?.ecg_heart_rate || '',
     av_block: editingRecord?.av_block_first_degree === 'Yes' ? '1-degree' : (editingRecord?.av_block_second_degree === 'Yes' ? '2-degree' : (editingRecord?.av_block_chb === 'Yes' ? 'CHB' : 'None')),
     bbb: editingRecord?.bbb_rbbb === 'Yes' ? 'RBBB' : (editingRecord?.bbb_lbbb === 'Yes' ? 'LBBB' : (editingRecord?.bbb_indeterminate === 'Yes' ? 'Indeterminate' : 'None')),
     qwaves_none: editingRecord?.qwaves_none === 'Yes' || editingRecord?.qwaves_none === true || true,
@@ -298,7 +298,7 @@ const STEMIForm = forwardRef(function STEMIForm(
     ecg_other: editingRecord?.ecg_other || '',
 
     // Section 10: Reports -> Echo
-    echo_ef: editingRecord?.echo_ef || 50,
+    echo_ef: editingRecord?.echo_ef || '',
     lv_function: editingRecord?.lv_function_mild_lvd === 'Yes' ? 'Mild LVD' : (editingRecord?.lv_function_moderate_lvd === 'Yes' ? 'Moderate LVD' : (editingRecord?.lv_function_severe_lvd === 'Yes' ? 'Severe LVD' : 'Normal')),
     rwma_lad: editingRecord?.rwma_lad === 'Yes' || editingRecord?.rwma_lad === true || true,
     rwma_rca: editingRecord?.rwma_rca === 'Yes' || editingRecord?.rwma_rca === true,
@@ -312,14 +312,14 @@ const STEMIForm = forwardRef(function STEMIForm(
     echo_other: editingRecord?.echo_other || '',
 
     // Section 10: Reports -> Blood Investigations
-    hemoglobin: editingRecord?.hemoglobin || 13.5,
-    creatinine: editingRecord?.creatinine || 0.9,
-    troponin_i: editingRecord?.troponin_i || 'Positive',
+    hemoglobin: editingRecord?.hemoglobin || '',
+    creatinine: editingRecord?.creatinine || '',
+    troponin_i: editingRecord?.troponin_i || '',
     cpk: editingRecord?.cpk || '',
     ck_mb: editingRecord?.ck_mb || '',
-    sodium: editingRecord?.sodium || 138,
-    potassium: editingRecord?.potassium || 4.2,
-    rbs_admission: editingRecord?.rbs_admission || 130,
+    sodium: editingRecord?.sodium || '',
+    potassium: editingRecord?.potassium || '',
+    rbs_admission: editingRecord?.rbs_admission || '',
 
     // Section 10: Reports -> CAG
     angiogram_done: editingRecord?.angiogram_done || 'No',
@@ -365,14 +365,14 @@ const STEMIForm = forwardRef(function STEMIForm(
     appr_thrombolysis_indication: editingRecord?.appr_thrombolysis_indication || 'Appropriate',
     appr_ptca_indication: editingRecord?.appr_ptca_indication || 'Appropriate',
     appr_invasive_monitoring: editingRecord?.appr_invasive_monitoring || 'Appropriate',
-    appr_iabp_indication: editingRecord?.appr_iabp_indication || 'Inappropriate',
-    appr_invasive_ventilation: editingRecord?.appr_invasive_ventilation || 'Inappropriate',
-    appr_dialysis_indication: editingRecord?.appr_dialysis_indication || 'Inappropriate',
+    appr_iabp_indication: editingRecord?.appr_iabp_indication || 'Appropriate',
+    appr_invasive_ventilation: editingRecord?.appr_invasive_ventilation || 'Appropriate',
+    appr_dialysis_indication: editingRecord?.appr_dialysis_indication || 'Appropriate',
     appr_other_procedure_name: editingRecord?.appr_other_procedure_name || '',
-    appr_other_procedure_appropriateness: editingRecord?.appr_other_procedure_appropriateness || 'Inappropriate',
+    appr_other_procedure_appropriateness: editingRecord?.appr_other_procedure_appropriateness || 'Appropriate',
     appr_cardiac_enzymes: editingRecord?.appr_cardiac_enzymes || 'Appropriate',
-    appr_bnp: editingRecord?.appr_bnp || 'Inappropriate',
-    appr_crp: editingRecord?.appr_crp || 'Inappropriate',
+    appr_bnp: editingRecord?.appr_bnp || 'Appropriate',
+    appr_crp: editingRecord?.appr_crp || 'Appropriate',
     appr_lipid_profile: editingRecord?.appr_lipid_profile || 'Appropriate',
     appr_bedside_echo: editingRecord?.appr_bedside_echo || 'Appropriate',
     appr_chest_xray: editingRecord?.appr_chest_xray || 'Appropriate',
@@ -380,14 +380,14 @@ const STEMIForm = forwardRef(function STEMIForm(
     appr_aspirin: editingRecord?.appr_aspirin || 'Appropriate',
     appr_clopidogrel: editingRecord?.appr_clopidogrel || 'Appropriate',
     appr_ace_inhibitor: editingRecord?.appr_ace_inhibitor || 'Appropriate',
-    appr_arb: editingRecord?.appr_arb || 'Inappropriate',
+    appr_arb: editingRecord?.appr_arb || 'Appropriate',
     appr_statin: editingRecord?.appr_statin || 'Appropriate',
-    appr_diuretic: editingRecord?.appr_diuretic || 'Inappropriate',
-    appr_lanoxin: editingRecord?.appr_lanoxin || 'Inappropriate',
+    appr_diuretic: editingRecord?.appr_diuretic || 'Appropriate',
+    appr_lanoxin: editingRecord?.appr_lanoxin || 'Appropriate',
     appr_anticoagulant: editingRecord?.appr_anticoagulant || 'Appropriate',
-    appr_amiodarone: editingRecord?.appr_amiodarone || 'Inappropriate',
+    appr_amiodarone: editingRecord?.appr_amiodarone || 'Appropriate',
     appr_other_drug_name: editingRecord?.appr_other_drug_name || '',
-    appr_other_drug_appropriateness: editingRecord?.appr_other_drug_appropriateness || 'Inappropriate',
+    appr_other_drug_appropriateness: editingRecord?.appr_other_drug_appropriateness || 'Appropriate',
 
     appr_iccu_admission_note: editingRecord?.appr_iccu_admission_note ?? editingRecord?.appropriateness?.iccu_admission_note ?? editingRecord?.iccu_admission_note ?? '',
     appr_iccu_transfer_out_note: editingRecord?.appr_iccu_transfer_out_note ?? editingRecord?.appropriateness?.iccu_transfer_out_note ?? editingRecord?.iccu_transfer_out_note ?? '',
@@ -814,7 +814,7 @@ const STEMIForm = forwardRef(function STEMIForm(
     if (formData.history_dm_htn_angina === 'Yes') score += 1;
     if (formData.sbp_lt_100 === 'Yes') score += 3;
     if (formData.heart_rate_gt_100 === 'Yes') score += 2;
-    if (formData.killip_class_ii_to_iv === 'Yes') score += 2;
+    if (['I', 'II', 'III', 'IV', 'Yes'].includes(formData.killip_class_ii_to_iv)) score += 2;
     if (formData.anterior_mi_or_lbbb === 'Yes') score += 1;
     if (formData.weight_lt_67kg === 'Yes') score += 1;
     if (formData.reperfusion_gt_4hrs === 'Yes') score += 1;
@@ -1609,7 +1609,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               {renderRadio('history_dm_htn_angina', 'H/o DM/ HTN/ Angina (+1)', ['Yes', 'No'])}
               {renderRadio('sbp_lt_100', 'SBP < 100 mmHg (+3)', ['Yes', 'No'])}
               {renderRadio('heart_rate_gt_100', 'Heart Rate > 100/ min (+2)', ['Yes', 'No'])}
-              {renderRadio('killip_class_ii_to_iv', 'Killip Class II to IV (+2)', ['Yes', 'No'])}
+              {renderRadio('killip_class_ii_to_iv', 'Killip Class (+2)', ['No', 'I', 'II', 'III', 'IV'])}
               {renderRadio('anterior_mi_or_lbbb', 'Ant MI/ LBBB (+1)', ['Yes', 'No'])}
               {renderRadio('weight_lt_67kg', 'Weight < 67 kg (+1)', ['Yes', 'No'])}
               {renderRadio('reperfusion_gt_4hrs', 'Time to reperfusion > 4 hrs (+1)', ['Yes', 'No'])}

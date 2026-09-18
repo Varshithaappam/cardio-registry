@@ -25,7 +25,7 @@ export const CLINICAL_METRICS = {
     possibleRange: { min: 0, max: 300 },
     evaluationType: 'LOWER_IS_BETTER',
     ranges: {
-      normal: { max: 119, label: 'Normal (< 120 mmHg)' },
+      normal: { min: 90, max: 119, label: 'Normal (90 - 119 mmHg)' },
       medium: { min: 120, max: 139, label: 'Prehypertension (120 - 139 mmHg)' },
       high: { min: 140, max: 300, label: 'Hypertension (≥ 140 mmHg)' }
     }
@@ -37,7 +37,7 @@ export const CLINICAL_METRICS = {
     possibleRange: { min: 0, max: 200 },
     evaluationType: 'LOWER_IS_BETTER',
     ranges: {
-      normal: { max: 79, label: 'Normal (< 80 mmHg)' },
+      normal: { min: 60, max: 79, label: 'Normal (60 - 79 mmHg)' },
       medium: { min: 80, max: 89, label: 'Prehypertension (80 - 89 mmHg)' },
       high: { min: 90, max: 200, label: 'Hypertension (≥ 90 mmHg)' }
     }
@@ -63,7 +63,7 @@ export const CLINICAL_METRICS = {
     possibleRange: { min: 0, max: 500 },
     evaluationType: 'LOWER_IS_BETTER',
     ranges: {
-      normal: { max: 90, label: 'Target Met (≤ 90 min)' },
+      normal: { min: 0, max: 90, label: 'Target Met (≤ 90 min)' },
       medium: { min: 91, max: 120, label: 'Delayed (91 - 120 min)' },
       high: { min: 121, max: 500, label: 'Critical Delay (> 120 min)' }
     }
@@ -75,7 +75,7 @@ export const CLINICAL_METRICS = {
     possibleRange: { min: 0, max: 300 },
     evaluationType: 'LOWER_IS_BETTER',
     ranges: {
-      normal: { max: 30, label: 'Target Met (≤ 30 min)' },
+      normal: { min: 0, max: 30, label: 'Target Met (≤ 30 min)' },
       medium: { min: 31, max: 60, label: 'Delayed (31 - 60 min)' },
       high: { min: 61, max: 300, label: 'Critical Delay (> 60 min)' }
     }
@@ -98,7 +98,7 @@ export const CLINICAL_METRICS = {
     id: 'tenecteplase_dose',
     label: 'Tenecteplase Dose (mg)',
     unit: 'mg',
-    possibleRange: null,
+    possibleRange: { min: 0, max: 100 },
     evaluationType: 'INFO_ONLY'
   },
 
@@ -214,7 +214,7 @@ export const CLINICAL_METRICS = {
     possibleRange: { min: 0, max: 100 },
     evaluationType: 'LOWER_IS_BETTER',
     ranges: {
-      normal: { max: 0.039, label: 'Normal (< 0.04 ng/mL)' },
+      normal: { min: 0, max: 0.039, label: 'Normal (< 0.04 ng/mL)' },
       medium: { min: 0.04, max: 0.39, label: 'Elevated (0.04 - 0.39 ng/mL)' },
       high: { min: 0.40, max: 100, label: 'Myocardial Infarction (≥ 0.40 ng/mL)' }
     }
@@ -238,7 +238,7 @@ export const CLINICAL_METRICS = {
     possibleRange: { min: 0, max: 1000 },
     evaluationType: 'LOWER_IS_BETTER',
     ranges: {
-      normal: { max: 24.9, label: 'Normal (< 25 U/L)' },
+      normal: { min: 0, max: 24.9, label: 'Normal (< 25 U/L)' },
       medium: { min: 25, max: 50, label: 'Elevated (25 - 50 U/L)' },
       high: { min: 50.1, max: 1000, label: 'High (> 50 U/L)' }
     }
@@ -286,28 +286,28 @@ export const CLINICAL_METRICS = {
     possibleRange: { min: 20, max: 1000 },
     evaluationType: 'LOWER_IS_BETTER',
     ranges: {
-      normal: { max: 139, label: 'Normal (< 140 mg/dL)' },
+      normal: { min: 70, max: 139, label: 'Normal (70 - 139 mg/dL)' },
       medium: { min: 140, max: 199, label: 'Pre-diabetes / Impaired (140 - 199 mg/dL)' },
       high: { min: 200, max: 1000, label: 'Diabetes / Severe (≥ 200 mg/dL)' }
     }
   },
 
   // --- HOSPITAL STAY & FINANCIAL AUDITING METRICS (ADMINISTRATIVE) ---
-  iccu_stay: { id: 'iccu_stay', label: 'ICCU Stay (hours)', unit: 'hours', evaluationType: 'INFO_ONLY' },
-  stepdown_icu_stay: { id: 'stepdown_icu_stay', label: 'Step-down ICU Stay (hours)', unit: 'hours', evaluationType: 'INFO_ONLY' },
-  floors_stay: { id: 'floors_stay', label: 'Floors Stay (days)', unit: 'days', evaluationType: 'INFO_ONLY' },
-  total_hospital_stay: { id: 'total_hospital_stay', label: 'Total Hospital Stay (days)', unit: 'days', evaluationType: 'INFO_ONLY' },
-  bed_charges: { id: 'bed_charges', label: 'Bed Charges (INR ₹)', unit: 'INR (₹)', evaluationType: 'INFO_ONLY' },
-  drugs_disposables: { id: 'drugs_disposables', label: 'Drugs & Disposables (INR ₹)', unit: 'INR (₹)', evaluationType: 'INFO_ONLY' },
-  packages: { id: 'packages', label: 'Packages (INR ₹)', unit: 'INR (₹)', evaluationType: 'INFO_ONLY' },
-  lab_investigations: { id: 'lab_investigations', label: 'Lab Investigations (INR ₹)', unit: 'INR (₹)', evaluationType: 'INFO_ONLY' },
-  non_invasive_labs: { id: 'non_invasive_labs', label: 'Non-invasive Labs (INR ₹)', unit: 'INR (₹)', evaluationType: 'INFO_ONLY' },
-  consults: { id: 'consults', label: 'Consults (INR ₹)', unit: 'INR (₹)', evaluationType: 'INFO_ONLY' },
-  radiology: { id: 'radiology', label: 'Radiology (INR ₹)', unit: 'INR (₹)', evaluationType: 'INFO_ONLY' },
-  miscellaneous: { id: 'miscellaneous', label: 'Miscellaneous Charges (INR ₹)', unit: 'INR (₹)', evaluationType: 'INFO_ONLY' }
+  iccu_stay: { id: 'iccu_stay', label: 'ICCU Stay (hours)', unit: 'hours', possibleRange: { min: 0, max: 720 }, evaluationType: 'INFO_ONLY' },
+  stepdown_icu_stay: { id: 'stepdown_icu_stay', label: 'Step-down ICU Stay (hours)', unit: 'hours', possibleRange: { min: 0, max: 720 }, evaluationType: 'INFO_ONLY' },
+  floors_stay: { id: 'floors_stay', label: 'Floors Stay (days)', unit: 'days', possibleRange: { min: 0, max: 180 }, evaluationType: 'INFO_ONLY' },
+  total_hospital_stay: { id: 'total_hospital_stay', label: 'Total Hospital Stay (days)', unit: 'days', possibleRange: { min: 0, max: 180 }, evaluationType: 'INFO_ONLY' },
+  bed_charges: { id: 'bed_charges', label: 'Bed Charges (INR ₹)', unit: 'INR (₹)', possibleRange: { min: 0, max: 10000000 }, evaluationType: 'INFO_ONLY' },
+  drugs_disposables: { id: 'drugs_disposables', label: 'Drugs & Disposables (INR ₹)', unit: 'INR (₹)', possibleRange: { min: 0, max: 10000000 }, evaluationType: 'INFO_ONLY' },
+  packages: { id: 'packages', label: 'Packages (INR ₹)', unit: 'INR (₹)', possibleRange: { min: 0, max: 10000000 }, evaluationType: 'INFO_ONLY' },
+  lab_investigations: { id: 'lab_investigations', label: 'Lab Investigations (INR ₹)', unit: 'INR (₹)', possibleRange: { min: 0, max: 10000000 }, evaluationType: 'INFO_ONLY' },
+  non_invasive_labs: { id: 'non_invasive_labs', label: 'Non-invasive Labs (INR ₹)', unit: 'INR (₹)', possibleRange: { min: 0, max: 10000000 }, evaluationType: 'INFO_ONLY' },
+  consults: { id: 'consults', label: 'Consults (INR ₹)', unit: 'INR (₹)', possibleRange: { min: 0, max: 10000000 }, evaluationType: 'INFO_ONLY' },
+  radiology: { id: 'radiology', label: 'Radiology (INR ₹)', unit: 'INR (₹)', possibleRange: { min: 0, max: 10000000 }, evaluationType: 'INFO_ONLY' },
+  miscellaneous: { id: 'miscellaneous', label: 'Miscellaneous Charges (INR ₹)', unit: 'INR (₹)', possibleRange: { min: 0, max: 10000000 }, evaluationType: 'INFO_ONLY' }
 };
 
-const FIELD_ALIASES = {
+export const FIELD_ALIASES = {
   systolic_bp: 'sbp',
   diastolic_bp: 'dbp',
   door_to_balloon_time: 'door_to_balloon',
@@ -325,15 +325,26 @@ const FIELD_ALIASES = {
 
 /**
  * Evaluates a numeric patient value against WHO/ACC/AHA clinical metrics rules.
+ * 
+ * 1. Absolute Boundary Validation (Error State):
+ *    - If value is outside possibleRange { min, max }, returns OUT_OF_RANGE status with:
+ *      errorMessage: "Value is outside the permitted clinical range."
+ * 
+ * 2. Explicit Categories (Standard Badges):
+ *    - Checks explicit normal, medium, high ranges defined in metrics config.
+ * 
+ * 3. Dynamic Fallbacks (Abnormal Badges):
+ *    - Below Normal: If value < minimum of defined Normal range -> returns "Abnormal (Low)"
+ *    - Above Highest Category: If value > maximum of highest defined category -> returns "Abnormal (High)"
+ *
  * @param {string} metricId - Key from CLINICAL_METRICS or alias (e.g., 'pulse_rate', 'systolic_bp', 'troponin_i')
  * @param {number|string} rawValue - Patient input value
- * @returns {Object|null} Alert status & Tailwind UI styles OR null if empty/invalid/out-of-scope.
+ * @returns {Object|null} Evaluation object containing status, label, badgeClass, isError, errorMessage OR null.
  */
 export function evaluateClinicalMetric(metricId, rawValue) {
   const resolvedKey = FIELD_ALIASES[metricId] || metricId;
   const config = CLINICAL_METRICS[resolvedKey];
 
-  // Strict Null Fallback: Return null if no config, empty/null/undefined value, or INFO_ONLY metric
   if (!config || rawValue === '' || rawValue === null || rawValue === undefined) {
     return null;
   }
@@ -343,16 +354,35 @@ export function evaluateClinicalMetric(metricId, rawValue) {
     return null;
   }
 
+  // 1. Absolute Boundary Validation (Error State)
+  if (config.possibleRange && typeof config.possibleRange === 'object') {
+    const { min: absMin, max: absMax } = config.possibleRange;
+    if ((absMin !== undefined && absMin !== null && val < absMin) ||
+        (absMax !== undefined && absMax !== null && val > absMax)) {
+      return {
+        status: 'OUT_OF_RANGE',
+        isError: true,
+        errorMessage: 'Value is outside the permitted clinical range.',
+        label: 'Value is outside the permitted clinical range.',
+        badgeClass: 'bg-red-100 text-red-800 border-red-300 font-bold',
+        textClass: 'text-red-600',
+        borderClass: 'border-red-500 focus:ring-red-500/20'
+      };
+    }
+  }
+
+  // If metric is INFO_ONLY or has no ranges defined, return null if within possibleRange
   if (config.evaluationType === 'INFO_ONLY' || !config.ranges) {
     return null;
   }
 
   const { ranges } = config;
 
-  // 1. Check HIGH / SEVERE Range
+  // 2. Explicit Categories (Standard Badges)
+
+  // Check HIGH / SEVERE Range
   let isHigh = false;
   let highLabel = ranges.high?.label || 'Severe / High Risk';
-
   if (Array.isArray(ranges.high)) {
     isHigh = ranges.high.some(r => (r.min !== undefined ? val >= r.min : true) && (r.max !== undefined ? val <= r.max : true));
   } else if (ranges.high) {
@@ -363,6 +393,7 @@ export function evaluateClinicalMetric(metricId, rawValue) {
     return {
       status: 'HIGH',
       severity: 'high',
+      isError: false,
       label: highLabel,
       badgeClass: 'bg-rose-50 text-rose-700 border-rose-200 font-bold',
       textClass: 'text-rose-600',
@@ -370,10 +401,9 @@ export function evaluateClinicalMetric(metricId, rawValue) {
     };
   }
 
-  // 2. Check MEDIUM / BORDERLINE Range
+  // Check MEDIUM / BORDERLINE Range
   let isMedium = false;
   let mediumLabel = ranges.medium?.label || 'Borderline / Medium';
-
   if (Array.isArray(ranges.medium)) {
     isMedium = ranges.medium.some(r => (r.min !== undefined ? val >= r.min : true) && (r.max !== undefined ? val <= r.max : true));
   } else if (ranges.medium) {
@@ -384,6 +414,7 @@ export function evaluateClinicalMetric(metricId, rawValue) {
     return {
       status: 'MEDIUM',
       severity: 'medium',
+      isError: false,
       label: mediumLabel,
       badgeClass: 'bg-amber-50 text-amber-700 border-amber-200 font-bold',
       textClass: 'text-amber-600',
@@ -391,10 +422,9 @@ export function evaluateClinicalMetric(metricId, rawValue) {
     };
   }
 
-  // 3. Check NORMAL Range
+  // Check NORMAL Range
   let isNormal = false;
   let normalLabel = ranges.normal?.label || 'Normal';
-
   if (Array.isArray(ranges.normal)) {
     isNormal = ranges.normal.some(r => (r.min !== undefined ? val >= r.min : true) && (r.max !== undefined ? val <= r.max : true));
   } else if (ranges.normal) {
@@ -405,6 +435,7 @@ export function evaluateClinicalMetric(metricId, rawValue) {
     return {
       status: 'NORMAL',
       severity: 'low',
+      isError: false,
       label: normalLabel,
       badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200 font-medium',
       textClass: 'text-emerald-600',
@@ -412,7 +443,82 @@ export function evaluateClinicalMetric(metricId, rawValue) {
     };
   }
 
-  // Strict Null Fallback if not matching any defined range
+  // 3. Dynamic Fallbacks (Abnormal Badges)
+
+  // a) Below Normal Range Minimum Check
+  let normalMin = null;
+  if (ranges.normal) {
+    if (Array.isArray(ranges.normal)) {
+      const mins = ranges.normal.map(r => r.min).filter(v => v !== undefined && v !== null);
+      if (mins.length > 0) normalMin = Math.min(...mins);
+    } else if (ranges.normal.min !== undefined && ranges.normal.min !== null) {
+      normalMin = ranges.normal.min;
+    }
+  }
+
+  if (normalMin !== null && val < normalMin) {
+    return {
+      status: 'ABNORMAL_LOW',
+      severity: 'medium',
+      isError: false,
+      label: 'Abnormal (Low)',
+      badgeClass: 'bg-amber-100 text-amber-900 border-amber-300 font-bold shadow-2xs',
+      textClass: 'text-amber-700',
+      borderClass: 'border-amber-400 focus:ring-amber-500/20'
+    };
+  }
+
+  // b) Above Highest Category Maximum Check
+  const definedMaxes = [];
+  ['normal', 'medium', 'high'].forEach(cat => {
+    const catObj = ranges[cat];
+    if (Array.isArray(catObj)) {
+      catObj.forEach(r => {
+        if (r.max !== undefined && r.max !== null) definedMaxes.push(r.max);
+      });
+    } else if (catObj && catObj.max !== undefined && catObj.max !== null) {
+      definedMaxes.push(catObj.max);
+    }
+  });
+
+  const highestCategoryMax = definedMaxes.length > 0 ? Math.max(...definedMaxes) : null;
+  if (highestCategoryMax !== null && val > highestCategoryMax) {
+    return {
+      status: 'ABNORMAL_HIGH',
+      severity: 'high',
+      isError: false,
+      label: 'Abnormal (High)',
+      badgeClass: 'bg-rose-100 text-rose-900 border-rose-300 font-bold shadow-2xs',
+      textClass: 'text-rose-700',
+      borderClass: 'border-rose-400 focus:ring-rose-500/20'
+    };
+  }
+
+  // c) Fallback if val < lowest defined min across all categories
+  const definedMins = [];
+  ['normal', 'medium', 'high'].forEach(cat => {
+    const catObj = ranges[cat];
+    if (Array.isArray(catObj)) {
+      catObj.forEach(r => {
+        if (r.min !== undefined && r.min !== null) definedMins.push(r.min);
+      });
+    } else if (catObj && catObj.min !== undefined && catObj.min !== null) {
+      definedMins.push(catObj.min);
+    }
+  });
+  const lowestDefinedMin = definedMins.length > 0 ? Math.min(...definedMins) : null;
+  if (lowestDefinedMin !== null && val < lowestDefinedMin) {
+    return {
+      status: 'ABNORMAL_LOW',
+      severity: 'medium',
+      isError: false,
+      label: 'Abnormal (Low)',
+      badgeClass: 'bg-amber-100 text-amber-900 border-amber-300 font-bold shadow-2xs',
+      textClass: 'text-amber-700',
+      borderClass: 'border-amber-400 focus:ring-amber-500/20'
+    };
+  }
+
   return null;
 }
 

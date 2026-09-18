@@ -323,6 +323,75 @@ async function ensureAuditTable() {
   }
 }
 
+async function ensureRegisterPatientSP() {
+  try {
+    const spQuery = `
+      CREATE OR ALTER PROCEDURE dbo.usp_RegisterPatient
+          @mr_no                 VARCHAR(10)   = NULL,
+          @ip_no                 VARCHAR(10)   = NULL,
+          @patient_name          NVARCHAR(150),
+          @date_of_birth         DATE,
+          @gender                NVARCHAR(6)   = 'Unknown',
+          @blood_group           NVARCHAR(7)   = 'Unknown',
+          @insurance_mode        NVARCHAR(24)  = 'Unknown',
+          @phone_no              VARCHAR(15)   = NULL,
+          @email                 VARCHAR(100)  = NULL,
+          @hypertension          NVARCHAR(7)   = 'No',
+          @smoking               NVARCHAR(7)   = 'No',
+          @diabetes              NVARCHAR(7)   = 'No',
+          @diabetes_control_type NVARCHAR(26)  = 'Unknown',
+          @renal_failure         NVARCHAR(7)   = 'No',
+          @active_dialysis_status NVARCHAR(14) = 'Unknown',
+          @address               VARCHAR(500)  = NULL,
+          @house_flat_no         NVARCHAR(100) = NULL,
+          @street_locality       NVARCHAR(255) = NULL,
+          @village_town          NVARCHAR(150) = NULL,
+          @mandal                NVARCHAR(100) = NULL,
+          @district              NVARCHAR(100) = NULL,
+          @state                 NVARCHAR(100) = NULL,
+          @pincode               VARCHAR(10)   = NULL,
+          @higher_education      NVARCHAR(13)  = 'None',
+          @occupation            VARCHAR(255)  = NULL,
+          @uhid                  VARCHAR(50)   = NULL,
+          @abha_number           VARCHAR(50)   = NULL,
+          @patient_status        VARCHAR(20)   = 'ACTIVE',
+          @date_of_death         DATE          = NULL,
+          @merged_into_patient_id INT          = NULL,
+          @NewPatientId          INT           = NULL OUTPUT
+      AS
+      BEGIN
+          SET NOCOUNT ON;
+
+          INSERT INTO dbo.patient_demographics (
+              mr_no, ip_no, patient_name, date_of_birth, gender, blood_group,
+              insurance_mode, phone_no, email, hypertension, smoking, diabetes,
+              diabetes_control_type, renal_failure, active_dialysis_status, address,
+              house_flat_no, street_locality, village_town, mandal, district, state, pincode,
+              higher_education, occupation, uhid, abha_number,
+              patient_status, date_of_death, merged_into_patient_id,
+              created_at, updated_at
+          )
+          VALUES (
+              @mr_no, @ip_no, @patient_name, @date_of_birth, @gender, @blood_group,
+              @insurance_mode, @phone_no, @email, @hypertension, @smoking, @diabetes,
+              @diabetes_control_type, @renal_failure, @active_dialysis_status, @address,
+              @house_flat_no, @street_locality, @village_town, @mandal, @district, @state, @pincode,
+              @higher_education, @occupation, @uhid, @abha_number,
+              ISNULL(@patient_status, 'ACTIVE'), @date_of_death, @merged_into_patient_id,
+              SYSDATETIME(), SYSDATETIME()
+          );
+
+          SET @NewPatientId = SCOPE_IDENTITY();
+          SELECT @NewPatientId AS reg_patient_id;
+      END;
+    `;
+    await query(spQuery);
+    console.log('✓ Verified/Updated stored procedure [dbo.usp_RegisterPatient]');
+  } catch (err) {
+    console.warn('⚠️ usp_RegisterPatient stored procedure check notice:', err.message);
+  }
+}
+
 async function healthCheck() {
   try {
     const result = await query('SELECT 1 AS ok;');
@@ -330,6 +399,7 @@ async function healthCheck() {
     console.log('✅ SQL Server Database Connected Successfully');
     await ensureAuditTable();
     await ensureAppropriatenessColumns();
+    await ensureRegisterPatientSP();
     return result.recordset[0];
   } catch (error) {
     console.error('❌ SQL Server Connection Failed');
@@ -341,6 +411,6 @@ async function healthCheck() {
   }
 }
 
-module.exports = { sql, getPool, getConnection, query, insert, healthCheck, ensureAppropriatenessColumns, ensureAuditTable };
+module.exports = { sql, getPool, getConnection, query, insert, healthCheck, ensureAppropriatenessColumns, ensureAuditTable, ensureRegisterPatientSP };
 
 
