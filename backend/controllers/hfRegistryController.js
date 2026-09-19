@@ -254,8 +254,8 @@ const getPatientAuditLog = async (req, res) => {
         p.patient_name, 
         p.mr_no 
       FROM system_audit_log s
-      LEFT JOIN patient_demographics p ON s.patient_id = p.reg_patient_id 
-      WHERE s.patient_id = @regPatientId
+      LEFT JOIN patient_demographics p ON TRY_CAST(s.patient_id AS INT) = p.reg_patient_id 
+      WHERE (s.patient_id = CAST(@regPatientId AS VARCHAR(100)) OR TRY_CAST(s.patient_id AS INT) = @regPatientId)
 
       UNION ALL
 
@@ -276,13 +276,13 @@ const getPatientAuditLog = async (req, res) => {
         p.patient_name, 
         p.mr_no 
       FROM hf_registry_audit a 
-      LEFT JOIN users u ON a.user_id = u.user_id 
+      LEFT JOIN users u ON (CAST(a.user_id AS VARCHAR(100)) = CAST(u.user_id AS VARCHAR(100)) OR u.username = CAST(a.user_id AS VARCHAR(100))) 
       LEFT JOIN hf_registry hf ON a.hf_id = hf.hf_id 
       LEFT JOIN patient_demographics p ON hf.reg_patient_id = p.reg_patient_id 
       WHERE p.reg_patient_id = @regPatientId
         AND NOT EXISTS (
           SELECT 1 FROM system_audit_log s 
-          WHERE s.patient_id = p.reg_patient_id 
+          WHERE (s.patient_id = CAST(p.reg_patient_id AS VARCHAR(100)) OR TRY_CAST(s.patient_id AS INT) = p.reg_patient_id)
             AND s.registry_type = 'HF'
             AND s.timestamp BETWEEN DATEADD(second, -5, a.timestamp) AND DATEADD(second, 5, a.timestamp)
         )
@@ -338,7 +338,6 @@ const getPatientAuditLog = async (req, res) => {
   }
 };
 
-
 /**
  * Expose Single HF Record Audit Logs Endpoint (GET /api/hf-registry/:id/audit)
  */
@@ -359,15 +358,15 @@ const getAuditLog = async (req, res) => {
         a.previous_values,
         a.new_values, 
         a.timestamp, 
-        u.username, 
+        COALESCE(u.username, CAST(a.user_id AS VARCHAR(100))) AS username, 
         u.email, 
         p.reg_patient_id, 
         p.patient_name, 
         p.mr_no 
       FROM hf_registry_audit a 
-      JOIN users u ON a.user_id = u.user_id 
-      JOIN hf_registry hf ON a.hf_id = hf.hf_id 
-      JOIN patient_demographics p ON hf.reg_patient_id = p.reg_patient_id 
+      LEFT JOIN users u ON (CAST(a.user_id AS VARCHAR(100)) = CAST(u.user_id AS VARCHAR(100)) OR u.username = CAST(a.user_id AS VARCHAR(100))) 
+      LEFT JOIN hf_registry hf ON a.hf_id = hf.hf_id 
+      LEFT JOIN patient_demographics p ON hf.reg_patient_id = p.reg_patient_id 
       WHERE a.hf_id = @targetId
       ORDER BY a.timestamp DESC;
     `;
@@ -376,9 +375,9 @@ const getAuditLog = async (req, res) => {
     // Fallback if no rows found by JOINs
     if (rows.length === 0) {
       const fallbackQuery = `
-        SELECT a.*, u.username, u.email
+        SELECT a.*, COALESCE(u.username, CAST(a.user_id AS VARCHAR(100))) AS username, u.email
         FROM hf_registry_audit a
-        JOIN users u ON a.user_id = u.user_id
+        LEFT JOIN users u ON (CAST(a.user_id AS VARCHAR(100)) = CAST(u.user_id AS VARCHAR(100)) OR u.username = CAST(a.user_id AS VARCHAR(100)))
         WHERE a.hf_id = @targetId
         ORDER BY a.timestamp DESC
       `;
@@ -462,8 +461,8 @@ const exportPatientAuditExcel = async (req, res) => {
             p.patient_name, 
             p.mr_no 
           FROM system_audit_log s
-          LEFT JOIN patient_demographics p ON s.patient_id = p.reg_patient_id 
-          WHERE s.patient_id = @regPatientId
+          LEFT JOIN patient_demographics p ON TRY_CAST(s.patient_id AS INT) = p.reg_patient_id 
+          WHERE (s.patient_id = CAST(@regPatientId AS VARCHAR(100)) OR TRY_CAST(s.patient_id AS INT) = @regPatientId)
 
           UNION ALL
 
@@ -484,13 +483,13 @@ const exportPatientAuditExcel = async (req, res) => {
             p.patient_name, 
             p.mr_no 
           FROM hf_registry_audit a 
-          LEFT JOIN users u ON a.user_id = u.user_id 
+          LEFT JOIN users u ON (CAST(a.user_id AS VARCHAR(100)) = CAST(u.user_id AS VARCHAR(100)) OR u.username = CAST(a.user_id AS VARCHAR(100))) 
           LEFT JOIN hf_registry hf ON a.hf_id = hf.hf_id 
           LEFT JOIN patient_demographics p ON hf.reg_patient_id = p.reg_patient_id 
           WHERE p.reg_patient_id = @regPatientId
             AND NOT EXISTS (
               SELECT 1 FROM system_audit_log s 
-              WHERE s.patient_id = p.reg_patient_id 
+              WHERE (s.patient_id = CAST(p.reg_patient_id AS VARCHAR(100)) OR TRY_CAST(s.patient_id AS INT) = p.reg_patient_id)
                 AND s.registry_type = 'HF'
                 AND s.timestamp BETWEEN DATEADD(second, -5, a.timestamp) AND DATEADD(second, 5, a.timestamp)
             )
