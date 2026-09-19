@@ -329,10 +329,11 @@ const getPatientAuditLog = async (req, res) => {
       data
     });
   } catch (error) {
-    console.error('Error fetching patient audit history:', error);
+    console.error('SQL Error (getPatientAuditLog):', error.message || error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to retrieve patient audit history.'
+      message: error.message || 'Failed to retrieve patient audit history.',
+      error: error.message
     });
   }
 };

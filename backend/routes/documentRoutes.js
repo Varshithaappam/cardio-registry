@@ -119,14 +119,17 @@ router.post("/upload", (req, res) => {
 router.get("/:hf_id", async (req, res) => {
     try {
         const hf_id = req.params.hf_id;
+        if (!hf_id || String(hf_id).startsWith('temp-')) {
+            return res.status(200).json({ success: true, data: [] });
+        }
         const { recordset: rows } = await db.query(
             'SELECT * FROM [hf_patient_documents] WHERE [hf_id] = @hfId ORDER BY [uploaded_at] DESC;',
             { hfId: hf_id }
         );
-        return res.status(200).json({ success: true, data: rows });
+        return res.status(200).json({ success: true, data: rows || [] });
     } catch (error) {
         console.error("Error retrieving documents:", error);
-        return res.status(500).json({ success: false, message: "Failed to retrieve documents." });
+        return res.status(500).json({ success: false, message: "Failed to retrieve documents.", error: error.message });
     }
 });
 
