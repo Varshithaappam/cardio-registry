@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import FormField from './FormField';
 import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
 
-export default function NumberInput({
+function NumberInput({
   label,
   value,
   onChange,
@@ -16,15 +16,61 @@ export default function NumberInput({
   disabled = false,
   className = '',
   readOnly = false,
-  error = null
+  error = null,
+  debounceMs = 200,
+  onBlur
 }) {
   const isDisabled = disabled || readOnly;
+  const propStrVal = value !== undefined && value !== null ? String(value) : '';
+  const [localVal, setLocalVal] = useState(propStrVal);
+  const debounceTimerRef = useRef(null);
+
+  useEffect(() => {
+    setLocalVal(propStrVal);
+  }, [propStrVal]);
+
+  const flushChange = useCallback(
+    (newVal) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      if (onChange && newVal !== propStrVal) {
+        onChange(newVal);
+      }
+    },
+    [onChange, propStrVal]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
   const handleChange = (val) => {
     if (maxLength && val.length > maxLength) return;
     if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
-      onChange(val);
-    } else {
-      alert("enter only numbers");
+      setLocalVal(val);
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(() => {
+        if (onChange) {
+          onChange(val);
+        }
+      }, debounceMs);
+    }
+  };
+
+  const handleBlur = (e) => {
+    flushChange(localVal);
+    if (onBlur) {
+      onBlur(e);
     }
   };
 
@@ -36,12 +82,15 @@ export default function NumberInput({
         disabled={isDisabled}
         readOnly={readOnly}
         required={required}
-        value={value ?? ''}
+        value={localVal}
         placeholder={placeholder}
         maxLength={maxLength}
         onChange={(e) => handleChange(e.target.value)}
+        onBlur={handleBlur}
         className={error ? INPUT_ERROR_STYLES : isDisabled ? INPUT_DISABLED_STYLES : INPUT_NORMAL_STYLES}
       />
     </FormField>
   );
 }
+
+export default memo(NumberInput);

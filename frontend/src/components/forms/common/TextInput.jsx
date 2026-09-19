@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import ValidatedTextField from './ValidatedTextField';
 
-export default function TextInput({
+function TextInput({
   label,
   value,
   onChange,
@@ -41,3 +41,5 @@ export default function TextInput({
     />
   );
 }
+
+export default memo(TextInput);

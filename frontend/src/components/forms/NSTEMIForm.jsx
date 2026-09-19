@@ -477,8 +477,9 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     return score;
   };
 
-  const handleChange = (field, value) => {
+  const handleChange = useCallback((field, value) => {
     setFormData((prev) => {
+      if (prev[field] === value) return prev;
       const updated = { ...prev, [field]: value };
 
       // Recompute TIMI Risk Score dynamically
@@ -527,7 +528,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
       return updated;
     });
-  };
+  }, []);
 
   // Build flattener payload for backend compatibility matching nstemi_* DB tables
   const getFlattenedData = () => {

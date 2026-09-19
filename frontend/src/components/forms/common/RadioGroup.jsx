@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import FormField from './FormField';
 import {
   FORM_STYLES,
@@ -34,7 +34,7 @@ export const isRadioChecked = (stateVal, optVal) => {
   return false;
 };
 
-export default function RadioGroup({
+function RadioGroup({
   label,
   name,
   options,
@@ -84,3 +84,5 @@ export default function RadioGroup({
     </FormField>
   );
 }
+
+export default memo(RadioGroup);

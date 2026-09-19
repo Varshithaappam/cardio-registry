@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import FormField from './FormField';
 import {
   FORM_STYLES,
@@ -15,7 +15,7 @@ const columnClass = {
   4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
 };
 
-export default function CheckboxGroup({
+function CheckboxGroup({
   label,
   options,
   values = [],
@@ -69,3 +69,5 @@ export default function CheckboxGroup({
     </FormField>
   );
 }
+
+export default memo(CheckboxGroup);

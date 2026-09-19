@@ -740,8 +740,9 @@ const STEMIForm = forwardRef(function STEMIForm(
     });
   };
 
-  const handleChange = (field, value) => {
+  const handleChange = useCallback((field, value) => {
     setFormData((prev) => {
+      if (prev[field] === value) return prev;
       const updated = { ...prev, [field]: value };
 
       if (field === 'treatment_strategy') {
@@ -765,14 +766,13 @@ const STEMIForm = forwardRef(function STEMIForm(
       return updated;
     });
 
-    if (formErrors[field]) {
-      setFormErrors((prev) => {
-        const newErr = { ...prev };
-        delete newErr[field];
-        return newErr;
-      });
-    }
-  };
+    setFormErrors((prev) => {
+      if (!prev[field]) return prev;
+      const newErr = { ...prev };
+      delete newErr[field];
+      return newErr;
+    });
+  }, []);
 
   const validateField = (field, value) => {
     if (field === 'admission_date' && !value) {

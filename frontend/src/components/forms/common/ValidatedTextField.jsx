@@ -1,14 +1,13 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 import FormField from './FormField';
 import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
 
 /**
  * ValidatedTextField Component
- * Reusable input / textarea wrapper enforcing strict maxLength attributes,
- * auto-resizing height for textareas, dynamic live "{used}/{maxLength}" character counters,
- * and Tailwind warning styles when approaching limits.
+ * Optimized with local state isolation, debounced parent propagation,
+ * and React.memo to eliminate typing lag across large medical forms.
  */
-export default function ValidatedTextField({
+function ValidatedTextField({
   label,
   value,
   onChange,
@@ -27,13 +26,46 @@ export default function ValidatedTextField({
   error = null,
   showCounter = true,
   type = 'text',
+  debounceMs = 200,
+  onBlur,
   ...restProps
 }) {
   const isDisabled = disabled || readOnly;
-  const strVal = value !== undefined && value !== null ? String(value) : '';
-  const currentLength = strVal.length;
-  const isWarning = maxLength - currentLength <= warningThreshold;
+  const propStrVal = value !== undefined && value !== null ? String(value) : '';
+  const [localVal, setLocalVal] = useState(propStrVal);
+  const debounceTimerRef = useRef(null);
   const textareaRef = useRef(null);
+
+  // Synchronize local value when external value changes
+  useEffect(() => {
+    setLocalVal(propStrVal);
+  }, [propStrVal]);
+
+  // Flush pending changes to parent
+  const flushChange = useCallback(
+    (newVal) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      if (onChange && newVal !== propStrVal) {
+        onChange(newVal);
+      }
+    },
+    [onChange, propStrVal]
+  );
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  const currentLength = localVal.length;
+  const isWarning = maxLength - currentLength <= warningThreshold;
 
   const adjustHeight = (el) => {
     const target = el || textareaRef.current;
@@ -47,15 +79,31 @@ export default function ValidatedTextField({
     if (multiline || rows >= 1) {
       adjustHeight();
     }
-  }, [strVal, multiline, rows]);
+  }, [localVal, multiline, rows]);
 
   const handleChange = (e) => {
     const newVal = e && e.target !== undefined ? e.target.value : e;
-    if (onChange) {
-      onChange(newVal);
-    }
+    setLocalVal(newVal);
+
     if (e && e.target) {
       adjustHeight(e.target);
+    }
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      if (onChange) {
+        onChange(newVal);
+      }
+    }, debounceMs);
+  };
+
+  const handleBlur = (e) => {
+    flushChange(localVal);
+    if (onBlur) {
+      onBlur(e);
     }
   };
 
@@ -74,10 +122,11 @@ export default function ValidatedTextField({
             id={id || name}
             name={name || id}
             rows={rows}
-            value={strVal}
+            value={localVal}
             placeholder={placeholder}
             maxLength={maxLength}
             onChange={handleChange}
+            onBlur={handleBlur}
             onInput={(e) => adjustHeight(e.target)}
             disabled={isDisabled}
             readOnly={readOnly}
@@ -91,10 +140,11 @@ export default function ValidatedTextField({
             name={name || id}
             type={type}
             required={required}
-            value={strVal}
+            value={localVal}
             placeholder={placeholder}
             maxLength={maxLength}
             onChange={handleChange}
+            onBlur={handleBlur}
             disabled={isDisabled}
             readOnly={readOnly}
             className={`${fieldStyles} ${inputClassName}`}
@@ -119,3 +169,5 @@ export default function ValidatedTextField({
     </FormField>
   );
 }
+
+export default memo(ValidatedTextField);

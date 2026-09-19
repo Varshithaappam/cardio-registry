@@ -1,12 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
 
 /**
  * TextArea Component
- * Auto-resizing textarea starting at 1 row tall when empty, expanding/shrinking
- * dynamically to match exact scrollHeight without extra vertical space or scrollbars.
- * Features live character counter formatted as "{used}/{maxLength}" (e.g. "0/250" or "15/250").
+ * Optimized with local state isolation, debounced parent propagation,
+ * and React.memo to eliminate typing lag across large medical forms.
  */
-export default function TextArea({
+function TextArea({
   label,
   value = '',
   onChange,
@@ -23,12 +22,42 @@ export default function TextArea({
   warningThreshold = 10,
   error = null,
   showCounter = true,
+  debounceMs = 200,
+  onBlur,
   ...restProps
 }) {
-  const textareaRef = useRef(null);
   const isDisabled = disabled || readOnly;
-  const strVal = value !== undefined && value !== null ? String(value) : '';
-  const currentLength = strVal.length;
+  const propStrVal = value !== undefined && value !== null ? String(value) : '';
+  const [localVal, setLocalVal] = useState(propStrVal);
+  const debounceTimerRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  useEffect(() => {
+    setLocalVal(propStrVal);
+  }, [propStrVal]);
+
+  const flushChange = useCallback(
+    (newVal) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      if (onChange && newVal !== propStrVal) {
+        onChange(newVal);
+      }
+    },
+    [onChange, propStrVal]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  const currentLength = localVal.length;
   const isWarning = maxLength - currentLength <= warningThreshold;
 
   const adjustHeight = (el) => {
@@ -41,15 +70,31 @@ export default function TextArea({
 
   useEffect(() => {
     adjustHeight();
-  }, [strVal]);
+  }, [localVal]);
 
   const handleChange = (e) => {
-    const val = e && e.target !== undefined ? e.target.value : e;
-    if (onChange) {
-      onChange(val);
-    }
+    const newVal = e && e.target !== undefined ? e.target.value : e;
+    setLocalVal(newVal);
+
     if (e && e.target) {
       adjustHeight(e.target);
+    }
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      if (onChange) {
+        onChange(newVal);
+      }
+    }, debounceMs);
+  };
+
+  const handleBlur = (e) => {
+    flushChange(localVal);
+    if (onBlur) {
+      onBlur(e);
     }
   };
 
@@ -68,10 +113,11 @@ export default function TextArea({
           id={id || name}
           name={name || id}
           rows={rows}
-          value={strVal}
+          value={localVal}
           placeholder={placeholder}
           maxLength={maxLength}
           onChange={handleChange}
+          onBlur={handleBlur}
           onInput={(e) => adjustHeight(e.target)}
           disabled={isDisabled}
           readOnly={readOnly}
@@ -101,3 +147,5 @@ export default function TextArea({
     </div>
   );
 }
+
+export default memo(TextArea);

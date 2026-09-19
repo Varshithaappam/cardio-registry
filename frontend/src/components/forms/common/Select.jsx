@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { memo } from 'react';
 import FormField from './FormField';
 import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
 
-export default function Select({
+function Select({
   label,
   value,
   onChange,
@@ -40,3 +40,5 @@ export default function Select({
     </FormField>
   );
 }
+
+export default memo(Select);

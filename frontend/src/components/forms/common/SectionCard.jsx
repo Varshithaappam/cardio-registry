@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { FORM_STYLES } from './formStyles';
 
-export default function SectionCard({ title, subtitle, children, className = '', disabled = false }) {
+function SectionCard({ title, subtitle, children, className = '', disabled = false }) {
   return (
     <section className={`border border-slate-200 rounded-xl p-4 space-y-4 transition-all shadow-xs bg-white ${
       disabled ? 'bg-slate-100/50 border-slate-200/60 opacity-60 text-slate-400 select-none pointer-events-none' : ''
@@ -13,3 +13,5 @@ export default function SectionCard({ title, subtitle, children, className = '',
     </section>
   );
 }
+
+export default memo(SectionCard);

@@ -2710,7 +2710,7 @@ const hf = forwardRef(function hf(
     const isValFilled = (val) => {
       if (val === null || val === undefined) return false;
       if (typeof val === 'string') return val.trim() !== '' && val.trim() !== 'No' && val.trim() !== 'Unknown';
-      if (typeof val === 'number') return !isNaN(val) && val !== 0;
+      if (typeof val === 'number') return !isNaN(val);
       if (typeof val === 'boolean') return val;
       if (Array.isArray(val)) return val.some(isValFilled);
       if (typeof val === 'object') return Object.values(val).some(isValFilled);
@@ -2718,33 +2718,9 @@ const hf = forwardRef(function hf(
     };
 
     try {
-      const userStateValues = [
-        visitId, caregiverName, caregiverRelationship, caregiverPhone, highestEducation,
-        monthlyIncome, occupation, address, insuranceMode, referredFrom,
-        presentDiagnosis, precipitatingFactors, otherPrecipitatingFactor,
-        nonHfAdmissionReason, daysHospitalized, dischargeDate, encounterId,
-        previousDiagnosis, pastMiYearsAgo, pastMiLocation, historyOther,
-        recentHospitalizationDates, recentHospitalizationReasons, syncopeFrequency,
-        pvcCount, pvcFrequency, nsvtFrequency, vWeight, vHeight, vHr, vRr, vO2,
-        vBpSittingSystolic, vBpSittingDiastolic, vBpStandingSystolic, vBpStandingDiastolic,
-        vUnableToWeighReason,
-        symptomDyspneaAtRest, symptomDyspneaWithExertion, symptomFatigue, symptomOrthopnea, symptomLossOfAppetite, symptomDecreasedExercise, symptomWeightGain, symptomWeightLoss, symptomSyncope, symptomPnd, symptomMuscleCramps, symptomWheeze, symptomGiddiness, symptomOther, symptomOtherDetails,
-        signPeripheralEdema, signRales, signHepatomegaly, signAscites, signJvp, signClinicalOther, signClinicalOtherDetails,
-        riskFactors, comorbidities,
-        historyCabg, historyPtca, historyStroke, historyMajorBleed, historyThrombolysis, historyPastMi,
-        hfEtiologyCv, hfEtiologyNonCv, hfEtiologyPulm,
-        initialClinicalNotes, maceEvents, finalClinicalNotes, selectedInvestigations,
-        ecgHr, echoEf, bnpValue, creatinineValue, potassiumValue, investigationNotes,
-        drugRows, drugContraindications, hfDevBrand, eligibleDeviceBrand,
-        echoLvdd, echoLvds, echoLvh, echoLaSize, echoMr, echoTr, echoAr, echoOtherValves,
-        echoRvSystolicPressure, echoRwmi, ecgRhythm, ecgRate, ecgQrsDuration,
-        labNtProBnp, labTroponin, labHemoglobin, labSerumCreatinine, labSerumPotassium,
-        labSerumSodium, labHbA1c, labUricAcid, sixMinWalkDistance,
-        dischargeDietInstructions, dischargeFluidRestriction, dischargeWeightMonitoring,
-        dischargeRedFlagWarning, dischargeExercisePlan, scheduledFollowupDate,
-        primaryFollowupReason, primaryNoFollowupReason, pcpTransitionSummary, selfCareInstructions
-      ];
-      return !userStateValues.some(isValFilled);
+      const dataPayload = getSubmissionData();
+      const { regPatientId, reg_patient_id, hf_id, created_by, updated_by, isDraft, ...fields } = dataPayload || {};
+      return !Object.values(fields).some(isValFilled);
     } catch (e) {
       console.warn("isFormCompletelyEmpty evaluation error:", e);
       return false;
@@ -5303,7 +5279,7 @@ const hf = forwardRef(function hf(
                 { key: 'inr', label: 'INR', unit: 'ratio', clsKey: 'inr', placeholder: '' },
                 { key: 'st2', label: 'ST2', unit: 'ng/mL', clsKey: 'st2', placeholder: '' }
               ].map((item) => {
-                const valStr = labTests[item.key].result;
+                const valStr = labTests[item.key]?.result ?? '';
                 const cls = item.clsKey ? getClassification(item.clsKey, valStr) : { status: '', classNames: '', message: '' };
                 const displayErr = formErrors[item.key] || labErrors[item.key];
                 
@@ -5353,7 +5329,7 @@ const hf = forwardRef(function hf(
                       )}
                     </div>
                     <div className="col-span-3">
-                      {renderLabDateInput(labTests[item.key].date, (val) => handleLabChange(item.key, 'date', val))}
+                      {renderLabDateInput(labTests[item.key]?.date, (val) => handleLabChange(item.key, 'date', val))}
                     </div>
                   </div>
                 );
@@ -5362,15 +5338,15 @@ const hf = forwardRef(function hf(
               {/* Custom Lab Field */}
               <div className="grid grid-cols-12 items-center gap-2 py-1">
                 <div className="col-span-5 flex items-center gap-1.5">
-                  <input disabled={readOnly} type="checkbox" checked={labTests.other.checked} onChange={(e) => handleLabChange('other', 'checked', e.target.checked)} className={CHECKBOX_STYLES} />
-                  <input disabled={readOnly} type="text" placeholder="Other Lab Name..." value={labTests.other.name || ''} onChange={(e) => handleLabChange('other', 'name', e.target.value)} className={INPUT_NORMAL_STYLES + ' py-1 text-xs'} />
+                  <input disabled={readOnly} type="checkbox" checked={labTests.other?.checked ?? false} onChange={(e) => handleLabChange('other', 'checked', e.target.checked)} className={CHECKBOX_STYLES} />
+                  <input disabled={readOnly} type="text" placeholder="Other Lab Name..." value={labTests.other?.name || ''} onChange={(e) => handleLabChange('other', 'name', e.target.value)} className={INPUT_NORMAL_STYLES + ' py-1 text-xs'} />
                 </div>
                 <div className="col-span-4 flex items-center justify-center">
-                  <input disabled={readOnly} type="text" placeholder="Result..." value={labTests.other.result} onChange={(e) => handleLabChange('other', 'result', e.target.value)} className={INPUT_NORMAL_STYLES + ' w-24 sm:w-28 py-1 text-xs text-center'} />
+                  <input disabled={readOnly} type="text" placeholder="Result..." value={labTests.other?.result ?? ''} onChange={(e) => handleLabChange('other', 'result', e.target.value)} className={INPUT_NORMAL_STYLES + ' w-24 sm:w-28 py-1 text-xs text-center'} />
                   <span className="shrink-0 w-12"></span>
                 </div>
                 <div className="col-span-3">
-                  {renderLabDateInput(labTests.other.date, (val) => handleLabChange('other', 'date', val))}
+                  {renderLabDateInput(labTests.other?.date, (val) => handleLabChange('other', 'date', val))}
                 </div>
               </div>
             </div>
