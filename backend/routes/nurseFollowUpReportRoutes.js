@@ -39,8 +39,8 @@ const getPatientCentricTasks = async (req, res) => {
 
     const pool = await db.getPool();
     const request = pool.request();
-    request.input('startDate', db.sql.Date, startDate);
-    request.input('endDate', db.sql.Date, endDate);
+    request.input('startDate', db.sql.VarChar(50), startDate || null);
+    request.input('endDate', db.sql.VarChar(50), endDate || null);
 
     const queryStr = `
       WITH LatestHF AS (
