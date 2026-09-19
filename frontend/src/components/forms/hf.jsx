@@ -1203,9 +1203,9 @@ const hf = forwardRef(function hf(
   const [selectedInvestigations, setSelectedInvestigations] = useState(editingRecord?.investigations?.selected ?? []).selected || [];
 
   // --- Vaccinations & Blood Group States ---
-  const [vacPneumococcal, setVacPneumococcal] = useState(editingRecord?.investigations?.vacPneumococcal ?? false);
+  const [vacPneumococcal, setVacPneumococcal] = useState(editingRecord?.investigations?.vacPneumococcal === 'Yes' || editingRecord?.investigations?.vacPneumococcal === true);
   const [vacPneumococcalDate, setVacPneumococcalDate] = useState(editingRecord?.investigations?.vacPneumococcalDate ?? '');
-  const [vacInfluenza, setVacInfluenza] = useState(editingRecord?.investigations?.vacInfluenza ?? false);
+  const [vacInfluenza, setVacInfluenza] = useState(editingRecord?.investigations?.vacInfluenza === 'Yes' || editingRecord?.investigations?.vacInfluenza === true);
   const [vacInfluenzaDate, setVacInfluenzaDate] = useState(editingRecord?.investigations?.vacInfluenzaDate ?? '');
   const [bloodGroup, setBloodGroup] = useState(editingRecord?.investigations?.bloodGroup ?? '');
 
@@ -1896,32 +1896,32 @@ const hf = forwardRef(function hf(
   });
 
   // 9. Recommendations States
-  const [recFluidDiet, setRecFluidDiet] = useState(editingRecord?.recommendations?.fluid_and_diet ?? (editingRecord?.recommendations?.fluidAndDiet ? 'Yes' : 'No'));
-  const [recFluidDietDetails, setRecFluidDietDetails] = useState(editingRecord?.recommendations?.fluid_and_diet_details ?? editingRecord?.recommendations?.fluidAndDiet ?? '');
+  const [recFluidDiet, setRecFluidDiet] = useState(editingRecord?.recommendations?.fluid_and_diet === 'Yes' ? 'Yes' : 'No');
+  const [recFluidDietDetails, setRecFluidDietDetails] = useState((editingRecord?.recommendations?.fluid_and_diet_details && editingRecord?.recommendations?.fluid_and_diet_details !== 'No' && editingRecord?.recommendations?.fluid_and_diet_details !== 'Yes') ? editingRecord.recommendations.fluid_and_diet_details : '');
 
-  const [recExercise, setRecExercise] = useState(editingRecord?.recommendations?.exercise ?? (editingRecord?.recommendations?.exercise ? 'Yes' : 'No'));
-  const [recExerciseDetails, setRecExerciseDetails] = useState(editingRecord?.recommendations?.exercise_details ?? editingRecord?.recommendations?.exercise ?? '');
+  const [recExercise, setRecExercise] = useState(editingRecord?.recommendations?.exercise === 'Yes' ? 'Yes' : 'No');
+  const [recExerciseDetails, setRecExerciseDetails] = useState((editingRecord?.recommendations?.exercise_details && editingRecord?.recommendations?.exercise_details !== 'No' && editingRecord?.recommendations?.exercise_details !== 'Yes') ? editingRecord.recommendations.exercise_details : '');
 
-  const [recYoga, setRecYoga] = useState(editingRecord?.recommendations?.yoga ?? (editingRecord?.recommendations?.yoga ? 'Yes' : 'No'));
-  const [recYogaDetails, setRecYogaDetails] = useState(editingRecord?.recommendations?.yoga_details ?? editingRecord?.recommendations?.yoga ?? '');
+  const [recYoga, setRecYoga] = useState(editingRecord?.recommendations?.yoga === 'Yes' ? 'Yes' : 'No');
+  const [recYogaDetails, setRecYogaDetails] = useState((editingRecord?.recommendations?.yoga_details && editingRecord?.recommendations?.yoga_details !== 'No' && editingRecord?.recommendations?.yoga_details !== 'Yes') ? editingRecord.recommendations.yoga_details : '');
 
-  const [recSmokingCessation, setRecSmokingCessation] = useState(editingRecord?.recommendations?.smoking_cessation ?? (editingRecord?.recommendations?.smokingCessation ? 'Yes' : 'No'));
-  const [recSmokingCessationDetails, setRecSmokingCessationDetails] = useState(editingRecord?.recommendations?.smoking_cessation_details ?? editingRecord?.recommendations?.smokingCessation ?? '');
+  const [recSmokingCessation, setRecSmokingCessation] = useState(editingRecord?.recommendations?.smoking_cessation === 'Yes' ? 'Yes' : 'No');
+  const [recSmokingCessationDetails, setRecSmokingCessationDetails] = useState((editingRecord?.recommendations?.smoking_cessation_details && editingRecord?.recommendations?.smoking_cessation_details !== 'No' && editingRecord?.recommendations?.smoking_cessation_details !== 'Yes') ? editingRecord.recommendations.smoking_cessation_details : '');
 
-  const [recStressManagement, setRecStressManagement] = useState(editingRecord?.recommendations?.stress_management ?? (editingRecord?.recommendations?.stressManagement ? 'Yes' : 'No'));
-  const [recStressManagementDetails, setRecStressManagementDetails] = useState(editingRecord?.recommendations?.stress_management_details ?? editingRecord?.recommendations?.stressManagement ?? '');
+  const [recStressManagement, setRecStressManagement] = useState(editingRecord?.recommendations?.stress_management === 'Yes' ? 'Yes' : 'No');
+  const [recStressManagementDetails, setRecStressManagementDetails] = useState((editingRecord?.recommendations?.stress_management_details && editingRecord?.recommendations?.stress_management_details !== 'No' && editingRecord?.recommendations?.stress_management_details !== 'Yes') ? editingRecord.recommendations.stress_management_details : '');
 
-  const [recDrugs, setRecDrugs] = useState(editingRecord?.recommendations?.drugs ?? (editingRecord?.recommendations?.drugs ? 'Yes' : 'No'));
-  const [recDrugsDetails, setRecDrugsDetails] = useState(editingRecord?.recommendations?.drugs_details ?? editingRecord?.recommendations?.drugs ?? '');
+  const [recDrugs, setRecDrugs] = useState(editingRecord?.recommendations?.drugs === 'Yes' ? 'Yes' : 'No');
+  const [recDrugsDetails, setRecDrugsDetails] = useState((editingRecord?.recommendations?.drugs_details && editingRecord?.recommendations?.drugs_details !== 'No' && editingRecord?.recommendations?.drugs_details !== 'Yes') ? editingRecord.recommendations.drugs_details : '');
 
-  const [recInvestigations, setRecInvestigations] = useState(editingRecord?.recommendations?.investigations ?? (editingRecord?.recommendations?.investigations ? 'Yes' : 'No'));
-  const [recInvestigationsDetails, setRecInvestigationsDetails] = useState(editingRecord?.recommendations?.investigations_details ?? editingRecord?.recommendations?.investigations ?? '');
+  const [recInvestigations, setRecInvestigations] = useState(editingRecord?.recommendations?.investigations === 'Yes' ? 'Yes' : 'No');
+  const [recInvestigationsDetails, setRecInvestigationsDetails] = useState((editingRecord?.recommendations?.investigations_details && editingRecord?.recommendations?.investigations_details !== 'No' && editingRecord?.recommendations?.investigations_details !== 'Yes') ? editingRecord.recommendations.investigations_details : '');
 
-  const [recProcedures, setRecProcedures] = useState(editingRecord?.recommendations?.procedures ?? (editingRecord?.recommendations?.procedures ? 'Yes' : 'No'));
-  const [recProceduresDetails, setRecProceduresDetails] = useState(editingRecord?.recommendations?.procedures_details ?? editingRecord?.recommendations?.procedures ?? '');
+  const [recProcedures, setRecProcedures] = useState(editingRecord?.recommendations?.procedures === 'Yes' ? 'Yes' : 'No');
+  const [recProceduresDetails, setRecProceduresDetails] = useState((editingRecord?.recommendations?.procedures_details && editingRecord?.recommendations?.procedures_details !== 'No' && editingRecord?.recommendations?.procedures_details !== 'Yes') ? editingRecord.recommendations.procedures_details : '');
 
-  const [recOther, setRecOther] = useState(editingRecord?.recommendations?.other_recommendation ?? (editingRecord?.recommendations?.otherRecommendation ? 'Yes' : 'No'));
-  const [recOtherDetails, setRecOtherDetails] = useState(editingRecord?.recommendations?.other_recommendation_details ?? editingRecord?.recommendations?.otherRecommendation ?? '');
+  const [recOther, setRecOther] = useState(editingRecord?.recommendations?.other_recommendation === 'Yes' ? 'Yes' : 'No');
+  const [recOtherDetails, setRecOtherDetails] = useState((editingRecord?.recommendations?.other_recommendation_details && editingRecord?.recommendations?.other_recommendation_details !== 'No' && editingRecord?.recommendations?.other_recommendation_details !== 'Yes') ? editingRecord.recommendations.other_recommendation_details : '');
 
   // 10. Imaging & Document Upload States
   const [tempHfId] = useState(() => 'temp-' + Date.now() + '-' + Math.round(Math.random() * 1000));
@@ -2683,23 +2683,23 @@ const hf = forwardRef(function hf(
       education_other_details: eduOther === 'Yes' ? (eduOtherDetails || null) : null
     },
     recommendations: {
-      fluid_and_diet: (recFluidDiet === 'Yes' || recFluidDietDetails) ? 'Yes' : 'No',
+      fluid_and_diet: recFluidDiet === 'Yes' ? 'Yes' : 'No',
       fluid_and_diet_details: recFluidDietDetails || null,
-      exercise: (recExercise === 'Yes' || recExerciseDetails) ? 'Yes' : 'No',
+      exercise: recExercise === 'Yes' ? 'Yes' : 'No',
       exercise_details: recExerciseDetails || null,
-      yoga: (recYoga === 'Yes' || recYogaDetails) ? 'Yes' : 'No',
+      yoga: recYoga === 'Yes' ? 'Yes' : 'No',
       yoga_details: recYogaDetails || null,
-      smoking_cessation: (recSmokingCessation === 'Yes' || recSmokingCessationDetails) ? 'Yes' : 'No',
+      smoking_cessation: recSmokingCessation === 'Yes' ? 'Yes' : 'No',
       smoking_cessation_details: recSmokingCessationDetails || null,
-      stress_management: (recStressManagement === 'Yes' || recStressManagementDetails) ? 'Yes' : 'No',
+      stress_management: recStressManagement === 'Yes' ? 'Yes' : 'No',
       stress_management_details: recStressManagementDetails || null,
-      drugs: (recDrugs === 'Yes' || recDrugsDetails) ? 'Yes' : 'No',
+      drugs: recDrugs === 'Yes' ? 'Yes' : 'No',
       drugs_details: recDrugsDetails || null,
-      investigations: (recInvestigations === 'Yes' || recInvestigationsDetails) ? 'Yes' : 'No',
+      investigations: recInvestigations === 'Yes' ? 'Yes' : 'No',
       investigations_details: recInvestigationsDetails || null,
-      procedures: (recProcedures === 'Yes' || recProceduresDetails) ? 'Yes' : 'No',
+      procedures: recProcedures === 'Yes' ? 'Yes' : 'No',
       procedures_details: recProceduresDetails || null,
-      other_recommendation: (recOther === 'Yes' || recOtherDetails) ? 'Yes' : 'No',
+      other_recommendation: recOther === 'Yes' ? 'Yes' : 'No',
       other_recommendation_details: recOtherDetails || null
     },
     followupAssessment: followupAssessmentRef.current?.getAssessmentPayload() || followupAssessment || null
