@@ -5245,7 +5245,7 @@ const hf = forwardRef(function hf(
                       <div className="flex items-center gap-1.5 justify-center w-full">
                         <input disabled={readOnly}
                           type="text"
-                          value={valStr}
+                          value={valStr ?? ''}
                           placeholder={item.placeholder}
                           onChange={(e) => {
                             const val = e.target.value;
