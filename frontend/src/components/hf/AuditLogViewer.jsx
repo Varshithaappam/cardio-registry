@@ -118,11 +118,17 @@ export default function AuditLogViewer({ hfId, regPatientId, isOpen = true, onCl
     return words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
   };
 
+  const FOLLOWUP_TABLE_REGEX = /^(stemi_followup|nstemi_followup|followup|followups|patient_followup_tasks)$/i;
+  const FOLLOWUP_KEY_REGEX = /^(stemi_followup|nstemi_followup|followup|followups|patient_followup_tasks)(\[|\.|$)/i;
+
   const flattenObject = (obj, prefix = '') => {
     const result = {};
     if (!obj || typeof obj !== 'object') return result;
     
     Object.keys(obj).forEach((key) => {
+      if (FOLLOWUP_TABLE_REGEX.test(key)) {
+        return;
+      }
       const val = obj[key];
       const newKey = prefix ? `${prefix}.${key}` : key;
       
@@ -158,6 +164,9 @@ export default function AuditLogViewer({ hfId, regPatientId, isOpen = true, onCl
     };
 
     allKeys.forEach((key) => {
+      if (FOLLOWUP_KEY_REGEX.test(key)) {
+        return;
+      }
       const oldValue = normalize(prev[key]);
       const newValue = normalize(curr[key]);
 

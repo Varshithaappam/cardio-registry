@@ -191,11 +191,20 @@ function resolveCanonicalObject(obj) {
   const flat = { ...obj };
 
   // 1. AV Block
-  if (!flat.av_block) {
-    if (flat.av_block_chb === 'Yes') flat.av_block = 'CHB';
-    else if (flat.av_block_second_degree === 'Yes') flat.av_block = 'Second Degree';
-    else if (flat.av_block_first_degree === 'Yes') flat.av_block = 'First Degree';
-    else if (flat.av_block_none === 'Yes') flat.av_block = 'None';
+  let avVal = flat.av_block;
+  if (!avVal) {
+    if (flat.av_block_chb === 'Yes') avVal = 'CHB';
+    else if (flat.av_block_second_degree === 'Yes') avVal = 'Second Degree';
+    else if (flat.av_block_first_degree === 'Yes') avVal = 'First Degree';
+    else if (flat.av_block_none === 'Yes') avVal = 'None';
+  }
+  if (avVal) {
+    const lowerAv = String(avVal).toLowerCase().trim();
+    if (['1-degree', '1st degree', '1 degree', '1st-degree', 'first degree'].includes(lowerAv)) flat.av_block = '1st Degree AV Block';
+    else if (['2-degree', '2nd degree', '2 degree', '2nd-degree', 'second degree', 'mobitz type i', 'mobitz type ii'].includes(lowerAv)) flat.av_block = '2nd Degree AV Block';
+    else if (['chb', 'complete heart block', '3rd degree', '3 degree', '3rd-degree', 'third degree'].includes(lowerAv)) flat.av_block = 'Complete Heart Block (3rd Degree)';
+    else if (['none', 'nil'].includes(lowerAv)) flat.av_block = 'None';
+    else flat.av_block = avVal;
   }
 
   // 2. BBB
@@ -216,6 +225,12 @@ function resolveCanonicalObject(obj) {
     else if (flat.rhythm_nsr === 'Yes') rhythmVal = 'NSR';
   }
   if (rhythmVal) {
+    const lowerRhythm = String(rhythmVal).toLowerCase().trim();
+    if (['sinus', 'sinus rhythm', 'nsr', 'normal sinus rhythm'].includes(lowerRhythm)) rhythmVal = 'Sinus Rhythm';
+    else if (['af', 'afib', 'atrial fibrillation', 'atrial fibrillation (af)'].includes(lowerRhythm)) rhythmVal = 'Atrial Fibrillation';
+    else if (['svt', 'supraventricular tachycardia'].includes(lowerRhythm)) rhythmVal = 'Supraventricular Tachycardia';
+    else if (['vt', 'ventricular tachycardia'].includes(lowerRhythm)) rhythmVal = 'Ventricular Tachycardia';
+    else if (['vf', 'ventricular fibrillation'].includes(lowerRhythm)) rhythmVal = 'Ventricular Fibrillation';
     flat.rhythm = rhythmVal;
     flat.ecg_rhythm = rhythmVal;
   }
@@ -340,7 +355,12 @@ function flattenObject(obj, prefix = '') {
   const res = {};
   if (!obj || typeof obj !== 'object') return res;
 
+  const FOLLOWUP_TABLE_REGEX = /^(stemi_followup|nstemi_followup|followup|followups|patient_followup_tasks)$/i;
+
   for (const key of Object.keys(obj)) {
+    if (FOLLOWUP_TABLE_REGEX.test(key)) {
+      continue;
+    }
     const val = obj[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
 
@@ -377,7 +397,7 @@ function formatAuditDisplayValue(val) {
   if (val === null || val === undefined) return '—';
   const norm = normalizeVal(val);
   if (norm === '') return '—';
-  return val;
+  return norm;
 }
 
 /**
@@ -457,6 +477,10 @@ function getChangedFields(oldObj, newObj) {
     if (
       excludedKeys.has(lowerLeaf) ||
       excludedKeys.has(lowerFullKey) ||
+      lowerFullKey.startsWith('enabled_') ||
+      lowerFullKey.startsWith('enabled') ||
+      lowerFullKey.startsWith('custom_date_') ||
+      lowerFullKey.startsWith('customdate_') ||
       leaf.startsWith('appr_') ||
       lowerLeaf.endsWith('_id') ||
       (lowerLeaf.endsWith('id') && lowerLeaf !== 'visitid')

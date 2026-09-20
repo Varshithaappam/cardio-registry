@@ -205,7 +205,12 @@ const flattenObject = (obj, prefix = '') => {
   let res = {};
   if (!obj || typeof obj !== 'object') return res;
 
+  const FOLLOWUP_TABLE_REGEX = /^(stemi_followup|nstemi_followup|followup|followups|patient_followup_tasks)$/i;
+
   for (const key of Object.keys(obj)) {
+    if (FOLLOWUP_TABLE_REGEX.test(key)) {
+      continue;
+    }
     const val = obj[key];
     const newKey = prefix ? `${prefix}.${key}` : key;
 
@@ -295,8 +300,9 @@ const computeObjectDiff = (oldObj, newObj) => {
     const lowerLeaf = leaf.toLowerCase();
     const lowerFullKey = key.toLowerCase();
 
-    // Skip modular followup array items from primary registry audit trail
-    if (lowerFullKey.startsWith('followup') || lowerFullKey.includes('followup[')) {
+    // Skip modular followup array/table items from primary registry audit trail
+    const FOLLOWUP_KEY_REGEX = /^(stemi_followup|nstemi_followup|followup|followups|patient_followup_tasks)(\[|\.|$)/i;
+    if (FOLLOWUP_KEY_REGEX.test(lowerFullKey) || lowerFullKey.includes('followup')) {
       continue;
     }
 
