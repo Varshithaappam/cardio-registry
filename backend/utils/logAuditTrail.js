@@ -53,28 +53,53 @@ function normalizeVal(val) {
   const normalizedDate = normalizeDateValue(val);
   if (normalizedDate) return normalizedDate;
 
-  let s = String(val).trim();
-  if (s === 'null' || s === 'undefined' || s === '') return '';
+  let rawStr = String(val).trim();
+  if (rawStr === 'null' || rawStr === 'undefined' || rawStr === '') return '';
 
   // ISO date strings e.g., "2026-09-15T00:00:00.000Z" -> "2026-09-15"
-  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
-    s = s.split('T')[0];
+  if (/^\d{4}-\d{2}-\d{2}T/.test(rawStr)) {
+    rawStr = rawStr.split('T')[0];
   }
 
+  const lower = rawStr.toLowerCase();
+
   // Boolean / string Yes/No/0/1/Unknown normalizations evaluated BEFORE raw number formatting
-  const lower = s.toLowerCase();
   if (['no', 'false', '0'].includes(lower)) return 'No';
   if (['yes', 'true', '1'].includes(lower)) return 'Yes';
   if (['unknown'].includes(lower)) return 'Unknown';
   if (['referred from (department / practice)', 'referred from (department/practice)', 'referred from'].includes(lower)) return '';
 
+  // 1. AV Block Semantic Equivalences
+  if (['first degree', '1st degree', '1-degree', '1 degree', '1st-degree'].includes(lower)) return '1st Degree AV Block';
+  if (['second degree', '2nd degree', '2-degree', '2 degree', '2nd-degree', 'mobitz type i', 'mobitz type ii', '2nd degree mobitz type 1', '2nd degree mobitz type 2'].includes(lower)) return '2nd Degree AV Block';
+  if (['third degree', '3rd degree', 'complete heart block', 'chb', '3-degree', '3 degree', '3rd-degree'].includes(lower)) return 'Complete Heart Block (3rd Degree)';
+  if (['none', 'no av block', 'nil'].includes(lower)) return 'None';
+
+  // 2. ECG Rhythm Semantic Equivalences
+  if (['sinus', 'sinus rhythm', 'nsr', 'normal sinus rhythm'].includes(lower)) return 'Sinus Rhythm';
+  if (['af', 'afib', 'atrial fibrillation', 'atrial fibrillation (af)'].includes(lower)) return 'Atrial Fibrillation';
+  if (['svt', 'supraventricular tachycardia', 'supraventricular tachycardia (svt)'].includes(lower)) return 'Supraventricular Tachycardia';
+  if (['vt', 'ventricular tachycardia', 'ventricular tachycardia (vt)'].includes(lower)) return 'Ventricular Tachycardia';
+  if (['vf', 'ventricular fibrillation', 'ventricular fibrillation (vf)'].includes(lower)) return 'Ventricular Fibrillation';
+
+  // 3. Killip Class Semantic Equivalences
+  if (['class i', 'class 1', 'killip 1', 'killip i', 'killip class i', 'killip class 1'].includes(lower)) return 'Killip Class I';
+  if (['class ii', 'class 2', 'killip 2', 'killip ii', 'killip class ii', 'killip class 2'].includes(lower)) return 'Killip Class II';
+  if (['class iii', 'class 3', 'killip 3', 'killip iii', 'killip class iii', 'killip class 3'].includes(lower)) return 'Killip Class III';
+  if (['class iv', 'class 4', 'killip 4', 'killip iv', 'killip class iv', 'killip class 4'].includes(lower)) return 'Killip Class IV';
+
+  // 4. TIMI Risk Semantic Equivalences
+  if (['low', 'low risk'].includes(lower)) return 'Low Risk';
+  if (['intermediate', 'intermediate risk', 'medium', 'medium risk'].includes(lower)) return 'Intermediate Risk';
+  if (['high', 'high risk'].includes(lower)) return 'High Risk';
+
   // Numbers e.g. "120.00" -> "120", "3.50" -> "3.5"
-  if (!isNaN(s) && s !== '') {
-    const num = Number(s);
+  if (!isNaN(rawStr) && rawStr !== '') {
+    const num = Number(rawStr);
     if (!isNaN(num)) return String(num);
   }
 
-  return s;
+  return rawStr;
 }
 
 const FIELD_LABEL_MAP = {
@@ -123,7 +148,23 @@ const FIELD_LABEL_MAP = {
   mr: 'MR',
   treatment_strategy: 'Treatment Strategy',
   statin_dose: 'Statin Dose',
-  discharge_statin_dose: 'Discharge Statin Dose'
+  discharge_statin_dose: 'Discharge Statin Dose',
+  discharge_beta_blocker: 'Discharge Beta Blocker',
+  discharge_calcium_channel_blocker: 'Calcium Channel Blocker',
+  discharge_nitrate: 'Nitrate',
+  discharge_nicorandil: 'Nicorandil',
+  discharge_ivabradine: 'Ivabradine',
+  discharge_ranolazine: 'Ranolazine',
+  discharge_trimetazidine: 'Trimetazidine',
+  discharge_aspirin: 'Discharge Aspirin',
+  discharge_clopidogrel: 'Clopidogrel',
+  discharge_prasugrel: 'Prasugrel',
+  discharge_ticagrelor: 'Discharge Ticagrelor',
+  discharge_statin: 'Discharge Statin',
+  discharge_gp2b3a: 'Gp2b3a',
+  discharge_bivaluridin: 'Bivaluridin',
+  gp2b3a: 'Gp2b3a',
+  bivaluridin: 'Bivaluridin'
 };
 
 function formatFieldLabel(key) {
@@ -236,6 +277,58 @@ function resolveCanonicalObject(obj) {
     else if (flat.discharge_statin_80mg === 'Yes') flat.discharge_statin_dose = '80 mg';
   }
 
+  // 11. Referred From Alias Normalization
+  let refFromVal = flat.referredFrom || flat.referred_from;
+  if (refFromVal !== undefined) {
+    flat.referredFrom = refFromVal;
+    flat.referred_from = refFromVal;
+  }
+
+  // 12. Fluid And Diet Alias Normalization
+  let fluidDietVal = flat.fluidAndDiet || flat['recommendations.fluidAndDiet'] || flat['recommendations.fluid_and_diet_details'] || flat.fluid_and_diet_details;
+  if (fluidDietVal !== undefined) {
+    flat['recommendations.fluid_and_diet_details'] = fluidDietVal;
+    flat['recommendations.fluidAndDiet'] = fluidDietVal;
+  }
+
+  // 13. Syncope Frequency Alias Normalization
+  let syncopeFreqVal = flat.syncopeFrequency || flat.syncope_frequency;
+  if (syncopeFreqVal !== undefined) {
+    flat.syncopeFrequency = syncopeFreqVal;
+    flat.syncope_frequency = syncopeFreqVal;
+  }
+
+  // 14. Complaints Syncope Presyncope Normalization
+  let syncopeVal = flat.complaints_syncope || flat.complaints_syncope_presyncope || flat.complaintsSyncope;
+  if (syncopeVal !== undefined) {
+    flat.complaints_syncope = syncopeVal;
+    flat.complaints_syncope_presyncope = syncopeVal;
+    flat.complaintsSyncope = syncopeVal;
+  }
+
+  // 15. Previous Diagnosis Normalization
+  let prevDiagVal = flat.previous_diagnosis || flat.previousDiagnosis;
+  if (prevDiagVal !== undefined) {
+    flat.previous_diagnosis = prevDiagVal;
+    flat.previousDiagnosis = prevDiagVal;
+  }
+
+  // 16. Discharge / Treatment Medication Alias Normalization
+  const DISCHARGE_MED_KEYS = [
+    'beta_blocker', 'calcium_channel_blocker', 'nitrate', 'nicorandil',
+    'ivabradine', 'ranolazine', 'trimetazidine', 'aspirin', 'clopidogrel',
+    'prasugrel', 'ticagrelor', 'statin', 'statin_10mg', 'statin_20mg',
+    'statin_40mg', 'statin_80mg', 'gp2b3a', 'bivaluridin'
+  ];
+  for (const mKey of DISCHARGE_MED_KEYS) {
+    const disKey = `discharge_${mKey}`;
+    const val = flat[disKey] !== undefined ? flat[disKey] : flat[mKey];
+    if (val !== undefined) {
+      flat[disKey] = val;
+      flat[mKey] = val;
+    }
+  }
+
   return flat;
 }
 
@@ -323,7 +416,8 @@ function getChangedFields(oldObj, newObj) {
     'stent_des', 'stent_bms',
     'heparin_lmwh', 'heparin_ufh_iv', 'heparin_ufh_sc',
     'statin_10mg', 'statin_20mg', 'statin_40mg', 'statin_80mg',
-    'discharge_statin_10mg', 'discharge_statin_20mg', 'discharge_statin_40mg', 'discharge_statin_80mg'
+    'discharge_statin_10mg', 'discharge_statin_20mg', 'discharge_statin_40mg', 'discharge_statin_80mg',
+    'fluidanddiet'
   ]);
 
   // Keys that are synthetically created by resolveCanonicalObject — if these only exist
@@ -354,8 +448,9 @@ function getChangedFields(oldObj, newObj) {
     const lowerLeaf = leaf.toLowerCase();
     const lowerFullKey = key.toLowerCase();
 
-    // Skip modular followup array items from primary registry audit trail
-    if (lowerFullKey.startsWith('followup') || lowerFullKey.includes('followup[')) {
+    // Skip modular followup array/table items from primary registry audit trail
+    const FOLLOWUP_KEY_REGEX = /^(stemi_followup|nstemi_followup|followup|followups|patient_followup_tasks)(\[|\.|$)/i;
+    if (FOLLOWUP_KEY_REGEX.test(lowerFullKey) || lowerFullKey.includes('followup')) {
       continue;
     }
 
@@ -371,6 +466,19 @@ function getChangedFields(oldObj, newObj) {
 
     if (!key.includes('.') && hasNestedCounterpart(key)) {
       continue;
+    }
+
+    // Skip un-prefixed medication keys when discharge_ prefixed counterpart exists
+    const DISCHARGE_MED_SET = new Set([
+      'beta_blocker', 'calcium_channel_blocker', 'nitrate', 'nicorandil',
+      'ivabradine', 'ranolazine', 'trimetazidine', 'aspirin', 'clopidogrel',
+      'prasugrel', 'ticagrelor', 'statin', 'statin_10mg', 'statin_20mg',
+      'statin_40mg', 'statin_80mg', 'gp2b3a', 'bivaluridin'
+    ]);
+    if (!lowerFullKey.startsWith('discharge_') && DISCHARGE_MED_SET.has(lowerLeaf)) {
+      if (allFullKeys.has(`discharge_${lowerLeaf}`)) {
+        continue;
+      }
     }
 
     // Skip canonical group fields that only exist on one side.

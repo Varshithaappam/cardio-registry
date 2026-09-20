@@ -211,7 +211,7 @@ async function saveHfAssessment(data, userId = 1) {
             discharge_date: toSqlDate(data.inpatientDetails?.dischargeDate),
             treating_cardiologist: data.inpatientDetails?.treatingCardiologist,
             referring_doctor: data.inpatientDetails?.referringDoctor,
-            referred_from: data.patient?.referredFrom || data.inpatientDetails?.referredFrom || null,
+            referred_from: data.patient?.referredFrom || data.patient?.referred_from || data.inpatientDetails?.referredFrom || data.inpatientDetails?.referred_from || data.referredFrom || data.referred_from || null,
             present_diagnosis: data.patient?.presentDiagnosis,
             myocardial_ischemia: data.inpatientDetails?.precipitatingFactors?.includes('Myocardial ischemia') ? 'Yes' : 'No',
             atrial_fibrillation: data.inpatientDetails?.precipitatingFactors?.includes('Atrial fibrillation') ? 'Yes' : 'No',
@@ -250,7 +250,7 @@ async function saveHfAssessment(data, userId = 1) {
             recent_hospitalization_reasons: data.recent_hospitalization_reasons,
             documented_vt_vf: data.documented_vt_vf,
             documented_pvcs: data.documented_pvcs,
-            complaints_syncope_presyncope: data.complaints_syncope || 'No',
+            complaints_syncope_presyncope: data.complaints_syncope || data.complaints_syncope_presyncope || 'No',
             pvc_count: data.pvc_count ? Number(data.pvc_count) : null,
             pvc_frequency: data.pvc_frequency,
             documented_nsvt: data.documented_nsvt,
@@ -395,7 +395,28 @@ async function saveHfAssessment(data, userId = 1) {
 
         // 10. Insert recommendations
         if (data.recommendations) {
-            await hfModel.insertHfRecommendations(conn, withHfId(data.recommendations));
+            const recs = data.recommendations;
+            const recData = {
+                fluid_and_diet: recs.fluid_and_diet || ((recs.fluid_and_diet_details || recs.fluidAndDiet) ? 'Yes' : 'No'),
+                fluid_and_diet_details: recs.fluid_and_diet_details || recs.fluidAndDiet || null,
+                exercise: recs.exercise || (recs.exercise_details ? 'Yes' : 'No'),
+                exercise_details: recs.exercise_details || null,
+                yoga: recs.yoga || (recs.yoga_details ? 'Yes' : 'No'),
+                yoga_details: recs.yoga_details || null,
+                smoking_cessation: recs.smoking_cessation || (recs.smoking_cessation_details ? 'Yes' : 'No'),
+                smoking_cessation_details: recs.smoking_cessation_details || null,
+                stress_management: recs.stress_management || (recs.stress_management_details ? 'Yes' : 'No'),
+                stress_management_details: recs.stress_management_details || null,
+                drugs: recs.drugs || (recs.drugs_details ? 'Yes' : 'No'),
+                drugs_details: recs.drugs_details || null,
+                investigations: recs.investigations || (recs.investigations_details ? 'Yes' : 'No'),
+                investigations_details: recs.investigations_details || null,
+                procedures: recs.procedures || (recs.procedures_details ? 'Yes' : 'No'),
+                procedures_details: recs.procedures_details || null,
+                other_recommendation: recs.other_recommendation || (recs.other_recommendation_details ? 'Yes' : 'No'),
+                other_recommendation_details: recs.other_recommendation_details || null
+            };
+            await hfModel.insertHfRecommendations(conn, withHfId(recData));
         }
 
         // 11, 12, 13. Insert Investigations
@@ -929,6 +950,7 @@ async function getHfAssessment(hf_id) {
             visitType: admin.visit_type,
             address: admin.address,
             referredFrom: admin.referred_from,
+            referred_from: admin.referred_from,
             patient: {
                 address: admin.address,
                 highestEducation: admin.education_level,
@@ -939,12 +961,14 @@ async function getHfAssessment(hf_id) {
                 caregiverPhone: admin.caregiver_phone,
                 insuranceMode: admin.insurance_mode,
                 referredFrom: admin.referred_from,
+                referred_from: admin.referred_from,
                 presentDiagnosis: admin.present_diagnosis
             },
             inpatientDetails: {
                 treatingCardiologist: admin.treating_cardiologist,
                 referringDoctor: admin.referring_doctor,
                 referredFrom: admin.referred_from,
+                referred_from: admin.referred_from,
                 dischargeDate: admin.discharge_date,
                 encounterId: admin.care_mr_no,
                 precipitatingFactors,
@@ -967,8 +991,10 @@ async function getHfAssessment(hf_id) {
             recent_hospitalization_dates: initial.recent_hospitalization_dates,
             recent_hospitalization_reasons: initial.recent_hospitalization_reasons,
             documented_vt_vf: initial.documented_vt_vf,
-            complaints_syncope: initial.complaints_syncope_presyncope,
-            syncope_frequency: initial.pvc_frequency,
+            complaints_syncope: initial.complaints_syncope_presyncope || 'No',
+            complaints_syncope_presyncope: initial.complaints_syncope_presyncope || 'No',
+            syncope_frequency: initial.syncope_frequency || null,
+            syncopeFrequency: initial.syncope_frequency || null,
             documented_pvcs: initial.documented_pvcs,
             pvc_count: initial.pvc_count,
             pvc_frequency: initial.pvc_frequency,

@@ -393,6 +393,7 @@ function EditFormPage({ records, loadPatients }) {
               });
             }
             await loadPatients();
+            navigate(`/patient/${regPatientId}`);
           } catch (err) {
             console.error('Error saving HF assessment:', err);
             await showAlert({
@@ -400,6 +401,7 @@ function EditFormPage({ records, loadPatients }) {
               title: 'Save Failed',
               message: err.response?.data?.message || 'Failed to save Heart Failure Assessment details.'
             });
+            return;
           }
         } else if (type === 'NSTEMI') {
           try {
@@ -427,12 +429,14 @@ function EditFormPage({ records, loadPatients }) {
                 });
               }
               await loadPatients();
+              navigate(`/patient/${regPatientId}`);
             } else {
               await showAlert({
                 type: 'danger',
                 title: 'Save Failed',
                 message: response.data?.message || 'Failed to save NSTEMI record.'
               });
+              return;
             }
           } catch (err) {
             console.error('Error saving NSTEMI:', err);
@@ -441,6 +445,7 @@ function EditFormPage({ records, loadPatients }) {
               title: 'Error',
               message: err.response?.data?.message || 'Error saving NSTEMI record. Please check backend connection.'
             });
+            return;
           }
         } else if (type === 'STEMI') {
           try {
@@ -468,12 +473,14 @@ function EditFormPage({ records, loadPatients }) {
                 });
               }
               await loadPatients();
+              navigate(`/patient/${regPatientId}`);
             } else {
               await showAlert({
                 type: 'danger',
                 title: 'Save Failed',
                 message: response.data?.message || 'Failed to save STEMI record.'
               });
+              return;
             }
           } catch (err) {
             console.error('Error saving STEMI:', err);
@@ -482,9 +489,9 @@ function EditFormPage({ records, loadPatients }) {
               title: 'Error',
               message: err.response?.data?.message || 'Error saving STEMI record. Please check backend connection.'
             });
+            return;
           }
         }
-        navigate(`/patient/${regPatientId}`);
       }}
       onBackPatients={() => navigate(`/patient/${regPatientId}`)}
     />

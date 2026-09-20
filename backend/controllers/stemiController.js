@@ -919,7 +919,7 @@ async function getStemiRecord(req, res) {
           const clashingOutcomes = [
             'beta_blocker', 'calcium_channel_blocker', 'nitrate', 'nicorandil', 'ivabradine', 'ranolazine',
             'trimetazidine', 'aspirin', 'clopidogrel', 'prasugrel', 'ticagrelor', 'statin',
-            'statin_10mg', 'statin_20mg', 'statin_40mg', 'statin_80mg'
+            'statin_10mg', 'statin_20mg', 'statin_40mg', 'statin_80mg', 'gp2b3a', 'bivaluridin'
           ];
           for (const k in row) {
             if (clashingOutcomes.includes(k)) {
@@ -1066,7 +1066,7 @@ async function fetchStemiFullData(stemi_id) {
           const clashingOutcomes = [
             'beta_blocker', 'calcium_channel_blocker', 'nitrate', 'nicorandil', 'ivabradine', 'ranolazine',
             'trimetazidine', 'aspirin', 'clopidogrel', 'prasugrel', 'ticagrelor', 'statin',
-            'statin_10mg', 'statin_20mg', 'statin_40mg', 'statin_80mg'
+            'statin_10mg', 'statin_20mg', 'statin_40mg', 'statin_80mg', 'gp2b3a', 'bivaluridin'
           ];
           for (const k in row) {
             if (clashingOutcomes.includes(k)) {
@@ -1083,6 +1083,35 @@ async function fetchStemiFullData(stemi_id) {
               merged[k] = row[k];
             }
           }
+          const noteAliases = {
+            appr_iccu_admission_note: row.iccu_admission_note,
+            appr_iccu_transfer_out_note: row.iccu_transfer_out_note,
+            appr_thrombolysis_indication_note: row.tlt_note || row.thrombolysis_indication_note,
+            appr_ptca_indication_note: row.ptca_note || row.ptca_indication_note,
+            appr_invasive_monitoring_note: row.invasive_monitoring_note,
+            appr_iabp_indication_note: row.iabp_note || row.iabp_indication_note,
+            appr_invasive_ventilation_note: row.invasive_ventilation_note,
+            appr_dialysis_indication_note: row.dialysis_note || row.dialysis_indication_note,
+            appr_other_procedure_appropriateness_note: row.any_other_procedure_note || row.other_procedure_note,
+            appr_cardiac_enzymes_note: row.cardiac_enzymes_note,
+            appr_bnp_note: row.bnp_note,
+            appr_crp_note: row.crp_note,
+            appr_lipid_profile_note: row.lipid_profile_note,
+            appr_bedside_echo_note: row.bed_side_echo_note || row.bedside_echo_note,
+            appr_chest_xray_note: row.cxr_note || row.chest_xray_note,
+            appr_beta_blockers_note: row.beta_blockers_note,
+            appr_aspirin_note: row.aspirin_note,
+            appr_clopidogrel_note: row.clopidogrel_note,
+            appr_ace_inhibitor_note: row.ace_inhibitor_note,
+            appr_arb_note: row.arb_note,
+            appr_statin_note: row.statin_note,
+            appr_diuretic_note: row.diuretic_note,
+            appr_lanoxin_note: row.lanoxin_note,
+            appr_anticoagulant_note: row.anticoagulant_note,
+            appr_amiodarone_note: row.amiodarone_note,
+            appr_other_drug_appropriateness_note: row.any_other_drug_note || row.other_drug_note
+          };
+          Object.assign(merged, noteAliases);
         } else {
           merged = { ...merged, ...row };
         }
@@ -1429,22 +1458,22 @@ async function updateStemiRecord(req, res) {
     reqOutcomes.input('cva_hemorrhagic', sql.NVarChar(3), getStr('cva_hemorrhagic'));
     reqOutcomes.input('major_bleeding', sql.NVarChar(3), getStr('major_bleeding'));
     reqOutcomes.input('outcome_other', sql.VarChar(255), getVal('outcome_other'));
-    reqOutcomes.input('beta_blocker', sql.NVarChar(3), getStr('discharge_beta_blocker'));
-    reqOutcomes.input('calcium_channel_blocker', sql.NVarChar(3), getStr('discharge_calcium_channel_blocker'));
-    reqOutcomes.input('nitrate', sql.NVarChar(3), getStr('discharge_nitrate'));
-    reqOutcomes.input('nicorandil', sql.NVarChar(3), getStr('discharge_nicorandil'));
-    reqOutcomes.input('ivabradine', sql.NVarChar(3), getStr('discharge_ivabradine'));
-    reqOutcomes.input('ranolazine', sql.NVarChar(3), getStr('discharge_ranolazine'));
-    reqOutcomes.input('trimetazidine', sql.NVarChar(3), getStr('discharge_trimetazidine'));
-    reqOutcomes.input('aspirin', sql.NVarChar(3), getStr('discharge_aspirin', 'Yes'));
-    reqOutcomes.input('clopidogrel', sql.NVarChar(3), getStr('discharge_clopidogrel'));
-    reqOutcomes.input('prasugrel', sql.NVarChar(3), getStr('discharge_prasugrel'));
-    reqOutcomes.input('ticagrelor', sql.NVarChar(3), getStr('discharge_ticagrelor', 'Yes'));
-    reqOutcomes.input('statin', sql.NVarChar(3), getStr('discharge_statin', 'Yes'));
-    reqOutcomes.input('statin_10mg', sql.NVarChar(3), getStr('discharge_statin_10mg'));
-    reqOutcomes.input('statin_20mg', sql.NVarChar(3), getStr('discharge_statin_20mg'));
-    reqOutcomes.input('statin_40mg', sql.NVarChar(3), getStr('discharge_statin_40mg'));
-    reqOutcomes.input('statin_80mg', sql.NVarChar(3), getStr('discharge_statin_80mg'));
+    reqOutcomes.input('beta_blocker', sql.NVarChar(3), getStr('discharge_beta_blocker') || getStr('beta_blocker'));
+    reqOutcomes.input('calcium_channel_blocker', sql.NVarChar(3), getStr('discharge_calcium_channel_blocker') || getStr('calcium_channel_blocker'));
+    reqOutcomes.input('nitrate', sql.NVarChar(3), getStr('discharge_nitrate') || getStr('nitrate'));
+    reqOutcomes.input('nicorandil', sql.NVarChar(3), getStr('discharge_nicorandil') || getStr('nicorandil'));
+    reqOutcomes.input('ivabradine', sql.NVarChar(3), getStr('discharge_ivabradine') || getStr('ivabradine'));
+    reqOutcomes.input('ranolazine', sql.NVarChar(3), getStr('discharge_ranolazine') || getStr('ranolazine'));
+    reqOutcomes.input('trimetazidine', sql.NVarChar(3), getStr('discharge_trimetazidine') || getStr('trimetazidine'));
+    reqOutcomes.input('aspirin', sql.NVarChar(3), getStr('discharge_aspirin') || getStr('aspirin', 'Yes'));
+    reqOutcomes.input('clopidogrel', sql.NVarChar(3), getStr('discharge_clopidogrel') || getStr('clopidogrel'));
+    reqOutcomes.input('prasugrel', sql.NVarChar(3), getStr('discharge_prasugrel') || getStr('prasugrel'));
+    reqOutcomes.input('ticagrelor', sql.NVarChar(3), getStr('discharge_ticagrelor') || getStr('ticagrelor', 'Yes'));
+    reqOutcomes.input('statin', sql.NVarChar(3), getStr('discharge_statin') || getStr('statin', 'Yes'));
+    reqOutcomes.input('statin_10mg', sql.NVarChar(3), getStr('discharge_statin_10mg') || getStr('statin_10mg'));
+    reqOutcomes.input('statin_20mg', sql.NVarChar(3), getStr('discharge_statin_20mg') || getStr('statin_20mg'));
+    reqOutcomes.input('statin_40mg', sql.NVarChar(3), getStr('discharge_statin_40mg') || getStr('statin_40mg'));
+    reqOutcomes.input('statin_80mg', sql.NVarChar(3), getStr('discharge_statin_80mg') || getStr('statin_80mg'));
     reqOutcomes.input('discharge_other_medication', sql.VarChar(255), getVal('discharge_other_medication'));
 
     await reqOutcomes.query(`
