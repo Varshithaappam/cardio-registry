@@ -88,6 +88,25 @@ const formatFieldLabel = (key) => {
     .replace(/\b\w/g, c => c.toUpperCase());
 };
 
+// const normalizeVal = (val) => {
+//   if (val === null || val === undefined) return '';
+//   let s = String(val).trim();
+//   if (s === 'null' || s === 'undefined' || s === '') return '';
+//   if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+//     s = s.split('T')[0];
+//   }
+//   const lower = s.toLowerCase();
+//   if (['no', 'false', '0'].includes(lower)) return 'No';
+//   if (['yes', 'true', '1'].includes(lower)) return 'Yes';
+//   if (['unknown'].includes(lower)) return 'Unknown';
+//   if (['referred from (department / practice)', 'referred from (department/practice)', 'referred from'].includes(lower)) return '';
+//   if (!isNaN(s) && s !== '') {
+//     const num = Number(s);
+//     if (!isNaN(num)) return String(num);
+//   }
+//   return s;
+// };
+
 const normalizeVal = (val) => {
   if (val === null || val === undefined) return '';
   let s = String(val).trim();
@@ -96,10 +115,18 @@ const normalizeVal = (val) => {
     s = s.split('T')[0];
   }
   const lower = s.toLowerCase();
+  
   if (['no', 'false', '0'].includes(lower)) return 'No';
   if (['yes', 'true', '1'].includes(lower)) return 'Yes';
   if (['unknown'].includes(lower)) return 'Unknown';
   if (['referred from (department / practice)', 'referred from (department/practice)', 'referred from'].includes(lower)) return '';
+
+  // AV Block Semantic Equivalences
+  if (['first degree', '1st degree', '1-degree', '1 degree', '1st-degree'].includes(lower)) return '1st Degree AV Block';
+  if (['second degree', '2nd degree', '2-degree', '2 degree', '2nd-degree', 'mobitz type i', 'mobitz type ii'].includes(lower)) return '2nd Degree AV Block';
+  if (['third degree', '3rd degree', 'complete heart block', 'chb', '3-degree', '3 degree', '3rd-degree'].includes(lower)) return 'Complete Heart Block (3rd Degree)';
+  if (['none', 'no av block', 'nil'].includes(lower)) return 'None';
+
   if (!isNaN(s) && s !== '') {
     const num = Number(s);
     if (!isNaN(num)) return String(num);
@@ -204,8 +231,8 @@ const resolveCanonicalObject = (obj) => {
 const flattenObject = (obj, prefix = '') => {
   let res = {};
   if (!obj || typeof obj !== 'object') return res;
+    const FOLLOWUP_TABLE_REGEX = /^(stemi_followup|nstemi_followup|followup|followups|patient_followup_tasks)$/i;
 
-  const FOLLOWUP_TABLE_REGEX = /^(stemi_followup|nstemi_followup|followup|followups|patient_followup_tasks)$/i;
 
   for (const key of Object.keys(obj)) {
     if (FOLLOWUP_TABLE_REGEX.test(key)) {
@@ -300,9 +327,8 @@ const computeObjectDiff = (oldObj, newObj) => {
     const lowerLeaf = leaf.toLowerCase();
     const lowerFullKey = key.toLowerCase();
 
-    // Skip modular followup array/table items from primary registry audit trail
-    const FOLLOWUP_KEY_REGEX = /^(stemi_followup|nstemi_followup|followup|followups|patient_followup_tasks)(\[|\.|$)/i;
-    if (FOLLOWUP_KEY_REGEX.test(lowerFullKey) || lowerFullKey.includes('followup')) {
+    // Skip modular followup array items from primary registry audit trail
+    if (lowerFullKey.startsWith('followup') || lowerFullKey.includes('followup[')) {
       continue;
     }
 
