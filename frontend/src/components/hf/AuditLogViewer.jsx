@@ -120,13 +120,14 @@ export default function AuditLogViewer({ hfId, regPatientId, isOpen = true, onCl
 
   const FOLLOWUP_TABLE_REGEX = /^(stemi_followup|nstemi_followup|followup|followups|patient_followup_tasks)$/i;
   const FOLLOWUP_KEY_REGEX = /^(stemi_followup|nstemi_followup|followup|followups|patient_followup_tasks)(\[|\.|$)/i;
+  const FOLLOWUP_SUFFIX_REGEX = /_(1m|3m|6m|12m|1month|3month|6month|12month)$/i;
 
   const flattenObject = (obj, prefix = '') => {
     const result = {};
     if (!obj || typeof obj !== 'object') return result;
     
     Object.keys(obj).forEach((key) => {
-      if (FOLLOWUP_TABLE_REGEX.test(key)) {
+      if (FOLLOWUP_TABLE_REGEX.test(key) || FOLLOWUP_SUFFIX_REGEX.test(key)) {
         return;
       }
       const val = obj[key];
@@ -164,7 +165,7 @@ export default function AuditLogViewer({ hfId, regPatientId, isOpen = true, onCl
     };
 
     allKeys.forEach((key) => {
-      if (FOLLOWUP_KEY_REGEX.test(key)) {
+      if (FOLLOWUP_KEY_REGEX.test(key) || FOLLOWUP_SUFFIX_REGEX.test(key)) {
         return;
       }
       const oldValue = normalize(prev[key]);

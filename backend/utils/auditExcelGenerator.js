@@ -327,8 +327,10 @@ const computeObjectDiff = (oldObj, newObj) => {
     const lowerLeaf = leaf.toLowerCase();
     const lowerFullKey = key.toLowerCase();
 
-    // Skip modular followup array items from primary registry audit trail
-    if (lowerFullKey.startsWith('followup') || lowerFullKey.includes('followup[')) {
+    // Skip modular followup array/table items and timeframe suffix fields from primary registry audit trail
+    const FOLLOWUP_KEY_REGEX = /^(stemi_followup|nstemi_followup|followup|followups|patient_followup_tasks)(\[|\.|$)/i;
+    const FOLLOWUP_SUFFIX_REGEX = /_(1m|3m|6m|12m|1month|3month|6month|12month)$/i;
+    if (FOLLOWUP_KEY_REGEX.test(lowerFullKey) || FOLLOWUP_SUFFIX_REGEX.test(lowerFullKey) || lowerFullKey.includes('followup')) {
       continue;
     }
 
