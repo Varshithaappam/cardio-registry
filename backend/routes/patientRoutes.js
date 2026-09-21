@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const patientController = require("../controllers/patientController");
+const { authenticateToken, requireRole } = require("../middleware/authMiddleware");
 
 /**
  * Patient Routes
@@ -24,7 +25,7 @@ router.post("/reject-match", patientController.rejectMatch);
 router.post("/:id/reject-match", patientController.rejectMatch);
 
 // Get Patient Match Audit History
-router.get("/audit", patientController.getAuditLogs);
+router.get("/audit", authenticateToken, requireRole("ADMIN"), patientController.getAuditLogs);
 
 // Get Patient Counts
 router.get("/counts/all", patientController.getAllPatientCounts);

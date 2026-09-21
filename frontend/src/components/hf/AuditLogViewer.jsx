@@ -296,12 +296,22 @@ export default function AuditLogViewer({ hfId, regPatientId, isOpen = true, onCl
     }
   };
 
+  const currentUser = (() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('user'));
+    } catch (e) {
+      return null;
+    }
+  })();
+  const isAuthorizedForAudit = currentUser?.role_id === 1 || String(currentUser?.role || currentUser?.role_name || '').toUpperCase() === 'ADMIN';
+
   useEffect(() => {
-    if ((isOpen || isInline) && (regPatientId || hfId)) {
+    if ((isOpen || isInline) && (regPatientId || hfId) && isAuthorizedForAudit) {
       fetchAuditLogs();
     }
-  }, [isOpen, isInline, hfId, regPatientId]);
+  }, [isOpen, isInline, hfId, regPatientId, isAuthorizedForAudit]);
 
+  if (!isAuthorizedForAudit) return null;
   if (!isOpen && !isInline) return null;
 
   const renderDataBlock = (data) => {

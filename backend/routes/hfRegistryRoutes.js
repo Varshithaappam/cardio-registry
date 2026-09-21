@@ -45,7 +45,7 @@ router.put(
 router.get(
   '/patient/:regPatientId/audit',
   authenticateToken,
-  requireRole('ADMIN', 'CLINICIAN'),
+  requireRole('ADMIN'),
   hfRegistryController.getPatientAuditLog
 );
 
@@ -53,11 +53,13 @@ router.get(
 router.post(
   '/export-audit-excel',
   authenticateToken,
+  requireRole('ADMIN'),
   hfRegistryController.exportPatientAuditExcel
 );
 router.get(
   '/patient/:regPatientId/audit/export-excel',
   authenticateToken,
+  requireRole('ADMIN'),
   hfRegistryController.exportPatientAuditExcel
 );
 
@@ -65,7 +67,7 @@ router.get(
 router.get(
   '/:id/audit', 
   authenticateToken, 
-  requireRole('ADMIN', 'CLINICIAN'), 
+  requireRole('ADMIN'), 
   hfRegistryController.getAuditLog
 );
 

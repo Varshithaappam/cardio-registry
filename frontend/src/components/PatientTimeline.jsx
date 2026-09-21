@@ -70,6 +70,16 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
 
   const targetPatientId = record?.patient?.id || record?.patient?.reg_patient_id || record?.patient?.regPatientId || record?.reg_patient_id;
 
+  const currentUser = (() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('user'));
+    } catch (e) {
+      return null;
+    }
+  })();
+
+  const isAuthorizedForAudit = currentUser?.role_id === 1 || String(currentUser?.role || currentUser?.role_name || '').toUpperCase() === 'ADMIN';
+
   const fetchAuditLogs = () => {
     if (!targetPatientId) return;
     setLoadingAudit(true);
@@ -84,20 +94,10 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
   };
 
   useEffect(() => {
-    if (activeTab === 'audit' && targetPatientId) {
+    if (activeTab === 'audit' && targetPatientId && isAuthorizedForAudit) {
       fetchAuditLogs();
     }
-  }, [activeTab, targetPatientId, record]);
-
-  const currentUser = (() => {
-    try {
-      return JSON.parse(sessionStorage.getItem('user'));
-    } catch (e) {
-      return null;
-    }
-  })();
-
-  const isAuthorizedForAudit = ['ADMIN', 'CLINICIAN'].includes(currentUser?.role);
+  }, [activeTab, targetPatientId, record, isAuthorizedForAudit]);
 
   const targetHfId = record?.hf_id || 
                      record?.patient?.hf_id || 
