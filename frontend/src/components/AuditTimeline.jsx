@@ -19,6 +19,21 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [actionFilter, setActionFilter] = useState('ALL');
+  const [userFilter, setUserFilter] = useState('ALL');
+
+  // Timeline interactive filters
+  const [timelineActionFilter, setTimelineActionFilter] = useState('ALL');
+  const [timelineUserFilter, setTimelineUserFilter] = useState('ALL');
+
+  // Dynamically extract unique users from audit logs
+  const availableUsers = useMemo(() => {
+    const set = new Set();
+    logs.forEach((log) => {
+      const u = log.username || log.user_id;
+      if (u) set.add(String(u));
+    });
+    return Array.from(set).sort();
+  }, [logs]);
 
   // Helper to format ISO/database timestamp in Indian Standard Time (Asia/Kolkata)
   const formatTimestamp = (ts) => {
@@ -516,10 +531,30 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
     }
   };
 
-  // Timeline displays strictly past 1 week logs
+  // Timeline displays past 1 week logs filtered by action type and user
   const timelineLogs = useMemo(() => {
-    return logs.filter(log => isWithinPastWeek(log.timestamp));
-  }, [logs]);
+    return logs.filter((log) => {
+      if (!isWithinPastWeek(log.timestamp)) return false;
+
+      // Filter by Timeline Action Filter
+      if (timelineActionFilter && timelineActionFilter !== 'ALL') {
+        const act = String(log.action_type || '').toUpperCase();
+        if (timelineActionFilter === 'CREATE' && !(act === 'CREATE' || act === 'CREATION')) return false;
+        if (timelineActionFilter === 'UPDATE' && !(act === 'UPDATE' || act === 'UPDATED')) return false;
+        if (timelineActionFilter === 'DELETE' && !(act === 'DELETE' || act === 'DELETION')) return false;
+        if (timelineActionFilter === 'RESTORE' && !(act === 'RESTORE' || act === 'RESTORED' || act === 'UNDELETE')) return false;
+        if (!['CREATE', 'UPDATE', 'DELETE', 'RESTORE'].includes(timelineActionFilter) && act !== timelineActionFilter) return false;
+      }
+
+      // Filter by Timeline User Filter
+      if (timelineUserFilter && timelineUserFilter !== 'ALL') {
+        const u = String(log.username || log.user_id || '');
+        if (u !== timelineUserFilter) return false;
+      }
+
+      return true;
+    });
+  }, [logs, timelineActionFilter, timelineUserFilter]);
 
   // Client-side ExcelJS generator fallback
   const generateClientSideExcel = async (filteredLogs) => {
@@ -558,9 +593,10 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
     const pId = patientMr || '—';
     const dateStr = (startDate && endDate) ? `${startDate} to ${endDate}` : (startDate ? `From ${startDate}` : (endDate ? `Until ${endDate}` : 'All Actions'));
     const actStr = (actionFilter && actionFilter !== 'ALL') ? actionFilter : 'All Actions';
+    const userStr = (userFilter && userFilter !== 'ALL') ? userFilter : 'All Users';
     const totalRecs = filteredLogs.length;
 
-    metaCell.value = `Patient Name: ${pName} | MR No: ${pMr} | Patient ID: ${pId} | Date Range: ${dateStr} | Action: ${actStr} | Total Records: ${totalRecs}`;
+    metaCell.value = `Patient Name: ${pName} | MR No: ${pMr} | Patient ID: ${pId} | Date Range: ${dateStr} | Action: ${actStr} | User: ${userStr} | Total Records: ${totalRecs}`;
     metaCell.font = { name: 'Calibri', size: 10, bold: true, italic: true, color: { argb: 'FF4B0082' } };
     metaCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
     metaCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -689,6 +725,13 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
       });
     }
 
+    if (userFilter && userFilter !== 'ALL') {
+      filtered = filtered.filter(l => {
+        const u = String(l.username || l.user_id || '');
+        return u === userFilter;
+      });
+    }
+
     if (filtered.length === 0) {
       alert('No audit logs found matching the selected export filters.');
       return;
@@ -704,7 +747,8 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
           patientId: patientMr,
           startDate,
           endDate,
-          actionFilter
+          actionFilter,
+          userFilter
         },
         {
           responseType: 'blob'
@@ -838,8 +882,8 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
           </div>
         </div>
 
-        {/* Controls Row: Start Date, End Date, Action Type, Download Button */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 items-end pt-1">
+        {/* Controls Row: Start Date, End Date, Action Type, User Name, Download Button */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end pt-1">
           <div>
             <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
               <Calendar className="w-3 h-3 text-purple-600" />
@@ -885,11 +929,28 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
           </div>
 
           <div>
+            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+              <UserCheck className="w-3 h-3 text-purple-600" />
+              <span>User Name</span>
+            </label>
+            <select
+              value={userFilter}
+              onChange={(e) => setUserFilter(e.target.value)}
+              className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all shadow-2xs"
+            >
+              <option value="ALL">All Users</option>
+              {availableUsers.map((u) => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <button
               onClick={handleDownloadExcel}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs py-2.5 px-4 rounded-xl shadow-xs hover:shadow transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs py-2.5 px-3 rounded-xl shadow-xs hover:shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-4 h-4 shrink-0" />
               <span>Download Excel Report</span>
             </button>
           </div>
@@ -909,7 +970,7 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
       </div>
 
       {/* Timeline Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-100 pb-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-purple-100 pb-4">
         <div>
           <h2 className="text-sm sm:text-base font-extrabold tracking-wide uppercase text-purple-950 flex flex-wrap items-center gap-2">
             <Shield className="w-4 h-4 text-purple-600 inline-block" />
@@ -921,6 +982,40 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
           <p className="text-xs text-slate-500 mt-1">
             Immutable record of modifications, creations, and deletions (showing past 7 days).
           </p>
+        </div>
+
+        {/* Timeline Interactive Filters */}
+        <div className="flex flex-wrap items-center gap-2 bg-purple-50/70 p-2 rounded-xl border border-purple-200/80">
+          <div className="flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-purple-700" />
+            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">Action:</span>
+            <select
+              value={timelineActionFilter}
+              onChange={(e) => setTimelineActionFilter(e.target.value)}
+              className="bg-white border border-purple-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs"
+            >
+              <option value="ALL">All Actions</option>
+              <option value="CREATE">Creation</option>
+              <option value="UPDATE">Update</option>
+              <option value="DELETE">Deletion</option>
+              <option value="RESTORE">Restored</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <UserCheck className="w-3.5 h-3.5 text-purple-700" />
+            <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">User:</span>
+            <select
+              value={timelineUserFilter}
+              onChange={(e) => setTimelineUserFilter(e.target.value)}
+              className="bg-white border border-purple-200 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-2xs"
+            >
+              <option value="ALL">All Users</option>
+              {availableUsers.map((u) => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 

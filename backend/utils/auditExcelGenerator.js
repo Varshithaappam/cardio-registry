@@ -498,7 +498,15 @@ function formatRawValues(log) {
   }
 }
 
-async function generateAuditExcel({ logs = [], patientName = '', patientMr = '', patientId = '', startDate = '', endDate = '', actionFilter = '' }, res) {
+async function generateAuditExcel({ logs = [], patientName = '', patientMr = '', patientId = '', startDate = '', endDate = '', actionFilter = '', userFilter = '' }, res) {
+  let filteredLogs = [...logs];
+  if (userFilter && userFilter !== 'ALL') {
+    filteredLogs = filteredLogs.filter((log) => {
+      const u = String(log.username || log.user_id || '');
+      return u === userFilter;
+    });
+  }
+
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'CARE HEALTH SYSTEM';
   workbook.lastModifiedBy = 'CARE HEALTH SYSTEM';
@@ -536,9 +544,10 @@ async function generateAuditExcel({ logs = [], patientName = '', patientMr = '',
   const pId = patientId || '—';
   const dateStr = (startDate && endDate) ? `${startDate} to ${endDate}` : (startDate ? `From ${startDate}` : (endDate ? `Until ${endDate}` : 'All Actions'));
   const actStr = (actionFilter && actionFilter !== 'ALL') ? actionFilter : 'All Actions';
-  const totalRecs = logs.length;
+  const userStr = (userFilter && userFilter !== 'ALL') ? userFilter : 'All Users';
+  const totalRecs = filteredLogs.length;
 
-  metaCell.value = `Patient Name: ${pName} | MR No: ${pMr} | Patient ID: ${pId} | Date Range: ${dateStr} | Action: ${actStr} | Total Records: ${totalRecs}`;
+  metaCell.value = `Patient Name: ${pName} | MR No: ${pMr} | Patient ID: ${pId} | Date Range: ${dateStr} | Action: ${actStr} | User: ${userStr} | Total Records: ${totalRecs}`;
   metaCell.font = { name: 'Calibri', size: 10, bold: true, italic: true, color: { argb: 'FF4B0082' } };
   metaCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6E6FA' } };
   metaCell.alignment = { horizontal: 'center', vertical: 'middle' };
@@ -580,7 +589,7 @@ async function generateAuditExcel({ logs = [], patientName = '', patientMr = '',
     right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
   };
 
-  logs.forEach((log) => {
+  filteredLogs.forEach((log) => {
     const auditId = log.audit_id || '';
     const ts = formatTimestampIST(log.timestamp);
     const action = String(log.action_type || '').toUpperCase();
