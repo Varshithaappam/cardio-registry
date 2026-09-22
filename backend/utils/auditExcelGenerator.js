@@ -516,12 +516,11 @@ async function generateAuditExcel({ logs = [], patientName = '', patientMr = '',
     { key: 'registry_type', width: 16 },
     { key: 'record_identifier', width: 24 },
     { key: 'user_name', width: 20 },
-    { key: 'modified_fields', width: 48 },
-    { key: 'raw_values', width: 48 }
+    { key: 'modified_fields', width: 48 }
   ];
 
   // Row 1: Banner Title
-  worksheet.mergeCells('A1:H1');
+  worksheet.mergeCells('A1:G1');
   const titleCell = worksheet.getCell('A1');
   titleCell.value = 'CARE HEALTH SYSTEM — AUDIT & VERIFICATION TRAIL REPORT';
   titleCell.font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -530,7 +529,7 @@ async function generateAuditExcel({ logs = [], patientName = '', patientMr = '',
   worksheet.getRow(1).height = 32;
 
   // Row 2: Metadata Header
-  worksheet.mergeCells('A2:H2');
+  worksheet.mergeCells('A2:G2');
   const metaCell = worksheet.getCell('A2');
   const pName = patientName || 'Patient';
   const pMr = patientMr || '—';
@@ -550,9 +549,9 @@ async function generateAuditExcel({ logs = [], patientName = '', patientMr = '',
 
   // Row 4: Table Column Headers
   const headers = [
-    'Audit ID', 'Timestamp (IST)', 'Action Type', 'Registry Type',
-    'Record Identifier', 'User Name', 'Modified Fields / Details', 'Raw Values'
-  ];
+      'Audit ID', 'Timestamp (IST)', 'Action Type', 'Registry Type',
+      'Record Identifier', 'User Name', 'Modified Fields / Details'
+    ];
   const headerRow = worksheet.getRow(4);
   headerRow.values = headers;
   headerRow.height = 24;
@@ -600,8 +599,7 @@ async function generateAuditExcel({ logs = [], patientName = '', patientMr = '',
       regType,
       recId,
       userName,
-      modifiedFields,
-      rawValues
+      modifiedFields
     ]);
 
     dataRow.eachCell((cell, colNumber) => {
@@ -613,7 +611,7 @@ async function generateAuditExcel({ logs = [], patientName = '', patientMr = '',
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: style.fill } };
         cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: style.fontColor } };
         cell.alignment = { horizontal: 'center', vertical: 'top' };
-      } else if (colNumber === 7 || colNumber === 8) {
+      } else if (colNumber === 7) {
         cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
       } else {
         cell.alignment = { vertical: 'top', horizontal: 'center' };

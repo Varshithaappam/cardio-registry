@@ -538,12 +538,11 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
       { key: 'registry_type', width: 16 },
       { key: 'record_identifier', width: 24 },
       { key: 'user_name', width: 20 },
-      { key: 'modified_fields', width: 48 },
-      { key: 'raw_values', width: 48 }
+      { key: 'modified_fields', width: 48 }
     ];
 
     // Row 1 Title Banner
-    worksheet.mergeCells('A1:H1');
+    worksheet.mergeCells('A1:G1');
     const titleCell = worksheet.getCell('A1');
     titleCell.value = 'CARE HEALTH SYSTEM — AUDIT & VERIFICATION TRAIL REPORT';
     titleCell.font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -552,7 +551,7 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
     worksheet.getRow(1).height = 32;
 
     // Row 2 Metadata Header Banner
-    worksheet.mergeCells('A2:H2');
+    worksheet.mergeCells('A2:G2');
     const metaCell = worksheet.getCell('A2');
     const pName = patientName || 'Patient';
     const pMr = patientMr || '—';
@@ -573,7 +572,7 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
     // Row 4 Table Headers
     const headers = [
       'Audit ID', 'Timestamp (IST)', 'Action Type', 'Registry Type',
-      'Record Identifier', 'User Name', 'Modified Fields / Details', 'Raw Values'
+      'Record Identifier', 'User Name', 'Modified Fields / Details'
     ];
     const headerRow = worksheet.getRow(4);
     headerRow.values = headers;
@@ -616,22 +615,6 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
         ? parsedChanges.map(chg => `${chg.field}: "${chg.previous ?? '—'}" -> "${chg.new ?? '—'}"`).join('\n')
         : '—';
 
-      let rawValues = 'Prev:';
-      let prevStr = '';
-      if (log.previous_values) {
-        try {
-          const parsed = typeof log.previous_values === 'string' ? JSON.parse(log.previous_values) : log.previous_values;
-          prevStr = JSON.stringify(parsed);
-        } catch {
-          prevStr = String(log.previous_values);
-        }
-      }
-      if (action === 'CREATE' || action === 'CREATION') {
-        rawValues = 'Prev: null | New:';
-      } else if (prevStr) {
-        rawValues = `Prev:\n${prevStr}`;
-      }
-
       const dataRow = worksheet.addRow([
         auditId,
         ts,
@@ -639,8 +622,7 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
         regType,
         recId,
         userName,
-        modifiedFields,
-        rawValues
+        modifiedFields
       ]);
 
       dataRow.eachCell((cell, colNumber) => {
@@ -652,7 +634,7 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
           cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: style.fill } };
           cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: style.fontColor } };
           cell.alignment = { horizontal: 'center', vertical: 'top' };
-        } else if (colNumber === 7 || colNumber === 8) {
+        } else if (colNumber === 7) {
           cell.alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
         } else {
           cell.alignment = { vertical: 'top', horizontal: 'center' };
