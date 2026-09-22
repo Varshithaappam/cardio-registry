@@ -205,12 +205,7 @@ export default function NurseFollowUpReport() {
     setLoading(true);
     setError(null);
     try {
-      let response;
-      try {
-        response = await api.get('/nurse-dashboard/tasks');
-      } catch (e1) {
-        response = await api.get('/nurse-followup-report/tasks');
-      }
+      const response = await api.get('/nurse-dashboard/tasks');
       if (response.data && response.data.success) {
         setTasks(response.data.data || []);
       } else {
@@ -234,12 +229,7 @@ export default function NurseFollowUpReport() {
     setLogsLoading(true);
     const key = `${regPatientId}-${registryType}`;
     try {
-      let response;
-      try {
-        response = await api.get(`/nurse-dashboard/${regPatientId}/logs?registry=${registryType}&registry_type=${registryType}`);
-      } catch (e1) {
-        response = await api.get(`/nurse-followup-report/${regPatientId}/logs?registry=${registryType}&registry_type=${registryType}`);
-      }
+      const response = await api.get(`/nurse-dashboard/${regPatientId}/logs?registry=${registryType}&registry_type=${registryType}`);
       if (response.data && response.data.success) {
         setPatientLogs((prev) => ({ ...prev, [key]: response.data.data || [] }));
       } else {

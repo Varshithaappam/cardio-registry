@@ -100,9 +100,7 @@ const getPatientCentricTasks = async (req, res) => {
         INNER JOIN patient_demographics p WITH (NOLOCK) ON t.reg_patient_id = p.reg_patient_id
         LEFT JOIN LatestHF lhf ON t.reg_patient_id = lhf.reg_patient_id
         LEFT JOIN hf_followup_assessments fa WITH (NOLOCK) ON (
-          t.source_registry LIKE '%Heart Failure%' AND (
-            t.source_record_id = fa.followup_id OR fa.followup_id = lhf.max_followup_id
-          )
+          t.source_registry LIKE '%Heart Failure%' AND t.source_record_id = fa.followup_id
         )
         WHERE t.status != 'No Follow-Up Needed'
           AND t.status != 'Superseded by new assessment'

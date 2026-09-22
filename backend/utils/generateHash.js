@@ -2,7 +2,7 @@
 const bcrypt = require('bcryptjs');
 
 // Read the plain text password passed from the command line argument
-const plainPassword = 'Siva@2026';
+const plainPassword = 'Komal@2026';
 
 if (!plainPassword) {
   console.log('\n❌ Error: Please provide a password as an argument.');
