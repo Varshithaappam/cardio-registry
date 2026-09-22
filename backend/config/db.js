@@ -147,15 +147,18 @@ const config = {
   }
 };
 
-let poolPromise;
+const poolPromise = new sql.ConnectionPool(config)
+  .connect()
+  .then((pool) => {
+    console.log('✅ Global SQL Pool Connected Successfully');
+    return pool;
+  })
+  .catch((err) => {
+    console.error('❌ SQL Server Pool Connection Failed:', err);
+    throw err;
+  });
 
 function getPool() {
-  if (!poolPromise) {
-    poolPromise = new sql.ConnectionPool(config).connect().catch((error) => {
-      poolPromise = undefined;
-      throw error;
-    });
-  }
   return poolPromise;
 }
 
@@ -406,6 +409,6 @@ async function healthCheck() {
   }
 }
 
-module.exports = { sql, getPool, getConnection, query, insert, healthCheck, ensureAppropriatenessColumns, ensureAuditTable, ensureRegisterPatientSP };
+module.exports = { sql, poolPromise, getPool, getConnection, query, insert, healthCheck, ensureAppropriatenessColumns, ensureAuditTable, ensureRegisterPatientSP };
 
 
