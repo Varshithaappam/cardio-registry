@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import FormField from './FormField';
 import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
+import { validateTextWithChar } from '../../../utils/formSanitizers';
 
 /**
  * ValidatedTextField Component
@@ -27,13 +28,30 @@ export default function ValidatedTextField({
   error = null,
   showCounter = true,
   type = 'text',
+  validateAlphabetical = true,
+  isPhone = false,
   ...restProps
 }) {
+  const isPhoneField = Boolean(
+    isPhone ||
+    type === 'tel' ||
+    (id && (String(id).toLowerCase().includes('phone') || String(id).toLowerCase().includes('mobile') || String(id).toLowerCase().includes('contact'))) ||
+    (name && (String(name).toLowerCase().includes('phone') || String(name).toLowerCase().includes('mobile') || String(name).toLowerCase().includes('contact'))) ||
+    (label && (String(label).toLowerCase().includes('phone') || String(label).toLowerCase().includes('mobile') || String(label).toLowerCase().includes('contact')))
+  );
+
+  const effectiveMaxLength = isPhoneField ? 10 : maxLength;
+  const shouldShowCounter = showCounter && !isPhoneField;
+  const effectiveValidateAlphabetical = validateAlphabetical && !isPhoneField;
+
   const isDisabled = disabled || readOnly;
   const strVal = value !== undefined && value !== null ? String(value) : '';
   const currentLength = strVal.length;
-  const isWarning = maxLength - currentLength <= warningThreshold;
+  const isWarning = effectiveMaxLength - currentLength <= warningThreshold;
   const textareaRef = useRef(null);
+
+  const hasCharError = effectiveValidateAlphabetical && type === 'text' && strVal.trim().length > 0 && !validateTextWithChar(strVal);
+  const effectiveError = error || (hasCharError ? 'Must contain at least 1 letter (A-Z)' : null);
 
   const adjustHeight = (el) => {
     const target = el || textareaRef.current;
@@ -50,7 +68,10 @@ export default function ValidatedTextField({
   }, [strVal, multiline, rows]);
 
   const handleChange = (e) => {
-    const newVal = e && e.target !== undefined ? e.target.value : e;
+    let newVal = e && e.target !== undefined ? e.target.value : e;
+    if (isPhoneField && typeof newVal === 'string') {
+      newVal = newVal.replace(/\D/g, '').slice(0, 10);
+    }
     if (onChange) {
       onChange(newVal);
     }
@@ -59,14 +80,14 @@ export default function ValidatedTextField({
     }
   };
 
-  const fieldStyles = error
+  const fieldStyles = effectiveError
     ? INPUT_ERROR_STYLES
     : isDisabled
     ? INPUT_DISABLED_STYLES
     : INPUT_NORMAL_STYLES;
 
   return (
-    <FormField label={label} required={required} error={error} className={className}>
+    <FormField label={label} required={required} error={effectiveError} className={className}>
       <div className="relative w-full">
         {multiline || rows >= 1 ? (
           <textarea
@@ -76,7 +97,7 @@ export default function ValidatedTextField({
             rows={rows}
             value={strVal}
             placeholder={placeholder}
-            maxLength={maxLength}
+            maxLength={effectiveMaxLength}
             onChange={handleChange}
             onInput={(e) => adjustHeight(e.target)}
             disabled={isDisabled}
@@ -89,11 +110,11 @@ export default function ValidatedTextField({
           <input
             id={id || name}
             name={name || id}
-            type={type}
+            type={isPhoneField ? 'tel' : type}
             required={required}
             value={strVal}
-            placeholder={placeholder}
-            maxLength={maxLength}
+            placeholder={placeholder || (isPhoneField ? 'E.g. 9848012345' : '')}
+            maxLength={effectiveMaxLength}
             onChange={handleChange}
             disabled={isDisabled}
             readOnly={readOnly}
@@ -102,7 +123,7 @@ export default function ValidatedTextField({
           />
         )}
 
-        {showCounter && !isDisabled && (
+        {shouldShowCounter && !isDisabled && (
           <div className="flex justify-end items-center mt-1">
             <span
               className={`text-[11px] font-mono transition-colors duration-200 select-none ${
@@ -111,7 +132,7 @@ export default function ValidatedTextField({
                   : 'text-slate-400 font-medium'
               }`}
             >
-              {currentLength}/{maxLength}
+              {currentLength}/{effectiveMaxLength}
             </span>
           </div>
         )}

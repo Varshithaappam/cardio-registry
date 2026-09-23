@@ -13,7 +13,7 @@ import CheckboxGroup from './common/CheckboxGroup';
 import FormField from './common/FormField';
 import DrugTable from './common/DrugTable';
 import FollowupAssessmentForm from './FollowupAssessmentForm';
-import { validateField } from '../../utils/validation';
+import { validateField, getVitalsWarning } from '../../utils/validation';
 import { formatDateForDisplay, formatDateTimeForDisplay, formatDateForDatabase } from '../../utils/dateUtils';
 import {
   FORM_STYLES,
@@ -1036,12 +1036,12 @@ const hf = forwardRef(function hf(
 
   // Visit Info Context
   const [assessmentDate, setAssessmentDate] = useState(editingRecord?.assessmentDate ?? new Date().toISOString().split('T')[0]);
-  const [visitType, setVisitType] = useState(editingRecord?.visitType ?? 'Outpatient');
+  const [visitType, setVisitType] = useState(editingRecord?.visitType ?? null);
   const [treatingCardiologist, setTreatingCardiologist] = useState(
-    editingRecord?.inpatientDetails?.treatingCardiologist ?? patient.primaryConsultant ?? CARDIOLOGISTS[0]
+    editingRecord?.inpatientDetails?.treatingCardiologist ?? patient.primaryConsultant ?? null
   );
   const [referringDoctor, setReferringDoctor] = useState(
-    editingRecord?.inpatientDetails?.referringDoctor ?? patient.referringDoctor ?? REFERRING_DOCTORS[0]
+    editingRecord?.inpatientDetails?.referringDoctor ?? patient.referringDoctor ?? null
   );
   const [dischargeDate, setDischargeDate] = useState(editingRecord?.inpatientDetails?.dischargeDate ?? '');
   const [encounterId, setEncounterId] = useState(editingRecord?.inpatientDetails?.encounterId ?? editingRecord?.encounterId ?? '');
@@ -1051,45 +1051,46 @@ const hf = forwardRef(function hf(
   const [previousDiagnosis, setPreviousDiagnosis] = useState(editingRecord?.previous_diagnosis ?? editingRecord?.previousDiagnosis ?? '');
   
   // Medical History Enums/Flags
-  const [historyCabg, setHistoryCabg] = useState(editingRecord?.history_cabg ?? 'No');
-  const [historyPtca, setHistoryPtca] = useState(editingRecord?.history_ptca ?? 'No');
-  const [historyStroke, setHistoryStroke] = useState(editingRecord?.history_stroke ?? 'No');
-  const [historyMajorBleed, setHistoryMajorBleed] = useState(editingRecord?.history_major_bleed ?? 'No');
-  const [historyThrombolysis, setHistoryThrombolysis] = useState(editingRecord?.history_thrombolysis ?? 'No');
-  const [historyPastMi, setHistoryPastMi] = useState(editingRecord?.history_past_mi ?? 'No');
+  const [historyCabg, setHistoryCabg] = useState(editingRecord?.history_cabg ?? null);
+  const [historyPtca, setHistoryPtca] = useState(editingRecord?.history_ptca ?? null);
+  const [historyStroke, setHistoryStroke] = useState(editingRecord?.history_stroke ?? null);
+  const [historyMajorBleed, setHistoryMajorBleed] = useState(editingRecord?.history_major_bleed ?? null);
+  const [historyThrombolysis, setHistoryThrombolysis] = useState(editingRecord?.history_thrombolysis ?? null);
+  const [historyPastMi, setHistoryPastMi] = useState(editingRecord?.history_past_mi ?? null);
   const [pastMiYearsAgo, setPastMiYearsAgo] = useState(editingRecord?.past_mi_years_ago ?? '');
   const [pastMiLocation, setPastMiLocation] = useState(editingRecord?.past_mi_location ?? '');
   const [historyOther, setHistoryOther] = useState(editingRecord?.history_other ?? '');
 
   // Recent Hospitalization Details
-  const [previousHfHospitalization, setPreviousHfHospitalization] = useState(editingRecord?.previous_hf_hospitalization ?? 'No');
+  const [previousHfHospitalization, setPreviousHfHospitalization] = useState(editingRecord?.previous_hf_hospitalization ?? null);
   const [recentHospitalizationDates, setRecentHospitalizationDates] = useState(editingRecord?.recent_hospitalization_dates ?? '');
   const [recentHospitalizationReasons, setRecentHospitalizationReasons] = useState(editingRecord?.recent_hospitalization_reasons ?? '');
 
   // VT/VF Risk Assessment Details
-  const [documentedVtVf, setDocumentedVtVf] = useState(editingRecord?.documented_vt_vf ?? 'No');
+  const [documentedVtVf, setDocumentedVtVf] = useState(editingRecord?.documented_vt_vf ?? null);
   const [complaintsSyncope, setComplaintsSyncope] = useState(() => {
     if (editingRecord?.complaints_syncope === 'Yes' || editingRecord?.complaints_syncope_presyncope === 'Yes') return 'Yes';
     if (editingRecord?.syncope_frequency || editingRecord?.syncopeFrequency) return 'Yes';
-    return editingRecord?.complaints_syncope ?? 'No';
+    if (editingRecord?.complaints_syncope === 'No' || editingRecord?.complaints_syncope_presyncope === 'No') return 'No';
+    return null;
   });
   const [syncopeFrequency, setSyncopeFrequency] = useState(() => {
     return editingRecord?.syncope_frequency || editingRecord?.syncopeFrequency || '';
   });
-  const [documentedPvcs, setDocumentedPvcs] = useState(editingRecord?.documented_pvcs ?? 'No');
+  const [documentedPvcs, setDocumentedPvcs] = useState(editingRecord?.documented_pvcs ?? null);
   const [pvcCount, setPvcCount] = useState(editingRecord?.pvc_count ?? '');
   const [pvcFrequency, setPvcFrequency] = useState(editingRecord?.pvc_frequency ?? '');
-  const [documentedNsvt, setDocumentedNsvt] = useState(editingRecord?.documented_nsvt ?? 'No');
+  const [documentedNsvt, setDocumentedNsvt] = useState(editingRecord?.documented_nsvt ?? null);
   const [nsvtFrequency, setNsvtFrequency] = useState(editingRecord?.nsvt_frequency ?? '');
 
   // Vitals & Metrics
   const [vWeight, setVWeight] = useState(editingRecord?.weight ?? '');
-  const [vUnableToWeigh, setVUnableToWeigh] = useState(editingRecord?.unable_to_weigh ?? 'No');
+  const [vUnableToWeigh, setVUnableToWeigh] = useState(editingRecord?.unable_to_weigh ?? null);
   const [vUnableToWeighReason, setVUnableToWeighReason] = useState(editingRecord?.unable_to_weigh_reason ?? '');
   const [vHeight, setVHeight] = useState(editingRecord?.height ?? '');
   const [vHr, setVHr] = useState(editingRecord?.heart_rate ?? '');
-  const [vHrRegular, setVHrRegular] = useState(editingRecord?.heart_rate_regular ?? 'Yes');
-  const [vHrIrregular, setVHrIrregular] = useState(editingRecord?.heart_rate_irregular ?? 'No');
+  const [vHrRegular, setVHrRegular] = useState(editingRecord?.heart_rate_regular ?? null);
+  const [vHrIrregular, setVHrIrregular] = useState(editingRecord?.heart_rate_irregular ?? null);
   const [vRr, setVRr] = useState(editingRecord?.respiratory_rate ?? '');
   const [vO2, setVO2] = useState(editingRecord?.oxygen_saturation ?? '');
   const [vBpSittingSystolic, setVBpSittingSystolic] = useState(editingRecord?.systolic_bp_sitting ?? '');
@@ -1097,34 +1098,34 @@ const hf = forwardRef(function hf(
   const [vBpStandingSystolic, setVBpStandingSystolic] = useState(editingRecord?.systolic_bp_standing ?? '');
   const [vBpStandingDiastolic, setVBpStandingDiastolic] = useState(editingRecord?.diastolic_bp_standing ?? '');
   
-  const [vMentalAlert, setVMentalAlert] = useState(editingRecord?.mental_status_alert ?? 'Yes');
-  const [vMentalConfused, setVMentalConfused] = useState(editingRecord?.mental_status_confused ?? 'No');
-  const [vMentalDrowsy, setVMentalDrowsy] = useState(editingRecord?.mental_status_drowsy ?? 'No');
+  const [vMentalAlert, setVMentalAlert] = useState(editingRecord?.mental_status_alert ?? null);
+  const [vMentalConfused, setVMentalConfused] = useState(editingRecord?.mental_status_confused ?? null);
+  const [vMentalDrowsy, setVMentalDrowsy] = useState(editingRecord?.mental_status_drowsy ?? null);
 
   // Symptoms Checklist Variables (Enum 'Yes'/'No')
-  const [symptomDyspneaAtRest, setSymptomDyspneaAtRest] = useState(editingRecord?.dyspnea_at_rest ?? 'No');
-  const [symptomDyspneaWithExertion, setSymptomDyspneaWithExertion] = useState(editingRecord?.dyspnea_with_exertion ?? 'No');
-  const [symptomFatigue, setSymptomFatigue] = useState(editingRecord?.fatigue ?? 'No');
-  const [symptomOrthopnea, setSymptomOrthopnea] = useState(editingRecord?.orthopnea ?? 'No');
-  const [symptomLossOfAppetite, setSymptomLossOfAppetite] = useState(editingRecord?.loss_of_appetite_bloating ?? 'No');
-  const [symptomDecreasedExercise, setSymptomDecreasedExercise] = useState(editingRecord?.decreased_exercise_tolerance ?? 'No');
-  const [symptomWeightGain, setSymptomWeightGain] = useState(editingRecord?.weight_gain ?? 'No');
-  const [symptomWeightLoss, setSymptomWeightLoss] = useState(editingRecord?.weight_loss ?? 'No');
-  const [symptomSyncope, setSymptomSyncope] = useState(editingRecord?.syncope ?? 'No');
-  const [symptomPnd, setSymptomPnd] = useState(editingRecord?.pnd ?? 'No');
-  const [symptomMuscleCramps, setSymptomMuscleCramps] = useState(editingRecord?.muscle_cramps ?? 'No');
-  const [symptomWheeze, setSymptomWheeze] = useState(editingRecord?.wheeze ?? 'No');
-  const [symptomGiddiness, setSymptomGiddiness] = useState(editingRecord?.giddiness ?? 'No');
-  const [symptomOther, setSymptomOther] = useState(editingRecord?.symptom_other ?? 'No');
+  const [symptomDyspneaAtRest, setSymptomDyspneaAtRest] = useState(editingRecord?.dyspnea_at_rest ?? null);
+  const [symptomDyspneaWithExertion, setSymptomDyspneaWithExertion] = useState(editingRecord?.dyspnea_with_exertion ?? null);
+  const [symptomFatigue, setSymptomFatigue] = useState(editingRecord?.fatigue ?? null);
+  const [symptomOrthopnea, setSymptomOrthopnea] = useState(editingRecord?.orthopnea ?? null);
+  const [symptomLossOfAppetite, setSymptomLossOfAppetite] = useState(editingRecord?.loss_of_appetite_bloating ?? null);
+  const [symptomDecreasedExercise, setSymptomDecreasedExercise] = useState(editingRecord?.decreased_exercise_tolerance ?? null);
+  const [symptomWeightGain, setSymptomWeightGain] = useState(editingRecord?.weight_gain ?? null);
+  const [symptomWeightLoss, setSymptomWeightLoss] = useState(editingRecord?.weight_loss ?? null);
+  const [symptomSyncope, setSymptomSyncope] = useState(editingRecord?.syncope ?? null);
+  const [symptomPnd, setSymptomPnd] = useState(editingRecord?.pnd ?? null);
+  const [symptomMuscleCramps, setSymptomMuscleCramps] = useState(editingRecord?.muscle_cramps ?? null);
+  const [symptomWheeze, setSymptomWheeze] = useState(editingRecord?.wheeze ?? null);
+  const [symptomGiddiness, setSymptomGiddiness] = useState(editingRecord?.giddiness ?? null);
+  const [symptomOther, setSymptomOther] = useState(editingRecord?.symptom_other ?? null);
   const [symptomOtherDetails, setSymptomOtherDetails] = useState(editingRecord?.symptom_other_details ?? '');
 
   // Volume Overload Signs Checklist Variables (Enum 'Yes'/'No')
-  const [signPeripheralEdema, setSignPeripheralEdema] = useState(editingRecord?.peripheral_edema ?? 'No');
-  const [signRales, setSignRales] = useState(editingRecord?.rales ?? 'No');
-  const [signHepatomegaly, setSignHepatomegaly] = useState(editingRecord?.hepatomegaly ?? 'No');
-  const [signAscites, setSignAscites] = useState(editingRecord?.ascites ?? 'No');
-  const [signJvp, setSignJvp] = useState(editingRecord?.jugular_venous_pressure ?? 'No');
-  const [signClinicalOther, setSignClinicalOther] = useState(editingRecord?.clinical_sign_other ?? 'No');
+  const [signPeripheralEdema, setSignPeripheralEdema] = useState(editingRecord?.peripheral_edema ?? null);
+  const [signRales, setSignRales] = useState(editingRecord?.rales ?? null);
+  const [signHepatomegaly, setSignHepatomegaly] = useState(editingRecord?.hepatomegaly ?? null);
+  const [signAscites, setSignAscites] = useState(editingRecord?.ascites ?? null);
+  const [signJvp, setSignJvp] = useState(editingRecord?.jugular_venous_pressure ?? null);
+  const [signClinicalOther, setSignClinicalOther] = useState(editingRecord?.clinical_sign_other ?? null);
   const [signClinicalOtherDetails, setSignClinicalOtherDetails] = useState(editingRecord?.clinical_sign_other_details ?? '');
 
   // Global Context Parameters
@@ -1134,7 +1135,7 @@ const hf = forwardRef(function hf(
     if (raw && (raw.includes('HFrEF') || raw.includes('reduced'))) return 'HFrEF (HF with reduced EF)';
     if (editingRecord?.finalClinicalAssessment?.hfpef === 'Yes') return 'HFpEF (HF with preserved EF)';
     if (editingRecord?.finalClinicalAssessment?.hfref === 'Yes') return 'HFrEF (HF with reduced EF)';
-    return 'HFrEF (HF with reduced EF)';
+    return null;
   });
   const [hfStage, setHfStage] = useState(() => {
     const raw = editingRecord?.stageOfHF || editingRecord?.finalAssessment?.finalStage;
@@ -1143,7 +1144,7 @@ const hf = forwardRef(function hf(
     if (editingRecord?.finalClinicalAssessment?.stage_b === 'Yes') return 'Stage B';
     if (editingRecord?.finalClinicalAssessment?.stage_c === 'Yes') return 'Stage C';
     if (editingRecord?.finalClinicalAssessment?.stage_d === 'Yes') return 'Stage D';
-    return 'Stage C';
+    return null;
   });
   const [hfNyha, setHfNyha] = useState(() => {
     const raw = editingRecord?.nyhaClass || editingRecord?.finalAssessment?.finalNyhaClass;
@@ -1152,22 +1153,22 @@ const hf = forwardRef(function hf(
     if (editingRecord?.finalClinicalAssessment?.nyha_class_2 === 'Yes') return 'NYHA Class II';
     if (editingRecord?.finalClinicalAssessment?.nyha_class_3 === 'Yes') return 'NYHA Class III';
     if (editingRecord?.finalClinicalAssessment?.nyha_class_4 === 'Yes') return 'NYHA Class IV';
-    return 'NYHA Class II';
+    return null;
   });
-  const [hfAf, setHfAf] = useState(editingRecord?.afStatus ?? 'NSR');
+  const [hfAf, setHfAf] = useState(editingRecord?.afStatus ?? null);
   const [hfEtiologyCv, setHfEtiologyCv] = useState(editingRecord?.hfEtiology?.cardiovascular ?? []);
   const [hfEtiologyNonCv, setHfEtiologyNonCv] = useState(editingRecord?.hfEtiology?.nonCardiac ?? []);
   const [hfEtiologyPulm, setHfEtiologyPulm] = useState(editingRecord?.hfEtiology?.pulmonary ?? []);
 
   // 4. Final Clinical Assessment States
-  const [finalNyha, setFinalNyha] = useState(editingRecord?.finalAssessment?.finalNyhaClass ?? editingRecord?.nyhaClass ?? 'NYHA Class II');
-  const [finalStage, setFinalStage] = useState(editingRecord?.finalAssessment?.finalStage ?? editingRecord?.stageOfHF ?? 'Stage C');
-  const [finalHfType, setFinalHfType] = useState(editingRecord?.finalAssessment?.finalTypeOfHF ?? editingRecord?.typeOfHF ?? 'HFrEF (HF with reduced EF)');
+  const [finalNyha, setFinalNyha] = useState(editingRecord?.finalAssessment?.finalNyhaClass ?? editingRecord?.nyhaClass ?? null);
+  const [finalStage, setFinalStage] = useState(editingRecord?.finalAssessment?.finalStage ?? editingRecord?.stageOfHF ?? null);
+  const [finalHfType, setFinalHfType] = useState(editingRecord?.finalAssessment?.finalTypeOfHF ?? editingRecord?.typeOfHF ?? null);
   const [maceEvents, setMaceEvents] = useState(editingRecord?.finalAssessment?.mace ?? []);
   const [finalClinicalNotes, setFinalClinicalNotes] = useState(editingRecord?.finalAssessment?.clinicalNotes ?? '');
 
   // New Comorbidities & Risk Factors states
-    const [etiologyOther, setEtiologyOther] = useState(editingRecord?.finalAssessment?.etiologyOther ?? 'No');
+  const [etiologyOther, setEtiologyOther] = useState(editingRecord?.finalAssessment?.etiologyOther ?? null);
   const [etiologyOtherDetails, setEtiologyOtherDetails] = useState(editingRecord?.finalAssessment?.etiologyOtherDetails ?? '');
   const [comorbidities, setComorbidities] = useState(editingRecord?.finalAssessment?.comorbidities ?? []);
   const [otherComorbidity, setOtherComorbidity] = useState(editingRecord?.finalAssessment?.otherComorbidity ?? '');
@@ -1183,20 +1184,20 @@ const hf = forwardRef(function hf(
   });
 
   // Expanded MACE States matching the image fields exactly
-  const [maceHospitalization, setMaceHospitalization] = useState(editingRecord?.finalAssessment?.maceHospitalization ?? 'No');
-  const [maceStroke, setMaceStroke] = useState(editingRecord?.finalAssessment?.maceStroke ?? 'No');
-  const [maceProcedures, setMaceProcedures] = useState(editingRecord?.finalAssessment?.maceProcedures ?? 'No');
-  const [maceMajorBleed, setMaceMajorBleed] = useState(editingRecord?.finalAssessment?.maceMajorBleed ?? 'No');
-  const [maceSevereArrhythmia, setMaceSevereArrhythmia] = useState(editingRecord?.finalAssessment?.maceSevereArrhythmia ?? 'No');
-  const [maceOther, setMaceOther] = useState(editingRecord?.finalAssessment?.maceOther ?? 'No');
+  const [maceHospitalization, setMaceHospitalization] = useState(editingRecord?.finalAssessment?.maceHospitalization ?? null);
+  const [maceStroke, setMaceStroke] = useState(editingRecord?.finalAssessment?.maceStroke ?? null);
+  const [maceProcedures, setMaceProcedures] = useState(editingRecord?.finalAssessment?.maceProcedures ?? null);
+  const [maceMajorBleed, setMaceMajorBleed] = useState(editingRecord?.finalAssessment?.maceMajorBleed ?? null);
+  const [maceSevereArrhythmia, setMaceSevereArrhythmia] = useState(editingRecord?.finalAssessment?.maceSevereArrhythmia ?? null);
+  const [maceOther, setMaceOther] = useState(editingRecord?.finalAssessment?.maceOther ?? null);
   const [maceOtherDetails, setMaceOtherDetails] = useState(editingRecord?.finalAssessment?.maceOtherDetails ?? '');
 
   // Death fields inside MACE
-  const [maceDeath, setMaceDeath] = useState(editingRecord?.finalAssessment?.maceDeath ?? 'No');
+  const [maceDeath, setMaceDeath] = useState(editingRecord?.finalAssessment?.maceDeath ?? null);
   const [maceDeathDate, setMaceDeathDate] = useState(editingRecord?.finalAssessment?.maceDeathDate ?? '');
   const [maceDeathLocation, setMaceDeathLocation] = useState(editingRecord?.finalAssessment?.maceDeathLocation ?? '');
   const [maceDeathReason, setMaceDeathReason] = useState(editingRecord?.finalAssessment?.maceDeathReason ?? '');
-  const [maceNone, setMaceNone] = useState(editingRecord?.finalAssessment?.maceNone ?? 'No');
+  const [maceNone, setMaceNone] = useState(editingRecord?.finalAssessment?.maceNone ?? null);
   const [hospNote, setHospNote] = useState(editingRecord?.finalAssessment?.hospNote || editingRecord?.hosp_note || editingRecord?.finalClinicalAssessment?.hosp_note || '');
   const [strokeNote, setStrokeNote] = useState(editingRecord?.finalAssessment?.strokeNote || editingRecord?.stroke_note || editingRecord?.finalClinicalAssessment?.stroke_note || '');
   const [bleedNote, setBleedNote] = useState(editingRecord?.finalAssessment?.bleedNote || editingRecord?.bleed_note || editingRecord?.finalClinicalAssessment?.bleed_note || '');
@@ -1324,7 +1325,6 @@ const hf = forwardRef(function hf(
     ];
     if (numericalFields.includes(fieldName)) {
       if (value !== '' && !/^[0-9]*\.?[0-9]*$/.test(value)) {
-        alert("enter only numbers");
         return;
       }
     }
@@ -1342,14 +1342,11 @@ const hf = forwardRef(function hf(
   const handleNumericChange = (setter, val) => {
     if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
       setter(val);
-    } else {
-      alert("enter only numbers");
     }
   };
 
   const handleDoseChange = (val, setDose, label) => {
     if (val !== '' && !/^[0-9]*\.?[0-9]*$/.test(val)) {
-      alert("enter only numbers");
       return;
     }
     const res = validateField('dose', val);
@@ -1363,7 +1360,6 @@ const hf = forwardRef(function hf(
   const handleLabChange = (key, field, value) => {
     if (field === 'result') {
       if (value !== '' && !/^[0-9]*\.?[0-9]*$/.test(value)) {
-        alert("enter only numbers");
         return;
       }
     }
@@ -2066,8 +2062,10 @@ const hf = forwardRef(function hf(
 
   // Calculators
   const vBmi = useMemo(() => {
-    if (vUnableToWeigh === 'No' && vWeight > 0 && vHeight > 0) {
-      return Number((vWeight / Math.pow(vHeight / 100, 2)).toFixed(1));
+    const w = parseFloat(vWeight);
+    const h = parseFloat(vHeight);
+    if (vUnableToWeigh !== 'Yes' && !isNaN(w) && w > 0 && !isNaN(h) && h > 0) {
+      return Number((w / Math.pow(h / 100, 2)).toFixed(1));
     }
     return undefined;
   }, [vWeight, vHeight, vUnableToWeigh]);
@@ -3881,7 +3879,7 @@ const hf = forwardRef(function hf(
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <NumberInput readOnly={readOnly} id="vWeight" label="Weight (kg)" disabled={vUnableToWeigh === 'Yes'} value={vWeight} onChange={(val) => handleFieldChange('weight', val, setVWeight, setVWeightError)} error={formErrors.vWeight || vWeightError} />
+                <NumberInput readOnly={readOnly} id="vWeight" label="Weight (kg)" disabled={vUnableToWeigh === 'Yes'} value={vWeight} onChange={(val) => handleFieldChange('weight', val, setVWeight, setVWeightError)} error={formErrors.vWeight || vWeightError} warning={getVitalsWarning('weight', vWeight)} />
                 <label className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 cursor-pointer">
                   <input disabled={readOnly} type="checkbox" checked={vUnableToWeigh === 'Yes'} onChange={(e) => setVUnableToWeigh(e.target.checked ? 'Yes' : 'No')} />
                   <span>Unable to weigh (Measure at earliest opportunity)</span>
@@ -3891,7 +3889,7 @@ const hf = forwardRef(function hf(
                 </div>
               </div>
               <div>
-                <NumberInput readOnly={readOnly} id="vHeight" label="Height (Cm)" value={vHeight} onChange={(val) => handleFieldChange('height', val, setVHeight, setVHeightError)} error={formErrors.vHeight || vHeightError} />
+                <NumberInput readOnly={readOnly} id="vHeight" label="Height (Cm)" value={vHeight} onChange={(val) => handleFieldChange('height', val, setVHeight, setVHeightError)} error={formErrors.vHeight || vHeightError} warning={getVitalsWarning('height', vHeight)} />
               </div>
               <div className="p-3 bg-white rounded-lg border border-slate-200 flex flex-col justify-center">
                 <span className="text-slate-400 font-semibold text-[10px] uppercase block">Calculated BMI</span>
@@ -3901,7 +3899,7 @@ const hf = forwardRef(function hf(
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <NumberInput readOnly={readOnly} id="vHr" label="Heart Rate (resting) (Bpm)" value={vHr} onChange={(val) => handleFieldChange('heartRate', val, setVHr, setVHrError)} error={formErrors.vHr || vHrError} />
+                <NumberInput readOnly={readOnly} id="vHr" label="Heart Rate (resting) (Bpm)" value={vHr} onChange={(val) => handleFieldChange('heartRate', val, setVHr, setVHrError)} error={formErrors.vHr || vHrError} warning={getVitalsWarning('heartRate', vHr)} />
               </div>
               <div className="md:col-span-2">
                 <label className="form-field-label mb-2">Regularity</label>
@@ -3928,25 +3926,25 @@ const hf = forwardRef(function hf(
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <NumberInput readOnly={readOnly} id="vRr" label="Respiratory Rate" value={vRr} onChange={setVRr} error={formErrors.vRr} />
-              <NumberInput readOnly={readOnly} id="vO2" label="O₂ Saturation (%)" value={vO2} onChange={(val) => handleFieldChange('o2Saturation', val, setVO2, setVO2Error)} error={formErrors.vO2 || vO2Error} />
+              <NumberInput readOnly={readOnly} id="vRr" label="Respiratory Rate" value={vRr} onChange={setVRr} error={formErrors.vRr} warning={getVitalsWarning('rr', vRr)} />
+              <NumberInput readOnly={readOnly} id="vO2" label="O₂ Saturation (%)" value={vO2} onChange={(val) => handleFieldChange('o2Saturation', val, setVO2, setVO2Error)} error={formErrors.vO2 || vO2Error} warning={getVitalsWarning('o2', vO2)} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-3 bg-white rounded-lg border border-slate-200">
                 <label className="form-field-label mb-1">Blood Pressure: Sitting / Supine (mmHg)</label>
                 <div className="flex gap-2">
-                  <NumberInput readOnly={readOnly} id="vBpSittingSystolic" value={vBpSittingSystolic} onChange={(val) => handleFieldChange('systolicBp', val, setVBpSittingSystolic, setVBpSittingSystolicError)} placeholder="Sys" error={formErrors.vBpSittingSystolic || vBpSittingSystolicError} />
+                  <NumberInput readOnly={readOnly} id="vBpSittingSystolic" value={vBpSittingSystolic} onChange={(val) => handleFieldChange('systolicBp', val, setVBpSittingSystolic, setVBpSittingSystolicError)} placeholder="Sys" error={formErrors.vBpSittingSystolic || vBpSittingSystolicError} warning={getVitalsWarning('sysBp', vBpSittingSystolic)} />
                   <span className="self-center text-slate-400">/</span>
-                  <NumberInput readOnly={readOnly} id="vBpSittingDiastolic" value={vBpSittingDiastolic} onChange={(val) => handleFieldChange('diastolicBp', val, setVBpSittingDiastolic, setVBpSittingDiastolicError)} placeholder="Dia" error={formErrors.vBpSittingDiastolic || vBpSittingDiastolicError} />
+                  <NumberInput readOnly={readOnly} id="vBpSittingDiastolic" value={vBpSittingDiastolic} onChange={(val) => handleFieldChange('diastolicBp', val, setVBpSittingDiastolic, setVBpSittingDiastolicError)} placeholder="Dia" error={formErrors.vBpSittingDiastolic || vBpSittingDiastolicError} warning={getVitalsWarning('diaBp', vBpSittingDiastolic)} />
                 </div>
               </div>
               <div className="p-3 bg-white rounded-lg border border-slate-200">
                 <label className="form-field-label mb-1">Blood Pressure: Standing (mmHg)</label>
                 <div className="flex gap-2">
-                  <NumberInput readOnly={readOnly} id="vBpStandingSystolic" value={vBpStandingSystolic} onChange={setVBpStandingSystolic} placeholder="Sys" error={formErrors.vBpStandingSystolic} />
+                  <NumberInput readOnly={readOnly} id="vBpStandingSystolic" value={vBpStandingSystolic} onChange={setVBpStandingSystolic} placeholder="Sys" error={formErrors.vBpStandingSystolic} warning={getVitalsWarning('sysBp', vBpStandingSystolic)} />
                   <span className="self-center text-slate-400">/</span>
-                  <NumberInput readOnly={readOnly} id="vBpStandingDiastolic" value={vBpStandingDiastolic} onChange={setVBpStandingDiastolic} placeholder="Dia" error={formErrors.vBpStandingDiastolic} />
+                  <NumberInput readOnly={readOnly} id="vBpStandingDiastolic" value={vBpStandingDiastolic} onChange={setVBpStandingDiastolic} placeholder="Dia" error={formErrors.vBpStandingDiastolic} warning={getVitalsWarning('diaBp', vBpStandingDiastolic)} />
                 </div>
               </div>
             </div>
@@ -4839,7 +4837,7 @@ const hf = forwardRef(function hf(
                       <div className="flex flex-col gap-0.5" id="echoEfPercentBlock">
                         <div className="flex items-center gap-1.5">
                           <span className="w-24 font-medium flex items-center gap-0.5">
-                            EF% <span className="text-red-500 font-bold">*</span>:
+                            EF%:
                           </span>
                           <input
                             disabled={readOnly}
@@ -4875,7 +4873,7 @@ const hf = forwardRef(function hf(
                     return (
                       <div className="flex flex-col gap-0.5" id="echoEaRatioBlock">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-24 font-medium">E/A ratio <span className="text-red-500 font-bold">*</span>:</span>
+                          <span className="w-24 font-medium">E/A ratio:</span>
                           <input
                             disabled={readOnly}
                             type="text"
@@ -4909,7 +4907,7 @@ const hf = forwardRef(function hf(
                     return (
                       <div className="flex flex-col gap-0.5" id="echoRvTapsvBlock">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-24 font-medium">RV TAPSV <span className="text-red-500 font-bold">*</span>:</span>
+                          <span className="w-24 font-medium">RV TAPSV:</span>
                           <input
                             disabled={readOnly}
                             type="text"
@@ -4945,7 +4943,7 @@ const hf = forwardRef(function hf(
                     return (
                       <div className="flex flex-col gap-0.5" id="echoEePrimeRatioBlock">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-32 font-medium text-xs">E/E' ratio <span className="text-red-500 font-bold">*</span>:</span>
+                          <span className="w-32 font-medium text-xs">E/E' ratio:</span>
                           <input
                             disabled={readOnly}
                             type="text"
@@ -4980,7 +4978,7 @@ const hf = forwardRef(function hf(
                     return (
                       <div className="flex flex-col gap-0.5" id="echoEDecelTimeBlock">
                         <div className="flex items-center gap-1.5">
-                          <span className="w-32 font-medium text-xs">E deceleration time <span className="text-red-500 font-bold">*</span>:</span>
+                          <span className="w-32 font-medium text-xs">E deceleration time:</span>
                           <input
                             disabled={readOnly}
                             type="text"
@@ -5220,11 +5218,11 @@ const hf = forwardRef(function hf(
                   {sixMwtStatus === 'Done' && (
                     <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-4 pl-5 bg-white p-2 rounded border border-slate-200">
                       <div className="flex items-center gap-1">
-                        <span>▪ Distance walked in m: <span className="text-red-500 font-bold">*</span></span>
+                        <span>▪ Distance walked in m:</span>
                         <input disabled={readOnly} type="text" value={sixMwtDistance} onChange={(e) => handleNumericChange(setSixMwtDistance, e.target.value)} className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.sixMwtDistance ? 'border-red-500 text-red-700' : 'border-slate-300'}`} />
                       </div>
                       <div className="flex items-center gap-1">
-                        <span>▪ Heart rate recovery in first 1 minute: <span className="text-red-500 font-bold">*</span></span>
+                        <span>▪ Heart rate recovery in first 1 minute:</span>
                         <input disabled={readOnly} type="text" value={sixMwtHrRecovery} onChange={(e) => handleNumericChange(setSixMwtHrRecovery, e.target.value)} className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.sixMwtHrRecovery ? 'border-red-500 text-red-700' : 'border-slate-300'}`} />
                       </div>
                     </div>
@@ -5535,7 +5533,7 @@ const hf = forwardRef(function hf(
             {/* Recommended Consults & Intolerances */}
             <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-300">
               <div className="p-3.5 space-y-1.5">
-                <label className={LABEL_STYLES}>Recommended Consults <span className="text-red-500">*</span></label>
+                <label className={LABEL_STYLES}>Recommended Consults</label>
                 <textarea disabled={readOnly}
                   rows={2}
                   value={recommendedConsults}
@@ -5546,7 +5544,7 @@ const hf = forwardRef(function hf(
               </div>
 
               <div className="p-3.5 space-y-1.5">
-                <label className={LABEL_STYLES}>Drug Intolerance(s) / Contraindications <span className="text-red-500">*</span></label>
+                <label className={LABEL_STYLES}>Drug Intolerance(s) / Contraindications</label>
                 <textarea disabled={readOnly}
                   rows={2}
                   value={drugIntoleranceContraindications}
@@ -5565,7 +5563,7 @@ const hf = forwardRef(function hf(
               return (
                 <div className="bg-white p-3.5 space-y-3" id="drugBetaBlocker">
                   <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                    <span className={SUBSECTION_HEADER_STYLES + ' border-0 pb-0 mb-0'}>Beta-Blocker Therapy <span className="text-red-500">*</span></span>
+                    <span className={SUBSECTION_HEADER_STYLES + ' border-0 pb-0 mb-0'}>Beta-Blocker Therapy</span>
                     {formErrors.betaBlocker && (
                       <span className="text-red-500 text-xs font-bold">{formErrors.betaBlocker}</span>
                     )}
@@ -5631,7 +5629,7 @@ const hf = forwardRef(function hf(
               return (
                 <div className="bg-white p-3.5 space-y-3" id="drugAceInhibitor">
                   <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                    <span className={SUBSECTION_HEADER_STYLES + ' border-0 pb-0 mb-0'}>ACE Inhibitor Therapy <span className="text-red-500">*</span></span>
+                    <span className={SUBSECTION_HEADER_STYLES + ' border-0 pb-0 mb-0'}>ACE Inhibitor Therapy</span>
                     {formErrors.aceInhibitor && (
                       <span className="text-red-500 text-xs font-bold">{formErrors.aceInhibitor}</span>
                     )}
@@ -5697,7 +5695,7 @@ const hf = forwardRef(function hf(
               return (
                 <div className="bg-white p-3.5 space-y-3" id="drugArb">
                   <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                    <span className={SUBSECTION_HEADER_STYLES + ' border-0 pb-0 mb-0'}>Angiotensin Receptor Blocker (ARB) <span className="text-red-500">*</span></span>
+                    <span className={SUBSECTION_HEADER_STYLES + ' border-0 pb-0 mb-0'}>Angiotensin Receptor Blocker (ARB)</span>
                     {formErrors.arb && (
                       <span className="text-red-500 text-xs font-bold">{formErrors.arb}</span>
                     )}

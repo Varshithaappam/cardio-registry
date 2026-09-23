@@ -38,15 +38,20 @@ export default function DateInput({
   const isoVal = value ? String(value).split('T')[0] : '';
 
   const handleTextChange = (e) => {
-    const raw = e.target.value;
-    if (!raw.trim()) {
+    let raw = e.target.value;
+    if (!raw) {
       onChange('');
       return;
     }
-    if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(raw.trim())) {
-      onChange(formatDateForDatabase(raw.trim()));
+    // Live Sanitization: strip anything not digit or dash/slash, max 10 chars
+    let clean = raw.replace(/[^0-9-/]/g, '');
+    if (clean.length > 10) {
+      clean = clean.slice(0, 10);
+    }
+    if (/^\d{2}[-/]\d{2}[-/]\d{4}$/.test(clean)) {
+      onChange(formatDateForDatabase(clean));
     } else {
-      onChange(raw);
+      onChange(clean);
     }
   };
 

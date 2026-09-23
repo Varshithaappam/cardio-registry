@@ -11,8 +11,14 @@
  */
 export const formatDateForDisplay = (dateVal) => {
   if (!dateVal) return '';
-  const str = String(dateVal).trim();
+  let str = String(dateVal).trim();
   if (!str || str === 'null' || str === 'undefined') return '';
+
+  // Sanitize: strip non-digits and non-dash/slash, limit to 10 chars max
+  if (!str.includes('T') && !str.includes('GMT')) {
+    str = str.replace(/[^0-9-/]/g, '');
+    if (str.length > 10) str = str.slice(0, 10);
+  }
 
   // If already DD-MM-YYYY
   if (/^\d{2}-\d{2}-\d{4}$/.test(str)) return str;

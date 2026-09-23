@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { CheckCircle2, AlertTriangle, Info, Trash2, X } from 'lucide-react';
+import { getFriendlyErrorMessage } from '../utils/errorMapper';
+import { scrollToAndHighlightField } from '../utils/fieldScrollHelper';
 
 // Create React Context for Global Alerts & Confirmation Modals
 const AlertContext = createContext(null);
@@ -17,12 +19,19 @@ export function AlertProvider({ children }) {
     confirmText: 'OK',
     cancelText: 'Cancel',
     showCancel: false,
+    targetField: null,
     onConfirm: null,
     onCancel: null,
   });
 
-  const closeModal = () => {
+  const closeModal = (targetField = null) => {
     setModalConfig((prev) => ({ ...prev, isOpen: false }));
+    const fieldToScroll = targetField || modalConfig.targetField;
+    if (fieldToScroll) {
+      setTimeout(() => {
+        scrollToAndHighlightField(fieldToScroll);
+      }, 100);
+    }
   };
 
   /**
@@ -34,24 +43,47 @@ export function AlertProvider({ children }) {
     title = 'Notice',
     message = '',
     confirmText = 'OK',
+    targetField = null,
     onConfirm = null,
   }) => {
+    // Sanitize any raw error or technical message passed directly to showAlert
+    let finalTitle = title;
+    let finalMessage = message;
+    let finalType = type;
+    let finalTargetField = targetField;
+
+    const friendly = getFriendlyErrorMessage(message);
+    if (friendly.targetField && !finalTargetField) {
+      finalTargetField = friendly.targetField;
+    }
+
+    if (type === 'danger' || type === 'error' || type === 'warning' || typeof message !== 'string' || message.includes('SQL') || message.includes('dbo.') || message.includes('duplicate key') || message.includes('2627') || message.includes('2601')) {
+      finalMessage = friendly.message;
+      if (title === 'Notice' || title === 'Error' || title === 'Save Failed') {
+        finalTitle = friendly.title;
+      }
+      if (type === 'danger' || type === 'error') {
+        finalType = friendly.type;
+      }
+    }
+
     return new Promise((resolve) => {
       setModalConfig({
         isOpen: true,
-        type,
-        title,
-        message,
+        type: finalType,
+        title: finalTitle,
+        message: finalMessage,
         confirmText,
         cancelText: 'Cancel',
         showCancel: false,
+        targetField: finalTargetField,
         onConfirm: async () => {
-          closeModal();
+          closeModal(finalTargetField);
           if (onConfirm) await onConfirm();
           resolve(true);
         },
         onCancel: () => {
-          closeModal();
+          closeModal(finalTargetField);
           resolve(false);
         },
       });

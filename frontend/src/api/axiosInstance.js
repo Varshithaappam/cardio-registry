@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getFriendlyErrorMessage } from '../utils/errorMapper';
 
 const api = axios.create({
   baseURL:
@@ -43,7 +44,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Redirect to login when authentication is invalid
+// Redirect to login when authentication is invalid & sanitize raw backend error messages
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -57,6 +58,14 @@ api.interceptors.response.use(
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
+    }
+
+    // Attach user-friendly error mapping to error object and sanitize data.message
+    const friendly = getFriendlyErrorMessage(error);
+    error.friendlyError = friendly;
+    if (error.response?.data) {
+      error.response.data.message = friendly.message;
+      error.response.data.title = friendly.title;
     }
 
     return Promise.reject(error);

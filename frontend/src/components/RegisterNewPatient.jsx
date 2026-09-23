@@ -3,6 +3,7 @@ import { User, MapPin, Briefcase, GraduationCap, X, Check, Phone, Mail, Shield, 
 import { buildPatientPayload } from '../utils/patientMapper';
 import { validateField } from '../utils/validation';
 import { formatDateForDisplay } from '../utils/dateUtils';
+import { sanitizePhone, sanitizePincode, sanitizeAlphaOnly } from '../utils/formSanitizers';
 import { createPatient, updatePatient, verifyPatient, confirmPatientMatch, rejectPatientMatch, resolveStagingPatient } from '../../api/patientApi';
 import PatientVerificationModal from './PatientVerificationModal';
 
@@ -712,7 +713,7 @@ export default function RegisterNewPatient({
                   placeholder="E.g. Hyderabad"
                   className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   value={villageTown}
-                  onChange={(e) => setVillageTown(e.target.value)}
+                  onChange={(e) => setVillageTown(sanitizeAlphaOnly(e.target.value))}
                 />
               </div>
               <div>
@@ -724,7 +725,7 @@ export default function RegisterNewPatient({
                   placeholder="E.g. Khairatabad"
                   className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   value={mandal}
-                  onChange={(e) => setMandal(e.target.value)}
+                  onChange={(e) => setMandal(sanitizeAlphaOnly(e.target.value))}
                 />
               </div>
             </div>
@@ -740,7 +741,7 @@ export default function RegisterNewPatient({
                   placeholder="E.g. Hyderabad"
                   className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
+                  onChange={(e) => setDistrict(sanitizeAlphaOnly(e.target.value))}
                 />
               </div>
               <div>
@@ -752,7 +753,7 @@ export default function RegisterNewPatient({
                   placeholder="E.g. Telangana"
                   className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   value={state}
-                  onChange={(e) => setState(e.target.value)}
+                  onChange={(e) => setState(sanitizeAlphaOnly(e.target.value))}
                 />
               </div>
               <div>
@@ -764,7 +765,7 @@ export default function RegisterNewPatient({
                   placeholder="500034"
                   className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
                   value={pincode}
-                  onChange={(e) => setPincode(e.target.value)}
+                  onChange={(e) => setPincode(sanitizePincode(e.target.value))}
                 />
               </div>
             </div>
@@ -777,14 +778,15 @@ export default function RegisterNewPatient({
                   id="reg-phone"
                   type="text"
                   required
-                  placeholder="+91 98480 12345"
+                  maxLength={10}
+                  placeholder="9848012345"
                   className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
                   value={phone}
                   onChange={(e) => {
-                    const val = e.target.value;
-                    const res = validateField('phone', val);
+                    const cleanPhone = sanitizePhone(e.target.value);
+                    const res = validateField('phone', cleanPhone);
                     setPhoneError(res.isValid ? null : res.error);
-                    setPhone(val);
+                    setPhone(cleanPhone);
                   }}
                   onBlur={(e) => {
                     const res = validateField('phone', e.target.value);

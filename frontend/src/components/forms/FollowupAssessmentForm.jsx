@@ -47,13 +47,13 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
 
   // --- Branch 1: If "Yes" is selected ---
   const [followupInterval, setFollowupInterval] = useState(
-    initialData?.followup_interval || initialData?.followupInterval || '1-Month'
+    initialData?.followup_interval || initialData?.followupInterval || null
   );
   const [scheduledFollowupDate, setScheduledFollowupDate] = useState(
     formatToIsoDate(initialData?.scheduled_followup_date || initialData?.scheduledFollowupDate || '')
   );
   const [visitMode, setVisitMode] = useState(
-    initialData?.visit_mode || initialData?.visitMode || 'In-Person HF Clinic'
+    initialData?.visit_mode || initialData?.visitMode || null
   );
   const [primaryFollowupReason, setPrimaryFollowupReason] = useState(
     initialData?.primary_followup_reason || initialData?.primaryFollowupReason || ''
@@ -61,10 +61,10 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
 
   // Recommended Pre-Visit Investigations (Checkboxes)
   const [investigationSerumLytes, setInvestigationSerumLytes] = useState(
-    initialData?.investigation_serum_lytes ?? initialData?.investigations?.serumLytes ?? true
+    initialData?.investigation_serum_lytes ?? initialData?.investigations?.serumLytes ?? false
   );
   const [investigationEcg, setInvestigationEcg] = useState(
-    initialData?.investigation_ecg ?? initialData?.investigations?.ecg ?? true
+    initialData?.investigation_ecg ?? initialData?.investigations?.ecg ?? false
   );
   const [investigationEcho, setInvestigationEcho] = useState(
     initialData?.investigation_echo ?? initialData?.investigations?.echo ?? false

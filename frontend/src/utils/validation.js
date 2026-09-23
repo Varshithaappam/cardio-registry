@@ -3,6 +3,49 @@
  */
 import { formatDateForDatabase } from './dateUtils';
 
+/**
+ * Clinical Range Thresholds for Vitals Metrics
+ */
+export const VITALS_CLINICAL_RANGES = {
+  weight: { min: 10, max: 400 },
+  height: { min: 50, max: 250 },
+  heartRate: { min: 10, max: 300 },
+  rr: { min: 4, max: 60 },
+  o2: { min: 0, max: 100 },
+  sysBp: { min: 40, max: 300 },
+  diaBp: { min: 20, max: 200 }
+};
+
+/**
+ * Computes soft validation warning for vitals fields.
+ * Returns exact warning string 'Not in clinical range' when entered value is outside clinical threshold.
+ */
+export const getVitalsWarning = (fieldName, value) => {
+  if (value === undefined || value === null || String(value).trim() === '') {
+    return null;
+  }
+
+  const num = Number(value);
+  if (isNaN(num)) return null;
+
+  const key = String(fieldName).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  let range = null;
+  if (key.includes('weight')) range = VITALS_CLINICAL_RANGES.weight;
+  else if (key.includes('height')) range = VITALS_CLINICAL_RANGES.height;
+  else if (key.includes('hr') || key.includes('heartrate') || key.includes('pulse')) range = VITALS_CLINICAL_RANGES.heartRate;
+  else if (key.includes('rr') || key.includes('respiratoryrate')) range = VITALS_CLINICAL_RANGES.rr;
+  else if (key.includes('o2') || key.includes('spo2') || key.includes('saturation')) range = VITALS_CLINICAL_RANGES.o2;
+  else if (key.includes('sys') || key.includes('systolic')) range = VITALS_CLINICAL_RANGES.sysBp;
+  else if (key.includes('dia') || key.includes('diastolic')) range = VITALS_CLINICAL_RANGES.diaBp;
+
+  if (range && (num < range.min || num > range.max)) {
+    return 'Not in clinical range';
+  }
+
+  return null;
+};
+
 export const validateField = (fieldName, value) => {
   if (value === undefined || value === null || String(value).trim() === '') {
     return { isValid: true, error: null, warning: null, status: null, color: null };

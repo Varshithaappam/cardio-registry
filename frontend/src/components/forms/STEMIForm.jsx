@@ -76,20 +76,20 @@ const getFollowupInitialState = (followupArray, baseDate) => {
     date_6m: calculateExpectedDate(baseDate, 6) || '',
     date_12m: calculateExpectedDate(baseDate, 12) || '',
     custom_date_1m: false, custom_date_3m: false, custom_date_6m: false, custom_date_12m: false,
-    angina_1m: 'No', angina_3m: 'No', angina_6m: 'No', angina_12m: 'No',
-    func_1m: 'None', func_3m: 'None', func_6m: 'None', func_12m: 'None',
+    angina_1m: null, angina_3m: null, angina_6m: null, angina_12m: null,
+    func_1m: null, func_3m: null, func_6m: null, func_12m: null,
     antiang_1m: '', antiang_3m: '', antiang_6m: '', antiang_12m: '',
-    dapt_1m: 'No', dapt_3m: 'No', dapt_6m: 'No', dapt_12m: 'No',
-    statin_1m: 'No', statin_3m: 'No', statin_6m: 'No', statin_12m: 'No',
-    beta_1m: 'No', beta_3m: 'No', beta_6m: 'No', beta_12m: 'No',
-    ace_1m: 'No', ace_3m: 'No', ace_6m: 'No', ace_12m: 'No',
-    aldo_1m: 'No', aldo_3m: 'No', aldo_6m: 'No', aldo_12m: 'No',
-    acs_1m: 'No', acs_3m: 'No', acs_6m: 'No', acs_12m: 'No',
-    ptca_1m: 'No', ptca_3m: 'No', ptca_6m: 'No', ptca_12m: 'No',
-    cabg_1m: 'No', cabg_3m: 'No', cabg_6m: 'No', cabg_12m: 'No',
-    death_1m: 'No', death_3m: 'No', death_6m: 'No', death_12m: 'No',
+    dapt_1m: null, dapt_3m: null, dapt_6m: null, dapt_12m: null,
+    statin_1m: null, statin_3m: null, statin_6m: null, statin_12m: null,
+    beta_1m: null, beta_3m: null, beta_6m: null, beta_12m: null,
+    ace_1m: null, ace_3m: null, ace_6m: null, ace_12m: null,
+    aldo_1m: null, aldo_3m: null, aldo_6m: null, aldo_12m: null,
+    acs_1m: null, acs_3m: null, acs_6m: null, acs_12m: null,
+    ptca_1m: null, ptca_3m: null, ptca_6m: null, ptca_12m: null,
+    cabg_1m: null, cabg_3m: null, cabg_6m: null, cabg_12m: null,
+    death_1m: null, death_3m: null, death_6m: null, death_12m: null,
     other_1m: '', other_3m: '', other_6m: '', other_12m: '',
-    visit_mode: 'In-Person',
+    visit_mode: null,
     special_instructions: ''
   };
 
@@ -110,18 +110,18 @@ const getFollowupInitialState = (followupArray, baseDate) => {
         state[`date_${key}`] = String(row.followup_date).split('T')[0];
         state[`custom_date_${key}`] = true;
       }
-      state[`angina_${key}`] = row.angina || 'No';
-      state[`func_${key}`] = row.functional_class || 'None';
+      state[`angina_${key}`] = row.angina ?? null;
+      state[`func_${key}`] = row.functional_class ?? null;
       state[`antiang_${key}`] = row.number_of_antianginals !== null && row.number_of_antianginals !== undefined ? String(row.number_of_antianginals) : '';
-      state[`dapt_${key}`] = row.dual_antiplatelets || 'No';
-      state[`statin_${key}`] = row.statins || 'No';
-      state[`beta_${key}`] = row.beta_blocker || 'No';
-      state[`ace_${key}`] = row.acei_arb || 'No';
-      state[`aldo_${key}`] = row.aldosterone_antagonist || 'No';
-      state[`acs_${key}`] = row.acs_hospitalization || 'No';
-      state[`ptca_${key}`] = row.ptca || 'No';
-      state[`cabg_${key}`] = row.cabg || 'No';
-      state[`death_${key}`] = row.death || 'No';
+      state[`dapt_${key}`] = row.dual_antiplatelets ?? null;
+      state[`statin_${key}`] = row.statins ?? null;
+      state[`beta_${key}`] = row.beta_blocker ?? null;
+      state[`ace_${key}`] = row.acei_arb ?? null;
+      state[`aldo_${key}`] = row.aldosterone_antagonist ?? null;
+      state[`acs_${key}`] = row.acs_hospitalization ?? null;
+      state[`ptca_${key}`] = row.ptca ?? null;
+      state[`cabg_${key}`] = row.cabg ?? null;
+      state[`death_${key}`] = row.death ?? null;
       state[`other_${key}`] = row.other_event || '';
     }
     if (row.visit_mode && !state.visit_mode) {
@@ -133,6 +133,24 @@ const getFollowupInitialState = (followupArray, baseDate) => {
   });
 
   return state;
+};
+
+const calculateTotalStayDays = (iccuHrs, stepdownHrs, floorDys, admDate, dischDate) => {
+  const iccu = parseFloat(iccuHrs) || 0;
+  const stepdown = parseFloat(stepdownHrs) || 0;
+  const floor = parseFloat(floorDys) || 0;
+  if (iccu > 0 || stepdown > 0 || floor > 0) {
+    return Math.round(((iccu + stepdown) / 24 + floor) * 10) / 10;
+  }
+  if (admDate && dischDate) {
+    const start = new Date(admDate);
+    const end = new Date(dischDate);
+    if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end >= start) {
+      const diffTime = Math.abs(end - start);
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+  }
+  return '';
 };
 
 const STEMIForm = forwardRef(function STEMIForm(
@@ -158,68 +176,68 @@ const STEMIForm = forwardRef(function STEMIForm(
 
   const [formData, setFormData] = useState({
     // Section 1: Demographic Information
-    reg_patient_id: patient.id || patient.reg_patient_id || 1,
+    reg_patient_id: patient.id || patient.reg_patient_id || '',
     name: patient.name || patient.patient_name || '',
     age: patientAge || patient.age || '',
-    gender: patient.gender || 'M',
+    gender: patient.gender || '',
     mr_no: patient.mrNo || patient.mr_no || '',
     ip_no: editingRecord?.ip_no || '',
-    admission_date: editingRecord?.admission_date || new Date().toISOString().split('T')[0],
+    admission_date: editingRecord?.admission_date || '',
     discharge_date: editingRecord?.discharge_date || '',
-    primary_consultant: editingRecord?.primary_consultant || 'Dr. K. Sridhar (Cardiologist)',
+    primary_consultant: editingRecord?.primary_consultant || patient.primaryConsultant || '',
     phone: patient.phone || patient.contact_phone || editingRecord?.phone || '',
     email: patient.email || patient.contact_email || editingRecord?.email || '',
     acs_no: editingRecord?.acs_no || '',
 
     // Section 2: Clinical Information (Background & Presentation & Vitals)
-    hypertension: editingRecord?.hypertension ?? editingRecord?.administrative?.hypertension ?? 'Unknown',
-    diabetes: editingRecord?.diabetes ?? editingRecord?.administrative?.diabetes ?? 'Unknown',
-    smoking: editingRecord?.smoking ?? editingRecord?.administrative?.smoking ?? 'Unknown',
-    renal_failure: editingRecord?.renal_failure ?? editingRecord?.administrative?.renal_failure ?? 'Unknown',
-    copd: editingRecord?.copd ?? editingRecord?.administrative?.copd ?? 'Unknown',
-    cva: editingRecord?.cva ?? editingRecord?.administrative?.cva ?? 'Unknown',
-    prior_acs: editingRecord?.prior_acs ?? editingRecord?.administrative?.prior_acs ?? 'Unknown',
-    prior_ptca: editingRecord?.prior_ptca ?? editingRecord?.administrative?.prior_ptca ?? 'Unknown',
-    prior_cabg: editingRecord?.prior_cabg ?? editingRecord?.administrative?.prior_cabg ?? 'Unknown',
+    hypertension: editingRecord?.hypertension ?? editingRecord?.administrative?.hypertension ?? null,
+    diabetes: editingRecord?.diabetes ?? editingRecord?.administrative?.diabetes ?? null,
+    smoking: editingRecord?.smoking ?? editingRecord?.administrative?.smoking ?? null,
+    renal_failure: editingRecord?.renal_failure ?? editingRecord?.administrative?.renal_failure ?? null,
+    copd: editingRecord?.copd ?? editingRecord?.administrative?.copd ?? null,
+    cva: editingRecord?.cva ?? editingRecord?.administrative?.cva ?? null,
+    prior_acs: editingRecord?.prior_acs ?? editingRecord?.administrative?.prior_acs ?? null,
+    prior_ptca: editingRecord?.prior_ptca ?? editingRecord?.administrative?.prior_ptca ?? null,
+    prior_cabg: editingRecord?.prior_cabg ?? editingRecord?.administrative?.prior_cabg ?? null,
     other_background: editingRecord?.other_background ?? editingRecord?.administrative?.other_background ?? '',
 
-    typical_angina: editingRecord?.typical_angina ?? editingRecord?.clinical?.typical_angina ?? 'No',
-    atypical_chest_pain: editingRecord?.atypical_chest_pain ?? editingRecord?.clinical?.atypical_chest_pain ?? 'No',
-    breathlessness: editingRecord?.breathlessness ?? editingRecord?.clinical?.breathlessness ?? 'No',
-    syncope_presyncope: editingRecord?.syncope_presyncope ?? editingRecord?.clinical?.syncope_presyncope ?? 'No',
+    typical_angina: editingRecord?.typical_angina ?? editingRecord?.clinical?.typical_angina ?? null,
+    atypical_chest_pain: editingRecord?.atypical_chest_pain ?? editingRecord?.clinical?.atypical_chest_pain ?? null,
+    breathlessness: editingRecord?.breathlessness ?? editingRecord?.clinical?.breathlessness ?? null,
+    syncope_presyncope: editingRecord?.syncope_presyncope ?? editingRecord?.clinical?.syncope_presyncope ?? null,
     pulse_rate: editingRecord?.pulse_rate ?? editingRecord?.clinical?.pulse_rate ?? '',
     systolic_bp: editingRecord?.systolic_bp ?? editingRecord?.clinical?.systolic_bp ?? '',
     diastolic_bp: editingRecord?.diastolic_bp ?? editingRecord?.clinical?.diastolic_bp ?? '',
 
     // Section 3: Risk Stratification - TIMI Risk score
-    age_gt_75: editingRecord?.age_gt_75 || (patientAge >= 75 ? 'Yes' : 'No'),
-    age_65_to_74: editingRecord?.age_65_to_74 || (patientAge >= 65 && patientAge < 75 ? 'Yes' : 'No'),
-    history_dm_htn_angina: editingRecord?.history_dm_htn_angina || 'No',
-    sbp_lt_100: editingRecord?.sbp_lt_100 || 'No',
-    heart_rate_gt_100: editingRecord?.heart_rate_gt_100 || 'No',
-    killip_class_ii_to_iv: editingRecord?.killip_class_ii_to_iv || 'No',
-    anterior_mi_or_lbbb: editingRecord?.anterior_mi_or_lbbb || 'No',
-    weight_lt_67kg: editingRecord?.weight_lt_67kg || 'No',
-    reperfusion_gt_4hrs: editingRecord?.reperfusion_gt_4hrs || 'No',
-    timi_total_score: editingRecord?.timi_total_score !== undefined ? editingRecord.timi_total_score : 0,
+    age_gt_75: editingRecord?.age_gt_75 || (patientAge >= 75 ? 'Yes' : (editingRecord ? 'No' : null)),
+    age_65_to_74: editingRecord?.age_65_to_74 || (patientAge >= 65 && patientAge < 75 ? 'Yes' : (editingRecord ? 'No' : null)),
+    history_dm_htn_angina: editingRecord?.history_dm_htn_angina || null,
+    sbp_lt_100: editingRecord?.sbp_lt_100 || null,
+    heart_rate_gt_100: editingRecord?.heart_rate_gt_100 || null,
+    killip_class_ii_to_iv: editingRecord?.killip_class_ii_to_iv || null,
+    anterior_mi_or_lbbb: editingRecord?.anterior_mi_or_lbbb || null,
+    weight_lt_67kg: editingRecord?.weight_lt_67kg || null,
+    reperfusion_gt_4hrs: editingRecord?.reperfusion_gt_4hrs || null,
+    timi_total_score: editingRecord?.timi_total_score !== undefined && editingRecord?.timi_total_score !== null ? editingRecord.timi_total_score : '',
 
     // Section 4: Other Risk Factors
-    lvf: editingRecord?.lvf || 'No',
-    vt_vf: editingRecord?.vt_vf || 'No',
-    bbb_chb: editingRecord?.bbb_chb || 'No',
-    elevated_bnp: editingRecord?.elevated_bnp || 'No',
-    elevated_crp: editingRecord?.elevated_crp || 'No',
+    lvf: editingRecord?.lvf || null,
+    vt_vf: editingRecord?.vt_vf || null,
+    bbb_chb: editingRecord?.bbb_chb || null,
+    elevated_bnp: editingRecord?.elevated_bnp || null,
+    elevated_crp: editingRecord?.elevated_crp || null,
 
     // Section 5: Treatment Strategy
-    treatment_strategy: editingRecord?.pami === 'Yes' ? 'PAMI' : (editingRecord?.thrombolysis === 'Yes' ? 'Thrombolysis' : (editingRecord?.conservative === 'Yes' ? 'Conservative' : 'PAMI')),
-    pami: editingRecord?.pami || 'No',
-    thrombolysis: editingRecord?.thrombolysis || 'No',
-    conservative: editingRecord?.conservative || 'No',
+    treatment_strategy: editingRecord?.pami === 'Yes' ? 'PAMI' : (editingRecord?.thrombolysis === 'Yes' ? 'Thrombolysis' : (editingRecord?.conservative === 'Yes' ? 'Conservative' : (editingRecord?.treatment_strategy ?? null))),
+    pami: editingRecord?.pami || null,
+    thrombolysis: editingRecord?.thrombolysis || null,
+    conservative: editingRecord?.conservative || null,
 
     // Section 6: PAMI details
     door_to_balloon_time: editingRecord?.door_to_balloon_time || '',
     vessel_lmca: editingRecord?.vessel_lmca === 'Yes' || editingRecord?.vessel_lmca === true,
-    vessel_lad: editingRecord ? (editingRecord.vessel_lad === 'Yes' || editingRecord.vessel_lad === true) : true,
+    vessel_lad: editingRecord ? (editingRecord.vessel_lad === 'Yes' || editingRecord.vessel_lad === true) : false,
     vessel_diagonal: editingRecord?.vessel_diagonal === 'Yes' || editingRecord?.vessel_diagonal === true,
     vessel_lcx: editingRecord?.vessel_lcx === 'Yes' || editingRecord?.vessel_lcx === true,
     vessel_ramus: editingRecord?.vessel_ramus === 'Yes' || editingRecord?.vessel_ramus === true,
@@ -227,13 +245,13 @@ const STEMIForm = forwardRef(function STEMIForm(
     vessel_rca: editingRecord?.vessel_rca === 'Yes' || editingRecord?.vessel_rca === true,
     vessel_pda: editingRecord?.vessel_pda === 'Yes' || editingRecord?.vessel_pda === true,
     vessel_segment: editingRecord?.vessel_segment || '',
-    thrombosuction_done: editingRecord?.thrombosuction_done === 'Yes' ? 'Done' : (editingRecord?.thrombosuction_not_done === 'Yes' ? 'Not done' : 'Not done'),
-    stent_type: editingRecord?.stent_des === 'Yes' ? 'DES' : (editingRecord?.stent_bms === 'Yes' ? 'BMS' : 'DES'),
+    thrombosuction_done: editingRecord?.thrombosuction_done === 'Yes' ? 'Done' : (editingRecord?.thrombosuction_not_done === 'Yes' ? 'Not done' : (editingRecord?.thrombosuction_done ?? null)),
+    stent_type: editingRecord?.stent_des === 'Yes' ? 'DES' : (editingRecord?.stent_bms === 'Yes' ? 'BMS' : (editingRecord?.stent_type ?? null)),
     stent_diameter: editingRecord?.stent_diameter || '',
     stent_length: editingRecord?.stent_length || '',
-    procedural_success: editingRecord?.procedural_success || 'No',
-    timi_flow: editingRecord?.timi_flow !== undefined ? editingRecord?.timi_flow : 3,
-    complication_none: editingRecord ? (editingRecord.complication_none === 'Yes' || editingRecord.complication_none === true) : true,
+    procedural_success: editingRecord?.procedural_success || null,
+    timi_flow: editingRecord?.timi_flow !== undefined && editingRecord?.timi_flow !== null ? editingRecord?.timi_flow : '',
+    complication_none: editingRecord ? (editingRecord.complication_none === 'Yes' || editingRecord.complication_none === true) : false,
     complication_tamponade: editingRecord?.complication_tamponade === 'Yes' || editingRecord?.complication_tamponade === true,
     complication_major_bleed: editingRecord?.complication_major_bleed === 'Yes' || editingRecord?.complication_major_bleed === true,
     complication_stroke: editingRecord?.complication_stroke === 'Yes' || editingRecord?.complication_stroke === true,
@@ -251,59 +269,59 @@ const STEMIForm = forwardRef(function STEMIForm(
     thrombolysis_dose: editingRecord?.thrombolysis_dose || '',
 
     // Section 8: Acute Drugs
-    heparin_strategy: editingRecord?.heparin_ufh_iv === 'Yes' ? 'UFH i.v alone' : (editingRecord?.heparin_ufh_sc === 'Yes' ? 'UFH s.c alone' : (editingRecord?.heparin_lmwh === 'Yes' ? 'LMWH alone' : (editingRecord?.heparin_ufh_iv_sc === 'Yes' ? 'UFH i.v+UFHs.c' : (editingRecord?.heparin_ufh_iv_lmwh === 'Yes' ? 'UFH i.v + LMWH' : 'LMWH alone')))),
-    statin: editingRecord?.statin || 'No',
-    statin_dose: editingRecord?.statin_10mg === 'Yes' ? '10 mg' : (editingRecord?.statin_20mg === 'Yes' ? '20 mg' : (editingRecord?.statin_80mg === 'Yes' ? '80 mg' : '40 mg')),
+    heparin_strategy: editingRecord?.heparin_ufh_iv === 'Yes' ? 'UFH i.v alone' : (editingRecord?.heparin_ufh_sc === 'Yes' ? 'UFH s.c alone' : (editingRecord?.heparin_lmwh === 'Yes' ? 'LMWH alone' : (editingRecord?.heparin_ufh_iv_sc === 'Yes' ? 'UFH i.v+UFHs.c' : (editingRecord?.heparin_ufh_iv_lmwh === 'Yes' ? 'UFH i.v + LMWH' : (editingRecord?.heparin_strategy ?? null))))),
+    statin: editingRecord?.statin || null,
+    statin_dose: editingRecord?.statin_10mg === 'Yes' ? '10 mg' : (editingRecord?.statin_20mg === 'Yes' ? '20 mg' : (editingRecord?.statin_80mg === 'Yes' ? '80 mg' : (editingRecord?.statin_dose ?? null))),
     other_drugs: editingRecord?.other_drugs || '',
 
     // Section 9: Diagnostic Procedures
-    bedside_echo: editingRecord?.bedside_echo || 'No',
-    departmental_echo: editingRecord?.departmental_echo || 'No',
-    stress_testing: editingRecord?.stress_testing || 'No',
-    lipid_profile: editingRecord?.lipid_profile || 'No',
-    bnp: editingRecord?.bnp || 'No',
-    crp: editingRecord?.crp || 'No',
-    troponin_test: editingRecord?.troponin_test || 'No',
-    cpk_ckmb: editingRecord?.cpk_ckmb || 'No',
-    rft: editingRecord?.rft || 'No',
-    lft: editingRecord?.lft || 'No',
-    electrolytes: editingRecord?.electrolytes || 'No',
-    hemogram: editingRecord?.hemogram || 'No',
-    cxr: editingRecord?.cxr || 'No',
+    bedside_echo: editingRecord?.bedside_echo || null,
+    departmental_echo: editingRecord?.departmental_echo || null,
+    stress_testing: editingRecord?.stress_testing || null,
+    lipid_profile: editingRecord?.lipid_profile || null,
+    bnp: editingRecord?.bnp || null,
+    crp: editingRecord?.crp || null,
+    troponin_test: editingRecord?.troponin_test || null,
+    cpk_ckmb: editingRecord?.cpk_ckmb || null,
+    rft: editingRecord?.rft || null,
+    lft: editingRecord?.lft || null,
+    electrolytes: editingRecord?.electrolytes || null,
+    hemogram: editingRecord?.hemogram || null,
+    cxr: editingRecord?.cxr || null,
     diagnostic_other: editingRecord?.diagnostic_other || '',
 
     // Section 10: Reports -> ECG
     ecg_heart_rate: editingRecord?.ecg_heart_rate || '',
-    av_block: editingRecord?.av_block_first_degree === 'Yes' ? '1-degree' : (editingRecord?.av_block_second_degree === 'Yes' ? '2-degree' : (editingRecord?.av_block_chb === 'Yes' ? 'CHB' : 'None')),
-    bbb: editingRecord?.bbb_rbbb === 'Yes' ? 'RBBB' : (editingRecord?.bbb_lbbb === 'Yes' ? 'LBBB' : (editingRecord?.bbb_indeterminate === 'Yes' ? 'Indeterminate' : 'None')),
-    qwaves_none: editingRecord ? (editingRecord.qwaves_none === 'Yes' || editingRecord.qwaves_none === true) : true,
+    av_block: editingRecord?.av_block_first_degree === 'Yes' ? '1-degree' : (editingRecord?.av_block_second_degree === 'Yes' ? '2-degree' : (editingRecord?.av_block_chb === 'Yes' ? 'CHB' : (editingRecord?.av_block ?? null))),
+    bbb: editingRecord?.bbb_rbbb === 'Yes' ? 'RBBB' : (editingRecord?.bbb_lbbb === 'Yes' ? 'LBBB' : (editingRecord?.bbb_indeterminate === 'Yes' ? 'Indeterminate' : (editingRecord?.bbb ?? null))),
+    qwaves_none: editingRecord ? (editingRecord.qwaves_none === 'Yes' || editingRecord.qwaves_none === true) : false,
     qwaves_inferior: editingRecord?.qwaves_inferior === 'Yes' || editingRecord?.qwaves_inferior === true,
     qwaves_anteroseptal: editingRecord?.qwaves_anteroseptal === 'Yes' || editingRecord?.qwaves_anteroseptal === true,
     qwaves_anterior: editingRecord?.qwaves_anterior === 'Yes' || editingRecord?.qwaves_anterior === true,
     qwaves_anterolateral: editingRecord?.qwaves_anterolateral === 'Yes' || editingRecord?.qwaves_anterolateral === true,
     qwaves_lateral: editingRecord?.qwaves_lateral === 'Yes' || editingRecord?.qwaves_lateral === true,
-    st_depression_none: editingRecord ? (editingRecord.st_depression_none === 'Yes' || editingRecord.st_depression_none === true) : true,
+    st_depression_none: editingRecord ? (editingRecord.st_depression_none === 'Yes' || editingRecord.st_depression_none === true) : false,
     st_depression_inferior: editingRecord?.st_depression_inferior === 'Yes' || editingRecord?.st_depression_inferior === true,
     st_depression_anteroseptal: editingRecord?.st_depression_anteroseptal === 'Yes' || editingRecord?.st_depression_anteroseptal === true,
     st_depression_anterior: editingRecord?.st_depression_anterior === 'Yes' || editingRecord?.st_depression_anterior === true,
     st_depression_anterolateral: editingRecord?.st_depression_anterolateral === 'Yes' || editingRecord?.st_depression_anterolateral === true,
     st_depression_lateral: editingRecord?.st_depression_lateral === 'Yes' || editingRecord?.st_depression_lateral === true,
-    t_inversion_none: editingRecord ? (editingRecord.t_inversion_none === 'Yes' || editingRecord.t_inversion_none === true) : true,
+    t_inversion_none: editingRecord ? (editingRecord.t_inversion_none === 'Yes' || editingRecord.t_inversion_none === true) : false,
     t_inversion_inferior: editingRecord?.t_inversion_inferior === 'Yes' || editingRecord?.t_inversion_inferior === true,
     t_inversion_anteroseptal: editingRecord?.t_inversion_anteroseptal === 'Yes' || editingRecord?.t_inversion_anteroseptal === true,
     t_inversion_anterior: editingRecord?.t_inversion_anterior === 'Yes' || editingRecord?.t_inversion_anterior === true,
     t_inversion_anterolateral: editingRecord?.t_inversion_anterolateral === 'Yes' || editingRecord?.t_inversion_anterolateral === true,
     t_inversion_lateral: editingRecord?.t_inversion_lateral === 'Yes' || editingRecord?.t_inversion_lateral === true,
-    rhythm: editingRecord?.rhythm_af === 'Yes' ? 'AF' : (editingRecord?.rhythm_svt === 'Yes' ? 'SVT' : (editingRecord?.rhythm_vt === 'Yes' ? 'VT' : (editingRecord?.rhythm_vf === 'Yes' ? 'VF' : 'NSR'))),
+    rhythm: editingRecord?.rhythm_af === 'Yes' ? 'AF' : (editingRecord?.rhythm_svt === 'Yes' ? 'SVT' : (editingRecord?.rhythm_vt === 'Yes' ? 'VT' : (editingRecord?.rhythm_vf === 'Yes' ? 'VF' : (editingRecord?.rhythm ?? null)))),
     ecg_other: editingRecord?.ecg_other || '',
 
     // Section 10: Reports -> Echo
     echo_ef: editingRecord?.echo_ef || '',
-    lv_function: editingRecord?.lv_function_mild_lvd === 'Yes' ? 'Mild LVD' : (editingRecord?.lv_function_moderate_lvd === 'Yes' ? 'Moderate LVD' : (editingRecord?.lv_function_severe_lvd === 'Yes' ? 'Severe LVD' : 'Normal')),
-    rwma_lad: editingRecord ? (editingRecord.rwma_lad === 'Yes' || editingRecord.rwma_lad === true) : true,
+    lv_function: editingRecord?.lv_function_mild_lvd === 'Yes' ? 'Mild LVD' : (editingRecord?.lv_function_moderate_lvd === 'Yes' ? 'Moderate LVD' : (editingRecord?.lv_function_severe_lvd === 'Yes' ? 'Severe LVD' : (editingRecord?.lv_function ?? null))),
+    rwma_lad: editingRecord ? (editingRecord.rwma_lad === 'Yes' || editingRecord.rwma_lad === true) : false,
     rwma_rca: editingRecord?.rwma_rca === 'Yes' || editingRecord?.rwma_rca === true,
     rwma_lcx: editingRecord?.rwma_lcx === 'Yes' || editingRecord?.rwma_lcx === true,
-    mr_grade: editingRecord?.mr_mild === 'Yes' ? 'Mild' : (editingRecord?.mr_moderate === 'Yes' ? 'Moderate' : (editingRecord?.mr_severe === 'Yes' ? 'Severe' : 'None')),
+    mr_grade: editingRecord?.mr_mild === 'Yes' ? 'Mild' : (editingRecord?.mr_moderate === 'Yes' ? 'Moderate' : (editingRecord?.mr_severe === 'Yes' ? 'Severe' : (editingRecord?.mr_grade ?? null))),
     echo_e: editingRecord?.echo_e || '',
     echo_a: editingRecord?.echo_a || '',
     echo_dt: editingRecord?.echo_dt || '',
@@ -322,72 +340,72 @@ const STEMIForm = forwardRef(function STEMIForm(
     rbs_admission: editingRecord?.rbs_admission || '',
 
     // Section 10: Reports -> CAG
-    angiogram_done: editingRecord?.angiogram_done || 'No',
-    angiogram_finding: editingRecord?.angiogram_normal === 'Yes' ? 'Normal' : (editingRecord?.angiogram_1vd === 'Yes' ? '1VD' : (editingRecord?.angiogram_2vd === 'Yes' ? '2VD' : (editingRecord?.angiogram_3vd === 'Yes' ? '3VD' : (editingRecord?.angiogram_lmca === 'Yes' ? 'LMCA' : '1VD')))),
+    angiogram_done: editingRecord?.angiogram_done || null,
+    angiogram_finding: editingRecord?.angiogram_normal === 'Yes' ? 'Normal' : (editingRecord?.angiogram_1vd === 'Yes' ? '1VD' : (editingRecord?.angiogram_2vd === 'Yes' ? '2VD' : (editingRecord?.angiogram_3vd === 'Yes' ? '3VD' : (editingRecord?.angiogram_lmca === 'Yes' ? 'LMCA' : (editingRecord?.angiogram_finding ?? null))))),
 
     // Section 11: Invasive Procedures
-    cag: editingRecord?.cag || 'No',
-    iabp: editingRecord?.iabp || 'No',
-    invasive_ventilation: editingRecord?.invasive_ventilation || 'No',
-    ptca: editingRecord?.ptca || 'No',
-    cabg: editingRecord?.cabg || 'No',
+    cag: editingRecord?.cag || null,
+    iabp: editingRecord?.iabp || null,
+    invasive_ventilation: editingRecord?.invasive_ventilation || null,
+    ptca: editingRecord?.ptca || null,
+    cabg: editingRecord?.cabg || null,
     other_procedure: editingRecord?.other_procedure || '',
 
     // Section 12: Outcomes
-    death: editingRecord?.death || 'No',
-    stemi_for_nonstemi: editingRecord?.stemi_for_nonstemi || 'No',
-    remi_for_stemi: editingRecord?.remi_for_stemi || 'No',
-    revascularization_recurrent_ischemia: editingRecord?.revascularization_recurrent_ischemia || 'No',
-    cva_thrombotic: editingRecord?.cva_thrombotic || 'No',
-    cva_hemorrhagic: editingRecord?.cva_hemorrhagic || 'No',
-    major_bleeding: editingRecord?.major_bleeding || 'No',
+    death: editingRecord?.death || null,
+    stemi_for_nonstemi: editingRecord?.stemi_for_nonstemi || null,
+    remi_for_stemi: editingRecord?.remi_for_stemi || null,
+    revascularization_recurrent_ischemia: editingRecord?.revascularization_recurrent_ischemia || null,
+    cva_thrombotic: editingRecord?.cva_thrombotic || null,
+    cva_hemorrhagic: editingRecord?.cva_hemorrhagic || null,
+    major_bleeding: editingRecord?.major_bleeding || null,
     outcome_other: editingRecord?.outcome_other || '',
 
     // Section 13: Discharge Medications
-    discharge_beta_blocker: editingRecord?.discharge_beta_blocker ?? editingRecord?.outcomes?.beta_blocker ?? 'No',
-    discharge_calcium_channel_blocker: editingRecord?.discharge_calcium_channel_blocker ?? editingRecord?.outcomes?.calcium_channel_blocker ?? 'No',
-    discharge_nitrate: editingRecord?.discharge_nitrate ?? editingRecord?.outcomes?.nitrate ?? 'No',
-    discharge_nicorandil: editingRecord?.discharge_nicorandil ?? editingRecord?.outcomes?.nicorandil ?? 'No',
-    discharge_ivabradine: editingRecord?.discharge_ivabradine ?? editingRecord?.outcomes?.ivabradine ?? 'No',
-    discharge_ranolazine: editingRecord?.discharge_ranolazine ?? editingRecord?.outcomes?.ranolazine ?? 'No',
-    discharge_trimetazidine: editingRecord?.discharge_trimetazidine ?? editingRecord?.outcomes?.trimetazidine ?? 'No',
-    discharge_aspirin: editingRecord?.discharge_aspirin ?? editingRecord?.outcomes?.aspirin ?? 'No',
-    discharge_clopidogrel: editingRecord?.discharge_clopidogrel ?? editingRecord?.outcomes?.clopidogrel ?? 'No',
-    discharge_prasugrel: editingRecord?.discharge_prasugrel ?? editingRecord?.outcomes?.prasugrel ?? 'No',
-    discharge_ticagrelor: editingRecord?.discharge_ticagrelor ?? editingRecord?.outcomes?.ticagrelor ?? 'No',
-    discharge_statin: editingRecord?.discharge_statin ?? editingRecord?.outcomes?.statin ?? 'No',
-    discharge_statin_dose: editingRecord?.discharge_statin_10mg === 'Yes' ? '10 mg' : (editingRecord?.discharge_statin_20mg === 'Yes' ? '20 mg' : (editingRecord?.discharge_statin_80mg === 'Yes' ? '80 mg' : '40 mg')),
+    discharge_beta_blocker: editingRecord?.discharge_beta_blocker ?? editingRecord?.outcomes?.beta_blocker ?? null,
+    discharge_calcium_channel_blocker: editingRecord?.discharge_calcium_channel_blocker ?? editingRecord?.outcomes?.calcium_channel_blocker ?? null,
+    discharge_nitrate: editingRecord?.discharge_nitrate ?? editingRecord?.outcomes?.nitrate ?? null,
+    discharge_nicorandil: editingRecord?.discharge_nicorandil ?? editingRecord?.outcomes?.nicorandil ?? null,
+    discharge_ivabradine: editingRecord?.discharge_ivabradine ?? editingRecord?.outcomes?.ivabradine ?? null,
+    discharge_ranolazine: editingRecord?.discharge_ranolazine ?? editingRecord?.outcomes?.ranolazine ?? null,
+    discharge_trimetazidine: editingRecord?.discharge_trimetazidine ?? editingRecord?.outcomes?.trimetazidine ?? null,
+    discharge_aspirin: editingRecord?.discharge_aspirin ?? editingRecord?.outcomes?.aspirin ?? null,
+    discharge_clopidogrel: editingRecord?.discharge_clopidogrel ?? editingRecord?.outcomes?.clopidogrel ?? null,
+    discharge_prasugrel: editingRecord?.discharge_prasugrel ?? editingRecord?.outcomes?.prasugrel ?? null,
+    discharge_ticagrelor: editingRecord?.discharge_ticagrelor ?? editingRecord?.outcomes?.ticagrelor ?? null,
+    discharge_statin: editingRecord?.discharge_statin ?? editingRecord?.outcomes?.statin ?? null,
+    discharge_statin_dose: editingRecord?.discharge_statin_10mg === 'Yes' ? '10 mg' : (editingRecord?.discharge_statin_20mg === 'Yes' ? '20 mg' : (editingRecord?.discharge_statin_80mg === 'Yes' ? '80 mg' : (editingRecord?.discharge_statin_dose ?? null))),
     discharge_other_medication: editingRecord?.discharge_other_medication ?? editingRecord?.outcomes?.discharge_other_medication ?? '',
 
     // Section 14, 15, 16: Appropriateness Assessment
-    appr_iccu_admission: editingRecord?.appr_iccu_admission || 'Appropriate',
-    appr_iccu_transfer_out: editingRecord?.appr_iccu_transfer_out || 'Appropriate',
-    appr_thrombolysis_indication: editingRecord?.appr_thrombolysis_indication || 'Appropriate',
-    appr_ptca_indication: editingRecord?.appr_ptca_indication || 'Appropriate',
-    appr_invasive_monitoring: editingRecord?.appr_invasive_monitoring || 'Appropriate',
-    appr_iabp_indication: editingRecord?.appr_iabp_indication || 'Appropriate',
-    appr_invasive_ventilation: editingRecord?.appr_invasive_ventilation || 'Appropriate',
-    appr_dialysis_indication: editingRecord?.appr_dialysis_indication || 'Appropriate',
+    appr_iccu_admission: editingRecord?.appr_iccu_admission || null,
+    appr_iccu_transfer_out: editingRecord?.appr_iccu_transfer_out || null,
+    appr_thrombolysis_indication: editingRecord?.appr_thrombolysis_indication || null,
+    appr_ptca_indication: editingRecord?.appr_ptca_indication || null,
+    appr_invasive_monitoring: editingRecord?.appr_invasive_monitoring || null,
+    appr_iabp_indication: editingRecord?.appr_iabp_indication || null,
+    appr_invasive_ventilation: editingRecord?.appr_invasive_ventilation || null,
+    appr_dialysis_indication: editingRecord?.appr_dialysis_indication || null,
     appr_other_procedure_name: editingRecord?.appr_other_procedure_name || '',
-    appr_other_procedure_appropriateness: editingRecord?.appr_other_procedure_appropriateness || 'Appropriate',
-    appr_cardiac_enzymes: editingRecord?.appr_cardiac_enzymes || 'Appropriate',
-    appr_bnp: editingRecord?.appr_bnp || 'Appropriate',
-    appr_crp: editingRecord?.appr_crp || 'Appropriate',
-    appr_lipid_profile: editingRecord?.appr_lipid_profile || 'Appropriate',
-    appr_bedside_echo: editingRecord?.appr_bedside_echo || 'Appropriate',
-    appr_chest_xray: editingRecord?.appr_chest_xray || 'Appropriate',
-    appr_beta_blockers: editingRecord?.appr_beta_blockers || 'Appropriate',
-    appr_aspirin: editingRecord?.appr_aspirin || 'Appropriate',
-    appr_clopidogrel: editingRecord?.appr_clopidogrel || 'Appropriate',
-    appr_ace_inhibitor: editingRecord?.appr_ace_inhibitor || 'Appropriate',
-    appr_arb: editingRecord?.appr_arb || 'Appropriate',
-    appr_statin: editingRecord?.appr_statin || 'Appropriate',
-    appr_diuretic: editingRecord?.appr_diuretic || 'Appropriate',
-    appr_lanoxin: editingRecord?.appr_lanoxin || 'Appropriate',
-    appr_anticoagulant: editingRecord?.appr_anticoagulant || 'Appropriate',
-    appr_amiodarone: editingRecord?.appr_amiodarone || 'Appropriate',
+    appr_other_procedure_appropriateness: editingRecord?.appr_other_procedure_appropriateness || null,
+    appr_cardiac_enzymes: editingRecord?.appr_cardiac_enzymes || null,
+    appr_bnp: editingRecord?.appr_bnp || null,
+    appr_crp: editingRecord?.appr_crp || null,
+    appr_lipid_profile: editingRecord?.appr_lipid_profile || null,
+    appr_bedside_echo: editingRecord?.appr_bedside_echo || null,
+    appr_chest_xray: editingRecord?.appr_chest_xray || null,
+    appr_beta_blockers: editingRecord?.appr_beta_blockers || null,
+    appr_aspirin: editingRecord?.appr_aspirin || null,
+    appr_clopidogrel: editingRecord?.appr_clopidogrel || null,
+    appr_ace_inhibitor: editingRecord?.appr_ace_inhibitor || null,
+    appr_arb: editingRecord?.appr_arb || null,
+    appr_statin: editingRecord?.appr_statin || null,
+    appr_diuretic: editingRecord?.appr_diuretic || null,
+    appr_lanoxin: editingRecord?.appr_lanoxin || null,
+    appr_anticoagulant: editingRecord?.appr_anticoagulant || null,
+    appr_amiodarone: editingRecord?.appr_amiodarone || null,
     appr_other_drug_name: editingRecord?.appr_other_drug_name || '',
-    appr_other_drug_appropriateness: editingRecord?.appr_other_drug_appropriateness || 'Appropriate',
+    appr_other_drug_appropriateness: editingRecord?.appr_other_drug_appropriateness || null,
 
     appr_iccu_admission_note: editingRecord?.appr_iccu_admission_note ?? editingRecord?.appropriateness?.iccu_admission_note ?? editingRecord?.iccu_admission_note ?? '',
     appr_iccu_transfer_out_note: editingRecord?.appr_iccu_transfer_out_note ?? editingRecord?.appropriateness?.iccu_transfer_out_note ?? editingRecord?.iccu_transfer_out_note ?? '',
@@ -419,10 +437,16 @@ const STEMIForm = forwardRef(function STEMIForm(
     appr_other_drug_appropriateness_note: editingRecord?.appr_other_drug_appropriateness_note ?? editingRecord?.appr_any_other_drug_note ?? editingRecord?.appropriateness?.any_other_drug_note ?? editingRecord?.any_other_drug_note ?? '',
 
     // Section 17: Length of Stay
-    iccu_hours: editingRecord?.iccu_hours || 48,
-    stepdown_icu_hours: editingRecord?.stepdown_icu_hours || 24,
-    floor_days: editingRecord?.floor_days || 2,
-    total_hospital_stay_days: editingRecord?.total_hospital_stay_days || 5,
+    iccu_hours: editingRecord?.iccu_hours || '',
+    stepdown_icu_hours: editingRecord?.stepdown_icu_hours || '',
+    floor_days: editingRecord?.floor_days || '',
+    total_hospital_stay_days: editingRecord?.total_hospital_stay_days || calculateTotalStayDays(
+      editingRecord?.iccu_hours,
+      editingRecord?.stepdown_icu_hours,
+      editingRecord?.floor_days,
+      editingRecord?.admission_date,
+      editingRecord?.discharge_date
+    ) || '',
 
     // Section 18: Cost of care
     bed_charges: editingRecord?.bed_charges || '',
@@ -760,6 +784,16 @@ const STEMIForm = forwardRef(function STEMIForm(
             }
           });
         }
+      }
+
+      if (['iccu_hours', 'stepdown_icu_hours', 'floor_days', 'admission_date', 'discharge_date'].includes(field)) {
+        updated.total_hospital_stay_days = calculateTotalStayDays(
+          updated.iccu_hours,
+          updated.stepdown_icu_hours,
+          updated.floor_days,
+          updated.admission_date,
+          updated.discharge_date
+        );
       }
 
       return updated;
@@ -1413,6 +1447,8 @@ const STEMIForm = forwardRef(function STEMIForm(
                 )}
               </div>
               <input
+                id="acs_no"
+                name="acs_no"
                 type="text"
                 disabled={readOnly}
                 value={formData.acs_no}
@@ -2728,7 +2764,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                     type="text"
                     readOnly
                     disabled
-                    value={formData.total_hospital_stay_days || '0'}
+                    value={formData.total_hospital_stay_days || calculateTotalStayDays(formData.iccu_hours, formData.stepdown_icu_hours, formData.floor_days, formData.admission_date, formData.discharge_date) || '0'}
                     className={INPUT_DISABLED_STYLES + " font-bold text-slate-950"}
                   />
                   <span className="font-semibold text-slate-500">days</span>

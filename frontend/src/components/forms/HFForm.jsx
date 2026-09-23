@@ -1,5 +1,6 @@
 import React, { useState, forwardRef, useImperativeHandle, useMemo, useEffect } from 'react';
 import { calculateAge } from '../../utils/calculateAge';
+import { getVitalsWarning } from '../../utils/validation';
 import SectionCard from './common/SectionCard';
 import TextInput from './common/TextInput';
 import NumberInput from './common/NumberInput';
@@ -197,12 +198,12 @@ const HFForm = forwardRef(function HFForm(
 
   // 2. Inpatient & Visit Details
   const [assessmentDate, setAssessmentDate] = useState(editingRecord?.assessmentDate ?? new Date().toISOString().split('T')[0]);
-  const [visitType, setVisitType] = useState(editingRecord?.visitType ?? 'Outpatient');
+  const [visitType, setVisitType] = useState(editingRecord?.visitType ?? null);
   const [treatingCardiologist, setTreatingCardiologist] = useState(
-    editingRecord?.inpatientDetails?.treatingCardiologist ?? patient.primaryConsultant ?? CARDIOLOGISTS[0]
+    editingRecord?.inpatientDetails?.treatingCardiologist ?? patient.primaryConsultant ?? null
   );
   const [referringDoctor, setReferringDoctor] = useState(
-    editingRecord?.inpatientDetails?.referringDoctor ?? patient.referringDoctor ?? REFERRING_DOCTORS[0]
+    editingRecord?.inpatientDetails?.referringDoctor ?? patient.referringDoctor ?? null
   );
   const [admissionDate, setAdmissionDate] = useState(editingRecord?.inpatientDetails?.admissionDate ?? '');
   const [dischargeDate, setDischargeDate] = useState(editingRecord?.inpatientDetails?.dischargeDate ?? '');
@@ -215,20 +216,20 @@ const HFForm = forwardRef(function HFForm(
   const [vUnableToWeighReason, setVUnableToWeighReason] = useState(editingRecord?.vitals?.unableToWeighReason ?? '');
   const [vHeight, setVHeight] = useState(editingRecord?.vitals?.heightCm ?? '');
   const [vHr, setVHr] = useState(editingRecord?.vitals?.heartRate ?? '');
-  const [vHrVar, setVHrVar] = useState(editingRecord?.vitals?.hrVariability ?? 'Regular');
+  const [vHrVar, setVHrVar] = useState(editingRecord?.vitals?.hrVariability ?? null);
   const [vRr, setVRr] = useState(editingRecord?.vitals?.respiratoryRate ?? '');
   const [vO2, setVO2] = useState(editingRecord?.vitals?.o2Saturation ?? '');
   const [vBpSystolic, setVBpSystolic] = useState(editingRecord?.vitals?.bpSittingSystolic ?? '');
   const [vBpDiastolic, setVBpDiastolic] = useState(editingRecord?.vitals?.bpSittingDiastolic ?? '');
   const [vBpStandingSystolic, setVBpStandingSystolic] = useState(editingRecord?.vitals?.bpStandingSystolic ?? '');
   const [vBpStandingDiastolic, setVBpStandingDiastolic] = useState(editingRecord?.vitals?.bpStandingDiastolic ?? '');
-  const [vMental, setVMental] = useState(editingRecord?.vitals?.mentalStatus ?? 'Alert/Oriented');
+  const [vMental, setVMental] = useState(editingRecord?.vitals?.mentalStatus ?? null);
 
   const [selectedSymptoms, setSelectedSymptoms] = useState(
-    mapObjectToSelected(editingRecord?.symptoms, SYMPTOM_OPTIONS)
+    editingRecord?.symptoms ? mapObjectToSelected(editingRecord?.symptoms, SYMPTOM_OPTIONS) : []
   );
   const [selectedVolumeOverload, setSelectedVolumeOverload] = useState(
-    mapObjectToSelected(editingRecord?.volumeOverloadSigns, VOLUME_OVERLOAD_OPTIONS)
+    editingRecord?.volumeOverloadSigns ? mapObjectToSelected(editingRecord?.volumeOverloadSigns, VOLUME_OVERLOAD_OPTIONS) : []
   );
   const [medicalHistory, setMedicalHistory] = useState(editingRecord?.initialAssessment?.medicalHistory ?? []);
   const [riskFactors, setRiskFactors] = useState(editingRecord?.initialAssessment?.riskFactors ?? []);
@@ -236,19 +237,19 @@ const HFForm = forwardRef(function HFForm(
     editingRecord?.initialAssessment?.comorbidities ?? []
   );
 
-  const [hfType, setHfType] = useState(editingRecord?.typeOfHF ?? 'Unknown');
-  const [hfStage, setHfStage] = useState(editingRecord?.stageOfHF ?? 'Stage C');
-  const [hfNyha, setHfNyha] = useState(editingRecord?.nyhaClass ?? 'NYHA Class II');
-  const [hfAf, setHfAf] = useState(editingRecord?.afStatus ?? 'NSR');
+  const [hfType, setHfType] = useState(editingRecord?.typeOfHF ?? null);
+  const [hfStage, setHfStage] = useState(editingRecord?.stageOfHF ?? null);
+  const [hfNyha, setHfNyha] = useState(editingRecord?.nyhaClass ?? null);
+  const [hfAf, setHfAf] = useState(editingRecord?.afStatus ?? null);
   const [hfEtiologyCv, setHfEtiologyCv] = useState(editingRecord?.hfEtiology?.cardiovascular ?? []);
   const [hfEtiologyNonCv, setHfEtiologyNonCv] = useState(editingRecord?.hfEtiology?.nonCardiac ?? []);
   const [hfEtiologyPulm, setHfEtiologyPulm] = useState(editingRecord?.hfEtiology?.pulmonary ?? []);
   const [initialClinicalNotes, setInitialClinicalNotes] = useState(editingRecord?.initialAssessment?.clinicalNotes ?? '');
 
   // 4. Final Clinical Assessment
-  const [finalNyha, setFinalNyha] = useState(editingRecord?.finalAssessment?.finalNyhaClass ?? editingRecord?.nyhaClass ?? 'NYHA Class II');
-  const [finalStage, setFinalStage] = useState(editingRecord?.finalAssessment?.finalStage ?? editingRecord?.stageOfHF ?? 'Stage C');
-  const [finalHfType, setFinalHfType] = useState(editingRecord?.finalAssessment?.finalTypeOfHF ?? editingRecord?.typeOfHF ?? 'Unknown');
+  const [finalNyha, setFinalNyha] = useState(editingRecord?.finalAssessment?.finalNyhaClass ?? editingRecord?.nyhaClass ?? null);
+  const [finalStage, setFinalStage] = useState(editingRecord?.finalAssessment?.finalStage ?? editingRecord?.stageOfHF ?? null);
+  const [finalHfType, setFinalHfType] = useState(editingRecord?.finalAssessment?.finalTypeOfHF ?? editingRecord?.typeOfHF ?? null);
   const [maceEvents, setMaceEvents] = useState(editingRecord?.finalAssessment?.mace ?? []);
   const [finalClinicalNotes, setFinalClinicalNotes] = useState(editingRecord?.finalAssessment?.clinicalNotes ?? '');
 
@@ -299,8 +300,10 @@ const HFForm = forwardRef(function HFForm(
 
   // Calculations
   const vBmi = useMemo(() => {
-    if (!vUnableToWeigh && vWeight > 0 && vHeight > 0) {
-      return Number((vWeight / Math.pow(vHeight / 100, 2)).toFixed(1));
+    const w = parseFloat(vWeight);
+    const h = parseFloat(vHeight);
+    if (!vUnableToWeigh && !isNaN(w) && w > 0 && !isNaN(h) && h > 0) {
+      return Number((w / Math.pow(h / 100, 2)).toFixed(1));
     }
     return undefined;
   }, [vWeight, vHeight, vUnableToWeigh]);
@@ -620,7 +623,7 @@ const HFForm = forwardRef(function HFForm(
       {/* 3. Initial Clinical Assessment */}
       <SectionCard title="3. Initial Clinical Assessment">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <NumberInput id="hf-height" label="Height (cm)" value={vHeight} onChange={setVHeight} />
+          <NumberInput id="hf-height" label="Height (cm)" value={vHeight} onChange={setVHeight} warning={getVitalsWarning('height', vHeight)} />
           <div>
             <NumberInput
               id="hf-weight"
@@ -628,6 +631,7 @@ const HFForm = forwardRef(function HFForm(
               disabled={vUnableToWeigh}
               value={vWeight}
               onChange={setVWeight}
+              warning={getVitalsWarning('weight', vWeight)}
             />
             <label className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 cursor-pointer">
               <input id="hf-unweight" type="checkbox" checked={vUnableToWeigh} onChange={(e) => setVUnableToWeigh(e.target.checked)} />
@@ -642,21 +646,21 @@ const HFForm = forwardRef(function HFForm(
               onChange={setVUnableToWeighReason}
             />
           )}
-          <NumberInput id="hf-hr" label="Heart Rate (bpm)" value={vHr} onChange={setVHr} />
-          <NumberInput id="hf-rr" label="Respiratory Rate (bpm)" value={vRr} onChange={setVRr} />
-          <NumberInput id="hf-o2" label="O2 Saturation (%)" value={vO2} onChange={setVO2} />
+          <NumberInput id="hf-hr" label="Heart Rate (bpm)" value={vHr} onChange={setVHr} warning={getVitalsWarning('heartRate', vHr)} />
+          <NumberInput id="hf-rr" label="Respiratory Rate (bpm)" value={vRr} onChange={setVRr} warning={getVitalsWarning('rr', vRr)} />
+          <NumberInput id="hf-o2" label="O2 Saturation (%)" value={vO2} onChange={setVO2} warning={getVitalsWarning('o2', vO2)} />
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">BP Sitting (Sys / Dia)</label>
             <div className="flex gap-2">
-              <NumberInput id="hf-bp-sys" value={vBpSystolic} onChange={setVBpSystolic} placeholder="Sys" />
-              <NumberInput id="hf-bp-dia" value={vBpDiastolic} onChange={setVBpDiastolic} placeholder="Dia" />
+              <NumberInput id="hf-bp-sys" value={vBpSystolic} onChange={setVBpSystolic} placeholder="Sys" warning={getVitalsWarning('sysBp', vBpSystolic)} />
+              <NumberInput id="hf-bp-dia" value={vBpDiastolic} onChange={setVBpDiastolic} placeholder="Dia" warning={getVitalsWarning('diaBp', vBpDiastolic)} />
             </div>
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">BP Standing (Sys / Dia)</label>
             <div className="flex gap-2">
-              <NumberInput id="hf-bp-stand-sys" value={vBpStandingSystolic} onChange={setVBpStandingSystolic} placeholder="Sys" />
-              <NumberInput id="hf-bp-stand-dia" value={vBpStandingDiastolic} onChange={setVBpStandingDiastolic} placeholder="Dia" />
+              <NumberInput id="hf-bp-stand-sys" value={vBpStandingSystolic} onChange={setVBpStandingSystolic} placeholder="Sys" warning={getVitalsWarning('sysBp', vBpStandingSystolic)} />
+              <NumberInput id="hf-bp-stand-dia" value={vBpStandingDiastolic} onChange={setVBpStandingDiastolic} placeholder="Dia" warning={getVitalsWarning('diaBp', vBpStandingDiastolic)} />
             </div>
           </div>
         </div>

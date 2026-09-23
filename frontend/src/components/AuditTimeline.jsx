@@ -192,6 +192,12 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
     if (['third degree', '3rd degree', 'complete heart block', 'chb', '3-degree', '3 degree', '3rd-degree'].includes(lower)) return 'Complete Heart Block (3rd Degree)';
     if (['none', 'no av block', 'nil'].includes(lower)) return 'None';
 
+    // LV Function / LVD Semantic Equivalences
+    if (['moderate lvd', 'mod. lvd', 'mod.lvd', 'mod lvd', 'moderate'].includes(lower)) return 'Moderate LVD';
+    if (['severe lvd', 'sev. lvd', 'sev.lvd', 'sev lvd', 'severe'].includes(lower)) return 'Severe LVD';
+    if (['mild lvd', 'mild. lvd', 'mild.lvd', 'mild lvd', 'mild'].includes(lower)) return 'Mild LVD';
+    if (['normal', 'normal lvd'].includes(lower)) return 'Normal';
+
     if (!isNaN(s) && s !== '') {
       const num = Number(s);
       if (!isNaN(num)) return String(num);
@@ -210,7 +216,6 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
       else if (flat.av_block_first_degree === 'Yes') flat.av_block = 'First Degree';
       else if (flat.av_block_none === 'Yes') flat.av_block = 'None';
     }
-    
 
     // 2. BBB
     if (!flat.bbb) {
@@ -235,11 +240,20 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
     }
 
     // 4. LV Function (check specific abnormal values first before normal)
-    if (!flat.lv_function) {
-      if (flat.lv_function_severe_lvd === 'Yes') flat.lv_function = 'Severe LVD';
-      else if (flat.lv_function_moderate_lvd === 'Yes') flat.lv_function = 'Moderate LVD';
-      else if (flat.lv_function_mild_lvd === 'Yes') flat.lv_function = 'Mild LVD';
-      else if (flat.lv_function_normal === 'Yes') flat.lv_function = 'Normal';
+    let lvVal = flat.lv_function;
+    if (!lvVal) {
+      if (flat.lv_function_severe_lvd === 'Yes') lvVal = 'Severe LVD';
+      else if (flat.lv_function_moderate_lvd === 'Yes') lvVal = 'Moderate LVD';
+      else if (flat.lv_function_mild_lvd === 'Yes') lvVal = 'Mild LVD';
+      else if (flat.lv_function_normal === 'Yes') lvVal = 'Normal';
+    }
+    if (lvVal) {
+      const lowerLv = String(lvVal).toLowerCase().trim();
+      if (['moderate lvd', 'mod. lvd', 'mod.lvd', 'mod lvd', 'moderate'].some(s => lowerLv.includes(s))) lvVal = 'Moderate LVD';
+      else if (['severe lvd', 'sev. lvd', 'sev.lvd', 'sev lvd', 'severe'].some(s => lowerLv.includes(s))) lvVal = 'Severe LVD';
+      else if (['mild lvd', 'mild. lvd', 'mild.lvd', 'mild lvd', 'mild'].some(s => lowerLv.includes(s))) lvVal = 'Mild LVD';
+      else if (['normal', 'normal lvd'].some(s => lowerLv.includes(s))) lvVal = 'Normal';
+      flat.lv_function = lvVal;
     }
 
     // 5. MR (check specific abnormal values first before none)

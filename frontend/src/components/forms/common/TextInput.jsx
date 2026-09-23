@@ -17,6 +17,7 @@ export default function TextInput({
   error = null,
   showCounter = true,
   type = 'text',
+  isPhone = false,
   ...rest
 }) {
   return (
@@ -36,6 +37,7 @@ export default function TextInput({
       error={error}
       showCounter={showCounter}
       type={type}
+      isPhone={isPhone}
       multiline={false}
       {...rest}
     />
