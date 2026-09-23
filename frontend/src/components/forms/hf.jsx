@@ -5124,14 +5124,19 @@ const hf = forwardRef(function hf(
               Stress Test
             </div>
             <div className="p-3 space-y-2">
-              <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
-                <span className="font-semibold text-slate-600">Date of test:</span>
-                {renderInlineDate(stressDate, setStressDate)}
-              </div>
               <div className="space-y-1.5">
-                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Not Done'} onChange={() => setStressStatus('Not Done')} /> Not Done</label>
                 <div>
-                  <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Done'} onChange={() => setStressStatus('Done')} /> Done</label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer">
+                      <input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Done'} onChange={() => setStressStatus('Done')} /> Done
+                    </label>
+                    {stressStatus === 'Done' && (
+                      <div className="flex items-center gap-1">
+                        <span className="font-semibold text-slate-600">Date of test:</span>
+                        {renderInlineDate(stressDate, setStressDate)}
+                      </div>
+                    )}
+                  </div>
                   {stressStatus === 'Done' && (
                     <div className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 pl-5 bg-white p-2 rounded border border-slate-200">
                       <div className="flex items-center gap-1"><span>▪ METS achieved:</span><input disabled={readOnly} type="text" value={stressMets} onChange={(e) => setStressMets(e.target.value)} className="border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full" /></div>
@@ -5149,6 +5154,9 @@ const hf = forwardRef(function hf(
                     </div>
                   )}
                 </div>
+                <label className="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer">
+                  <input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Not Done'} onChange={() => { setStressStatus('Not Done'); setStressDate(''); }} /> Not Done
+                </label>
               </div>
             </div>
           </div>
@@ -5159,25 +5167,14 @@ const hf = forwardRef(function hf(
               MRI
             </div>
             <div className="p-3 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-1">
-                <input
-                  disabled={readOnly}
-                  type="checkbox"
-                  checked={chkMriLvef}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-                    setChkMriLvef(checked);
-                    if (!checked) setMriLvef('');
-                  }}
-                  className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer"
-                />
-                <span className="font-semibold">LVEF:</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold text-slate-700">LVEF:</span>
                 <input
                   disabled={readOnly}
                   type="text"
                   value={mriLvef}
                   onChange={(e) => handleNumericChange(setMriLvef, e.target.value)}
-                  className="border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-28 disabled:bg-slate-100 disabled:text-slate-400"
+                  className="border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600 outline-none bg-white text-slate-800 placeholder:text-slate-400 w-28 disabled:bg-slate-100 disabled:text-slate-400"
                 />
               </div>
               <div className="flex items-center gap-4">
@@ -5208,13 +5205,19 @@ const hf = forwardRef(function hf(
               6-Minute Walk Test
             </div>
             <div className="p-3 space-y-2">
-              <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
-                <span className="font-semibold text-slate-600">Date of test:</span>
-                {renderInlineDate(sixMwtDate, setSixMwtDate, "border-b border-slate-300 p-0 focus:ring-0 text-xs bg-transparent", formErrors.sixMwtDate)}
-              </div>
               <div className={`space-y-2 p-2 rounded ${formErrors.sixMwtStatus ? 'border border-red-500 bg-red-50/30' : ''}`}>
                 <div>
-                  <label className="flex items-center gap-1.5 font-bold text-slate-700"><input disabled={readOnly} type="radio" name="six_mwt" checked={sixMwtStatus === 'Done'} onChange={() => setSixMwtStatus('Done')} /> Done:</label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer">
+                      <input disabled={readOnly} type="radio" name="six_mwt" checked={sixMwtStatus === 'Done'} onChange={() => setSixMwtStatus('Done')} /> Done:
+                    </label>
+                    {sixMwtStatus === 'Done' && (
+                      <div className="flex items-center gap-1">
+                        <span className="font-semibold text-slate-600">Date of test:</span>
+                        {renderInlineDate(sixMwtDate, setSixMwtDate, "border-b border-slate-300 p-0 focus:ring-0 text-xs bg-transparent", formErrors.sixMwtDate)}
+                      </div>
+                    )}
+                  </div>
                   {sixMwtStatus === 'Done' && (
                     <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-4 pl-5 bg-white p-2 rounded border border-slate-200">
                       <div className="flex items-center gap-1">
@@ -5229,7 +5232,9 @@ const hf = forwardRef(function hf(
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1.5 font-bold text-slate-700 whitespace-nowrap"><input disabled={readOnly} type="radio" name="six_mwt" checked={sixMwtStatus === 'Not Done'} onChange={() => setSixMwtStatus('Not Done')} /> Not Done, Reasons:</label>
+                  <label className="flex items-center gap-1.5 font-bold text-slate-700 whitespace-nowrap cursor-pointer">
+                    <input disabled={readOnly} type="radio" name="six_mwt" checked={sixMwtStatus === 'Not Done'} onChange={() => { setSixMwtStatus('Not Done'); setSixMwtDate(''); }} /> Not Done, Reasons:
+                  </label>
                   {sixMwtStatus === 'Not Done' && (
                     <input disabled={readOnly} type="text" value={sixMwtNotDoneReason} onChange={(e) => setSixMwtNotDoneReason(e.target.value)} className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.sixMwtNotDoneReason ? 'border-red-500 text-red-700' : 'border-slate-300'}`} placeholder="Specify clinical barriers..." />
                   )}
@@ -5258,13 +5263,19 @@ const hf = forwardRef(function hf(
               Angiogram
             </div>
             <div className="p-3 space-y-2">
-              <div className="flex items-center gap-1 border-b border-slate-100 pb-1.5">
-                <span className="font-semibold text-slate-600">Date of test:</span>
-                {renderInlineDate(angioDate, setAngioDate, "border-b border-slate-300 p-0 focus:ring-0 text-xs bg-transparent", formErrors.angioDate)}
-              </div>
               <div className={`space-y-1.5 p-2 rounded ${formErrors.angioStatus ? 'border border-red-500 bg-red-50/30' : ''}`}>
                 <div>
-                  <label className="flex items-center gap-1.5 font-bold text-slate-700"><input disabled={readOnly} type="radio" name="angio_st" checked={angioStatus === 'Done'} onChange={() => setAngioStatus('Done')} /> Done:</label>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <label className="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer">
+                      <input disabled={readOnly} type="radio" name="angio_st" checked={angioStatus === 'Done'} onChange={() => setAngioStatus('Done')} /> Done:
+                    </label>
+                    {angioStatus === 'Done' && (
+                      <div className="flex items-center gap-1">
+                        <span className="font-semibold text-slate-600">Date of test:</span>
+                        {renderInlineDate(angioDate, setAngioDate, "border-b border-slate-300 p-0 focus:ring-0 text-xs bg-transparent", formErrors.angioDate)}
+                      </div>
+                    )}
+                  </div>
                   {angioStatus === 'Done' && (
                     <div className={`mt-1 flex flex-wrap gap-4 pl-5 bg-white p-2 rounded border ${formErrors.angioFinding ? 'border-red-500' : 'border-slate-200'}`}>
                       {['Normal', '1 vessel disease', '2 vessel disease', '3 vessel disease', 'LMCA'].map(f => (
@@ -5276,7 +5287,9 @@ const hf = forwardRef(function hf(
                     </div>
                   )}
                 </div>
-                <label className="flex items-center gap-1.5 font-bold text-slate-700"><input disabled={readOnly} type="radio" name="angio_st" checked={angioStatus === 'Not Done'} onChange={() => setAngioStatus('Not Done')} /> Not Done</label>
+                <label className="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer">
+                  <input disabled={readOnly} type="radio" name="angio_st" checked={angioStatus === 'Not Done'} onChange={() => { setAngioStatus('Not Done'); setAngioDate(''); }} /> Not Done
+                </label>
                 {formErrors.angioStatus && (
                   <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.angioStatus}</span>
                 )}
@@ -5291,8 +5304,8 @@ const hf = forwardRef(function hf(
             </div>
             <div className="p-3 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="biopsy_st" checked={biopsyStatus === 'Done'} onChange={() => setBiopsyStatus('Done')} /> Done</label>
-                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="biopsy_st" checked={biopsyStatus === 'Not Done'} onChange={() => setBiopsyStatus('Not Done')} /> Not Done</label>
+                <label className="flex items-center gap-1.5 cursor-pointer"><input disabled={readOnly} type="radio" name="biopsy_st" checked={biopsyStatus === 'Done'} onChange={() => setBiopsyStatus('Done')} /> Done</label>
+                <label className="flex items-center gap-1.5 cursor-pointer"><input disabled={readOnly} type="radio" name="biopsy_st" checked={biopsyStatus === 'Not Done'} onChange={() => { setBiopsyStatus('Not Done'); setBiopsyDate(''); }} /> Not Done</label>
               </div>
               {biopsyStatus === 'Done' && (
                 <div className="flex items-center gap-1">

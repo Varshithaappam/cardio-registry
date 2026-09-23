@@ -2472,7 +2472,26 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
             <div className="col-span-2 p-3 bg-teal-50 border border-teal-200 rounded-lg flex flex-col justify-center items-center">
               <span className="font-bold text-teal-900 uppercase text-[10px] tracking-wider">Total:</span>
-              <span className="text-xl font-extrabold text-teal-700">₹ {formData.total_cost || '0'}</span>
+              <span className="text-xl font-extrabold text-teal-700">
+                ₹ {(() => {
+                  const costSum = [
+                    formData.bed_charges,
+                    formData.drugs_disposables_cost,
+                    formData.package_cost,
+                    formData.laboratory_cost,
+                    formData.non_invasive_lab_cost,
+                    formData.consultation_cost,
+                    formData.radiology_cost,
+                    formData.miscellaneous_cost
+                  ].reduce((acc, val) => acc + (parseFloat(val) || 0), 0);
+
+                  const valToUse = (formData.total_cost !== '' && formData.total_cost !== null && formData.total_cost !== undefined)
+                    ? parseFloat(formData.total_cost) || 0
+                    : costSum;
+
+                  return valToUse > 0 ? valToUse.toLocaleString('en-IN') : '0';
+                })()}
+              </span>
             </div>
           </div>
         </div>
