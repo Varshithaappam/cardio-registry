@@ -390,6 +390,97 @@ async function ensureRegisterPatientSP() {
   }
 }
 
+async function ensureHfFollowupTable() {
+  try {
+    const columns = [
+      { name: 'reg_patient_id', type: 'INT' },
+      { name: 'task_id', type: 'INT' },
+      { name: 'followup_date', type: 'DATE' },
+      { name: 'followup_conducted', type: 'NVARCHAR(100)' },
+      { name: 'attempt_number', type: 'INT' },
+      { name: 'answering_status', type: 'NVARCHAR(50)' },
+      { name: 'no_answer_reason', type: 'NVARCHAR(255)' },
+      { name: 'health_status', type: 'NVARCHAR(50)' },
+      { name: 'health_unhealthy_details', type: 'NVARCHAR(MAX)' },
+      { name: 'medications_still_taking', type: 'NVARCHAR(MAX)' },
+      { name: 'side_effects_observed', type: 'NVARCHAR(50)' },
+      { name: 'side_effects_details', type: 'NVARCHAR(MAX)' },
+      { name: 'physician_medication_changes', type: 'NVARCHAR(50)' },
+      { name: 'physician_medication_changes_details', type: 'NVARCHAR(MAX)' },
+      { name: 'date_of_admission', type: 'DATE' },
+      { name: 'date_of_discharge', type: 'DATE' },
+      { name: 'selected_symptoms', type: 'NVARCHAR(MAX)' },
+      { name: 'symptom_other_details', type: 'NVARCHAR(MAX)' },
+      { name: 'medication_adherence', type: 'NVARCHAR(50)' },
+      { name: 'medication_adherence_no_reason', type: 'NVARCHAR(MAX)' },
+      { name: 'drug_grid_json', type: 'NVARCHAR(MAX)' },
+      { name: 'bnp_nt_probnp_result', type: 'NVARCHAR(100)' },
+      { name: 'creatinine_result', type: 'NVARCHAR(100)' },
+      { name: 'sodium_result', type: 'NVARCHAR(100)' },
+      { name: 'hemoglobin_result', type: 'NVARCHAR(100)' },
+      { name: 'echo_done', type: 'NVARCHAR(50)' },
+      { name: 'has_major_clinical_event', type: 'NVARCHAR(50)' },
+      { name: 'selected_clinical_events', type: 'NVARCHAR(MAX)' },
+      { name: 'event_other_details', type: 'NVARCHAR(MAX)' },
+      { name: 'vaccinations_details', type: 'NVARCHAR(MAX)' },
+      { name: 'is_deceased', type: 'NVARCHAR(50)' },
+      { name: 'died_within_30days_discharge', type: 'NVARCHAR(50)' },
+      { name: 'place_of_death', type: 'NVARCHAR(255)' },
+      { name: 'date_of_death', type: 'DATE' },
+      { name: 'cause_of_death', type: 'NVARCHAR(100)' },
+      { name: 'cause_of_death_other_details', type: 'NVARCHAR(MAX)' },
+      { name: 'join_program_opt_in', type: 'NVARCHAR(50)' },
+      { name: 'patient_feedback', type: 'NVARCHAR(MAX)' },
+      { name: 'raw_form_json', type: 'NVARCHAR(MAX)' }
+    ];
+
+    const checkTbl = await query(`SELECT OBJECT_ID(N'dbo.hf_followup_records') AS id;`);
+    if (!checkTbl.recordset?.[0]?.id) {
+      await query(`
+        CREATE TABLE dbo.hf_followup_records (
+          record_id INT IDENTITY(1,1) PRIMARY KEY,
+          reg_patient_id INT NOT NULL,
+          created_at DATETIME2 DEFAULT SYSDATETIME()
+        );
+      `);
+    }
+
+    for (const col of columns) {
+      const checkCol = await query(
+        `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.hf_followup_records') AND name = '${col.name}'`
+      );
+      if (!checkCol.recordset || checkCol.recordset.length === 0) {
+        try {
+          await query(`ALTER TABLE dbo.hf_followup_records ADD [${col.name}] ${col.type} NULL;`);
+          console.log(`✓ Auto-added column [${col.name}] to dbo.hf_followup_records`);
+        } catch (err) {
+          console.warn(`Could not add column [${col.name}] to dbo.hf_followup_records:`, err.message);
+        }
+      }
+    }
+
+    // Ensure raw_form_json also exists on nurse_outreach_logs table
+    const checkLogTbl = await query(`SELECT OBJECT_ID(N'dbo.nurse_outreach_logs') AS id;`);
+    if (checkLogTbl.recordset?.[0]?.id) {
+      const checkLogCol = await query(
+        `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.nurse_outreach_logs') AND name = 'raw_form_json'`
+      );
+      if (!checkLogCol.recordset || checkLogCol.recordset.length === 0) {
+        try {
+          await query(`ALTER TABLE dbo.nurse_outreach_logs ADD [raw_form_json] NVARCHAR(MAX) NULL;`);
+          console.log(`✓ Auto-added column [raw_form_json] to dbo.nurse_outreach_logs`);
+        } catch (err) {
+          console.warn(`Could not add column [raw_form_json] to dbo.nurse_outreach_logs:`, err.message);
+        }
+      }
+    }
+
+    console.log('✓ Verified/Initialized [hf_followup_records] database table with all columns');
+  } catch (err) {
+    console.warn('⚠️ hf_followup_records table check notice:', err.message);
+  }
+}
+
 async function healthCheck() {
   try {
     const result = await query('SELECT 1 AS ok;');
@@ -398,6 +489,7 @@ async function healthCheck() {
     await ensureAuditTable();
     await ensureAppropriatenessColumns();
     await ensureRegisterPatientSP();
+    await ensureHfFollowupTable();
     return result.recordset[0];
   } catch (error) {
     console.error('❌ SQL Server Connection Failed');
@@ -409,6 +501,7 @@ async function healthCheck() {
   }
 }
 
-module.exports = { sql, poolPromise, getPool, getConnection, query, insert, healthCheck, ensureAppropriatenessColumns, ensureAuditTable, ensureRegisterPatientSP };
+module.exports = { sql, poolPromise, getPool, getConnection, query, insert, healthCheck, ensureAppropriatenessColumns, ensureAuditTable, ensureRegisterPatientSP, ensureHfFollowupTable };
+
 
 

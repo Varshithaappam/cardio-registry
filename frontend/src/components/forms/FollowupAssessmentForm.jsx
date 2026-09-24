@@ -366,57 +366,6 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
               />
             </div>
 
-            {/* Row 3: Recommended Pre-Visit Investigations */}
-            <FormField label="Recommended Pre-Visit Investigations/Tests">
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 bg-white p-3 rounded-lg border border-slate-200">
-                <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={investigationSerumLytes}
-                    onChange={(e) => setInvestigationSerumLytes(e.target.checked)}
-                    disabled={readOnly}
-                    className="rounded text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>Serum Electrolytes & Creatinine</span>
-                </label>
-
-                <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={investigationEcg}
-                    onChange={(e) => setInvestigationEcg(e.target.checked)}
-                    disabled={readOnly}
-                    className="rounded text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>ECG</span>
-                </label>
-
-                <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={investigationEcho}
-                    onChange={(e) => setInvestigationEcho(e.target.checked)}
-                    disabled={readOnly}
-                    className="rounded text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>Echocardiogram</span>
-                </label>
-
-                <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={investigationBnpNtprobnp}
-                    onChange={(e) => setInvestigationBnpNtprobnp(e.target.checked)}
-                    disabled={readOnly}
-                    className="rounded text-blue-600 focus:ring-blue-500"
-                  />
-                  <span>BNP / NT-proBNP</span>
-                </label>
-
-                
-              </div>
-            </FormField>
-
             {/* Row 4: Special Instructions */}
             <TextArea
               label="Special Clinical Instructions for Patient/Caregiver"

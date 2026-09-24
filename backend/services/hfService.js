@@ -378,9 +378,20 @@ async function saveHfAssessment(data, userId = 1) {
 
         // 5, 6, 7. Insert medicalTherapy parts 1, 2, 3
         if (data.medicalTherapy) {
-            await hfModel.insertHfMedicalTherapyPart1(conn, withHfId(data.medicalTherapy));
-            await hfModel.insertHfMedicalTherapyPart2(conn, withHfId(data.medicalTherapy));
-            await hfModel.insertHfMedicalTherapyPart3(conn, withHfId(data.medicalTherapy));
+            const truncateObjDoses = (obj) => {
+                if (!obj || typeof obj !== 'object') return obj;
+                const sanitized = { ...obj };
+                for (const k in sanitized) {
+                    if (typeof sanitized[k] === 'string' && sanitized[k].length > 50) {
+                        sanitized[k] = sanitized[k].substring(0, 50);
+                    }
+                }
+                return sanitized;
+            };
+            const safeMedTherapy = truncateObjDoses(data.medicalTherapy);
+            await hfModel.insertHfMedicalTherapyPart1(conn, withHfId(safeMedTherapy));
+            await hfModel.insertHfMedicalTherapyPart2(conn, withHfId(safeMedTherapy));
+            await hfModel.insertHfMedicalTherapyPart3(conn, withHfId(safeMedTherapy));
         }
 
         // 8. Insert deviceTherapy
@@ -598,8 +609,10 @@ async function saveHfAssessment(data, userId = 1) {
         // Section 11: Follow-up Assessment
         if (data.followupAssessment) {
             const fa = data.followupAssessment;
-            const isYes = fa.is_followup_required === 1 || fa.is_followup_required === true || fa.isFollowupRequired === 'Yes';
-            const isNo = fa.is_followup_required === 0 || fa.is_followup_required === false || fa.isFollowupRequired === 'No';
+            const valReq = fa.is_followup_required !== undefined ? fa.is_followup_required : fa.isFollowupRequired;
+            const strReq = String(valReq !== undefined && valReq !== null ? valReq : '').trim().toLowerCase();
+            const isYes = valReq === 1 || valReq === true || strReq === '1' || strReq === 'yes' || strReq === 'true';
+            const isNo = !isYes;
 
             const sanitizeString = (val) => (val && String(val).trim() !== '' ? String(val).trim() : null);
 
@@ -609,10 +622,10 @@ async function saveHfAssessment(data, userId = 1) {
                 is_followup_required: isYes ? 1 : 0,
 
                 // Branch 1 (Yes)
-                followup_interval: isYes ? sanitizeString(fa.followup_interval || fa.followupInterval) : null,
+                followup_interval: isYes ? sanitizeString(fa.followup_interval || fa.followupInterval || '1 Month') : null,
                 scheduled_followup_date: isYes ? toSqlDate(fa.scheduled_followup_date || fa.scheduledFollowupDate) : null,
-                visit_mode: isYes ? sanitizeString(fa.visit_mode || fa.visitMode) : null,
-                primary_followup_reason: isYes ? sanitizeString(fa.primary_followup_reason || fa.primaryFollowupReason) : null,
+                visit_mode: isYes ? sanitizeString(fa.visit_mode || fa.visitMode || 'Telephonic follow-up') : null,
+                primary_followup_reason: isYes ? sanitizeString(fa.primary_followup_reason || fa.primaryFollowupReason || 'Routine HF Telephonic Follow-up') : null,
                 investigation_serum_lytes: isYes ? (fa.investigation_serum_lytes || fa.investigations?.serumLytes ? 1 : 0) : null,
                 investigation_ecg: isYes ? (fa.investigation_ecg || fa.investigations?.ecg ? 1 : 0) : null,
                 investigation_echo: isYes ? (fa.investigation_echo || fa.investigations?.echo ? 1 : 0) : null,
@@ -621,7 +634,7 @@ async function saveHfAssessment(data, userId = 1) {
                 special_instructions: isYes ? sanitizeString(fa.special_instructions || fa.specialInstructions) : null,
 
                 // Branch 2 (No)
-                primary_no_followup_reason: isNo ? sanitizeString(fa.primary_no_followup_reason || fa.primaryNoFollowupReason) : null,
+                primary_no_followup_reason: isNo ? sanitizeString(fa.primary_no_followup_reason || fa.primaryNoFollowupReason || 'No follow-up required') : null,
                 pcp_transition_summary: isNo ? sanitizeString(fa.pcp_transition_summary || fa.pcpTransitionSummary) : null,
                 self_care_instructions: isNo ? sanitizeString(fa.self_care_instructions || fa.selfCareInstructions) : null
             };

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../api/axios';
+import HFFollowUpForm from './forms/HFFollowUpForm';
+import HfFollowupPdfModal from './modals/HfFollowupPdfModal';
 import {
   formatDateForDisplay,
   formatDateTimeForDisplay,
@@ -24,7 +26,8 @@ import {
   RefreshCw,
   Activity,
   ArrowUpDown,
-  Calendar
+  Calendar,
+  FileText
 } from 'lucide-react';
 
 export default function NurseFollowUpReport() {
@@ -41,6 +44,17 @@ export default function NurseFollowUpReport() {
 
   // Column Sorting State (Default: Follow-Up Interval Ascending)
   const [sortConfig, setSortConfig] = useState({ key: 'timeframe', direction: 'asc' });
+
+  // PDF Response Preview Modal State
+  const [pdfModalLog, setPdfModalLog] = useState(null);
+  const [pdfModalTask, setPdfModalTask] = useState(null);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+
+  const openPdfModal = (log, task) => {
+    setPdfModalLog(log);
+    setPdfModalTask(task);
+    setIsPdfModalOpen(true);
+  };
 
   // Toggle Sort Direction
   const handleSort = (key) => {
@@ -183,10 +197,14 @@ export default function NurseFollowUpReport() {
     return { currentEpisode, historicalEpisodes };
   };
 
-  // Modal State
+  // Quick Outreach Modal State
   const [selectedTask, setSelectedTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Detailed Heart Failure Follow-up Form Modal State
+  const [selectedHfTask, setSelectedHfTask] = useState(null);
+  const [isHfModalOpen, setIsHfModalOpen] = useState(false);
 
   // Log Outreach Form State
   const [formData, setFormData] = useState({
@@ -199,6 +217,116 @@ export default function NurseFollowUpReport() {
     assigned_nurse: '',
     notes: ''
   });
+
+  // Open Detailed HF Follow-Up Form Modal
+  const handleOpenHfModal = (task) => {
+    setSelectedHfTask(task);
+    setIsHfModalOpen(true);
+  };
+
+  // Submit Detailed HF Follow-up Log to Backend API
+  const handleSaveHfFollowup = async (formPayload) => {
+    if (!selectedHfTask) return;
+    setSubmitting(true);
+    const regType = getTaskRegistryType(selectedHfTask);
+
+    // Build formatted clinical summary for instant timeline log preview
+    let notesSummary = `[HF Detailed Follow-up]\n`;
+    notesSummary += `Mode: ${formPayload.followup_conducted || 'Telephonic'} (Attempt #${formPayload.attempt_number || 1}) | Answering: ${formPayload.answering_status || 'Yes'}\n`;
+    notesSummary += `Health Overview: ${formPayload.health_status || 'Healthy'} ${formPayload.health_unhealthy_details ? `(${formPayload.health_unhealthy_details})` : ''}\n`;
+    if ((formPayload.selected_symptoms || []).length > 0) {
+      notesSummary += `Symptoms Checklist: ${formPayload.selected_symptoms.join(', ')}\n`;
+    }
+    notesSummary += `Medication Adherence: ${formPayload.medication_adherence || 'Yes'} | Side Effects: ${formPayload.side_effects_observed || 'No'} | Physician Changes: ${formPayload.physician_medication_changes || 'No'}\n`;
+    
+    // Key Meds from grid
+    const activeMeds = (formPayload.drug_grid || [])
+      .filter((d) => d.taking === 'Yes' || d.inRecentVisit === 'Yes')
+      .map((d) => d.isOther && d.otherName ? d.otherName : d.name);
+    if (activeMeds.length > 0) {
+      notesSummary += `Current Key Meds: ${activeMeds.slice(0, 6).join(', ')}${activeMeds.length > 6 ? '...' : ''}\n`;
+    }
+
+    // Labs
+    const labParts = [];
+    if (formPayload.bnp_nt_probnp_result) labParts.push(`BNP: ${formPayload.bnp_nt_probnp_result}`);
+    if (formPayload.creatinine_result) labParts.push(`Creatinine: ${formPayload.creatinine_result}`);
+    if (formPayload.sodium_result) labParts.push(`Sodium: ${formPayload.sodium_result}`);
+    if (formPayload.hemoglobin_result) labParts.push(`Hb: ${formPayload.hemoglobin_result}`);
+    if (formPayload.echo_done) labParts.push(`2D Echo: ${formPayload.echo_done}`);
+    if (labParts.length > 0) {
+      notesSummary += `Labs & Investigations: ${labParts.join(' | ')}\n`;
+    }
+
+    if (formPayload.has_major_clinical_event === 'Yes' && (formPayload.selected_clinical_events || []).length > 0) {
+      notesSummary += `Major Clinical Events: ${formPayload.selected_clinical_events.join(', ')}\n`;
+    }
+
+    if (formPayload.is_deceased === 'Yes') {
+      notesSummary += `Deceased: Yes (Cause: ${formPayload.cause_of_death || 'Cardiac'}, Place: ${formPayload.place_of_death || 'N/A'})\n`;
+    }
+
+    if (formPayload.patient_feedback) {
+      notesSummary += `Feedback: ${formPayload.patient_feedback}`;
+    }
+
+    const taskIdToUse = selectedHfTask.task_id || selectedHfTask.id || selectedHfTask.source_record_id;
+    const payload = {
+      is_detailed_hf_form: true,
+      reg_patient_id: selectedHfTask.reg_patient_id,
+      task_id: taskIdToUse || null,
+      registry_type: regType,
+      source_registry: selectedHfTask.source_registry,
+      source_record_id: selectedHfTask.source_record_id,
+      timeframe: selectedHfTask.timeframe,
+      visit_mode: formPayload.followup_conducted || selectedHfTask.visit_mode,
+      contact_mode: formPayload.followup_conducted || 'Phone Call',
+      outcome: formPayload.answering_status === 'Yes' 
+        ? 'Detailed HF Follow-up Completed' 
+        : `Unreachable - ${formPayload.no_answer_reason || 'No Answer'}`,
+      status: formPayload.answering_status === 'Yes' ? 'Completed' : 'Pending Nurse Outreach',
+      symptoms_status: (formPayload.selected_symptoms || []).length > 0
+        ? (formPayload.selected_symptoms || []).join(', ').slice(0, 95)
+        : 'Stable - No worsening shortness of breath',
+      medication_adherence: formPayload.medication_adherence === 'Yes' 
+        ? 'Compliant - Taking all meds as prescribed' 
+        : 'Non-Compliant / Side Effects',
+      assigned_nurse: getLoggedInNurseName() || selectedHfTask.assigned_nurse || 'Staff Nurse',
+      notes: notesSummary,
+      ...formPayload
+    };
+
+    try {
+      let response;
+      if (taskIdToUse) {
+        try {
+          response = await api.post(`/nurse-dashboard/tasks/${taskIdToUse}/log`, payload);
+        } catch (e1) {
+          response = await api.post(`/nurse-followup-report/tasks/${taskIdToUse}/log`, payload);
+        }
+      } else {
+        response = await api.post(`/nurse-dashboard/logs`, payload);
+      }
+
+      if (response.data && response.data.success) {
+        setIsHfModalOpen(false);
+        setSelectedHfTask(null);
+        await fetchTasks();
+        const key = getUniqueKey(selectedHfTask);
+        if (expandedRowKey === key) {
+          await fetchPatientLogs(selectedHfTask.reg_patient_id, regType);
+        }
+      } else {
+        throw new Error(response.data?.message || 'Failed to save Heart Failure follow-up record.');
+      }
+    } catch (err) {
+      console.error('Error saving HF follow-up form:', err);
+      const serverMsg = err.friendlyError?.message || err.response?.data?.error || err.response?.data?.message || err.message;
+      alert(`Save Error: ${serverMsg || 'Failed to record HF follow-up.'}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // 1. Fetch Patient-Centric Tasks strictly from SQL Database
   const fetchTasks = async () => {
@@ -944,14 +1072,27 @@ export default function NurseFollowUpReport() {
 
                         {/* 6. Nurse Actions */}
                         <td className="py-4 px-4 align-top text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1.5 flex-wrap">
                             <button
                               onClick={() => handleOpenModal(task)}
-                              className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                              className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-2xs cursor-pointer"
+                              title="Log Quick Telephone Call Outreach"
                             >
                               <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
                               <span>Log Outreach</span>
                             </button>
+
+                            {(getTaskRegistryType(task) === 'HF' || (task.source_registry || '').toLowerCase().includes('heart failure')) && (
+                              <button
+                                onClick={() => handleOpenHfModal(task)}
+                                className="px-2.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-2xs cursor-pointer"
+                                title="Fill Detailed 7-Section Heart Failure Follow-up Form"
+                              >
+                                <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
+                                <span>Log Detailed HF Follow-up</span>
+                              </button>
+                            )}
+
                             <button
                               onClick={() => toggleExpandRow(task)}
                               className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all cursor-pointer"
@@ -1059,9 +1200,35 @@ export default function NurseFollowUpReport() {
                                         <span>Assigned Nurse: <strong className="text-slate-800">{task.assigned_nurse || 'Unassigned'}</strong></span>
                                         <span>Last Contact: {task.last_contact_date ? formatDateTime(task.last_contact_date) : 'None Recorded'}</span>
                                       </div>
-                                      <div className="text-slate-700 italic bg-white p-2.5 rounded-lg border border-slate-200">
-                                        "{task.nurse_notes || 'No outreach notes recorded yet.'}"
-                                      </div>
+                                      {task.nurse_notes && task.nurse_notes.includes('[HF Detailed Follow-up]') ? (
+                                        <div className="p-3 bg-teal-50 border border-teal-200 rounded-xl space-y-2">
+                                          <div className="flex items-center justify-between flex-wrap gap-2">
+                                            <div className="flex items-center gap-2">
+                                              <span className="px-2 py-0.5 bg-teal-600 text-white rounded font-extrabold text-[10px] uppercase tracking-wider">
+                                                Detailed HF Form
+                                              </span>
+                                              <span className="text-xs font-black text-teal-900">
+                                                Detailed 7-Section HF Clinical Assessment Response Recorded
+                                              </span>
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const matchingLog = (patientLogs[uniqueKey] || []).find((l) => l.notes?.includes('[HF Detailed Follow-up]'));
+                                                openPdfModal(matchingLog || { notes: task.nurse_notes }, task);
+                                              }}
+                                              className="px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+                                            >
+                                              <FileText className="w-4 h-4" />
+                                              <span>View PDF Response</span>
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <div className="text-slate-700 italic bg-white p-2.5 rounded-lg border border-slate-200">
+                                          "{task.nurse_notes || 'No outreach notes recorded yet.'}"
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
 
@@ -1090,12 +1257,15 @@ export default function NurseFollowUpReport() {
                                       const renderLogCard = (log, index, isCurrent) => {
                                         const episodeTag = log.episode_id || (log.registry_id ? `${log.registry_type || 'HF'}-${String(log.registry_id).padStart(2, '0')}` : 'Episode');
                                         const statusText = log.episode_status || 'Completed';
+                                        const isHfDetailed = Boolean(log.outcome && log.outcome.includes('Detailed HF Follow-up')) || Boolean(log.notes && log.notes.includes('[HF Detailed Follow-up]'));
 
                                         return (
                                           <div
                                             key={log.log_id || index}
-                                            className={`p-3 rounded-xl border text-[11px] space-y-1.5 transition-all ${
-                                              isCurrent
+                                            className={`p-3.5 rounded-xl border text-[11px] space-y-2.5 transition-all ${
+                                              isHfDetailed
+                                                ? 'bg-teal-50/60 border-teal-200 shadow-2xs hover:border-teal-300'
+                                                : isCurrent
                                                 ? 'bg-white border-blue-200/90 shadow-2xs hover:border-blue-300'
                                                 : 'bg-slate-50/90 border-slate-200 text-slate-700 hover:border-slate-300'
                                             }`}
@@ -1103,8 +1273,10 @@ export default function NurseFollowUpReport() {
                                             <div className="flex items-center justify-between font-bold text-slate-800 flex-wrap gap-1">
                                               <div className="flex items-center gap-1.5 flex-wrap">
                                                 {/* Contact Mode Badge */}
-                                                <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 border border-blue-300">
-                                                  {log.contact_mode || 'Phone Call'}
+                                                <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${
+                                                  isHfDetailed ? 'bg-teal-600 text-white border-teal-700' : 'bg-blue-100 text-blue-800 border-blue-300'
+                                                }`}>
+                                                  {isHfDetailed ? 'Detailed HF Form' : (log.contact_mode || 'Phone Call')}
                                                 </span>
 
                                                 {/* Episode ID & Status Badge */}
@@ -1127,20 +1299,32 @@ export default function NurseFollowUpReport() {
                                               </span>
                                             </div>
 
-                                            <div className={`font-black text-xs ${isCurrent ? 'text-blue-700' : 'text-slate-800'}`}>
-                                              {log.outcome}
+                                            <div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-slate-200/60">
+                                              <div className={`font-black text-xs ${isHfDetailed ? 'text-teal-900' : isCurrent ? 'text-blue-700' : 'text-slate-800'}`}>
+                                                {log.outcome}
+                                              </div>
+
+                                              {isHfDetailed && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => openPdfModal(log, task)}
+                                                  className="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                                  title="Download full 7-section Heart Failure follow-up PDF report"
+                                                >
+                                                  <FileText className="w-4 h-4" />
+                                                  <span>View PDF Response</span>
+                                                </button>
+                                              )}
                                             </div>
 
-                                            {log.symptoms_status && log.symptoms_status !== 'N/A' && (
+                                            {log.symptoms_status && log.symptoms_status !== 'N/A' && !isHfDetailed && (
                                               <div className="text-slate-600 text-[10px] flex items-center gap-1">
                                                 <span className="font-bold text-slate-500">Symptoms:</span> {log.symptoms_status}
                                               </div>
                                             )}
 
-                                            {log.notes && (
-                                              <div className={`text-slate-600 text-[11px] leading-relaxed p-2 rounded-lg border ${
-                                                isCurrent ? 'bg-slate-50/80 border-slate-100' : 'bg-white/80 border-slate-200/80'
-                                              }`}>
+                                            {log.notes && !isHfDetailed && (
+                                              <div className="text-slate-600 text-[11px] leading-relaxed p-2 rounded-lg border bg-white/80 border-slate-200/80">
                                                 {log.notes}
                                               </div>
                                             )}
@@ -1456,6 +1640,35 @@ export default function NurseFollowUpReport() {
           </div>
         </div>
       )}
+
+      {/* Log Detailed HF Follow-up Modal Dialog */}
+      {isHfModalOpen && selectedHfTask && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-fadeIn">
+          <div className="w-full max-w-[1440px] mx-auto my-auto flex justify-center">
+            <HFFollowUpForm
+              patientData={selectedHfTask}
+              taskData={selectedHfTask}
+              onSave={handleSaveHfFollowup}
+              onCancel={() => {
+                setIsHfModalOpen(false);
+                setSelectedHfTask(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* In-App Live PDF Response View Modal (Stays on http://localhost:3000/nurse-followup) */}
+      <HfFollowupPdfModal
+        isOpen={isPdfModalOpen}
+        onClose={() => {
+          setIsPdfModalOpen(false);
+          setPdfModalLog(null);
+          setPdfModalTask(null);
+        }}
+        logData={pdfModalLog}
+        patientData={pdfModalTask}
+      />
     </div>
   );
 }

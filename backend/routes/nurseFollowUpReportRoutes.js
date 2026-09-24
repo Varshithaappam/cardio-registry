@@ -48,6 +48,16 @@ const getPatientCentricTasks = async (req, res) => {
         FROM hf_followup_assessments WITH (NOLOCK)
         GROUP BY reg_patient_id
       ),
+      LatestHfAdmin AS (
+        SELECT 
+          r.reg_patient_id,
+          adm.visit_date,
+          adm.assessment_date,
+          adm.discharge_date,
+          ROW_NUMBER() OVER (PARTITION BY r.reg_patient_id ORDER BY r.hf_id DESC) AS rn
+        FROM hf_registry r WITH (NOLOCK)
+        INNER JOIN hf_administrative adm WITH (NOLOCK) ON r.hf_id = adm.hf_id
+      ),
       RankedTasks AS (
         SELECT 
           t.task_id,
@@ -73,11 +83,17 @@ const getPatientCentricTasks = async (req, res) => {
           t.last_contact_date,
           p.patient_name,
           p.mr_no,
+          p.uhid,
           p.gender,
           p.phone_no,
           p.date_of_birth,
           DATEDIFF(YEAR, p.date_of_birth, GETDATE()) - 
             CASE WHEN DATEADD(YEAR, DATEDIFF(YEAR, p.date_of_birth, GETDATE()), p.date_of_birth) > GETDATE() THEN 1 ELSE 0 END AS age,
+          COALESCE(
+            CAST(adm.visit_date AS VARCHAR(10)),
+            CAST(adm.assessment_date AS VARCHAR(10))
+          ) AS date_of_admission,
+          CAST(adm.discharge_date AS VARCHAR(10)) AS date_of_discharge,
           fa.primary_followup_reason,
           fa.primary_no_followup_reason,
           fa.pcp_transition_summary,
@@ -102,6 +118,7 @@ const getPatientCentricTasks = async (req, res) => {
         LEFT JOIN hf_followup_assessments fa WITH (NOLOCK) ON (
           t.source_registry LIKE '%Heart Failure%' AND t.source_record_id = fa.followup_id
         )
+        LEFT JOIN LatestHfAdmin adm ON (t.reg_patient_id = adm.reg_patient_id AND adm.rn = 1)
         WHERE t.status != 'No Follow-Up Needed'
           AND t.status != 'Superseded by new assessment'
       )
@@ -124,6 +141,9 @@ const getPatientCentricTasks = async (req, res) => {
         last_contact_date,
         patient_name,
         mr_no,
+        uhid,
+        date_of_admission,
+        date_of_discharge,
         gender,
         phone_no,
         date_of_birth,
@@ -237,6 +257,7 @@ const getPatientTimelineLogs = async (req, res) => {
           nol.symptoms_status,
           nol.medication_adherence,
           nol.notes,
+          nol.raw_form_json,
           'Manual Outreach Log' AS log_type,
           COALESCE(t.timeframe, nf.followup_month, 'Follow-Up') AS timeframe,
           -- Specific Registry & Episode Tracking
@@ -283,6 +304,7 @@ const getPatientTimelineLogs = async (req, res) => {
           nol.symptoms_status,
           nol.medication_adherence,
           nol.notes,
+          nol.raw_form_json,
           'Manual Outreach Log' AS log_type,
           COALESCE(t.timeframe, sf.followup_month, 'Follow-Up') AS timeframe,
           COALESCE(t.source_record_id, sf.stemi_id, sr.stemi_id, (SELECT MAX(stemi_id) FROM stemi_registry WHERE reg_patient_id = nol.reg_patient_id)) AS registry_id,
@@ -327,6 +349,7 @@ const getPatientTimelineLogs = async (req, res) => {
           nol.symptoms_status,
           nol.medication_adherence,
           nol.notes,
+          COALESCE(nol.raw_form_json, hfr.raw_form_json) AS raw_form_json,
           'Manual Outreach Log' AS log_type,
           COALESCE(t.timeframe, fa.followup_interval, 'Follow-Up') AS timeframe,
           -- Specific Registry & Episode Tracking
@@ -347,6 +370,7 @@ const getPatientTimelineLogs = async (req, res) => {
         LEFT JOIN patient_followup_tasks t ON nol.task_id = t.task_id
         LEFT JOIN hf_followup_assessments fa ON t.source_record_id = fa.followup_id
         LEFT JOIN hf_registry hr ON COALESCE(fa.hf_id, t.source_record_id) = hr.hf_id
+        LEFT JOIN hf_followup_records hfr ON (nol.task_id IS NOT NULL AND nol.task_id = hfr.task_id) OR (nol.reg_patient_id = hfr.reg_patient_id AND DATEDIFF(SECOND, nol.created_at, hfr.created_at) BETWEEN -60 AND 60)
         WHERE nol.reg_patient_id = @pid 
           AND (
             nol.registry_type = 'HF' 
@@ -373,6 +397,7 @@ const getPatientTimelineLogs = async (req, res) => {
           nol.symptoms_status,
           nol.medication_adherence,
           nol.notes,
+          COALESCE(nol.raw_form_json, hfr.raw_form_json) AS raw_form_json,
           'Manual Outreach Log' AS log_type,
           COALESCE(t.timeframe, nf.followup_month, fa.followup_interval, 'Follow-Up') AS timeframe,
           -- Specific Registry & Episode Tracking
@@ -396,6 +421,7 @@ const getPatientTimelineLogs = async (req, res) => {
         LEFT JOIN hf_registry hr ON COALESCE(fa.hf_id, t.source_record_id) = hr.hf_id
         LEFT JOIN nstemi_followup nf ON (nol.nstemi_followup_id = nf.followup_id OR (t.source_record_id = nf.nstemi_id AND t.timeframe = nf.followup_month))
         LEFT JOIN nstemi_registry nr ON (nf.nstemi_id = nr.nstemi_id OR t.source_record_id = nr.nstemi_id)
+        LEFT JOIN hf_followup_records hfr ON (nol.task_id IS NOT NULL AND nol.task_id = hfr.task_id) OR (nol.reg_patient_id = hfr.reg_patient_id AND DATEDIFF(SECOND, nol.created_at, hfr.created_at) BETWEEN -60 AND 60)
         WHERE nol.reg_patient_id = @pid
         ORDER BY COALESCE(nol.created_at, CAST(nol.contact_date AS DATETIME2)) DESC, nol.log_id DESC;
       `;
@@ -429,6 +455,22 @@ router.get('/tasks/:regPatientId/logs', getPatientTimelineLogs);
  * 1. Executes INSERT into nurse_outreach_logs.
  * 2. Immediately executes UPDATE on patient_followup_tasks (or nstemi_followup) within the same SQL transaction.
  */
+const parseSqlDate = (val) => {
+  if (!val || typeof val !== 'string') return null;
+  const trimmed = val.trim();
+  if (trimmed === '' || trimmed === 'null' || trimmed === 'undefined') return null;
+  const iso = trimmed.split('T')[0];
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : null;
+};
+
+const parseSqlString = (val, maxLen = 100, fallback = null) => {
+  if (val === null || val === undefined) return fallback;
+  if (Array.isArray(val)) val = val.join(', ');
+  const str = typeof val === 'object' ? JSON.stringify(val) : String(val).trim();
+  if (!str || str === 'null' || str === 'undefined') return fallback;
+  return str.length > maxLen ? str.slice(0, maxLen) : str;
+};
+
 const postLog = async (req, res) => {
   const pool = await db.getPool();
   const transaction = pool.transaction();
@@ -462,10 +504,11 @@ const postLog = async (req, res) => {
     }
 
     const pid = parseInt(reg_patient_id, 10);
-    const parsedTaskId = rawTaskId ? parseInt(rawTaskId, 10) : null;
+    const parsedTaskId = (rawTaskId && !isNaN(parseInt(rawTaskId, 10))) ? parseInt(rawTaskId, 10) : null;
     const isStemi = (registry_type === 'STEMI') || (source_registry && source_registry.includes('STEMI'));
     const isNstemi = (registry_type === 'NSTEMI') || (source_registry && source_registry.includes('NSTEMI'));
-    const overallStatus = status || overall_status || task_status || 'Completed';
+    const overallStatus = parseSqlString(status || overall_status || task_status, 50, 'Completed');
+    const resolvedSymptomsStatus = symptoms_status || req.body.selected_symptoms;
 
     await transaction.begin();
 
@@ -495,13 +538,13 @@ const postLog = async (req, res) => {
       const insertRes = await transaction.request()
         .input('finalTaskId', db.sql.Int, finalTaskId || null)
         .input('pid', db.sql.Int, pid)
-        .input('assignedNurse', db.sql.VarChar(100), assigned_nurse || 'Cardiac Care Nurse')
-        .input('contactMode', db.sql.VarChar(50), contact_mode || 'Phone Call')
-        .input('outcome', db.sql.VarChar(100), outcome || 'Patient Contacted & Appointment Confirmed')
-        .input('symptomsStatus', db.sql.VarChar(100), symptoms_status || 'Stable - No symptoms')
-        .input('medicationAdherence', db.sql.VarChar(100), medication_adherence || 'Compliant - Taking all meds as prescribed')
+        .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Cardiac Care Nurse'))
+        .input('contactMode', db.sql.NVarChar(50), parseSqlString(contact_mode, 50, 'Phone Call'))
+        .input('outcome', db.sql.NVarChar(100), parseSqlString(outcome, 100, 'Patient Contacted & Appointment Confirmed'))
+        .input('symptomsStatus', db.sql.NVarChar(150), parseSqlString(resolvedSymptomsStatus, 150, 'Stable - No symptoms'))
+        .input('medicationAdherence', db.sql.NVarChar(150), parseSqlString(medication_adherence, 150, 'Compliant - Taking all meds as prescribed'))
         .input('notes', db.sql.NVarChar(db.sql.MAX), notes || '')
-        .input('targetDate', db.sql.Date, target_date || null)
+        .input('targetDate', db.sql.Date, parseSqlDate(target_date))
         .query(`
           INSERT INTO nurse_outreach_logs (
             task_id,
@@ -539,9 +582,9 @@ const postLog = async (req, res) => {
       if (finalTaskId) {
         await transaction.request()
           .input('taskId', db.sql.Int, finalTaskId)
-          .input('overallStatus', db.sql.VarChar(50), overallStatus)
-          .input('assignedNurse', db.sql.VarChar(100), assigned_nurse || 'Cardiac Care Nurse')
-          .input('targetDate', db.sql.Date, target_date || null)
+          .input('overallStatus', db.sql.NVarChar(50), overallStatus)
+          .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Cardiac Care Nurse'))
+          .input('targetDate', db.sql.Date, parseSqlDate(target_date))
           .input('notes', db.sql.NVarChar(db.sql.MAX), notes || '')
           .query(`
             UPDATE patient_followup_tasks
@@ -571,11 +614,11 @@ const postLog = async (req, res) => {
         if (hasVisitMode || hasSpecialInstructions) {
           const reqStemiF = transaction.request()
             .input('stemiId', db.sql.Int, stemiRecordId)
-            .input('timeframe', db.sql.VarChar(20), timeframe);
+            .input('timeframe', db.sql.NVarChar(20), timeframe);
 
           let setClause = 'updated_at = GETDATE()';
           if (hasVisitMode) {
-            reqStemiF.input('visitMode', db.sql.VarChar(50), visit_mode || null);
+            reqStemiF.input('visitMode', db.sql.NVarChar(50), parseSqlString(visit_mode, 50, null));
             setClause += ', visit_mode = COALESCE(@visitMode, visit_mode)';
           }
           if (hasSpecialInstructions) {
@@ -629,13 +672,13 @@ const postLog = async (req, res) => {
         .input('finalTaskId', db.sql.Int, finalTaskId || null)
         .input('nstemiFollowupId', db.sql.Int, nstemiFollowupId || null)
         .input('pid', db.sql.Int, pid)
-        .input('assignedNurse', db.sql.VarChar(100), assigned_nurse || 'Cardiac Care Nurse')
-        .input('contactMode', db.sql.VarChar(50), contact_mode || 'Phone Call')
-        .input('outcome', db.sql.VarChar(100), outcome || 'Patient Contacted & Appointment Confirmed')
-        .input('symptomsStatus', db.sql.VarChar(100), symptoms_status || 'Stable - No symptoms')
-        .input('medicationAdherence', db.sql.VarChar(100), medication_adherence || 'Compliant - Taking all meds as prescribed')
+        .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Cardiac Care Nurse'))
+        .input('contactMode', db.sql.NVarChar(50), parseSqlString(contact_mode, 50, 'Phone Call'))
+        .input('outcome', db.sql.NVarChar(100), parseSqlString(outcome, 100, 'Patient Contacted & Appointment Confirmed'))
+        .input('symptomsStatus', db.sql.NVarChar(150), parseSqlString(resolvedSymptomsStatus, 150, 'Stable - No symptoms'))
+        .input('medicationAdherence', db.sql.NVarChar(150), parseSqlString(medication_adherence, 150, 'Compliant - Taking all meds as prescribed'))
         .input('notes', db.sql.NVarChar(db.sql.MAX), notes || '')
-        .input('targetDate', db.sql.Date, target_date || null)
+        .input('targetDate', db.sql.Date, parseSqlDate(target_date))
         .query(`
           INSERT INTO nurse_outreach_logs (
             task_id,
@@ -673,9 +716,9 @@ const postLog = async (req, res) => {
       if (finalTaskId) {
         await transaction.request()
           .input('taskId', db.sql.Int, finalTaskId)
-          .input('overallStatus', db.sql.VarChar(50), overallStatus)
-          .input('assignedNurse', db.sql.VarChar(100), assigned_nurse || 'Cardiac Care Nurse')
-          .input('targetDate', db.sql.Date, target_date || null)
+          .input('overallStatus', db.sql.NVarChar(50), overallStatus)
+          .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Cardiac Care Nurse'))
+          .input('targetDate', db.sql.Date, parseSqlDate(target_date))
           .input('notes', db.sql.NVarChar(db.sql.MAX), notes || '')
           .query(`
             UPDATE patient_followup_tasks
@@ -694,7 +737,7 @@ const postLog = async (req, res) => {
       if (nstemiFollowupId) {
         await transaction.request()
           .input('nstemiFollowupId', db.sql.Int, nstemiFollowupId)
-          .input('visitMode', db.sql.VarChar(50), visit_mode || null)
+          .input('visitMode', db.sql.NVarChar(50), parseSqlString(visit_mode, 50, null))
           .input('instructions', db.sql.NVarChar(500), notes || null)
           .query(`
             UPDATE nstemi_followup
@@ -737,16 +780,22 @@ const postLog = async (req, res) => {
       }
 
       // Step 1: Insert into nurse_outreach_logs table
+      const isDetailedHf = req.body.is_detailed_hf_form || req.body.drug_grid || req.body.selected_symptoms;
+      const formattedNotes = isDetailedHf 
+        ? `[HF Detailed Follow-up]\n${notes || ''}\n${JSON.stringify(req.body)}` 
+        : (notes || '');
+
       const insertRes = await transaction.request()
         .input('finalTaskId', db.sql.Int, finalTaskId || null)
         .input('pid', db.sql.Int, pid)
-        .input('assignedNurse', db.sql.VarChar(100), assigned_nurse || 'Staff Nurse')
-        .input('contactMode', db.sql.VarChar(50), contact_mode || 'Phone Call')
-        .input('outcome', db.sql.VarChar(100), outcome || 'Patient Contacted & Appointment Confirmed')
-        .input('symptomsStatus', db.sql.VarChar(100), symptoms_status || 'Stable - No worsening shortness of breath')
-        .input('medicationAdherence', db.sql.VarChar(100), medication_adherence || 'Compliant - Taking all meds as prescribed')
-        .input('notes', db.sql.NVarChar(db.sql.MAX), notes || '')
-        .input('targetDate', db.sql.Date, target_date || null)
+        .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Staff Nurse'))
+        .input('contactMode', db.sql.NVarChar(50), parseSqlString(contact_mode, 50, 'Phone Call'))
+        .input('outcome', db.sql.NVarChar(100), parseSqlString(outcome, 100, 'Patient Contacted & Appointment Confirmed'))
+        .input('symptomsStatus', db.sql.NVarChar(150), parseSqlString(resolvedSymptomsStatus, 150, 'Stable - No worsening shortness of breath'))
+        .input('medicationAdherence', db.sql.NVarChar(150), parseSqlString(medication_adherence, 150, 'Compliant - Taking all meds as prescribed'))
+        .input('notes', db.sql.NVarChar(db.sql.MAX), formattedNotes)
+        .input('rawFormJson', db.sql.NVarChar(db.sql.MAX), JSON.stringify(req.body))
+        .input('targetDate', db.sql.Date, parseSqlDate(target_date))
         .query(`
           INSERT INTO nurse_outreach_logs (
             task_id,
@@ -760,6 +809,7 @@ const postLog = async (req, res) => {
             symptoms_status,
             medication_adherence,
             notes,
+            raw_form_json,
             next_followup_date,
             created_at
           ) VALUES (
@@ -774,6 +824,7 @@ const postLog = async (req, res) => {
             @symptomsStatus,
             @medicationAdherence,
             @notes,
+            @rawFormJson,
             @targetDate,
             GETDATE()
           );
@@ -784,10 +835,10 @@ const postLog = async (req, res) => {
       if (finalTaskId) {
         await transaction.request()
           .input('taskId', db.sql.Int, finalTaskId)
-          .input('overallStatus', db.sql.VarChar(50), overallStatus)
-          .input('assignedNurse', db.sql.VarChar(100), assigned_nurse || 'Staff Nurse')
-          .input('targetDate', db.sql.Date, target_date || null)
-          .input('notes', db.sql.NVarChar(db.sql.MAX), notes || '')
+          .input('overallStatus', db.sql.NVarChar(50), overallStatus)
+          .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Staff Nurse'))
+          .input('targetDate', db.sql.Date, parseSqlDate(target_date))
+          .input('notes', db.sql.NVarChar(db.sql.MAX), formattedNotes)
           .query(`
             UPDATE patient_followup_tasks
             SET 
@@ -801,21 +852,90 @@ const postLog = async (req, res) => {
           `);
       }
 
-      // Step 3: Update hf_followup_assessments if source_record_id is provided
-      if (source_record_id) {
-        await transaction.request()
-          .input('sourceRecordId', db.sql.Int, parseInt(source_record_id, 10))
-          .input('targetDate', db.sql.Date, target_date || null)
-          .input('visitMode', db.sql.VarChar(50), visit_mode || null)
-          .input('instructions', db.sql.NVarChar(db.sql.MAX), notes || null)
-          .query(`
-            UPDATE hf_followup_assessments
-            SET 
-              scheduled_followup_date = COALESCE(@targetDate, scheduled_followup_date),
-              visit_mode = COALESCE(@visitMode, visit_mode),
-              special_instructions = COALESCE(@instructions, special_instructions)
-            WHERE followup_id = @sourceRecordId;
-          `);
+      // Step 3: Skip updating hf_followup_assessments table (initial discharge assessment)
+      // to avoid triggering table-level CHECK constraint CHK_valid_assessment_data on historical rows.
+      // Task updates and nurse outreach logs are captured in patient_followup_tasks, nurse_outreach_logs & hf_followup_records.
+
+      // Step 4: Record into hf_followup_records if table exists in database
+      if (isDetailedHf) {
+        try {
+          const hasTableRes = await transaction.request().query(
+            `SELECT 1 FROM sys.tables WHERE name = 'hf_followup_records'`
+          );
+          if (hasTableRes.recordset.length > 0) {
+            await transaction.request()
+              .input('regPatientId', db.sql.Int, pid)
+              .input('taskId', db.sql.Int, finalTaskId || null)
+              .input('followupDate', db.sql.Date, parseSqlDate(req.body.patient_followup_date) || parseSqlDate(new Date().toISOString()))
+              .input('followupConducted', db.sql.NVarChar(100), parseSqlString(req.body.followup_conducted || contact_mode, 100, 'Telephonic follow-up'))
+              .input('attemptNumber', db.sql.Int, req.body.attempt_number || 1)
+              .input('answeringStatus', db.sql.NVarChar(50), parseSqlString(req.body.answering_status, 50, 'Yes'))
+              .input('noAnswerReason', db.sql.NVarChar(255), parseSqlString(req.body.no_answer_reason, 255, null))
+              .input('healthStatus', db.sql.NVarChar(50), parseSqlString(req.body.health_status, 50, 'Healthy'))
+              .input('healthUnhealthyDetails', db.sql.NVarChar(db.sql.MAX), req.body.health_unhealthy_details || null)
+              .input('medicationsStillTaking', db.sql.NVarChar(db.sql.MAX), req.body.medications_still_taking || null)
+              .input('sideEffectsObserved', db.sql.NVarChar(50), parseSqlString(req.body.side_effects_observed, 50, 'No'))
+              .input('sideEffectsDetails', db.sql.NVarChar(db.sql.MAX), req.body.side_effects_details || null)
+              .input('physicianMedicationChanges', db.sql.NVarChar(50), parseSqlString(req.body.physician_medication_changes, 50, 'No'))
+              .input('physicianMedicationChangesDetails', db.sql.NVarChar(db.sql.MAX), req.body.physician_medication_changes_details || null)
+              .input('dateOfAdmission', db.sql.Date, parseSqlDate(req.body.date_of_admission))
+              .input('dateOfDischarge', db.sql.Date, parseSqlDate(req.body.date_of_discharge))
+              .input('selectedSymptoms', db.sql.NVarChar(db.sql.MAX), Array.isArray(req.body.selected_symptoms) ? req.body.selected_symptoms.join(', ') : (req.body.selected_symptoms || null))
+              .input('symptomOtherDetails', db.sql.NVarChar(db.sql.MAX), req.body.symptom_other_details || null)
+              .input('medicationAdherence', db.sql.NVarChar(50), parseSqlString(req.body.medication_adherence || medication_adherence, 50, null))
+              .input('medicationAdherenceNoReason', db.sql.NVarChar(db.sql.MAX), req.body.medication_adherence_no_reason || null)
+              .input('drugGridJson', db.sql.NVarChar(db.sql.MAX), req.body.drug_grid ? JSON.stringify(req.body.drug_grid) : null)
+              .input('bnpNtProbnpResult', db.sql.NVarChar(100), parseSqlString(req.body.bnp_nt_probnp_result, 100, null))
+              .input('creatinineResult', db.sql.NVarChar(100), parseSqlString(req.body.creatinine_result, 100, null))
+              .input('sodiumResult', db.sql.NVarChar(100), parseSqlString(req.body.sodium_result, 100, null))
+              .input('hemoglobinResult', db.sql.NVarChar(100), parseSqlString(req.body.hemoglobin_result, 100, null))
+              .input('echoDone', db.sql.NVarChar(50), parseSqlString(req.body.echo_done, 50, null))
+              .input('hasMajorClinicalEvent', db.sql.NVarChar(50), parseSqlString(req.body.has_major_clinical_event, 50, null))
+              .input('selectedClinicalEvents', db.sql.NVarChar(db.sql.MAX), Array.isArray(req.body.selected_clinical_events) ? req.body.selected_clinical_events.join(', ') : (req.body.selected_clinical_events || null))
+              .input('eventOtherDetails', db.sql.NVarChar(db.sql.MAX), req.body.event_other_details || null)
+              .input('vaccinationsDetails', db.sql.NVarChar(db.sql.MAX), req.body.vaccinations_details || null)
+              .input('isDeceased', db.sql.NVarChar(50), parseSqlString(req.body.is_deceased, 50, 'No'))
+              .input('diedWithin30daysDischarge', db.sql.NVarChar(50), parseSqlString(req.body.died_within_30days_discharge, 50, null))
+              .input('placeOfDeath', db.sql.NVarChar(255), parseSqlString(req.body.place_of_death, 255, null))
+              .input('dateOfDeath', db.sql.Date, parseSqlDate(req.body.date_of_death))
+              .input('causeOfDeath', db.sql.NVarChar(100), parseSqlString(req.body.cause_of_death, 100, null))
+              .input('causeOfDeathOtherDetails', db.sql.NVarChar(db.sql.MAX), req.body.cause_of_death_other_details || null)
+              .input('joinProgramOptIn', db.sql.NVarChar(50), parseSqlString(req.body.join_program_opt_in, 50, 'Yes'))
+              .input('patientFeedback', db.sql.NVarChar(db.sql.MAX), req.body.patient_feedback || null)
+              .input('rawFormJson', db.sql.NVarChar(db.sql.MAX), JSON.stringify(req.body))
+              .query(`
+                INSERT INTO hf_followup_records (
+                  reg_patient_id, task_id, followup_date, followup_conducted, attempt_number,
+                  answering_status, no_answer_reason, health_status, health_unhealthy_details,
+                  medications_still_taking, side_effects_observed, side_effects_details,
+                  physician_medication_changes, physician_medication_changes_details,
+                  date_of_admission, date_of_discharge,
+                  selected_symptoms, symptom_other_details, medication_adherence,
+                  medication_adherence_no_reason, drug_grid_json, bnp_nt_probnp_result,
+                  creatinine_result, sodium_result, hemoglobin_result, echo_done,
+                  has_major_clinical_event, selected_clinical_events, event_other_details,
+                  vaccinations_details, is_deceased, died_within_30days_discharge,
+                  place_of_death, date_of_death, cause_of_death, cause_of_death_other_details,
+                  join_program_opt_in, patient_feedback, raw_form_json, created_at
+                ) VALUES (
+                  @regPatientId, @taskId, @followupDate, @followupConducted, @attemptNumber,
+                  @answeringStatus, @noAnswerReason, @healthStatus, @healthUnhealthyDetails,
+                  @medicationsStillTaking, @sideEffectsObserved, @sideEffectsDetails,
+                  @physicianMedicationChanges, @physicianMedicationChangesDetails,
+                  @dateOfAdmission, @dateOfDischarge,
+                  @selectedSymptoms, @symptomOtherDetails, @medicationAdherence,
+                  @medicationAdherenceNoReason, @drugGridJson, @bnpNtProbnpResult,
+                  @creatinineResult, @sodiumResult, @hemoglobinResult, @echoDone,
+                  @hasMajorClinicalEvent, @selectedClinicalEvents, @eventOtherDetails,
+                  @vaccinationsDetails, @isDeceased, @diedWithin30daysDischarge,
+                  @placeOfDeath, @dateOfDeath, @causeOfDeath, @causeOfDeathOtherDetails,
+                  @joinProgramOptIn, @patientFeedback, @rawFormJson, GETDATE()
+                );
+              `);
+          }
+        } catch (hfErr) {
+          console.warn('Optional hf_followup_records save skipped:', hfErr.message);
+        }
       }
 
       await transaction.commit();
