@@ -40,9 +40,16 @@ export default function ValidatedTextField({
     (label && (String(label).toLowerCase().includes('phone') || String(label).toLowerCase().includes('mobile') || String(label).toLowerCase().includes('contact')))
   );
 
+  const isNumericField = Boolean(
+    type === 'number' ||
+    (id && (String(id).toLowerCase().includes('income') || String(id).toLowerCase().includes('salary') || String(id).toLowerCase().includes('amount') || String(id).toLowerCase().includes('cost') || String(id).toLowerCase().includes('price') || String(id).toLowerCase().includes('uhid') || String(id).toLowerCase().includes('abha'))) ||
+    (name && (String(name).toLowerCase().includes('income') || String(name).toLowerCase().includes('salary') || String(name).toLowerCase().includes('amount') || String(name).toLowerCase().includes('cost') || String(name).toLowerCase().includes('price') || String(name).toLowerCase().includes('uhid') || String(name).toLowerCase().includes('abha'))) ||
+    (label && (String(label).toLowerCase().includes('income') || String(label).toLowerCase().includes('salary') || String(label).toLowerCase().includes('amount') || String(label).toLowerCase().includes('cost') || String(label).toLowerCase().includes('price') || String(label).toLowerCase().includes('uhid') || String(label).toLowerCase().includes('abha')))
+  );
+
   const effectiveMaxLength = isPhoneField ? 10 : maxLength;
   const shouldShowCounter = showCounter && !isPhoneField;
-  const effectiveValidateAlphabetical = validateAlphabetical && !isPhoneField;
+  const effectiveValidateAlphabetical = validateAlphabetical && !isPhoneField && !isNumericField;
 
   const isDisabled = disabled || readOnly;
   const strVal = value !== undefined && value !== null ? String(value) : '';

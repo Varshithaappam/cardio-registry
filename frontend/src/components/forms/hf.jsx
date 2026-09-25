@@ -3561,7 +3561,8 @@ const hf = forwardRef(function hf(
               label="Monthly Income"
               value={monthlyIncome}
               onChange={(val) => handleFieldChange('monthlyIncome', val, setMonthlyIncome, setMonthlyIncomeError)}
-              placeholder=""
+              placeholder="E.g. 10,000"
+              validateAlphabetical={false}
               error={monthlyIncomeError}
             />
           </div>

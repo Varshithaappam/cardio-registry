@@ -505,6 +505,7 @@ const HFForm = forwardRef(function HFForm(
             value={monthlyIncome}
             onChange={(val) => setMonthlyIncome(formatIndianCurrency(val))}
             placeholder="E.g. 1,00,00,000"
+            validateAlphabetical={false}
           />
           <TextInput
             id="hf-occupation"

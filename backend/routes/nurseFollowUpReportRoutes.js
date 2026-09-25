@@ -367,7 +367,13 @@ const getPatientTimelineLogs = async (req, res) => {
         LEFT JOIN patient_followup_tasks t ON nol.task_id = t.task_id
         LEFT JOIN hf_followup_assessments fa ON t.source_record_id = fa.followup_id
         LEFT JOIN hf_registry hr ON COALESCE(nol.hf_id, fa.hf_id, t.source_record_id) = hr.hf_id
-        LEFT JOIN hf_followup_records hfr ON (nol.task_id IS NOT NULL AND nol.task_id = hfr.task_id) OR (nol.reg_patient_id = hfr.reg_patient_id AND DATEDIFF(SECOND, nol.created_at, hfr.created_at) BETWEEN -60 AND 60)
+        OUTER APPLY (
+          SELECT TOP 1 hfr.raw_form_json, hfr.hf_id
+          FROM hf_followup_records hfr
+          WHERE (nol.task_id IS NOT NULL AND hfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 300)
+             OR (nol.reg_patient_id = hfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 60)
+          ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) ASC
+        ) hfr
         WHERE nol.reg_patient_id = @pid 
           AND (
             nol.registry_type = 'HF' 
@@ -418,7 +424,13 @@ const getPatientTimelineLogs = async (req, res) => {
         LEFT JOIN hf_registry hr ON COALESCE(fa.hf_id, t.source_record_id) = hr.hf_id
         LEFT JOIN nstemi_followup nf ON (nol.nstemi_followup_id = nf.followup_id OR (t.source_record_id = nf.nstemi_id AND t.timeframe = nf.followup_month))
         LEFT JOIN nstemi_registry nr ON (nf.nstemi_id = nr.nstemi_id OR t.source_record_id = nr.nstemi_id)
-        LEFT JOIN hf_followup_records hfr ON (nol.task_id IS NOT NULL AND nol.task_id = hfr.task_id) OR (nol.reg_patient_id = hfr.reg_patient_id AND DATEDIFF(SECOND, nol.created_at, hfr.created_at) BETWEEN -60 AND 60)
+        OUTER APPLY (
+          SELECT TOP 1 hfr.raw_form_json, hfr.hf_id
+          FROM hf_followup_records hfr
+          WHERE (nol.task_id IS NOT NULL AND hfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 300)
+             OR (nol.reg_patient_id = hfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 60)
+          ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) ASC
+        ) hfr
         WHERE nol.reg_patient_id = @pid
         ORDER BY COALESCE(nol.created_at, CAST(nol.contact_date AS DATETIME2)) DESC, nol.log_id DESC;
       `;
