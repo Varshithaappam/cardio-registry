@@ -1,6 +1,7 @@
 import React, { useState, forwardRef, useImperativeHandle, useMemo, useEffect } from 'react';
 import { calculateAge } from '../../utils/calculateAge';
 import { getVitalsWarning } from '../../utils/validation';
+import { formatIndianCurrency } from '../../utils/formSanitizers';
 import SectionCard from './common/SectionCard';
 import TextInput from './common/TextInput';
 import NumberInput from './common/NumberInput';
@@ -189,7 +190,7 @@ const HFForm = forwardRef(function HFForm(
   // State Management
   // 1. Patient Profile extra fields
   const [highestEducation, setHighestEducation] = useState(patient.highestEducation ?? editingRecord?.patient?.highestEducation ?? '');
-  const [monthlyIncome, setMonthlyIncome] = useState(patient.monthlyIncome ?? editingRecord?.patient?.monthlyIncome ?? '');
+  const [monthlyIncome, setMonthlyIncome] = useState(formatIndianCurrency(patient.monthlyIncome ?? editingRecord?.patient?.monthlyIncome ?? ''));
   const [occupation, setOccupation] = useState(patient.occupation ?? editingRecord?.patient?.occupation ?? '');
   const [caregiverName, setCaregiverName] = useState(patient.caregiverName ?? editingRecord?.patient?.caregiverName ?? '');
   const [caregiverRelationship, setCaregiverRelationship] = useState(patient.caregiverRelationship ?? editingRecord?.patient?.caregiverRelationship ?? '');
@@ -502,8 +503,8 @@ const HFForm = forwardRef(function HFForm(
             id="hf-monthly-income"
             label="Monthly Income"
             value={monthlyIncome}
-            onChange={setMonthlyIncome}
-            placeholder="E.g. ₹40,000"
+            onChange={(val) => setMonthlyIncome(formatIndianCurrency(val))}
+            placeholder="E.g. 1,00,00,000"
           />
           <TextInput
             id="hf-occupation"

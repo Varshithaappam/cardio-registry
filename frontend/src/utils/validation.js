@@ -83,10 +83,11 @@ export const validateField = (fieldName, value) => {
   }
 
   if (fieldName === 'monthlyIncome') {
-    if (!/^\d+$/.test(strVal)) {
+    const rawVal = strVal.replace(/,/g, '');
+    if (!/^\d+$/.test(rawVal)) {
       return {
         isValid: false,
-        error: 'Please enter valid values like integers or numbers.',
+        error: 'Please enter valid numbers.',
         warning: null,
         status: 'Invalid',
         color: 'text-red-500 font-bold'

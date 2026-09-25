@@ -3,7 +3,7 @@ import { User, MapPin, Briefcase, GraduationCap, X, Check, Phone, Mail, Shield, 
 import { buildPatientPayload } from '../utils/patientMapper';
 import { validateField } from '../utils/validation';
 import { formatDateForDisplay } from '../utils/dateUtils';
-import { sanitizePhone, sanitizePincode, sanitizeAlphaOnly } from '../utils/formSanitizers';
+import { sanitizePhone, sanitizePincode, sanitizeAlphaOnly, sanitizeUHID, sanitizeABHA } from '../utils/formSanitizers';
 import { createPatient, updatePatient, verifyPatient, confirmPatientMatch, rejectPatientMatch, resolveStagingPatient } from '../../api/patientApi';
 import PatientVerificationModal from './PatientVerificationModal';
 
@@ -542,10 +542,11 @@ export default function RegisterNewPatient({
                 id="reg-uhid"
                 type="text"
                 required
+                maxLength={10}
                 placeholder="E.g. UHI12345"
-                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
                 value={uhid}
-                onChange={(e) => setUhid(e.target.value)}
+                onChange={(e) => setUhid(sanitizeUHID(e.target.value))}
               />
             </div>
             <div>
@@ -553,10 +554,11 @@ export default function RegisterNewPatient({
               <input
                 id="reg-abha"
                 type="text"
+                maxLength={14}
                 placeholder="14-digit ABHA"
-                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
                 value={abhaNumber}
-                onChange={(e) => setAbhaNumber(e.target.value)}
+                onChange={(e) => setAbhaNumber(sanitizeABHA(e.target.value))}
               />
             </div>
           </div>

@@ -3,7 +3,7 @@ import {
   User, Phone, Calendar, Heart, Shield, Activity, FileText, 
   AlertTriangle, Check, X, Pill, Stethoscope, ChevronDown, Sparkles 
 } from 'lucide-react';
-import { sanitizePositiveInteger } from '../../utils/formSanitizers';
+import { sanitizePositiveInteger, sanitizeUHID } from '../../utils/formSanitizers';
 import HfFollowupPdfModal from '../modals/HfFollowupPdfModal';
 
 // Reusable Auto-Resizing Textarea with CSS Word-Wrapping
@@ -539,10 +539,11 @@ export default function HFFollowUpForm({
               <input
                 type="text"
                 disabled={readOnly}
+                maxLength={10}
                 value={uhid}
-                onChange={(e) => setUhid(e.target.value)}
+                onChange={(e) => setUhid(sanitizeUHID(e.target.value))}
                 placeholder="UHID..."
-                className="w-full px-2 py-1.5 bg-white border border-rose-300 rounded-md focus:ring-1 focus:ring-rose-500 text-xs font-medium h-8 break-all"
+                className="w-full px-2 py-1.5 bg-white border border-rose-300 rounded-md focus:ring-1 focus:ring-rose-500 text-xs font-medium h-8 break-all font-mono"
               />
             </div>
 

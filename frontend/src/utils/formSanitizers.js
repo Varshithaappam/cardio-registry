@@ -104,3 +104,39 @@ export const sanitizeAlphaOnly = (val) => {
   return String(val).replace(/[^a-zA-Z\s]/g, '');
 };
 
+/**
+ * Sanitize & Format Monthly Income in Indian Standard Number Format (e.g. 1,00,00,000)
+ * Accepts numbers or numeric strings with/without existing commas.
+ * Strips non-digits and returns formatted string in Indian numbering format.
+ */
+export const formatIndianCurrency = (val) => {
+  if (val === null || val === undefined || val === '') return '';
+  const clean = String(val).replace(/\D/g, '');
+  if (!clean) return '';
+  try {
+    const num = BigInt(clean);
+    return num.toLocaleString('en-IN');
+  } catch {
+    const num = parseInt(clean, 10);
+    if (isNaN(num)) return '';
+    return num.toLocaleString('en-IN');
+  }
+};
+
+/**
+ * Sanitize UHID input (Max 10 characters)
+ */
+export const sanitizeUHID = (val) => {
+  if (val === null || val === undefined) return '';
+  return String(val).trim().slice(0, 10);
+};
+
+/**
+ * Sanitize ABHA number input (Max 14 characters)
+ */
+export const sanitizeABHA = (val) => {
+  if (val === null || val === undefined) return '';
+  return String(val).trim().slice(0, 14);
+};
+
+

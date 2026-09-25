@@ -201,7 +201,9 @@ async function saveHfAssessment(data, userId = 1) {
             visit_type: vt,
             address: data.patient?.address,
             education_level: data.patient?.highestEducation,
-            monthly_income: data.patient?.monthlyIncome ? Number(data.patient.monthlyIncome) : null,
+            monthly_income: (data.patient?.monthlyIncome !== undefined && data.patient?.monthlyIncome !== null && data.patient?.monthlyIncome !== '') 
+                ? (isNaN(Number(String(data.patient.monthlyIncome).replace(/,/g, ''))) ? null : Number(String(data.patient.monthlyIncome).replace(/,/g, ''))) 
+                : null,
             occupation: data.patient?.occupation,
             caregiver_name: data.patient?.caregiverName,
             caregiver_relationship: data.patient?.caregiverRelationship,

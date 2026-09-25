@@ -14,6 +14,7 @@ import FormField from './common/FormField';
 import DrugTable from './common/DrugTable';
 import FollowupAssessmentForm from './FollowupAssessmentForm';
 import { validateField, getVitalsWarning } from '../../utils/validation';
+import { formatIndianCurrency } from '../../utils/formSanitizers';
 import { formatDateForDisplay, formatDateTimeForDisplay, formatDateForDatabase } from '../../utils/dateUtils';
 import {
   FORM_STYLES,
@@ -999,7 +1000,9 @@ const hf = forwardRef(function hf(
            patient.higher_education ||
            '';
   });
-  const [monthlyIncome, setMonthlyIncome] = useState(editingRecord?.patient?.monthlyIncome || patient.monthlyIncome || '');
+  const [monthlyIncome, setMonthlyIncome] = useState(
+    formatIndianCurrency(editingRecord?.patient?.monthlyIncome || patient.monthlyIncome || '')
+  );
   const [monthlyIncomeError, setMonthlyIncomeError] = useState(null);
   const [occupation, setOccupation] = useState(editingRecord?.patient?.occupation || patient.occupation || '');
   const [caregiverName, setCaregiverName] = useState(editingRecord?.patient?.caregiverName || patient.caregiverName || '');
@@ -1313,6 +1316,19 @@ const hf = forwardRef(function hf(
   });
 
   const handleFieldChange = (fieldName, value, setter, setErrorState) => {
+    if (fieldName === 'monthlyIncome') {
+      const formatted = formatIndianCurrency(value);
+      setter(formatted);
+      const res = validateField(fieldName, formatted);
+      if (!res.isValid) {
+        setErrorState(res.error);
+      } else if (res.warning) {
+        setErrorState(res.warning);
+      } else {
+        setErrorState(null);
+      }
+      return;
+    }
     const numericalFields = [
       'weight', 'height', 'heartRate', 'respiratoryRate', 'o2Saturation',
       'systolicBp', 'diastolicBp', 'echoEfPercent', 'echoEaRatio', 'echoRvTapsv',
@@ -1321,7 +1337,7 @@ const hf = forwardRef(function hf(
       'ecgQtc', 'cxrCtRatio', 'pvcCount', 'nsvtEpisodes', 'svtEpisodes',
       'bivPacingPercent', 'numberOfShocks', 'appropriateShocks', 'inappropriateShocks',
       'atpTimes', 'sixMwtDistance', 'sixMwtHrRecovery', 'mriLvef', 'holterHrv',
-      'daysHospitalized', 'monthlyIncome'
+      'daysHospitalized'
     ];
     if (numericalFields.includes(fieldName)) {
       if (value !== '' && !/^[0-9]*\.?[0-9]*$/.test(value)) {
