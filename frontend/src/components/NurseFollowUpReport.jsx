@@ -282,9 +282,9 @@ export default function NurseFollowUpReport() {
       visit_mode: formPayload.followup_conducted || selectedHfTask.visit_mode,
       contact_mode: formPayload.followup_conducted || 'Phone Call',
       outcome: formPayload.answering_status === 'Yes' 
-        ? 'Detailed HF Follow-up Completed' 
+        ? 'Detailed HF Form Logged' 
         : `Unreachable - ${formPayload.no_answer_reason || 'No Answer'}`,
-      status: formPayload.answering_status === 'Yes' ? 'Completed' : 'Pending Nurse Outreach',
+      status: selectedHfTask.status || 'Pending Nurse Outreach',
       symptoms_status: (formPayload.selected_symptoms || []).length > 0
         ? (formPayload.selected_symptoms || []).join(', ').slice(0, 95)
         : 'Stable - No worsening shortness of breath',

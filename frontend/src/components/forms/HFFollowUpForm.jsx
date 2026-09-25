@@ -338,6 +338,39 @@ export default function HFFollowUpForm({
     e.preventDefault();
     if (readOnly) return;
 
+    // Validation Checks
+    const validationErrors = [];
+
+    // 1. RED FIELDS (Mandatory in ALL cases)
+    if (!uhid || !String(uhid).trim()) {
+      validationErrors.push("UHID is required.");
+    }
+    if (attemptNumber === null || attemptNumber === undefined || attemptNumber === '') {
+      validationErrors.push("Follow-up attempts in a month is required.");
+    }
+    if (!answeringStatus || !String(answeringStatus).trim()) {
+      validationErrors.push("Answering Status (Yes/No) is required.");
+    }
+
+    if (answeringStatus === 'No' && (!noAnswerReason || !String(noAnswerReason).trim())) {
+      validationErrors.push("Reason (If, No) is required when Answering Status is No.");
+    }
+
+    // 2. ORANGE FIELDS (Mandatory ONLY when Answering Status is 'Yes')
+    if (answeringStatus === 'Yes') {
+      if (!healthStatus || !String(healthStatus).trim()) {
+        validationErrors.push("Health Status ('Since your last visit, are you Healthy / Unhealthy') is required when Answering Status is Yes.");
+      }
+      if (healthStatus === 'Unhealthy' && (!healthUnhealthyDetails || !String(healthUnhealthyDetails).trim())) {
+        validationErrors.push("Please specify details for 'Unhealthy' health status.");
+      }
+    }
+
+    if (validationErrors.length > 0) {
+      alert(`Please complete the required fields before saving:\n\n• ${validationErrors.join('\n• ')}`);
+      return;
+    }
+
     const payload = {
       uhid: uhid,
       date_of_admission: dateOfAdmission,
@@ -500,14 +533,16 @@ export default function HFFollowUpForm({
           {/* 1. Encounter Metadata Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5 bg-slate-50/70 p-3 rounded-xl border border-slate-200/90 text-xs">
             <div className="min-w-0">
-              <label className="block text-xs font-bold text-slate-700 leading-tight mb-1">UHID</label>
+              <label className="block text-xs font-bold text-rose-600 leading-tight mb-1">
+                UHID <span className="text-rose-500">*</span>
+              </label>
               <input
                 type="text"
                 disabled={readOnly}
                 value={uhid}
                 onChange={(e) => setUhid(e.target.value)}
                 placeholder="UHID..."
-                className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-teal-500 text-xs font-medium h-8 break-all"
+                className="w-full px-2 py-1.5 bg-white border border-rose-300 rounded-md focus:ring-1 focus:ring-rose-500 text-xs font-medium h-8 break-all"
               />
             </div>
 
@@ -555,12 +590,14 @@ export default function HFFollowUpForm({
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-bold text-slate-700 leading-tight mb-1">Follow-up attempts</label>
+              <label className="block text-xs font-bold text-rose-600 leading-tight mb-1">
+                Follow-up attempts <span className="text-rose-500">*</span>
+              </label>
               <select
                 disabled={readOnly}
                 value={attemptNumber}
                 onChange={(e) => setAttemptNumber(e.target.value)}
-                className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-teal-500 text-xs font-medium h-8"
+                className="w-full px-2 py-1.5 bg-white border border-rose-300 rounded-md focus:ring-1 focus:ring-rose-500 text-xs font-medium h-8"
               >
                 <option value={1}>1</option>
                 <option value={2}>2</option>
@@ -569,12 +606,14 @@ export default function HFFollowUpForm({
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-bold text-slate-700 leading-tight mb-1">Answering Status</label>
+              <label className="block text-xs font-bold text-rose-600 leading-tight mb-1">
+                Answering Status <span className="text-rose-500">*</span>
+              </label>
               <select
                 disabled={readOnly}
                 value={answeringStatus}
                 onChange={(e) => setAnsweringStatus(e.target.value)}
-                className="w-full px-2 py-1.5 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-teal-500 text-xs font-medium h-8"
+                className="w-full px-2 py-1.5 bg-white border border-rose-300 rounded-md focus:ring-1 focus:ring-rose-500 text-xs font-medium h-8"
               >
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
@@ -583,7 +622,9 @@ export default function HFFollowUpForm({
 
             {answeringStatus === 'No' && (
               <div className="col-span-full">
-                <label className="block text-xs font-bold text-rose-700 leading-tight mb-0.5">Reason (If,No):</label>
+                <label className="block text-xs font-bold text-rose-700 leading-tight mb-0.5">
+                  Reason (If,No): <span className="text-rose-500">*</span>
+                </label>
                 <AutoTextarea
                   disabled={readOnly}
                   value={noAnswerReason}
@@ -597,9 +638,9 @@ export default function HFFollowUpForm({
 
           {/* 2. General Health & Medication Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-200/80">
-              <label className="block text-xs font-bold text-slate-800 leading-tight mb-1">
-                Since your last visit,are you
+            <div className={`p-2.5 rounded-xl border transition-colors ${answeringStatus === 'Yes' ? 'bg-amber-50/40 border-amber-200' : 'bg-slate-50/50 border-slate-200/80'}`}>
+              <label className={`block text-xs font-bold leading-tight mb-1 ${answeringStatus === 'Yes' ? 'text-amber-800' : 'text-slate-800'}`}>
+                Since your last visit,are you {answeringStatus === 'Yes' && <span className="text-amber-600 font-bold">*</span>}
               </label>
               <div className="flex items-center gap-4 bg-white px-2.5 py-1.5 rounded-md border border-slate-300 h-8">
                 {['Healthy', 'Unhealthy'].map((opt) => (
@@ -618,6 +659,9 @@ export default function HFFollowUpForm({
               </div>
               {healthStatus === 'Unhealthy' && (
                 <div className="mt-1.5">
+                  <label className="block text-[11px] font-bold text-amber-700 leading-tight mb-0.5">
+                    If unhealthy,Please specify <span className="text-amber-600">*</span>
+                  </label>
                   <AutoTextarea
                     disabled={readOnly}
                     value={healthUnhealthyDetails}

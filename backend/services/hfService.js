@@ -607,8 +607,11 @@ async function saveHfAssessment(data, userId = 1) {
         }
 
         // Section 11: Follow-up Assessment
-        if (data.followupAssessment) {
-            const fa = data.followupAssessment;
+        const fa = data.followupAssessment || data.hf_followup_assessments || (
+          (data.is_followup_required !== undefined || data.isFollowupRequired !== undefined || data.scheduled_followup_date || data.scheduledFollowupDate) ? data : null
+        );
+
+        if (fa) {
             const valReq = fa.is_followup_required !== undefined ? fa.is_followup_required : fa.isFollowupRequired;
             const strReq = String(valReq !== undefined && valReq !== null ? valReq : '').trim().toLowerCase();
             const isYes = valReq === 1 || valReq === true || strReq === '1' || strReq === 'yes' || strReq === 'true';
@@ -650,48 +653,33 @@ async function saveHfAssessment(data, userId = 1) {
                 const instructionsVal = followupData.special_instructions || followupData.self_care_instructions;
                 const statusVal = isYes ? 'Required' : 'No Follow-Up Needed';
 
-                const { recordset: existingTasks } = await conn.query(
-                    `SELECT task_id FROM patient_followup_tasks WHERE reg_patient_id = @regPatientId AND timeframe = @timeframeVal;`,
-                    { regPatientId: targetPatientId, timeframeVal }
+                // Auto-supersede previous active pending tasks for this reg_patient_id
+                await conn.query(
+                    `UPDATE patient_followup_tasks
+                     SET status = 'Superseded by new assessment'
+                     WHERE reg_patient_id = @regPatientId 
+                       AND status != 'Completed' 
+                       AND status != 'Superseded by new assessment';`,
+                    { regPatientId: targetPatientId }
                 );
 
-                if (existingTasks && existingTasks.length > 0) {
-                    await conn.query(
-                        `UPDATE patient_followup_tasks
-                         SET source_registry = 'Heart Failure Registry',
-                             status = @statusVal,
-                             target_date = @targetDateVal,
-                             timeframe = @timeframeVal,
-                             visit_mode = @visitModeVal,
-                             special_instructions = @instructionsVal,
-                             updated_at = GETDATE()
-                         WHERE reg_patient_id = @regPatientId AND timeframe = @timeframeVal;`,
-                        {
-                            regPatientId: targetPatientId,
-                            statusVal,
-                            targetDateVal,
-                            timeframeVal,
-                            visitModeVal,
-                            instructionsVal
-                        }
-                    );
-                } else {
-                    await conn.query(
-                        `INSERT INTO patient_followup_tasks (
-                            reg_patient_id, source_registry, status, target_date, timeframe, clinic_location, visit_mode, special_instructions, created_at, updated_at
-                         ) VALUES (
-                            @regPatientId, 'Heart Failure Registry', @statusVal, @targetDateVal, @timeframeVal, 'CARE Heart Institute', @visitModeVal, @instructionsVal, GETDATE(), GETDATE()
-                         );`,
-                        {
-                            regPatientId: targetPatientId,
-                            statusVal,
-                            targetDateVal,
-                            timeframeVal,
-                            visitModeVal,
-                            instructionsVal
-                        }
-                    );
-                }
+                // Insert new active task for the new admission hf_id
+                await conn.query(
+                    `INSERT INTO patient_followup_tasks (
+                        reg_patient_id, source_registry, source_record_id, status, target_date, timeframe, clinic_location, visit_mode, special_instructions, created_at, updated_at
+                     ) VALUES (
+                        @regPatientId, 'Heart Failure Registry', @hfIdVal, @statusVal, @targetDateVal, @timeframeVal, 'CARE Heart Institute', @visitModeVal, @instructionsVal, GETDATE(), GETDATE()
+                     );`,
+                    {
+                        regPatientId: targetPatientId,
+                        hfIdVal: hf_id,
+                        statusVal,
+                        targetDateVal,
+                        timeframeVal,
+                        visitModeVal,
+                        instructionsVal
+                    }
+                );
             } catch (faErr) {
                 console.error("Error inserting into hf_followup_assessments:", faErr);
             }

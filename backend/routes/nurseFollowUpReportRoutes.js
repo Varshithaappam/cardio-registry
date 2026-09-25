@@ -107,10 +107,7 @@ const getPatientCentricTasks = async (req, res) => {
           ROW_NUMBER() OVER (
             PARTITION BY t.reg_patient_id, t.source_registry 
             ORDER BY 
-              CASE WHEN t.status != 'Completed' THEN 1 ELSE 2 END ASC,
-              CASE WHEN COALESCE(t.target_date, fa.scheduled_followup_date) IS NULL THEN 1 ELSE 0 END ASC,
-              COALESCE(t.target_date, fa.scheduled_followup_date) ASC,
-              t.task_id ASC
+              t.task_id DESC
           ) AS row_num
         FROM patient_followup_tasks t WITH (NOLOCK)
         INNER JOIN patient_demographics p WITH (NOLOCK) ON t.reg_patient_id = p.reg_patient_id
@@ -353,15 +350,15 @@ const getPatientTimelineLogs = async (req, res) => {
           'Manual Outreach Log' AS log_type,
           COALESCE(t.timeframe, fa.followup_interval, 'Follow-Up') AS timeframe,
           -- Specific Registry & Episode Tracking
-          COALESCE(fa.hf_id, hr.hf_id, t.source_record_id, (SELECT MAX(hf_id) FROM hf_registry WHERE reg_patient_id = nol.reg_patient_id)) AS registry_id,
+          COALESCE(nol.hf_id, hfr.hf_id, fa.hf_id, hr.hf_id, t.source_record_id, (SELECT MAX(hf_id) FROM hf_registry WHERE reg_patient_id = nol.reg_patient_id)) AS registry_id,
           COALESCE(
             hr.hf_registry_no, 
-            CONCAT('HF-', RIGHT(CONCAT('00', CAST(COALESCE(fa.hf_id, hr.hf_id, t.source_record_id, (SELECT MAX(hf_id) FROM hf_registry WHERE reg_patient_id = nol.reg_patient_id)) AS VARCHAR(10))), 2)),
+            CONCAT('HF-', RIGHT(CONCAT('00', CAST(COALESCE(nol.hf_id, hfr.hf_id, fa.hf_id, hr.hf_id, t.source_record_id, (SELECT MAX(hf_id) FROM hf_registry WHERE reg_patient_id = nol.reg_patient_id)) AS VARCHAR(10))), 2)),
             'HF-EPISODE'
           ) AS episode_id,
           COALESCE(t.status, hr.status, 'Completed') AS episode_status,
           CASE 
-            WHEN COALESCE(fa.hf_id, hr.hf_id, t.source_record_id, (SELECT MAX(hf_id) FROM hf_registry WHERE reg_patient_id = nol.reg_patient_id)) = (
+            WHEN COALESCE(nol.hf_id, hfr.hf_id, fa.hf_id, hr.hf_id, t.source_record_id, (SELECT MAX(hf_id) FROM hf_registry WHERE reg_patient_id = nol.reg_patient_id)) = (
               SELECT MAX(hf_id) FROM hf_registry WHERE reg_patient_id = nol.reg_patient_id
             ) THEN 1 
             ELSE 0 
@@ -369,7 +366,7 @@ const getPatientTimelineLogs = async (req, res) => {
         FROM nurse_outreach_logs nol
         LEFT JOIN patient_followup_tasks t ON nol.task_id = t.task_id
         LEFT JOIN hf_followup_assessments fa ON t.source_record_id = fa.followup_id
-        LEFT JOIN hf_registry hr ON COALESCE(fa.hf_id, t.source_record_id) = hr.hf_id
+        LEFT JOIN hf_registry hr ON COALESCE(nol.hf_id, fa.hf_id, t.source_record_id) = hr.hf_id
         LEFT JOIN hf_followup_records hfr ON (nol.task_id IS NOT NULL AND nol.task_id = hfr.task_id) OR (nol.reg_patient_id = hfr.reg_patient_id AND DATEDIFF(SECOND, nol.created_at, hfr.created_at) BETWEEN -60 AND 60)
         WHERE nol.reg_patient_id = @pid 
           AND (
@@ -779,6 +776,31 @@ const postLog = async (req, res) => {
         }
       }
 
+      // Resolve specific hf_id for this task/patient snapshot
+      let resolvedHfId = null;
+      if (finalTaskId) {
+        const taskHfRes = await transaction.request()
+          .input('tid', db.sql.Int, finalTaskId)
+          .query(`
+            SELECT COALESCE(fa.hf_id, t.source_record_id) AS hf_id
+            FROM patient_followup_tasks t
+            LEFT JOIN hf_followup_assessments fa ON t.source_record_id = fa.followup_id
+            WHERE t.task_id = @tid;
+          `);
+        if (taskHfRes.recordset.length > 0 && taskHfRes.recordset[0].hf_id) {
+          resolvedHfId = taskHfRes.recordset[0].hf_id;
+        }
+      }
+
+      if (!resolvedHfId) {
+        const maxHfRes = await transaction.request()
+          .input('pid', db.sql.Int, pid)
+          .query(`SELECT MAX(hf_id) AS max_hf_id FROM hf_registry WHERE reg_patient_id = @pid;`);
+        if (maxHfRes.recordset.length > 0 && maxHfRes.recordset[0].max_hf_id) {
+          resolvedHfId = maxHfRes.recordset[0].max_hf_id;
+        }
+      }
+
       // Step 1: Insert into nurse_outreach_logs table
       const isDetailedHf = req.body.is_detailed_hf_form || req.body.drug_grid || req.body.selected_symptoms;
       const formattedNotes = isDetailedHf 
@@ -788,6 +810,7 @@ const postLog = async (req, res) => {
       const insertRes = await transaction.request()
         .input('finalTaskId', db.sql.Int, finalTaskId || null)
         .input('pid', db.sql.Int, pid)
+        .input('hfId', db.sql.Int, resolvedHfId || null)
         .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Staff Nurse'))
         .input('contactMode', db.sql.NVarChar(50), parseSqlString(contact_mode, 50, 'Phone Call'))
         .input('outcome', db.sql.NVarChar(100), parseSqlString(outcome, 100, 'Patient Contacted & Appointment Confirmed'))
@@ -802,6 +825,7 @@ const postLog = async (req, res) => {
             nstemi_followup_id,
             registry_type,
             reg_patient_id,
+            hf_id,
             contact_date,
             nurse_name,
             contact_mode,
@@ -817,6 +841,7 @@ const postLog = async (req, res) => {
             NULL,
             'HF',
             @pid,
+            @hfId,
             GETDATE(),
             @assignedNurse,
             @contactMode,
@@ -832,7 +857,8 @@ const postLog = async (req, res) => {
         `);
 
       // Step 2: Immediately execute UPDATE on patient_followup_tasks parent record
-      if (finalTaskId) {
+      // IMPORTANT: Only update task status when submitting a standard Outreach Log (NOT HF Detailed Log)
+      if (finalTaskId && !isDetailedHf) {
         await transaction.request()
           .input('taskId', db.sql.Int, finalTaskId)
           .input('overallStatus', db.sql.NVarChar(50), overallStatus)
@@ -852,13 +878,23 @@ const postLog = async (req, res) => {
           `);
       }
 
-      // Step 3: Skip updating hf_followup_assessments table (initial discharge assessment)
-      // to avoid triggering table-level CHECK constraint CHK_valid_assessment_data on historical rows.
-      // Task updates and nurse outreach logs are captured in patient_followup_tasks, nurse_outreach_logs & hf_followup_records.
-
-      // Step 4: Record into hf_followup_records if table exists in database
+      // Step 3: Record into hf_followup_records if table exists in database
       if (isDetailedHf) {
         try {
+          // Resolve admission and discharge dates if missing in payload
+          let admDate = parseSqlDate(req.body.date_of_admission);
+          let disDate = parseSqlDate(req.body.date_of_discharge);
+          if ((!admDate || !disDate) && resolvedHfId) {
+            const adminDatesRes = await transaction.request()
+              .input('hfid', db.sql.Int, resolvedHfId)
+              .query(`SELECT visit_date, assessment_date, discharge_date FROM hf_administrative WHERE hf_id = @hfid;`);
+            if (adminDatesRes.recordset.length > 0) {
+              const row = adminDatesRes.recordset[0];
+              if (!admDate) admDate = parseSqlDate(row.visit_date) || parseSqlDate(row.assessment_date);
+              if (!disDate) disDate = parseSqlDate(row.discharge_date);
+            }
+          }
+
           const hasTableRes = await transaction.request().query(
             `SELECT 1 FROM sys.tables WHERE name = 'hf_followup_records'`
           );
@@ -866,6 +902,7 @@ const postLog = async (req, res) => {
             await transaction.request()
               .input('regPatientId', db.sql.Int, pid)
               .input('taskId', db.sql.Int, finalTaskId || null)
+              .input('hfId', db.sql.Int, resolvedHfId || null)
               .input('followupDate', db.sql.Date, parseSqlDate(req.body.patient_followup_date) || parseSqlDate(new Date().toISOString()))
               .input('followupConducted', db.sql.NVarChar(100), parseSqlString(req.body.followup_conducted || contact_mode, 100, 'Telephonic follow-up'))
               .input('attemptNumber', db.sql.Int, req.body.attempt_number || 1)
@@ -878,8 +915,8 @@ const postLog = async (req, res) => {
               .input('sideEffectsDetails', db.sql.NVarChar(db.sql.MAX), req.body.side_effects_details || null)
               .input('physicianMedicationChanges', db.sql.NVarChar(50), parseSqlString(req.body.physician_medication_changes, 50, 'No'))
               .input('physicianMedicationChangesDetails', db.sql.NVarChar(db.sql.MAX), req.body.physician_medication_changes_details || null)
-              .input('dateOfAdmission', db.sql.Date, parseSqlDate(req.body.date_of_admission))
-              .input('dateOfDischarge', db.sql.Date, parseSqlDate(req.body.date_of_discharge))
+              .input('dateOfAdmission', db.sql.Date, admDate)
+              .input('dateOfDischarge', db.sql.Date, disDate)
               .input('selectedSymptoms', db.sql.NVarChar(db.sql.MAX), Array.isArray(req.body.selected_symptoms) ? req.body.selected_symptoms.join(', ') : (req.body.selected_symptoms || null))
               .input('symptomOtherDetails', db.sql.NVarChar(db.sql.MAX), req.body.symptom_other_details || null)
               .input('medicationAdherence', db.sql.NVarChar(50), parseSqlString(req.body.medication_adherence || medication_adherence, 50, null))
@@ -905,7 +942,7 @@ const postLog = async (req, res) => {
               .input('rawFormJson', db.sql.NVarChar(db.sql.MAX), JSON.stringify(req.body))
               .query(`
                 INSERT INTO hf_followup_records (
-                  reg_patient_id, task_id, followup_date, followup_conducted, attempt_number,
+                  reg_patient_id, task_id, hf_id, followup_date, followup_conducted, attempt_number,
                   answering_status, no_answer_reason, health_status, health_unhealthy_details,
                   medications_still_taking, side_effects_observed, side_effects_details,
                   physician_medication_changes, physician_medication_changes_details,
@@ -918,7 +955,7 @@ const postLog = async (req, res) => {
                   place_of_death, date_of_death, cause_of_death, cause_of_death_other_details,
                   join_program_opt_in, patient_feedback, raw_form_json, created_at
                 ) VALUES (
-                  @regPatientId, @taskId, @followupDate, @followupConducted, @attemptNumber,
+                  @regPatientId, @taskId, @hfId, @followupDate, @followupConducted, @attemptNumber,
                   @answeringStatus, @noAnswerReason, @healthStatus, @healthUnhealthyDetails,
                   @medicationsStillTaking, @sideEffectsObserved, @sideEffectsDetails,
                   @physicianMedicationChanges, @physicianMedicationChangesDetails,

@@ -395,6 +395,7 @@ async function ensureHfFollowupTable() {
     const columns = [
       { name: 'reg_patient_id', type: 'INT' },
       { name: 'task_id', type: 'INT' },
+      { name: 'hf_id', type: 'INT' },
       { name: 'followup_date', type: 'DATE' },
       { name: 'followup_conducted', type: 'NVARCHAR(100)' },
       { name: 'attempt_number', type: 'INT' },
@@ -459,18 +460,24 @@ async function ensureHfFollowupTable() {
       }
     }
 
-    // Ensure raw_form_json also exists on nurse_outreach_logs table
+    // Ensure raw_form_json and hf_id also exist on nurse_outreach_logs table
     const checkLogTbl = await query(`SELECT OBJECT_ID(N'dbo.nurse_outreach_logs') AS id;`);
     if (checkLogTbl.recordset?.[0]?.id) {
-      const checkLogCol = await query(
-        `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.nurse_outreach_logs') AND name = 'raw_form_json'`
-      );
-      if (!checkLogCol.recordset || checkLogCol.recordset.length === 0) {
-        try {
-          await query(`ALTER TABLE dbo.nurse_outreach_logs ADD [raw_form_json] NVARCHAR(MAX) NULL;`);
-          console.log(`✓ Auto-added column [raw_form_json] to dbo.nurse_outreach_logs`);
-        } catch (err) {
-          console.warn(`Could not add column [raw_form_json] to dbo.nurse_outreach_logs:`, err.message);
+      const logCols = [
+        { name: 'raw_form_json', type: 'NVARCHAR(MAX)' },
+        { name: 'hf_id', type: 'INT' }
+      ];
+      for (const lcol of logCols) {
+        const checkLogCol = await query(
+          `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.nurse_outreach_logs') AND name = '${lcol.name}'`
+        );
+        if (!checkLogCol.recordset || checkLogCol.recordset.length === 0) {
+          try {
+            await query(`ALTER TABLE dbo.nurse_outreach_logs ADD [${lcol.name}] ${lcol.type} NULL;`);
+            console.log(`✓ Auto-added column [${lcol.name}] to dbo.nurse_outreach_logs`);
+          } catch (err) {
+            console.warn(`Could not add column [${lcol.name}] to dbo.nurse_outreach_logs:`, err.message);
+          }
         }
       }
     }
