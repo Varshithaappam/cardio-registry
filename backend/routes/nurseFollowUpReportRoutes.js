@@ -30,58 +30,22 @@ const parseDateParam = (val) => {
  * 3. Bug 3 Fix: Pre-visit diagnostics explicitly set to NULL for NSTEMI records (no ghost data bleed).
  */
 const getPatientCentricTasks = async (req, res) => {
+  const startTime = Date.now();
+  const memBefore = process.memoryUsage();
+
   try {
     const rawStartDate = req.query.startDate || req.query.fromDate || req.query.start_date || null;
     const rawEndDate = req.query.endDate || req.query.toDate || req.query.end_date || null;
+    const limit = parseInt(req.query.limit || '500', 10);
 
     const startDate = parseDateParam(rawStartDate);
     const endDate = parseDateParam(rawEndDate);
 
     const pool = await db.getPool();
-
-    // Auto-cleanup: Supersede open tasks for older encounters where a newer encounter exists
-    try {
-      await pool.request().query(`
-        UPDATE t
-        SET t.status = 'Superseded by new encounter', t.updated_at = GETDATE()
-        FROM patient_followup_tasks t
-        INNER JOIN (
-          SELECT reg_patient_id, MAX(nstemi_id) AS max_id FROM nstemi_registry GROUP BY reg_patient_id
-        ) latest_nr ON t.reg_patient_id = latest_nr.reg_patient_id
-        WHERE t.source_registry LIKE '%NSTEMI%'
-          AND t.source_record_id < latest_nr.max_id
-          AND t.status NOT LIKE '%Superseded%'
-          AND t.status != 'Completed';
-
-        UPDATE t
-        SET t.status = 'Superseded by new encounter', t.updated_at = GETDATE()
-        FROM patient_followup_tasks t
-        INNER JOIN (
-          SELECT reg_patient_id, MAX(stemi_id) AS max_id FROM stemi_registry GROUP BY reg_patient_id
-        ) latest_sr ON t.reg_patient_id = latest_sr.reg_patient_id
-        WHERE t.source_registry LIKE '%STEMI%' AND t.source_registry NOT LIKE '%NSTEMI%'
-          AND t.source_record_id < latest_sr.max_id
-          AND t.status NOT LIKE '%Superseded%'
-          AND t.status != 'Completed';
-
-        UPDATE t
-        SET t.status = 'Superseded by new encounter', t.updated_at = GETDATE()
-        FROM patient_followup_tasks t
-        INNER JOIN (
-          SELECT reg_patient_id, MAX(hf_id) AS max_id FROM hf_registry GROUP BY reg_patient_id
-        ) latest_hf ON t.reg_patient_id = latest_hf.reg_patient_id
-        WHERE t.source_registry LIKE '%Heart Failure%'
-          AND t.source_record_id < latest_hf.max_id
-          AND t.status NOT LIKE '%Superseded%'
-          AND t.status != 'Completed';
-      `);
-    } catch (cleanupErr) {
-      console.warn('Auto-supersede cleanup warning:', cleanupErr.message);
-    }
-
     const request = pool.request();
     request.input('startDate', db.sql.VarChar(50), startDate || null);
     request.input('endDate', db.sql.VarChar(50), endDate || null);
+    request.input('limit', db.sql.Int, limit > 0 ? limit : 500);
 
     const queryStr = `
       WITH LatestNSTEMI AS (
@@ -114,8 +78,18 @@ const getPatientCentricTasks = async (req, res) => {
         FROM hf_registry r WITH (NOLOCK)
         INNER JOIN hf_administrative adm WITH (NOLOCK) ON r.hf_id = adm.hf_id
       ),
+      LatestStemiRec AS (
+        SELECT reg_patient_id, ip_no, acs_no,
+               ROW_NUMBER() OVER (PARTITION BY reg_patient_id ORDER BY created_at DESC, followup_record_id DESC) AS rn
+        FROM stemi_followup_records WITH (NOLOCK)
+      ),
+      LatestNstemiRec AS (
+        SELECT reg_patient_id, ip_no, acs_no,
+               ROW_NUMBER() OVER (PARTITION BY reg_patient_id ORDER BY created_at DESC, followup_record_id DESC) AS rn
+        FROM nstemi_followup_records WITH (NOLOCK)
+      ),
       RankedTasks AS (
-        SELECT 
+        SELECT TOP (@limit)
           t.task_id,
           t.reg_patient_id,
           t.source_registry,
@@ -159,14 +133,14 @@ const getPatientCentricTasks = async (req, res) => {
           COALESCE(
             sr.ip_no,
             nr.ip_no,
-            (SELECT TOP 1 sfr.ip_no FROM stemi_followup_records sfr WITH (NOLOCK) WHERE sfr.reg_patient_id = t.reg_patient_id ORDER BY sfr.created_at DESC),
-            (SELECT TOP 1 nfr.ip_no FROM nstemi_followup_records nfr WITH (NOLOCK) WHERE nfr.reg_patient_id = t.reg_patient_id ORDER BY nfr.created_at DESC)
+            srec.ip_no,
+            nrec.ip_no
           ) AS ip_no,
           COALESCE(
             sr.acs_no,
             nr.acs_no,
-            (SELECT TOP 1 sfr.acs_no FROM stemi_followup_records sfr WITH (NOLOCK) WHERE sfr.reg_patient_id = t.reg_patient_id ORDER BY sfr.created_at DESC),
-            (SELECT TOP 1 nfr.acs_no FROM nstemi_followup_records nfr WITH (NOLOCK) WHERE nfr.reg_patient_id = t.reg_patient_id ORDER BY nfr.created_at DESC)
+            srec.acs_no,
+            nrec.acs_no
           ) AS acs_no,
           fa.primary_followup_reason,
           fa.primary_no_followup_reason,
@@ -206,6 +180,8 @@ const getPatientCentricTasks = async (req, res) => {
           t.source_registry LIKE '%Heart Failure%' AND t.source_record_id = fa.followup_id
         )
         LEFT JOIN LatestHfAdmin adm ON (t.reg_patient_id = adm.reg_patient_id AND adm.rn = 1)
+        LEFT JOIN LatestStemiRec srec ON (t.reg_patient_id = srec.reg_patient_id AND srec.rn = 1)
+        LEFT JOIN LatestNstemiRec nrec ON (t.reg_patient_id = nrec.reg_patient_id AND nrec.rn = 1)
         LEFT JOIN stemi_registry sr WITH (NOLOCK) ON (
           (t.source_registry LIKE '%STEMI%' AND t.source_registry NOT LIKE '%NSTEMI%')
           AND (t.source_record_id = sr.stemi_id OR (t.source_record_id IS NULL AND sr.stemi_id = ls.max_stemi_id))
@@ -216,6 +192,10 @@ const getPatientCentricTasks = async (req, res) => {
         )
         WHERE t.status != 'No Follow-Up Needed'
           AND t.status NOT LIKE '%Superseded%'
+        ORDER BY 
+          CASE WHEN t.target_date IS NULL THEN 1 ELSE 0 END ASC,
+          t.target_date ASC,
+          t.task_id ASC
       )
       SELECT 
         task_id,
@@ -270,7 +250,6 @@ const getPatientCentricTasks = async (req, res) => {
     const result = await request.query(queryStr);
     const rawTasks = result.recordset || [];
 
-    // Normalize date properties across all records (target_date in YYYY-MM-DD for consistency)
     const tasks = rawTasks.map((t) => {
       const dateVal = t.target_date || t.followup_date;
       let isoDate = null;
@@ -294,9 +273,15 @@ const getPatientCentricTasks = async (req, res) => {
       };
     });
 
+    const durationMs = Date.now() - startTime;
+    const memAfter = process.memoryUsage();
+    const heapUsedDeltaMb = ((memAfter.heapUsed - memBefore.heapUsed) / 1024 / 1024).toFixed(2);
+    console.log(`[PERF] GET /api/nurse-dashboard/tasks completed in ${durationMs}ms | Returned ${tasks.length} tasks | Heap Used: ${(memAfter.heapUsed / 1024 / 1024).toFixed(2)}MB (Delta: ${heapUsedDeltaMb}MB)`);
+
     return res.status(200).json({
       success: true,
       count: tasks.length,
+      durationMs,
       data: tasks
     });
   } catch (error) {
