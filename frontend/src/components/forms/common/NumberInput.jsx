@@ -14,6 +14,7 @@ export default function NumberInput({
   step,
   maxLength,
   maxDecimals = 3,
+  isPercent = false,
   disabled = false,
   className = '',
   readOnly = false,
@@ -22,8 +23,9 @@ export default function NumberInput({
 }) {
   const isDisabled = disabled || readOnly;
   const isPercentage = Boolean(
-    (label && (label.includes('%') || label.toLowerCase().includes('percent') || label.toLowerCase().includes('ef'))) ||
-    (id && (id.includes('%') || id.toLowerCase().includes('percent') || id.toLowerCase().includes('ef')))
+    isPercent ||
+    (label && (label.includes('%') || label.toLowerCase().includes('percent') || label.toLowerCase().includes('ef') || label.toLowerCase().includes('saturation') || label.toLowerCase().includes('hba1c') || label.toLowerCase().includes('pacing') || label.toLowerCase().includes('burden'))) ||
+    (id && (id.includes('%') || id.toLowerCase().includes('percent') || id.toLowerCase().includes('ef') || id.toLowerCase().includes('saturation') || id.toLowerCase().includes('hba1c') || id.toLowerCase().includes('pacing') || id.toLowerCase().includes('burden')))
   );
 
   const handleChange = (val) => {
@@ -33,6 +35,11 @@ export default function NumberInput({
     }
 
     if (maxLength && val.length > maxLength) return;
+
+    // Reject any minus sign or negative input
+    if (typeof val === 'string' && val.includes('-')) {
+      val = val.replace(/-/g, '');
+    }
 
     // Allow numbers and a single decimal point
     if (/^[0-9]*\.?[0-9]*$/.test(val)) {
@@ -44,10 +51,19 @@ export default function NumberInput({
 
       const num = parseFloat(val);
       if (!isNaN(num)) {
-        // Enforce Percentage Limit (0 to 100)
-        if (isPercentage && num > 100) {
-          onChange('100');
+        // Enforce Non-negative (min >= 0)
+        const effectiveMin = min !== undefined && min !== null ? Math.max(0, Number(min)) : 0;
+        if (num < effectiveMin) {
+          onChange(String(effectiveMin));
           return;
+        }
+
+        // Enforce Percentage Limit (0 to 100)
+        if (isPercentage) {
+          if (num > 100) {
+            onChange('100');
+            return;
+          }
         }
         // Enforce explicit max prop if passed
         if (max !== undefined && max !== null && num > Number(max)) {
@@ -57,6 +73,12 @@ export default function NumberInput({
       }
 
       onChange(val);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+      e.preventDefault();
     }
   };
 
@@ -79,6 +101,7 @@ export default function NumberInput({
         value={value ?? ''}
         placeholder={placeholder}
         maxLength={maxLength}
+        onKeyDown={handleKeyDown}
         onChange={(e) => handleChange(e.target.value)}
         className={inputStyleClass}
       />

@@ -513,10 +513,10 @@ const HFClinicalForm = forwardRef(function HFClinicalForm(
       <SectionCard title="3. Initial Clinical Assessment" subtitle="Presentation, vitals, symptoms and baseline classification">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <FormField label="Height (cm)">
-            <input id="hf-height" type="number" value={vHeight} onChange={(e) => setVHeight(Number(e.target.value))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+            <input id="hf-height" type="number" min="0" value={vHeight} onChange={(e) => setVHeight(Math.max(0, Number(e.target.value)))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
           </FormField>
           <FormField label="Weight (kg)">
-            <input id="hf-weight" type="number" disabled={vUnableToWeigh} value={vWeight} onChange={(e) => setVWeight(Number(e.target.value))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white disabled:bg-slate-100" />
+            <input id="hf-weight" type="number" min="0" disabled={vUnableToWeigh} value={vWeight} onChange={(e) => setVWeight(Math.max(0, Number(e.target.value)))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white disabled:bg-slate-100" />
             <label className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500">
               <input id="hf-unweight" type="checkbox" checked={vUnableToWeigh} onChange={(e) => setVUnableToWeigh(e.target.checked)} />
               Unable to weigh
@@ -528,24 +528,24 @@ const HFClinicalForm = forwardRef(function HFClinicalForm(
           </FormField>
           }
           <FormField label="Heart Rate (bpm)">
-            <input id="hf-hr" type="number" value={vHr} onChange={(e) => setVHr(Number(e.target.value))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+            <input id="hf-hr" type="number" min="0" value={vHr} onChange={(e) => setVHr(Math.max(0, Number(e.target.value)))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
           </FormField>
           <FormField label="Respiratory Rate (bpm)">
-            <input id="hf-rr" type="number" value={vRr} onChange={(e) => setVRr(Number(e.target.value))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+            <input id="hf-rr" type="number" min="0" value={vRr} onChange={(e) => setVRr(Math.max(0, Number(e.target.value)))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
           </FormField>
           <FormField label="O2 Saturation (%)">
-            <input id="hf-o2" type="number" max="100" value={vO2} onChange={(e) => setVO2(Number(e.target.value))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+            <input id="hf-o2" type="number" min="0" max="100" value={vO2} onChange={(e) => setVO2(Math.max(0, Math.min(100, Number(e.target.value))))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
           </FormField>
           <FormField label="BP Sitting (Sys/Dia)">
             <div className="flex gap-2">
-              <input id="hf-bp-sys" type="number" placeholder="Sys" value={vBpSystolic} onChange={(e) => setVBpSystolic(Number(e.target.value))} className="w-1/2 p-2 border border-slate-200 rounded-lg text-sm bg-white" />
-              <input id="hf-bp-dia" type="number" placeholder="Dia" value={vBpDiastolic} onChange={(e) => setVBpDiastolic(Number(e.target.value))} className="w-1/2 p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+              <input id="hf-bp-sys" type="number" min="0" placeholder="Sys" value={vBpSystolic} onChange={(e) => setVBpSystolic(Math.max(0, Number(e.target.value)))} className="w-1/2 p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+              <input id="hf-bp-dia" type="number" min="0" placeholder="Dia" value={vBpDiastolic} onChange={(e) => setVBpDiastolic(Math.max(0, Number(e.target.value)))} className="w-1/2 p-2 border border-slate-200 rounded-lg text-sm bg-white" />
             </div>
           </FormField>
           <FormField label="BP Standing (Sys/Dia)">
             <div className="flex gap-2">
-              <input id="hf-bp-stand-sys" type="number" placeholder="Sys" value={vBpStandingSystolic} onChange={(e) => setVBpStandingSystolic(Number(e.target.value))} className="w-1/2 p-2 border border-slate-200 rounded-lg text-sm bg-white" />
-              <input id="hf-bp-stand-dia" type="number" placeholder="Dia" value={vBpStandingDiastolic} onChange={(e) => setVBpStandingDiastolic(Number(e.target.value))} className="w-1/2 p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+              <input id="hf-bp-stand-sys" type="number" min="0" placeholder="Sys" value={vBpStandingSystolic} onChange={(e) => setVBpStandingSystolic(Math.max(0, Number(e.target.value)))} className="w-1/2 p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+              <input id="hf-bp-stand-dia" type="number" min="0" placeholder="Dia" value={vBpStandingDiastolic} onChange={(e) => setVBpStandingDiastolic(Math.max(0, Number(e.target.value)))} className="w-1/2 p-2 border border-slate-200 rounded-lg text-sm bg-white" />
             </div>
           </FormField>
         </div>
@@ -610,7 +610,7 @@ const HFClinicalForm = forwardRef(function HFClinicalForm(
               <span className="font-medium text-slate-700">Documented PVCs</span>
             </label>
             {hfRiskPvcs &&
-            <input type="number" placeholder="PVC Count" value={hfRiskPvcCount} onChange={(e) => setHfRiskPvcCount(Number(e.target.value))} className="w-full p-1 border border-slate-200 rounded text-xs" />
+            <input type="number" min="0" placeholder="PVC Count" value={hfRiskPvcCount} onChange={(e) => setHfRiskPvcCount(Math.max(0, Number(e.target.value)))} className="w-full p-1 border border-slate-200 rounded text-xs" />
             }
           </div>
         </div>
@@ -622,19 +622,19 @@ const HFClinicalForm = forwardRef(function HFClinicalForm(
         <CheckboxGroup label="Investigations Performed / Ordered" options={INVESTIGATION_OPTIONS} values={selectedInvestigations} onChange={setSelectedInvestigations} columns={3} />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <FormField label="ECG Heart Rate (bpm)">
-            <input id="hf-ecg-hr" type="number" value={ecgHr} onChange={(e) => setEcgHr(e.target.value)} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+            <input id="hf-ecg-hr" type="number" min="0" value={ecgHr} onChange={(e) => setEcgHr(Math.max(0, Number(e.target.value)))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
           </FormField>
           <FormField label="Echo EF (%)">
-            <input id="hf-echo-ef" type="number" value={echoEf} onChange={(e) => setEchoEf(e.target.value)} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+            <input id="hf-echo-ef" type="number" min="0" max="100" value={echoEf} onChange={(e) => setEchoEf(Math.max(0, Math.min(100, Number(e.target.value))))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
           </FormField>
           <FormField label="BNP / NT-proBNP">
-            <input id="hf-bnp" type="number" value={bnpValue} onChange={(e) => setBnpValue(e.target.value)} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+            <input id="hf-bnp" type="number" min="0" value={bnpValue} onChange={(e) => setBnpValue(Math.max(0, Number(e.target.value)))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
           </FormField>
           <FormField label="Serum Creatinine (mg/dL)">
-            <input id="hf-creatinine" type="number" step="0.01" value={creatinineValue} onChange={(e) => setCreatinineValue(e.target.value)} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+            <input id="hf-creatinine" type="number" min="0" step="0.01" value={creatinineValue} onChange={(e) => setCreatinineValue(Math.max(0, Number(e.target.value)))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
           </FormField>
           <FormField label="Serum Potassium (mEq/L)">
-            <input id="hf-potassium" type="number" step="0.01" value={potassiumValue} onChange={(e) => setPotassiumValue(e.target.value)} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
+            <input id="hf-potassium" type="number" min="0" step="0.01" value={potassiumValue} onChange={(e) => setPotassiumValue(Math.max(0, Number(e.target.value)))} className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white" />
           </FormField>
         </div>
         <TextArea id="hf-investigation-notes" label="Investigation Notes" value={investigationNotes} onChange={setInvestigationNotes} placeholder="Summarize key investigation findings." rows={3} />

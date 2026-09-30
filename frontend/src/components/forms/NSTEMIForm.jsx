@@ -5,7 +5,7 @@ import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
 import { useAlert } from '../../context/AlertContext';
 import ClinicalMetricBadge from './common/ClinicalMetricBadge';
 import NoteInput from './common/NoteInput';
-import { sanitizeDecimal } from '../../utils/formSanitizers';
+import { sanitizeDecimal, sanitizePercentage } from '../../utils/formSanitizers';
 
 const proceduresList = [
   { label: 'Indication for ICCU admission', key: 'appr_iccu_admission' },
@@ -479,14 +479,23 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
   };
 
   const handleChange = (field, value) => {
+    let sanitizedVal = value;
+    if (typeof sanitizedVal === 'string' && sanitizedVal.includes('-')) {
+      sanitizedVal = sanitizedVal.replace(/-/g, '');
+    }
+    const percentageFields = ['echo_ef'];
     const decimalFields = [
-      'echo_ef', 'echo_e', 'echo_a', 'echo_dt', 'echo_e_prime', 'echo_tapsv',
+      'echo_e', 'echo_a', 'echo_dt', 'echo_e_prime', 'echo_tapsv',
       'hemoglobin', 'creatinine', 'sodium', 'potassium', 'rbs_admission',
       'stent_diameter', 'stent_length'
     ];
-    let sanitizedVal = value;
-    if (decimalFields.includes(field)) {
-      sanitizedVal = sanitizeDecimal(value, 3);
+    if (percentageFields.includes(field)) {
+      sanitizedVal = sanitizePercentage(sanitizedVal, 3);
+    } else if (decimalFields.includes(field)) {
+      sanitizedVal = sanitizeDecimal(sanitizedVal, 3);
+    } else if (typeof sanitizedVal === 'string' && /^\d+$/.test(sanitizedVal)) {
+      const num = parseInt(sanitizedVal, 10);
+      if (num < 0) sanitizedVal = '0';
     }
 
     setFormData((prev) => {
@@ -2361,9 +2370,17 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <div className="flex items-center gap-2">
                 <input
                   type="number"
+                  min="0"
+                  max="720"
+                  step="0.1"
                   value={formData.iccu_hours}
-                  onChange={(e) => handleChange('iccu_hours', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  onChange={(e) => {
+                    let val = e.target.value;
+                    if (val.includes('.') && val.split('.')[1].length > 2) val = parseFloat(val).toFixed(2);
+                    if (parseFloat(val) > 720) val = '720';
+                    handleChange('iccu_hours', val);
+                  }}
+                  className="w-full p-2 border border-slate-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <span className="font-semibold text-slate-500">hours</span>
               </div>
@@ -2373,9 +2390,17 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <div className="flex items-center gap-2">
                 <input
                   type="number"
+                  min="0"
+                  max="720"
+                  step="0.1"
                   value={formData.stepdown_icu_hours}
-                  onChange={(e) => handleChange('stepdown_icu_hours', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  onChange={(e) => {
+                    let val = e.target.value;
+                    if (val.includes('.') && val.split('.')[1].length > 2) val = parseFloat(val).toFixed(2);
+                    if (parseFloat(val) > 720) val = '720';
+                    handleChange('stepdown_icu_hours', val);
+                  }}
+                  className="w-full p-2 border border-slate-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <span className="font-semibold text-slate-500">hours</span>
               </div>
@@ -2385,9 +2410,17 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <div className="flex items-center gap-2">
                 <input
                   type="number"
+                  min="0"
+                  max="180"
+                  step="0.1"
                   value={formData.floor_days}
-                  onChange={(e) => handleChange('floor_days', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  onChange={(e) => {
+                    let val = e.target.value;
+                    if (val.includes('.') && val.split('.')[1].length > 2) val = parseFloat(val).toFixed(2);
+                    if (parseFloat(val) > 180) val = '180';
+                    handleChange('floor_days', val);
+                  }}
+                  className="w-full p-2 border border-slate-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <span className="font-semibold text-slate-500">days</span>
               </div>
@@ -2409,78 +2442,34 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
           <div className="font-bold text-slate-800 border-t pt-3">Cost of care:</div>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Bed charges</label>
-              <input
-                type="number"
-                value={formData.bed_charges}
-                onChange={(e) => handleChange('bed_charges', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Drugs & Disposables</label>
-              <input
-                type="number"
-                value={formData.drugs_disposables_cost}
-                onChange={(e) => handleChange('drugs_disposables_cost', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Packages</label>
-              <input
-                type="number"
-                value={formData.package_cost}
-                onChange={(e) => handleChange('package_cost', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md font-bold text-slate-900 bg-white"
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Lab Investigations</label>
-              <input
-                type="number"
-                value={formData.laboratory_cost}
-                onChange={(e) => handleChange('laboratory_cost', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Non-invasive labs</label>
-              <input
-                type="number"
-                value={formData.non_invasive_lab_cost}
-                onChange={(e) => handleChange('non_invasive_lab_cost', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Consults</label>
-              <input
-                type="number"
-                value={formData.consultation_cost}
-                onChange={(e) => handleChange('consultation_cost', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Radiology</label>
-              <input
-                type="number"
-                value={formData.radiology_cost}
-                onChange={(e) => handleChange('radiology_cost', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="font-bold text-slate-700 block mb-1">Miscellaneous</label>
-              <input
-                type="number"
-                value={formData.miscellaneous_cost}
-                onChange={(e) => handleChange('miscellaneous_cost', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
-              />
-            </div>
+            {[
+              { label: 'Bed charges', key: 'bed_charges' },
+              { label: 'Drugs & Disposables', key: 'drugs_disposables_cost' },
+              { label: 'Packages', key: 'package_cost' },
+              { label: 'Lab Investigations', key: 'laboratory_cost' },
+              { label: 'Non-invasive labs', key: 'non_invasive_lab_cost' },
+              { label: 'Consults', key: 'consultation_cost' },
+              { label: 'Radiology', key: 'radiology_cost' },
+              { label: 'Miscellaneous', key: 'miscellaneous_cost' }
+            ].map((c) => (
+              <div key={c.key}>
+                <label className="font-bold text-slate-700 block mb-1">{c.label}</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="999999999"
+                  step="0.01"
+                  value={formData[c.key]}
+                  onChange={(e) => {
+                    let val = e.target.value;
+                    if (val.includes('.') && val.split('.')[1].length > 2) val = parseFloat(val).toFixed(2);
+                    if (parseFloat(val) > 999999999) val = '999999999';
+                    handleChange(c.key, val);
+                  }}
+                  className="w-full p-2 border border-slate-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-medium text-slate-900 bg-white"
+                />
+              </div>
+            ))}
             <div className="col-span-2 p-3 bg-teal-50 border border-teal-200 rounded-lg flex flex-col justify-center items-center">
               <span className="font-bold text-teal-900 uppercase text-[10px] tracking-wider">Total:</span>
               <span className="text-xl font-extrabold text-teal-700">
@@ -2500,7 +2489,10 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                     ? parseFloat(formData.total_cost) || 0
                     : costSum;
 
-                  return valToUse > 0 ? valToUse.toLocaleString('en-IN') : '0';
+                  const roundedVal = Math.round(valToUse * 100) / 100;
+                  return roundedVal > 0 
+                    ? roundedVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+                    : '0.00';
                 })()}
               </span>
             </div>

@@ -32,27 +32,29 @@ export const sanitizePincode = (val) => {
 };
 
 /**
- * Sanitize Percentage Fields (0 to 100 max, up to 2 decimal places)
+ * Sanitize Percentage Fields (0 to 100 max, up to 3 decimal places like 9.967 or 99.456)
  */
-export const sanitizePercentage = (val) => {
+export const sanitizePercentage = (val, maxDecimals = 3) => {
   if (val === '' || val === null || val === undefined) return '';
   let str = String(val).replace(/[^0-9.]/g, '');
   const parts = str.split('.');
   if (parts.length > 2) {
     str = `${parts[0]}.${parts.slice(1).join('')}`;
   }
-  if (parts[1] && parts[1].length > 2) {
-    str = `${parts[0]}.${parts[1].slice(0, 2)}`;
+  const splitParts = str.split('.');
+  if (splitParts[1] && splitParts[1].length > maxDecimals) {
+    str = `${splitParts[0]}.${splitParts[1].slice(0, maxDecimals)}`;
   }
   const num = parseFloat(str);
-  if (!isNaN(num) && num > 100) {
-    return '100';
+  if (!isNaN(num)) {
+    if (num > 100) return '100';
+    if (num < 0) return '0';
   }
   return str;
 };
 
 /**
- * Sanitize Decimal values (max 3 decimal places by default)
+ * Sanitize Decimal values (max 3 decimal places by default, non-negative strictly)
  */
 export const sanitizeDecimal = (val, maxDecimals = 3, maxVal = null) => {
   if (val === '' || val === null || val === undefined) return '';
@@ -65,9 +67,10 @@ export const sanitizeDecimal = (val, maxDecimals = 3, maxVal = null) => {
   if (splitParts[1] && splitParts[1].length > maxDecimals) {
     str = `${splitParts[0]}.${splitParts[1].slice(0, maxDecimals)}`;
   }
-  if (maxVal !== null) {
-    const num = parseFloat(str);
-    if (!isNaN(num) && num > maxVal) {
+  const num = parseFloat(str);
+  if (!isNaN(num)) {
+    if (num < 0) return '0';
+    if (maxVal !== null && num > maxVal) {
       return String(maxVal);
     }
   }

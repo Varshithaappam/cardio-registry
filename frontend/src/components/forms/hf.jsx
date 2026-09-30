@@ -14,7 +14,7 @@ import FormField from './common/FormField';
 import DrugTable from './common/DrugTable';
 import FollowupAssessmentForm from './FollowupAssessmentForm';
 import { validateField, getVitalsWarning } from '../../utils/validation';
-import { formatIndianCurrency, sanitizeDecimal } from '../../utils/formSanitizers';
+import { formatIndianCurrency, sanitizeDecimal, sanitizePercentage, sanitizePositiveInteger } from '../../utils/formSanitizers';
 import { formatDateForDisplay, formatDateTimeForDisplay, formatDateForDatabase } from '../../utils/dateUtils';
 import {
   FORM_STYLES,
@@ -852,37 +852,49 @@ const hf = forwardRef(function hf(
     }
 
     if (fieldName === 'numberOfShocks') {
+      if (val < 0) return { status: 'invalid', classNames: 'border-red-500 bg-red-50 text-red-700 font-semibold', message: 'Invalid (<0)' };
       if (val === 0) return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'None (0)' };
       if (val >= 1 && val <= 3) return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Moderate (1-3)' };
       return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Elevated (>3)' };
     }
 
     if (fieldName === 'appropriateShocks') {
+      if (val < 0) return { status: 'invalid', classNames: 'border-red-500 bg-red-50 text-red-700 font-semibold', message: 'Invalid (<0)' };
       if (val === 0) return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'None (0)' };
+      const totalNum = parseFloat(numberOfShocks) || 0;
+      if (val > totalNum && totalNum > 0) return { status: 'invalid', classNames: 'border-red-500 bg-red-50 text-red-700 font-semibold', message: 'Exceeds Total Shocks' };
       return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Shocks Recorded' };
     }
 
     if (fieldName === 'inappropriateShocks') {
+      if (val < 0) return { status: 'invalid', classNames: 'border-red-500 bg-red-50 text-red-700 font-semibold', message: 'Invalid (<0)' };
       if (val === 0) return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'None (0)' };
+      const totalNum = parseFloat(numberOfShocks) || 0;
+      const appNum = parseFloat(appropriateShocks) || 0;
+      if ((val + appNum) > totalNum && totalNum > 0) return { status: 'invalid', classNames: 'border-red-500 bg-red-50 text-red-700 font-semibold', message: 'Exceeds Total Shocks' };
       return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Inappropriate Shock Recorded' };
     }
 
     if (fieldName === 'bivPacingPercent') {
-      if (val >= 95) return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Optimal (≥95%)' };
+      if (val < 0 || val > 100) return { status: 'invalid', classNames: 'border-red-500 bg-red-50 text-red-700 font-semibold', message: val < 0 ? 'Invalid (<0%)' : 'Invalid (>100%)' };
+      if (val >= 95 && val <= 100) return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'Optimal (≥95%)' };
       return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'Suboptimal Pacing (<95%)' };
     }
 
     if (fieldName === 'afibBurden') {
+      if (val < 0 || val > 100) return { status: 'invalid', classNames: 'border-red-500 bg-red-50 text-red-700 font-semibold', message: val < 0 ? 'Invalid (<0%)' : 'Invalid (>100%)' };
       if (val === 0) return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'None (0%)' };
       return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'AF Burden Present' };
     }
 
     if (fieldName === 'nsvtEpisodes') {
+      if (val < 0) return { status: 'invalid', classNames: 'border-red-500 bg-red-50 text-red-700 font-semibold', message: 'Invalid (<0)' };
       if (val === 0) return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'None (0)' };
       return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'NSVT Episodes Recorded' };
     }
 
     if (fieldName === 'svtEpisodes') {
+      if (val < 0) return { status: 'invalid', classNames: 'border-red-500 bg-red-50 text-red-700 font-semibold', message: 'Invalid (<0)' };
       if (val === 0) return { status: 'normal', classNames: 'border-emerald-500 bg-emerald-50 text-emerald-700', message: 'None (0)' };
       return { status: 'borderline', classNames: 'border-amber-500 bg-amber-50 text-amber-700 font-semibold', message: 'SVT Episodes Recorded' };
     }
@@ -949,6 +961,7 @@ const hf = forwardRef(function hf(
   };
 
   const renderDeviceMetric = (label, value, setValue, fieldName, unit, errorKey, required = false, disabled = false, type = 'text') => {
+    const isPercentMetric = unit === '%' || (label && label.includes('%')) || (fieldName && (fieldName.toLowerCase().includes('percent') || fieldName.toLowerCase().includes('burden')));
     const cls = getClassification(fieldName, value);
     const displayErr = formErrors[errorKey];
     return (
@@ -959,10 +972,29 @@ const hf = forwardRef(function hf(
         <div className="flex items-center gap-1.5 w-full">
           <input disabled={readOnly || disabled}
             type={type}
+            min={type === 'number' || unit === 'Count' ? '0' : undefined}
+            onKeyDown={(e) => {
+              if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                e.preventDefault();
+              }
+            }}
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={(e) => {
+              let val = e.target.value;
+              if (typeof val === 'string' && val.includes('-')) {
+                val = val.replace(/-/g, '');
+              }
+              if (isPercentMetric) {
+                if (val !== '' && !/^[0-9]*\.?[0-9]*$/.test(val)) return;
+                val = sanitizePercentage(val, 3);
+              } else if (type === 'number' || unit === 'Count') {
+                if (val !== '' && !/^[0-9]*\.?[0-9]*$/.test(val)) return;
+                val = sanitizePositiveInteger(val);
+              }
+              setValue(val);
+            }}
             className={`border px-2 py-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none rounded text-right font-mono ${
-              formErrors[errorKey] ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
+              formErrors[errorKey] || cls.status === 'invalid' ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
               cls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
               cls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
               cls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
@@ -973,6 +1005,7 @@ const hf = forwardRef(function hf(
         </div>
         {cls.status && (
           <span className={`text-[9px] font-bold mt-0.5 ${
+            cls.status === 'invalid' ? 'text-red-600' :
             cls.status === 'normal' ? 'text-emerald-600' :
             cls.status === 'borderline' ? 'text-amber-600' :
             'text-rose-600'
@@ -1329,17 +1362,25 @@ const hf = forwardRef(function hf(
       }
       return;
     }
+    const percentageFields = [
+      'echoEfPercent', 'bivPacingPercent', 'afibBurden', 'o2Saturation', 'mriLvef', 'hba1c'
+    ];
     const numericalFields = [
-      'weight', 'height', 'heartRate', 'respiratoryRate', 'o2Saturation',
-      'systolicBp', 'diastolicBp', 'echoEfPercent', 'echoEaRatio', 'echoRvTapsv',
+      'weight', 'height', 'heartRate', 'respiratoryRate',
+      'systolicBp', 'diastolicBp', 'echoEaRatio', 'echoRvTapsv',
       'echoEePrimeRatio', 'echoEDecelTime', 'echoLaDimension', 'echoLvSystole',
       'echoLvDiastole', 'echoRvSystolicPressure', 'ecgQrsDuration', 'ecgQt',
       'ecgQtc', 'cxrCtRatio', 'pvcCount', 'nsvtEpisodes', 'svtEpisodes',
-      'bivPacingPercent', 'numberOfShocks', 'appropriateShocks', 'inappropriateShocks',
-      'atpTimes', 'sixMwtDistance', 'sixMwtHrRecovery', 'mriLvef', 'holterHrv',
+      'numberOfShocks', 'appropriateShocks', 'inappropriateShocks',
+      'atpTimes', 'sixMwtDistance', 'sixMwtHrRecovery', 'holterHrv',
       'daysHospitalized'
     ];
-    if (numericalFields.includes(fieldName)) {
+    if (percentageFields.includes(fieldName)) {
+      if (value !== '' && !/^[0-9]*\.?[0-9]*$/.test(value)) {
+        return;
+      }
+      value = sanitizePercentage(value, 3);
+    } else if (numericalFields.includes(fieldName)) {
       if (value !== '' && !/^[0-9]*\.?[0-9]*$/.test(value)) {
         return;
       }
@@ -1356,9 +1397,9 @@ const hf = forwardRef(function hf(
     setter(value);
   };
 
-  const handleNumericChange = (setter, val) => {
+  const handleNumericChange = (setter, val, isPercent = false) => {
     if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
-      setter(sanitizeDecimal(val, 3));
+      setter(isPercent ? sanitizePercentage(val, 3) : sanitizeDecimal(val, 3));
     }
   };
 
@@ -1380,7 +1421,11 @@ const hf = forwardRef(function hf(
       if (value !== '' && !/^[0-9]*\.?[0-9]*$/.test(value)) {
         return;
       }
-      value = sanitizeDecimal(value, 3);
+      if (key === 'hba1c') {
+        value = sanitizePercentage(value, 3);
+      } else {
+        value = sanitizeDecimal(value, 3);
+      }
     }
     setLabTests(prev => ({
       ...prev,
@@ -1851,21 +1896,21 @@ const hf = forwardRef(function hf(
     return '';
   });
   const [icdShock, setIcdShock] = useState(editingRecord?.deviceTherapy?.icd_shock ?? 'No');
-  const [numberOfShocks, setNumberOfShocks] = useState(editingRecord?.deviceTherapy?.number_of_shocks ?? '');
-  const [appropriateShocks, setAppropriateShocks] = useState(editingRecord?.deviceTherapy?.appropriate_shocks ?? '');
-  const [inappropriateShocks, setInappropriateShocks] = useState(editingRecord?.deviceTherapy?.inappropriate_shocks ?? '');
+  const [numberOfShocks, setNumberOfShocks] = useState(() => sanitizePositiveInteger(editingRecord?.deviceTherapy?.number_of_shocks ?? ''));
+  const [appropriateShocks, setAppropriateShocks] = useState(() => sanitizePositiveInteger(editingRecord?.deviceTherapy?.appropriate_shocks ?? ''));
+  const [inappropriateShocks, setInappropriateShocks] = useState(() => sanitizePositiveInteger(editingRecord?.deviceTherapy?.inappropriate_shocks ?? ''));
   const [causeOfShocks, setCauseOfShocks] = useState(editingRecord?.deviceTherapy?.cause_of_shocks ?? '');
   const [atp, setAtp] = useState(editingRecord?.deviceTherapy?.atp ?? 'No');
-  const [atpTimes, setAtpTimes] = useState(editingRecord?.deviceTherapy?.atp_times ?? '');
+  const [atpTimes, setAtpTimes] = useState(() => sanitizePositiveInteger(editingRecord?.deviceTherapy?.atp_times ?? ''));
   const [atpSuccessAlways, setAtpSuccessAlways] = useState(editingRecord?.deviceTherapy?.atp_success_always ?? 'No');
   const [atpSuccessMostTimes, setAtpSuccessMostTimes] = useState(editingRecord?.deviceTherapy?.atp_success_most_times ?? 'No');
   const [atpSuccessSometimes, setAtpSuccessSometimes] = useState(editingRecord?.deviceTherapy?.atp_success_sometimes ?? 'No');
   const [atpSuccessNotSuccessful, setAtpSuccessNotSuccessful] = useState(editingRecord?.deviceTherapy?.atp_success_not_successful ?? 'No');
 
-  const [bivPacingPercent, setBivPacingPercent] = useState(editingRecord?.deviceTherapy?.biv_pacing_percent ?? '');
-  const [afibBurden, setAfibBurden] = useState(editingRecord?.deviceTherapy?.afib_burden ?? '');
-  const [nsvtEpisodes, setNsvtEpisodes] = useState(editingRecord?.deviceTherapy?.nsvt_episodes ?? '');
-  const [svtEpisodes, setSvtEpisodes] = useState(editingRecord?.deviceTherapy?.svt_episodes ?? '');
+  const [bivPacingPercent, setBivPacingPercent] = useState(() => sanitizePercentage(editingRecord?.deviceTherapy?.biv_pacing_percent ?? '', 3));
+  const [afibBurden, setAfibBurden] = useState(() => sanitizePercentage(editingRecord?.deviceTherapy?.afib_burden ?? '', 3));
+  const [nsvtEpisodes, setNsvtEpisodes] = useState(() => sanitizePositiveInteger(editingRecord?.deviceTherapy?.nsvt_episodes ?? ''));
+  const [svtEpisodes, setSvtEpisodes] = useState(() => sanitizePositiveInteger(editingRecord?.deviceTherapy?.svt_episodes ?? ''));
   const [deviceVolumeAlert, setDeviceVolumeAlert] = useState(editingRecord?.deviceTherapy?.device_volume_alert ?? '');
   const [deviceNotes, setDeviceNotes] = useState(editingRecord?.deviceTherapy?.notes ?? '');
 
