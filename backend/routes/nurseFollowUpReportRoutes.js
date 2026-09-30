@@ -381,14 +381,14 @@ const getPatientTimelineLogs = async (req, res) => {
           ORDER BY CASE WHEN t.source_record_id = nr.nstemi_id THEN 0 ELSE 1 END ASC, nr.nstemi_id DESC
         ) nr
         OUTER APPLY (
-          SELECT TOP 1 sfr.followup_record_id AS record_id, sfr.raw_form_json, sfr.stemi_id
+          SELECT TOP 1 sfr.record_id, sfr.raw_form_json, sfr.stemi_id
           FROM stemi_followup_records sfr
           WHERE (nol.task_id IS NOT NULL AND sfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 10)
              OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 60)
           ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) ASC
         ) sfr
         OUTER APPLY (
-          SELECT TOP 1 nfr.followup_record_id AS record_id, nfr.raw_form_json, nfr.nstemi_id
+          SELECT TOP 1 nfr.record_id, nfr.raw_form_json, nfr.nstemi_id
           FROM nstemi_followup_records nfr
           WHERE (nol.task_id IS NOT NULL AND nfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 10)
              OR (nol.reg_patient_id = nfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
@@ -454,14 +454,14 @@ const getPatientTimelineLogs = async (req, res) => {
         LEFT JOIN stemi_followup sf ON (t.source_record_id = sf.stemi_id AND t.timeframe = sf.followup_month)
         LEFT JOIN stemi_registry sr ON (sf.stemi_id = sr.stemi_id OR t.source_record_id = sr.stemi_id)
         OUTER APPLY (
-          SELECT TOP 1 sfr.followup_record_id AS record_id, sfr.raw_form_json, sfr.stemi_id
+          SELECT TOP 1 sfr.record_id, sfr.raw_form_json, sfr.stemi_id
           FROM stemi_followup_records sfr
           WHERE (nol.task_id IS NOT NULL AND sfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 10)
              OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 60)
           ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) ASC
         ) sfr
         OUTER APPLY (
-          SELECT TOP 1 nfr.followup_record_id AS record_id, nfr.raw_form_json, nfr.nstemi_id
+          SELECT TOP 1 nfr.record_id, nfr.raw_form_json, nfr.nstemi_id
           FROM nstemi_followup_records nfr
           WHERE (nol.task_id IS NOT NULL AND nfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 10)
              OR (nol.reg_patient_id = nfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
@@ -526,14 +526,14 @@ const getPatientTimelineLogs = async (req, res) => {
         LEFT JOIN hf_followup_assessments fa ON t.source_record_id = fa.followup_id
         LEFT JOIN hf_registry hr ON COALESCE(nol.hf_id, fa.hf_id, t.source_record_id) = hr.hf_id
         OUTER APPLY (
-          SELECT TOP 1 sfr.followup_record_id AS record_id, sfr.raw_form_json, sfr.stemi_id
+          SELECT TOP 1 sfr.record_id, sfr.raw_form_json, sfr.stemi_id
           FROM stemi_followup_records sfr
           WHERE (nol.task_id IS NOT NULL AND sfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 10)
              OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 60)
           ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) ASC
         ) sfr
         OUTER APPLY (
-          SELECT TOP 1 nfr.followup_record_id AS record_id, nfr.raw_form_json, nfr.nstemi_id
+          SELECT TOP 1 nfr.record_id, nfr.raw_form_json, nfr.nstemi_id
           FROM nstemi_followup_records nfr
           WHERE (nol.task_id IS NOT NULL AND nfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 10)
              OR (nol.reg_patient_id = nfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
@@ -623,17 +623,17 @@ const getPatientTimelineLogs = async (req, res) => {
           ORDER BY CASE WHEN t.source_record_id = nr.nstemi_id THEN 0 ELSE 1 END ASC, nr.nstemi_id DESC
         ) nr
         OUTER APPLY (
-          SELECT TOP 1 sfr.followup_record_id AS record_id, sfr.raw_form_json, sfr.stemi_id
+          SELECT TOP 1 sfr.record_id, sfr.raw_form_json, sfr.stemi_id
           FROM stemi_followup_records sfr
           WHERE (nol.task_id IS NOT NULL AND sfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 10)
              OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 60)
           ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) ASC
         ) sfr
         OUTER APPLY (
-          SELECT TOP 1 nfr.followup_record_id AS record_id, nfr.raw_form_json, nfr.nstemi_id
+          SELECT TOP 1 nfr.record_id, nfr.raw_form_json, nfr.nstemi_id
           FROM nstemi_followup_records nfr
           WHERE (nol.task_id IS NOT NULL AND nfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 10)
-             OR (nol.reg_patient_id = nfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
+             OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
           ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) ASC
         ) nfr
         OUTER APPLY (
@@ -1045,10 +1045,22 @@ const postLog = async (req, res) => {
         : (finalTaskId && finalTaskId >= 100000 ? finalTaskId - 100000 : null);
       const isDetailedNstemi = req.body.is_detailed_nstemi_form || req.body.is_detailed_acs_form || req.body.drug_grid || req.body.selected_symptoms;
 
+      let validNstemiFollowupId = null;
+      if (nstemiFollowupId) {
+        try {
+          const checkFkRes = await transaction.request()
+            .input('checkFkId', db.sql.Int, nstemiFollowupId)
+            .query(`SELECT 1 FROM dbo.nstemi_followup WHERE followup_id = @checkFkId;`);
+          if (checkFkRes.recordset && checkFkRes.recordset.length > 0) {
+            validNstemiFollowupId = nstemiFollowupId;
+          }
+        } catch (_) {}
+      }
+
       // Step 1: Insert into nurse_outreach_logs
       const insertRes = await transaction.request()
         .input('finalTaskId', db.sql.Int, finalTaskId || null)
-        .input('nstemiFollowupId', db.sql.Int, nstemiFollowupId || null)
+        .input('nstemiFollowupId', db.sql.Int, validNstemiFollowupId)
         .input('pid', db.sql.Int, pid)
         .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Cardiac Care Nurse'))
         .input('contactMode', db.sql.NVarChar(50), parseSqlString(contact_mode, 50, 'Detailed Form Submission'))

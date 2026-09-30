@@ -494,6 +494,8 @@ async function ensureHfFollowupTable() {
 async function ensureAcsFollowupTables() {
   const tables = ['stemi_followup_records', 'nstemi_followup_records'];
   const acsCols = [
+    { name: 'record_id', type: 'INT' },
+    { name: 'followup_record_id', type: 'INT' },
     { name: 'followup_date', type: 'DATE' },
     { name: 'physician_medication_changes_details', type: 'NVARCHAR(MAX)' },
     { name: 'new_health_complaints', type: 'NVARCHAR(MAX)' },
