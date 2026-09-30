@@ -80,12 +80,12 @@ const getPatientCentricTasks = async (req, res) => {
       ),
       LatestStemiRec AS (
         SELECT reg_patient_id, ip_no, acs_no,
-               ROW_NUMBER() OVER (PARTITION BY reg_patient_id ORDER BY created_at DESC, followup_record_id DESC) AS rn
+               ROW_NUMBER() OVER (PARTITION BY reg_patient_id ORDER BY created_at DESC) AS rn
         FROM stemi_followup_records WITH (NOLOCK)
       ),
       LatestNstemiRec AS (
         SELECT reg_patient_id, ip_no, acs_no,
-               ROW_NUMBER() OVER (PARTITION BY reg_patient_id ORDER BY created_at DESC, followup_record_id DESC) AS rn
+               ROW_NUMBER() OVER (PARTITION BY reg_patient_id ORDER BY created_at DESC) AS rn
         FROM nstemi_followup_records WITH (NOLOCK)
       ),
       RankedTasks AS (
@@ -381,14 +381,14 @@ const getPatientTimelineLogs = async (req, res) => {
           ORDER BY CASE WHEN t.source_record_id = nr.nstemi_id THEN 0 ELSE 1 END ASC, nr.nstemi_id DESC
         ) nr
         OUTER APPLY (
-          SELECT TOP 1 sfr.record_id, sfr.raw_form_json, sfr.stemi_id
+          SELECT TOP 1 sfr.followup_record_id AS record_id, sfr.raw_form_json, sfr.stemi_id
           FROM stemi_followup_records sfr
           WHERE (nol.task_id IS NOT NULL AND sfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 10)
              OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 60)
           ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) ASC
         ) sfr
         OUTER APPLY (
-          SELECT TOP 1 nfr.record_id, nfr.raw_form_json, nfr.nstemi_id
+          SELECT TOP 1 nfr.followup_record_id AS record_id, nfr.raw_form_json, nfr.nstemi_id
           FROM nstemi_followup_records nfr
           WHERE (nol.task_id IS NOT NULL AND nfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 10)
              OR (nol.reg_patient_id = nfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
@@ -454,14 +454,14 @@ const getPatientTimelineLogs = async (req, res) => {
         LEFT JOIN stemi_followup sf ON (t.source_record_id = sf.stemi_id AND t.timeframe = sf.followup_month)
         LEFT JOIN stemi_registry sr ON (sf.stemi_id = sr.stemi_id OR t.source_record_id = sr.stemi_id)
         OUTER APPLY (
-          SELECT TOP 1 sfr.record_id, sfr.raw_form_json, sfr.stemi_id
+          SELECT TOP 1 sfr.followup_record_id AS record_id, sfr.raw_form_json, sfr.stemi_id
           FROM stemi_followup_records sfr
           WHERE (nol.task_id IS NOT NULL AND sfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 10)
              OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 60)
           ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) ASC
         ) sfr
         OUTER APPLY (
-          SELECT TOP 1 nfr.record_id, nfr.raw_form_json, nfr.nstemi_id
+          SELECT TOP 1 nfr.followup_record_id AS record_id, nfr.raw_form_json, nfr.nstemi_id
           FROM nstemi_followup_records nfr
           WHERE (nol.task_id IS NOT NULL AND nfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 10)
              OR (nol.reg_patient_id = nfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
@@ -526,14 +526,14 @@ const getPatientTimelineLogs = async (req, res) => {
         LEFT JOIN hf_followup_assessments fa ON t.source_record_id = fa.followup_id
         LEFT JOIN hf_registry hr ON COALESCE(nol.hf_id, fa.hf_id, t.source_record_id) = hr.hf_id
         OUTER APPLY (
-          SELECT TOP 1 sfr.record_id, sfr.raw_form_json, sfr.stemi_id
+          SELECT TOP 1 sfr.followup_record_id AS record_id, sfr.raw_form_json, sfr.stemi_id
           FROM stemi_followup_records sfr
           WHERE (nol.task_id IS NOT NULL AND sfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 10)
              OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 60)
           ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) ASC
         ) sfr
         OUTER APPLY (
-          SELECT TOP 1 nfr.record_id, nfr.raw_form_json, nfr.nstemi_id
+          SELECT TOP 1 nfr.followup_record_id AS record_id, nfr.raw_form_json, nfr.nstemi_id
           FROM nstemi_followup_records nfr
           WHERE (nol.task_id IS NOT NULL AND nfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 10)
              OR (nol.reg_patient_id = nfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
@@ -623,14 +623,14 @@ const getPatientTimelineLogs = async (req, res) => {
           ORDER BY CASE WHEN t.source_record_id = nr.nstemi_id THEN 0 ELSE 1 END ASC, nr.nstemi_id DESC
         ) nr
         OUTER APPLY (
-          SELECT TOP 1 sfr.record_id, sfr.raw_form_json, sfr.stemi_id
+          SELECT TOP 1 sfr.followup_record_id AS record_id, sfr.raw_form_json, sfr.stemi_id
           FROM stemi_followup_records sfr
           WHERE (nol.task_id IS NOT NULL AND sfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 10)
              OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 60)
           ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) ASC
         ) sfr
         OUTER APPLY (
-          SELECT TOP 1 nfr.record_id, nfr.raw_form_json, nfr.nstemi_id
+          SELECT TOP 1 nfr.followup_record_id AS record_id, nfr.raw_form_json, nfr.nstemi_id
           FROM nstemi_followup_records nfr
           WHERE (nol.task_id IS NOT NULL AND nfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 10)
              OR (nol.reg_patient_id = nfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
