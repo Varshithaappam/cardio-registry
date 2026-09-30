@@ -485,8 +485,43 @@ async function ensureHfFollowupTable() {
     }
 
     console.log('✓ Verified/Initialized [hf_followup_records] database table with all columns');
+    await ensureAcsFollowupTables();
   } catch (err) {
     console.warn('⚠️ hf_followup_records table check notice:', err.message);
+  }
+}
+
+async function ensureAcsFollowupTables() {
+  const tables = ['stemi_followup_records', 'nstemi_followup_records'];
+  const acsCols = [
+    { name: 'followup_date', type: 'DATE' },
+    { name: 'physician_medication_changes_details', type: 'NVARCHAR(MAX)' },
+    { name: 'new_health_complaints', type: 'NVARCHAR(MAX)' },
+    { name: 'has_new_symptoms', type: 'NVARCHAR(50)' },
+    { name: 'assigned_nurse_name', type: 'NVARCHAR(150)' }
+  ];
+
+  for (const tbl of tables) {
+    try {
+      const checkTbl = await query(`SELECT OBJECT_ID(N'dbo.${tbl}') AS id;`);
+      if (checkTbl.recordset?.[0]?.id) {
+        for (const col of acsCols) {
+          const checkCol = await query(
+            `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.${tbl}') AND name = '${col.name}'`
+          );
+          if (!checkCol.recordset || checkCol.recordset.length === 0) {
+            try {
+              await query(`ALTER TABLE dbo.${tbl} ADD [${col.name}] ${col.type} NULL;`);
+              console.log(`✓ Auto-added missing column [${col.name}] to dbo.${tbl}`);
+            } catch (err) {
+              console.warn(`Could not add column [${col.name}] to dbo.${tbl}:`, err.message);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn(`⚠️ ${tbl} column check notice:`, err.message);
+    }
   }
 }
 
