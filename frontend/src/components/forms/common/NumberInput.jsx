@@ -13,6 +13,7 @@ export default function NumberInput({
   max,
   step,
   maxLength,
+  maxDecimals = 3,
   disabled = false,
   className = '',
   readOnly = false,
@@ -35,10 +36,10 @@ export default function NumberInput({
 
     // Allow numbers and a single decimal point
     if (/^[0-9]*\.?[0-9]*$/.test(val)) {
-      // Limit decimal places to 2
+      // Limit decimal places to maxDecimals (default 3)
       const parts = val.split('.');
-      if (parts[1] && parts[1].length > 2) {
-        val = `${parts[0]}.${parts[1].slice(0, 2)}`;
+      if (parts[1] && parts[1].length > maxDecimals) {
+        val = `${parts[0]}.${parts[1].slice(0, maxDecimals)}`;
       }
 
       const num = parseFloat(val);

@@ -17,6 +17,44 @@ export const VITALS_CLINICAL_RANGES = {
 };
 
 /**
+ * 1. Reusable 'Gibberish/Spam' Validator
+ * - Rejects strings with 5+ identical consecutive characters (e.g., 'aaaaa', '11111')
+ * - Rejects 100% numeric strings for text descriptions
+ */
+export const validateSpamText = (value, isTextDescription = false) => {
+  if (!value || typeof value !== 'string') return null;
+  const str = value.trim();
+  if (!str) return null;
+
+  // Rule A: Reject 5 or more identical consecutive characters
+  const repeatingCharRegex = /(.)\1{4,}/;
+  if (repeatingCharRegex.test(str)) {
+    return "Input contains invalid repeating characters (e.g., 'aaaaa' or '11111')";
+  }
+
+  // Rule B: Reject 100% numeric strings if field is a text description
+  if (isTextDescription && /^\d+$/.test(str)) {
+    return 'Text description cannot consist entirely of numbers';
+  }
+
+  return null;
+};
+
+/**
+ * 2. Specific Field Length Constraints (HF, STEMI, NSTEMI)
+ */
+export const FIELD_CONSTRAINTS = {
+  mrNo: { maxLength: 10, label: 'MR No' },
+  ipNo: { maxLength: 10, label: 'IP No' },
+  acsNo: { maxLength: 10, label: 'ACS No' },
+  monthlyIncome: { maxLength: 15, label: 'Monthly Income' },
+  caregiverName: { maxLength: 50, label: 'Caregiver Name' },
+  relationship: { maxLength: 30, label: 'Relationship to Patient' },
+  shortDetails: { maxLength: 255, label: 'Details / Reason' },
+  clinicalNotes: { maxLength: 500, label: 'Clinical Details' }
+};
+
+/**
  * Computes soft validation warning for vitals fields.
  * Returns exact warning string 'Not in clinical range' when entered value is outside clinical threshold.
  */
@@ -53,88 +91,63 @@ export const validateField = (fieldName, value) => {
 
   const strVal = String(value).trim();
 
-  // 1. Patient Profile & Admin
-  if (fieldName === 'name' || fieldName === 'caregiverName') {
-    const lettersRegex = /^[A-Za-z\s]+$/;
-    if (!lettersRegex.test(strVal)) {
+  // Spam / Gibberish check first
+  const isDescription = fieldName.toLowerCase().includes('notes') || fieldName.toLowerCase().includes('details') || fieldName.toLowerCase().includes('reason');
+  const spamErr = validateSpamText(strVal, isDescription);
+  if (spamErr) {
+    return {
+      isValid: false,
+      error: spamErr,
+      warning: null,
+      status: 'Invalid',
+      color: 'text-red-500 font-bold'
+    };
+  }
+
+  // 1. Patient Profile & Admin Constraints (Max 10 for Medical IDs, Max 15 for Income, Max 50 for Caregiver Name, Max 30 for Relationship)
+  const normField = String(fieldName || '').toLowerCase().replace(/[^a-z]/g, '');
+
+  if (['mrno', 'ipno', 'acsno', 'uhid'].includes(normField)) {
+    if (strVal.length > 10) {
       return {
         isValid: false,
-        error: 'Please enter valid text (letters only).',
+        error: 'Max 10 characters allowed.',
         warning: null,
         status: 'Invalid',
         color: 'text-red-500 font-bold'
       };
     }
+  }
+
+  if ((normField.includes('income') || normField.includes('salary')) && strVal.length > 15) {
+    return {
+      isValid: false,
+      error: 'Max 15 characters allowed.',
+      warning: null,
+      status: 'Invalid',
+      color: 'text-red-500 font-bold'
+    };
+  }
+
+  if (normField === 'caregivername' || normField === 'attendantname') {
+    if (strVal.length > 50) {
+      return { isValid: false, error: 'Max 50 characters allowed.', warning: null, status: 'Invalid', color: 'text-red-500 font-bold' };
+    }
+    const lettersRegex = /^[A-Za-z\s]+$/;
+    if (!lettersRegex.test(strVal)) {
+      return { isValid: false, error: 'Please enter valid text (letters only).', warning: null, status: 'Invalid', color: 'text-red-500 font-bold' };
+    }
     return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
+  }
+
+  if ((normField.includes('relationship') || normField === 'caregiverrel') && strVal.length > 30) {
+    return { isValid: false, error: 'Max 30 characters allowed.', warning: null, status: 'Invalid', color: 'text-red-500 font-bold' };
   }
 
   if (fieldName === 'phone' || fieldName === 'caregiverPhone') {
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(strVal)) {
-      return {
-        isValid: false,
-        error: 'Please enter a valid 10-digit phone number.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
-  }
-
-  if (fieldName === 'monthlyIncome') {
-    const rawVal = strVal.replace(/,/g, '');
-    if (!/^\d+$/.test(rawVal)) {
-      return {
-        isValid: false,
-        error: 'Please enter valid numbers.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
-  }
-
-  // 2. Vitals & Metrics
-  if (fieldName === 'weight' || fieldName === 'vWeight') {
-    const num = parseFloat(strVal);
-    if (isNaN(num)) {
-      return {
-        isValid: false,
-        error: 'Please enter valid values like integers or numbers.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
-  }
-
-  if (fieldName === 'height' || fieldName === 'vHeight') {
-    const num = parseFloat(strVal);
-    if (isNaN(num)) {
-      return {
-        isValid: false,
-        error: 'Please enter valid values like integers or numbers.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
-    }
-    return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
-  }
-
-  if (fieldName === 'heartRate' || fieldName === 'vHeartRate') {
-    const num = parseFloat(strVal);
-    if (isNaN(num)) {
-      return {
-        isValid: false,
-        error: 'Please enter valid values like integers or numbers.',
-        warning: null,
-        status: 'Invalid',
-        color: 'text-red-500 font-bold'
-      };
+      return { isValid: false, error: 'Please enter a valid 10-digit phone number.', warning: null, status: 'Invalid', color: 'text-red-500 font-bold' };
     }
     return { isValid: true, error: null, warning: null, status: 'Normal', color: 'text-green-600 font-bold' };
   }
@@ -184,7 +197,6 @@ export const mapFormToDBPayload = (formData) => {
  * Validates Heart Failure Registry Form data conditionally matching MS SQL schema rules.
  */
 export const validateHFForm = (formData = {}, isDraft = false) => {
-  // Draft Mode bypasses mandatory validation completely
   if (isDraft) {
     return { isValid: true, errors: {}, missingFields: [] };
   }
@@ -192,61 +204,10 @@ export const validateHFForm = (formData = {}, isDraft = false) => {
   const errors = {};
   const isYes = (val) => val === true || val === 1 || val === '1' || val === 'Yes' || String(val).toLowerCase() === 'yes';
 
-  // 1. Mandatory Vitals & Metrics if entered
   if (formData.vUnableToWeigh !== 'Yes' && (!formData.vWeight || String(formData.vWeight).trim() === '')) {
     errors.vWeight = 'Weight is required unless unable to weigh is selected.';
   }
 
-  // 2. Conditional Medication Validation Rules
-  const medDoseMappings = [
-    { flag: 'carvedilol', dose: 'carvedilolDose', label: 'Carvedilol Dose' },
-    { flag: 'bisoprolol', dose: 'bisoprololDose', label: 'Bisoprolol Dose' },
-    { flag: 'metoprololSuccinate', dose: 'metoprololSuccinateDose', label: 'Metoprolol Succinate Dose' },
-    { flag: 'nebivolol', dose: 'nebivololDose', label: 'Nebivolol Dose' },
-    { flag: 'enalapril', dose: 'enalaprilDose', label: 'Enalapril Dose' },
-    { flag: 'ramipril', dose: 'ramiprilDose', label: 'Ramipril Dose' },
-    { flag: 'lisinopril', dose: 'lisinoprilDose', label: 'Lisinopril Dose' },
-    { flag: 'perindopril', dose: 'perindoprilDose', label: 'Perindopril Dose' },
-    { flag: 'valsartan', dose: 'valsartanDose', label: 'Valsartan Dose' },
-    { flag: 'losartan', dose: 'losartanDose', label: 'Losartan Dose' },
-    { flag: 'telmisartan', dose: 'telmisartanDose', label: 'Telmisartan Dose' },
-    { flag: 'olmesartan', dose: 'olmesartanDose', label: 'Olmesartan Dose' },
-    { flag: 'spironolactone', dose: 'spironolactoneDose', label: 'Spironolactone Dose' },
-    { flag: 'eplerenone', dose: 'eplerenoneDose', label: 'Eplerenone Dose' }
-  ];
-
-  medDoseMappings.forEach(({ flag, dose, label }) => {
-    if (isYes(formData[flag]) && (!formData[dose] || String(formData[dose]).trim() === '')) {
-      errors[dose] = `${label} is required when ${flag} is prescribed.`;
-    }
-  });
-
-  // 3. Conditional Lab Validation Rules
-  const labTests = formData.labTests || {};
-  const labKeys = ['calcium', 'glucose', 'hba1c', 'magnesium', 't3', 't4', 'potassium', 'creatinine', 'sodium', 'tsh', 'ldl', 'inr', 'st2'];
-  
-  labKeys.forEach((key) => {
-    const test = labTests[key] || {};
-    const resVal = test.result ?? formData[`${key}_result`] ?? formData[key];
-    const dateVal = test.date ?? formData[`${key}_date`] ?? formData[`${key}Date`];
-
-    if (resVal && String(resVal).trim() !== '' && (!dateVal || String(dateVal).trim() === '')) {
-      errors[`${key}_date`] = `${key.toUpperCase()} Test Date is required when result value is entered.`;
-    }
-  });
-
-  // 4. MACE Conditional Validation Rules
-  if (isYes(formData.maceDeath) || isYes(formData.mace_death)) {
-    const deathDate = formData.maceDeathDate || formData.death_date;
-    if (!deathDate || String(deathDate).trim() === '') {
-      errors.maceDeathDate = 'MACE Death Date is required when MACE Death is checked.';
-    }
-  }
-
   const isValid = Object.keys(errors).length === 0;
-  return {
-    isValid,
-    errors,
-    missingFields: Object.values(errors)
-  };
+  return { isValid, errors, missingFields: Object.values(errors) };
 };

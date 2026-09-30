@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import api from '../../api/axios';
 import HFFollowUpForm from './forms/HFFollowUpForm';
+import StemiFollowUpForm from './forms/StemiFollowUpForm';
+import NstemiFollowUpForm from './forms/NstemiFollowUpForm';
 import HfFollowupPdfModal from './modals/HfFollowupPdfModal';
+import AcsFollowupPdfModal from './modals/AcsFollowupPdfModal';
 import {
   formatDateForDisplay,
   formatDateTimeForDisplay,
@@ -45,15 +48,28 @@ export default function NurseFollowUpReport() {
   // Column Sorting State (Default: Follow-Up Interval Ascending)
   const [sortConfig, setSortConfig] = useState({ key: 'timeframe', direction: 'asc' });
 
-  // PDF Response Preview Modal State
+  // PDF Response Preview Modal State (HF)
   const [pdfModalLog, setPdfModalLog] = useState(null);
   const [pdfModalTask, setPdfModalTask] = useState(null);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+
+  // PDF Response Preview Modal State (STEMI & NSTEMI)
+  const [acsPdfModalLog, setAcsPdfModalLog] = useState(null);
+  const [acsPdfModalTask, setAcsPdfModalTask] = useState(null);
+  const [acsPdfModalType, setAcsPdfModalType] = useState('STEMI');
+  const [isAcsPdfModalOpen, setIsAcsPdfModalOpen] = useState(false);
 
   const openPdfModal = (log, task) => {
     setPdfModalLog(log);
     setPdfModalTask(task);
     setIsPdfModalOpen(true);
+  };
+
+  const openAcsPdfModal = (log, task, type = 'STEMI') => {
+    setAcsPdfModalLog(log);
+    setAcsPdfModalTask(task);
+    setAcsPdfModalType(type);
+    setIsAcsPdfModalOpen(true);
   };
 
   // Toggle Sort Direction
@@ -206,6 +222,12 @@ export default function NurseFollowUpReport() {
   const [selectedHfTask, setSelectedHfTask] = useState(null);
   const [isHfModalOpen, setIsHfModalOpen] = useState(false);
 
+  // Detailed STEMI & NSTEMI Follow-up Form Modal State
+  const [selectedStemiTask, setSelectedStemiTask] = useState(null);
+  const [isStemiModalOpen, setIsStemiModalOpen] = useState(false);
+  const [selectedNstemiTask, setSelectedNstemiTask] = useState(null);
+  const [isNstemiModalOpen, setIsNstemiModalOpen] = useState(false);
+
   // Log Outreach Form State
   const [formData, setFormData] = useState({
     contact_mode: 'Phone Call',
@@ -222,6 +244,144 @@ export default function NurseFollowUpReport() {
   const handleOpenHfModal = (task) => {
     setSelectedHfTask(task);
     setIsHfModalOpen(true);
+  };
+
+  // Open Detailed STEMI / NSTEMI Form Modals
+  const handleOpenStemiModal = (task) => {
+    setSelectedStemiTask(task);
+    setIsStemiModalOpen(true);
+  };
+
+  const handleOpenNstemiModal = (task) => {
+    setSelectedNstemiTask(task);
+    setIsNstemiModalOpen(true);
+  };
+
+  // Helper to extract currently logged in user details for auto-assigning nurse
+  const getLoggedInNurseName = () => {
+    try {
+      const userStr = sessionStorage.getItem('user') || localStorage.getItem('user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if (u.name) return u.name;
+        if (u.full_name) return u.full_name;
+        if (u.username) return u.username;
+        if (u.nurse_name) return u.nurse_name;
+      }
+    } catch (e) {}
+    return sessionStorage.getItem('userName') || localStorage.getItem('userName') || '';
+  };
+
+  // Submit Detailed STEMI / NSTEMI Follow-up Log to Backend API
+  const handleSaveAcsFollowup = async (formPayload, type = 'STEMI') => {
+    const selectedTaskToUse = type === 'STEMI' ? selectedStemiTask : selectedNstemiTask;
+    if (!selectedTaskToUse) return;
+    const taskIdToUse = selectedTaskToUse.task_id || selectedTaskToUse.id || selectedTaskToUse.source_record_id;
+    setSubmitting(true);
+    const regType = type;
+
+    let notesSummary = `[${type} Detailed Follow-up]\n`;
+    notesSummary += `Mode: ${formPayload.followup_conducted || 'Telephonic'} (Attempt #${formPayload.attempt_number || 1}) | Answering: ${formPayload.answering_status || 'Yes'}\n`;
+    notesSummary += `Health Overview: ${formPayload.health_status || 'Healthy'} ${formPayload.health_unhealthy_details ? `(${formPayload.health_unhealthy_details})` : ''}\n`;
+    if ((formPayload.selected_symptoms || []).length > 0) {
+      notesSummary += `Symptoms Checklist: ${formPayload.selected_symptoms.join(', ')}\n`;
+    }
+    notesSummary += `Medication Adherence: ${formPayload.medication_adherence || 'Yes'} | Side Effects: ${formPayload.side_effects_observed || 'No'} | Physician Changes: ${formPayload.physician_medication_changes || 'No'}\n`;
+    
+    const activeMeds = (formPayload.drug_grid || [])
+      .filter((d) => d.taking === 'Yes' || d.inRecentVisit === 'Yes')
+      .map((d) => d.isOther && d.otherName ? d.otherName : d.name);
+    if (activeMeds.length > 0) {
+      notesSummary += `Current Key Meds: ${activeMeds.slice(0, 6).join(', ')}${activeMeds.length > 6 ? '...' : ''}\n`;
+    }
+
+    const labParts = [];
+    if (formPayload.trop_i_result) labParts.push(`Trop-I: ${formPayload.trop_i_result}`);
+    if (formPayload.creatinine_result) labParts.push(`Creatinine: ${formPayload.creatinine_result}`);
+    if (formPayload.bnp_nt_probnp_result) labParts.push(`BNP: ${formPayload.bnp_nt_probnp_result}`);
+    if (formPayload.hemoglobin_result) labParts.push(`Hb: ${formPayload.hemoglobin_result}`);
+    if (formPayload.sodium_result) labParts.push(`Sodium: ${formPayload.sodium_result}`);
+    if (formPayload.potassium_result) labParts.push(`Potassium: ${formPayload.potassium_result}`);
+    if (formPayload.echo_done) labParts.push(`2D Echo: ${formPayload.echo_done}`);
+    if (labParts.length > 0) {
+      notesSummary += `Labs & Investigations: ${labParts.join(' | ')}\n`;
+    }
+
+    if (formPayload.has_major_clinical_event === 'Yes' && (formPayload.selected_clinical_events || []).length > 0) {
+      notesSummary += `Major Clinical Events: ${formPayload.selected_clinical_events.join(', ')}\n`;
+    }
+
+    if (formPayload.is_deceased === 'Yes') {
+      notesSummary += `Deceased: Yes (Cause: ${formPayload.cause_of_death || 'Cardiac'}, Place: ${formPayload.place_of_death || 'N/A'})\n`;
+    }
+
+    if (formPayload.patient_feedback) {
+      notesSummary += `Feedback: ${formPayload.patient_feedback}`;
+    }
+
+    const chosenStatus = formPayload.overall_registry_status || formPayload.status || 'Completed';
+    const payload = {
+      is_detailed_stemi_form: type === 'STEMI',
+      is_detailed_nstemi_form: type === 'NSTEMI',
+      is_detailed_acs_form: true,
+      reg_patient_id: selectedTaskToUse.reg_patient_id,
+      task_id: taskIdToUse || null,
+      registry_type: regType,
+      source_registry: selectedTaskToUse.source_registry,
+      source_record_id: selectedTaskToUse.source_record_id,
+      timeframe: selectedTaskToUse.timeframe,
+      visit_mode: formPayload.followup_conducted || selectedTaskToUse.visit_mode,
+      contact_mode: formPayload.followup_conducted || 'Phone Call',
+      outcome: formPayload.answering_status === 'Yes' 
+        ? `Detailed ${type} Form Logged` 
+        : `Unreachable - ${formPayload.no_answer_reason || 'No Answer'}`,
+      status: chosenStatus,
+      overall_registry_status: chosenStatus,
+      symptoms_status: (formPayload.selected_symptoms || []).length > 0
+        ? (formPayload.selected_symptoms || []).join(', ').slice(0, 95)
+        : 'Stable - No symptoms',
+      medication_adherence: formPayload.medication_adherence === 'Yes' 
+        ? 'Compliant - Taking all meds as prescribed' 
+        : 'Non-Compliant / Side Effects',
+      assigned_nurse: getLoggedInNurseName() || selectedTaskToUse.assigned_nurse || 'Cardiac Care Nurse',
+      notes: notesSummary,
+      ...formPayload
+    };
+
+    try {
+      let response;
+      if (taskIdToUse) {
+        try {
+          response = await api.post(`/nurse-dashboard/tasks/${taskIdToUse}/log`, payload);
+        } catch (e1) {
+          response = await api.post(`/nurse-followup-report/tasks/${taskIdToUse}/log`, payload);
+        }
+      } else {
+        response = await api.post(`/nurse-dashboard/logs`, payload);
+      }
+
+      if (response.data && response.data.success) {
+        if (type === 'STEMI') {
+          setIsStemiModalOpen(false);
+          setSelectedStemiTask(null);
+        } else {
+          setIsNstemiModalOpen(false);
+          setSelectedNstemiTask(null);
+        }
+        await fetchTasks();
+        const key = getUniqueKey(selectedTaskToUse);
+        if (expandedRowKey === key) {
+          await fetchPatientLogs(selectedTaskToUse.reg_patient_id, regType);
+        }
+      } else {
+        throw new Error(response.data?.message || `Failed to save ${type} follow-up record.`);
+      }
+    } catch (err) {
+      console.error(`Error saving ${type} follow-up record:`, err);
+      alert(`Failed to save ${type} follow-up record: ${err.message}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   // Submit Detailed HF Follow-up Log to Backend API
@@ -271,6 +431,7 @@ export default function NurseFollowUpReport() {
     }
 
     const taskIdToUse = selectedHfTask.task_id || selectedHfTask.id || selectedHfTask.source_record_id;
+    const chosenStatus = formPayload.overall_registry_status || formPayload.status || 'Completed';
     const payload = {
       is_detailed_hf_form: true,
       reg_patient_id: selectedHfTask.reg_patient_id,
@@ -284,7 +445,8 @@ export default function NurseFollowUpReport() {
       outcome: formPayload.answering_status === 'Yes' 
         ? 'Detailed HF Form Logged' 
         : `Unreachable - ${formPayload.no_answer_reason || 'No Answer'}`,
-      status: selectedHfTask.status || 'Pending Nurse Outreach',
+      status: chosenStatus,
+      overall_registry_status: chosenStatus,
       symptoms_status: (formPayload.selected_symptoms || []).length > 0
         ? (formPayload.selected_symptoms || []).join(', ').slice(0, 95)
         : 'Stable - No worsening shortness of breath',
@@ -359,7 +521,17 @@ export default function NurseFollowUpReport() {
     try {
       const response = await api.get(`/nurse-dashboard/${regPatientId}/logs?registry=${registryType}&registry_type=${registryType}`);
       if (response.data && response.data.success) {
-        setPatientLogs((prev) => ({ ...prev, [key]: response.data.data || [] }));
+        const rawLogs = response.data.data || [];
+        const uniqueLogs = [];
+        const seenKeys = new Set();
+        for (const log of rawLogs) {
+          const uKey = log.log_id ? `log-${log.log_id}` : `${log.log_type}-${log.created_at}-${log.outcome}`;
+          if (!seenKeys.has(uKey)) {
+            seenKeys.add(uKey);
+            uniqueLogs.push(log);
+          }
+        }
+        setPatientLogs((prev) => ({ ...prev, [key]: uniqueLogs }));
       } else {
         setPatientLogs((prev) => ({ ...prev, [key]: [] }));
       }
@@ -387,8 +559,8 @@ export default function NurseFollowUpReport() {
   // 3. Dynamic KPI Calculations strictly from fetched state
   const kpis = useMemo(() => {
     const total = tasks.length;
-    const required = tasks.filter((t) => t.status === 'Required' || t.status === 'Scheduled' || t.status === 'Follow-Up Scheduled').length;
-    const pending = tasks.filter((t) => t.status === 'Pending Nurse Outreach' || t.status === 'Pending').length;
+    const required = tasks.filter((t) => t.status === 'Required' || t.status === 'Follow-Up Scheduled').length;
+    const pending = tasks.filter((t) => t.status === 'Pending Nurse Outreach' || t.status === 'Pending' || t.status === 'Pending Outreach').length;
     
     const today = new Date().toISOString().split('T')[0];
     const overdue = tasks.filter((t) => (t.target_date && t.target_date < today) || t.status === 'Missed / Overdue' || t.status === 'Overdue / Urgent Action').length;
@@ -413,6 +585,20 @@ export default function NurseFollowUpReport() {
       if (statusFilter !== 'All') {
         if (statusFilter === 'Required') {
           matchesStatus = task.status === 'Required' || task.status === 'Follow-Up Scheduled';
+        } else if (statusFilter === 'Pending Nurse Outreach' || statusFilter === 'Pending') {
+          matchesStatus = task.status === 'Pending Nurse Outreach' || task.status === 'Pending' || task.status === 'Pending Outreach';
+        } else if (statusFilter === 'Scheduled') {
+          matchesStatus = task.status === 'Scheduled';
+        } else if (statusFilter === 'Completed') {
+          matchesStatus = task.status === 'Completed';
+        } else if (statusFilter === 'Missed / Overdue') {
+          matchesStatus = task.status === 'Missed / Overdue' || task.status === 'Overdue / Urgent Action';
+        } else if (statusFilter === 'Patient Unreachable') {
+          matchesStatus = task.status === 'Patient Unreachable';
+        } else if (statusFilter === 'Escalated to Cardiologist') {
+          matchesStatus = task.status === 'Escalated to Cardiologist';
+        } else if (statusFilter === 'No Follow-Up Needed') {
+          matchesStatus = task.status === 'No Follow-Up Needed';
         } else {
           matchesStatus = task.status === statusFilter;
         }
@@ -474,34 +660,34 @@ export default function NurseFollowUpReport() {
     return result;
   }, [tasks, searchQuery, statusFilter, registryTypeFilter, fromDate, toDate, sortConfig]);
 
-  // Helper to extract currently logged in user details for auto-assigning nurse
-  const getLoggedInNurseName = () => {
-    try {
-      const userStr = sessionStorage.getItem('user') || localStorage.getItem('user');
-      if (userStr) {
-        const u = JSON.parse(userStr);
-        if (u.name) return u.name;
-        if (u.full_name) return u.full_name;
-        if (u.username) return u.username;
-        if (u.nurse_name) return u.nurse_name;
-      }
-    } catch (e) {}
-    return sessionStorage.getItem('userName') || localStorage.getItem('userName') || '';
-  };
-
   // 5. Open Log Outreach Modal
   const handleOpenModal = (task) => {
     setSelectedTask(task);
     const loggedInNurse = getLoggedInNurseName();
+    let initialNotes = task.nurse_notes || '';
+    if (
+      initialNotes.includes('[STEMI Detailed Follow-up]') ||
+      initialNotes.includes('[NSTEMI Detailed Follow-up]') ||
+      initialNotes.includes('[HF Detailed Follow-up]') ||
+      initialNotes.includes('Detailed STEMI Form') ||
+      initialNotes.includes('Detailed NSTEMI Form') ||
+      initialNotes.includes('Detailed HF Form')
+    ) {
+      initialNotes = '';
+    }
+    let initialStatus = task.status || 'Pending Nurse Outreach';
+    if (initialStatus === 'Required' || initialStatus === 'YES - Post-Discharge Visit Scheduled') {
+      initialStatus = 'Pending Nurse Outreach';
+    }
     setFormData({
       contact_mode: 'Phone Call',
       outcome: 'Patient Contacted & Appointment Confirmed',
-      status: task.status || 'Pending Nurse Outreach',
+      status: initialStatus,
       target_date: task.target_date ? String(task.target_date).split('T')[0] : '',
       symptoms_status: 'Stable - No worsening shortness of breath',
       medication_adherence: 'Compliant - Taking all meds as prescribed',
       assigned_nurse: loggedInNurse || task.assigned_nurse || '',
-      notes: task.nurse_notes || ''
+      notes: initialNotes
     });
     setIsModalOpen(true);
   };
@@ -514,6 +700,7 @@ export default function NurseFollowUpReport() {
     setSubmitting(true);
     const regType = getTaskRegistryType(selectedTask);
     const payload = {
+      is_standard_outreach: true,
       reg_patient_id: selectedTask.reg_patient_id,
       task_id: selectedTask.task_id,
       registry_type: regType,
@@ -681,7 +868,7 @@ export default function NurseFollowUpReport() {
       {/* KPI Cards Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total Patients */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-2">
+        <div onClick={() => setStatusFilter('All')} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-2 cursor-pointer hover:border-slate-300 transition-all">
           <div className="flex justify-between items-center text-slate-500">
             <span className="text-[11px] font-black uppercase tracking-wider">TOTAL PATIENTS</span>
             <Users className="w-4 h-4 text-slate-400" />
@@ -693,7 +880,7 @@ export default function NurseFollowUpReport() {
         </div>
 
         {/* Follow-up Required */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 border-l-4 border-l-blue-600 shadow-2xs space-y-2">
+        <div onClick={() => setStatusFilter('Required')} className="bg-white rounded-2xl p-4 border border-slate-200 border-l-4 border-l-blue-600 shadow-2xs space-y-2 cursor-pointer hover:border-blue-300 transition-all">
           <div className="flex justify-between items-center text-slate-500">
             <span className="text-[11px] font-black uppercase tracking-wider">FOLLOW-UP REQUIRED</span>
             <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 font-black text-[10px] rounded border border-blue-200">
@@ -707,7 +894,7 @@ export default function NurseFollowUpReport() {
         </div>
 
         {/* Pending Outreach */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 border-l-4 border-l-amber-500 shadow-2xs space-y-2">
+        <div onClick={() => setStatusFilter('Pending Nurse Outreach')} className="bg-white rounded-2xl p-4 border border-slate-200 border-l-4 border-l-amber-500 shadow-2xs space-y-2 cursor-pointer hover:border-amber-300 transition-all">
           <div className="flex justify-between items-center text-slate-500">
             <span className="text-[11px] font-black uppercase tracking-wider">PENDING OUTREACH</span>
             <Clock className="w-4 h-4 text-amber-500" />
@@ -719,7 +906,7 @@ export default function NurseFollowUpReport() {
         </div>
 
         {/* Overdue / Action Needed */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 border-l-4 border-l-red-500 shadow-2xs space-y-2">
+        <div onClick={() => setStatusFilter('Missed / Overdue')} className="bg-white rounded-2xl p-4 border border-slate-200 border-l-4 border-l-red-500 shadow-2xs space-y-2 cursor-pointer hover:border-red-300 transition-all">
           <div className="flex justify-between items-center text-slate-500">
             <span className="text-[11px] font-black uppercase tracking-wider">OVERDUE / ACTION NEEDED</span>
             <AlertTriangle className="w-4 h-4 text-red-500" />
@@ -731,7 +918,7 @@ export default function NurseFollowUpReport() {
         </div>
 
         {/* Completed */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 border-l-4 border-l-teal-600 shadow-2xs space-y-2">
+        <div onClick={() => setStatusFilter('Completed')} className="bg-white rounded-2xl p-4 border border-slate-200 border-l-4 border-l-teal-600 shadow-2xs space-y-2 cursor-pointer hover:border-teal-300 transition-all">
           <div className="flex justify-between items-center text-slate-500">
             <span className="text-[11px] font-black uppercase tracking-wider">COMPLETED</span>
             <CheckCircle2 className="w-4 h-4 text-teal-600" />
@@ -1073,23 +1260,36 @@ export default function NurseFollowUpReport() {
                         {/* 6. Nurse Actions */}
                         <td className="py-4 px-4 align-top text-right">
                           <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                            <button
-                              onClick={() => handleOpenModal(task)}
-                              className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-2xs cursor-pointer"
-                              title="Log Quick Telephone Call Outreach"
-                            >
-                              <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
-                              <span>Log Outreach</span>
-                            </button>
-
                             {(getTaskRegistryType(task) === 'HF' || (task.source_registry || '').toLowerCase().includes('heart failure')) && (
                               <button
                                 onClick={() => handleOpenHfModal(task)}
-                                className="px-2.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-2xs cursor-pointer"
-                                title="Fill Detailed 7-Section Heart Failure Follow-up Form"
+                                className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                title="Fill Detailed Heart Failure Follow-up Form"
                               >
-                                <Stethoscope className="w-3.5 h-3.5 text-teal-600" />
+                                <Stethoscope className="w-3.5 h-3.5 text-teal-200" />
                                 <span>Log Detailed HF Follow-up</span>
+                              </button>
+                            )}
+
+                            {(getTaskRegistryType(task) === 'STEMI' || ((task.source_registry || '').toLowerCase().includes('stemi') && !(task.source_registry || '').toLowerCase().includes('nstemi'))) && (
+                              <button
+                                onClick={() => handleOpenStemiModal(task)}
+                                className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                title="Fill Detailed STEMI Follow-up Form"
+                              >
+                                <Stethoscope className="w-3.5 h-3.5 text-red-200" />
+                                <span>Log Detailed STEMI Follow-up</span>
+                              </button>
+                            )}
+
+                            {(getTaskRegistryType(task) === 'NSTEMI' || (task.source_registry || '').toLowerCase().includes('nstemi')) && (
+                              <button
+                                onClick={() => handleOpenNstemiModal(task)}
+                                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                title="Fill Detailed NSTEMI Follow-up Form"
+                              >
+                                <Stethoscope className="w-3.5 h-3.5 text-amber-200" />
+                                <span>Log Detailed NSTEMI Follow-up</span>
                               </button>
                             )}
 
@@ -1198,7 +1398,16 @@ export default function NurseFollowUpReport() {
                                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
                                       <div className="flex justify-between items-center text-slate-600 font-semibold">
                                         <span>Assigned Nurse: <strong className="text-slate-800">{task.assigned_nurse || 'Unassigned'}</strong></span>
-                                        <span>Last Contact: {task.last_contact_date ? formatDateTime(task.last_contact_date) : 'None Recorded'}</span>
+                                        <span>Last Contact: <strong className="text-slate-800">{
+                                           (() => {
+                                             const logs = patientLogs[uniqueKey] || [];
+                                             const latestLog = logs[0];
+                                             if (latestLog && (latestLog.created_at || latestLog.contact_date)) {
+                                               return formatDateTime(latestLog.created_at || latestLog.contact_date);
+                                             }
+                                             return task.last_contact_date ? formatDate(task.last_contact_date) : 'None Recorded';
+                                           })()
+                                         }</strong></span>
                                       </div>
                                       {task.nurse_notes && task.nurse_notes.includes('[HF Detailed Follow-up]') ? (
                                         <div className="p-3 bg-teal-50 border border-teal-200 rounded-xl space-y-2">
@@ -1218,6 +1427,54 @@ export default function NurseFollowUpReport() {
                                                 openPdfModal(matchingLog || { notes: task.nurse_notes }, task);
                                               }}
                                               className="px-3.5 py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+                                            >
+                                              <FileText className="w-4 h-4" />
+                                              <span>View PDF Response</span>
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : task.nurse_notes && (task.nurse_notes.includes('[STEMI Detailed Follow-up]') || task.nurse_notes.includes('Detailed STEMI Form')) ? (
+                                        <div className="p-3 bg-red-50 border border-red-200 rounded-xl space-y-2">
+                                          <div className="flex items-center justify-between flex-wrap gap-2">
+                                            <div className="flex items-center gap-2">
+                                              <span className="px-2 py-0.5 bg-red-600 text-white rounded font-extrabold text-[10px] uppercase tracking-wider">
+                                                Detailed STEMI Form
+                                              </span>
+                                              <span className="text-xs font-black text-red-900">
+                                                Detailed STEMI Follow-Up Response Recorded
+                                              </span>
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const matchingLog = (patientLogs[uniqueKey] || []).find((l) => l.notes?.includes('[STEMI Detailed Follow-up]') || l.outcome?.includes('STEMI'));
+                                                openAcsPdfModal(matchingLog || { notes: task.nurse_notes }, task, 'STEMI');
+                                              }}
+                                              className="px-3.5 py-2 bg-red-700 hover:bg-red-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+                                            >
+                                              <FileText className="w-4 h-4" />
+                                              <span>View PDF Response</span>
+                                            </button>
+                                          </div>
+                                        </div>
+                                      ) : task.nurse_notes && (task.nurse_notes.includes('[NSTEMI Detailed Follow-up]') || task.nurse_notes.includes('Detailed NSTEMI Form')) ? (
+                                        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+                                          <div className="flex items-center justify-between flex-wrap gap-2">
+                                            <div className="flex items-center gap-2">
+                                              <span className="px-2 py-0.5 bg-amber-600 text-white rounded font-extrabold text-[10px] uppercase tracking-wider">
+                                                Detailed NSTEMI Form
+                                              </span>
+                                              <span className="text-xs font-black text-amber-900">
+                                                Detailed NSTEMI Follow-Up Response Recorded
+                                              </span>
+                                            </div>
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                const matchingLog = (patientLogs[uniqueKey] || []).find((l) => l.notes?.includes('[NSTEMI Detailed Follow-up]') || l.outcome?.includes('NSTEMI'));
+                                                openAcsPdfModal(matchingLog || { notes: task.nurse_notes }, task, 'NSTEMI');
+                                              }}
+                                              className="px-3.5 py-2 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 shadow-xs cursor-pointer"
                                             >
                                               <FileText className="w-4 h-4" />
                                               <span>View PDF Response</span>
@@ -1257,7 +1514,11 @@ export default function NurseFollowUpReport() {
                                       const renderLogCard = (log, index, isCurrent) => {
                                         const episodeTag = log.episode_id || (log.registry_id ? `${log.registry_type || 'HF'}-${String(log.registry_id).padStart(2, '0')}` : 'Episode');
                                         const statusText = log.episode_status || 'Completed';
-                                        const isHfDetailed = Boolean(log.outcome && log.outcome.includes('Detailed HF Follow-up')) || Boolean(log.notes && log.notes.includes('[HF Detailed Follow-up]'));
+                                        const isStandardOutreach = log.log_type === 'standard_outreach' || log.log_type === 'Manual Outreach Log' || log.outcome === 'Patient Contacted & Appointment Confirmed';
+                                        const isHfDetailed = !isStandardOutreach && (log.log_type === 'detailed_hf_log' || Boolean(log.notes && log.notes.includes('[HF Detailed Follow-up]')) || (Boolean(log.outcome && log.outcome.includes('Detailed HF Form')) && !log.notes?.includes('[STEMI Detailed') && !log.notes?.includes('[NSTEMI Detailed')));
+                                        const isStemiDetailed = !isStandardOutreach && (log.log_type === 'detailed_stemi_log' || Boolean(log.notes && log.notes.includes('[STEMI Detailed Follow-up]')) || (Boolean(log.outcome && log.outcome.includes('Detailed STEMI Form')) && !log.notes?.includes('[HF Detailed') && !log.notes?.includes('[NSTEMI Detailed')));
+                                        const isNstemiDetailed = !isStandardOutreach && (log.log_type === 'detailed_nstemi_log' || Boolean(log.notes && log.notes.includes('[NSTEMI Detailed Follow-up]')) || (Boolean(log.outcome && log.outcome.includes('Detailed NSTEMI Form')) && !log.notes?.includes('[HF Detailed') && !log.notes?.includes('[STEMI Detailed')));
+                                        const isDetailedForm = (isHfDetailed || isStemiDetailed || isNstemiDetailed) && !isStandardOutreach;
 
                                         return (
                                           <div
@@ -1265,6 +1526,10 @@ export default function NurseFollowUpReport() {
                                             className={`p-3.5 rounded-xl border text-[11px] space-y-2.5 transition-all ${
                                               isHfDetailed
                                                 ? 'bg-teal-50/60 border-teal-200 shadow-2xs hover:border-teal-300'
+                                                : isStemiDetailed
+                                                ? 'bg-red-50/60 border-red-200 shadow-2xs hover:border-red-300'
+                                                : isNstemiDetailed
+                                                ? 'bg-amber-50/60 border-amber-200 shadow-2xs hover:border-amber-300'
                                                 : isCurrent
                                                 ? 'bg-white border-blue-200/90 shadow-2xs hover:border-blue-300'
                                                 : 'bg-slate-50/90 border-slate-200 text-slate-700 hover:border-slate-300'
@@ -1274,9 +1539,15 @@ export default function NurseFollowUpReport() {
                                               <div className="flex items-center gap-1.5 flex-wrap">
                                                 {/* Contact Mode Badge */}
                                                 <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider border ${
-                                                  isHfDetailed ? 'bg-teal-600 text-white border-teal-700' : 'bg-blue-100 text-blue-800 border-blue-300'
+                                                  isHfDetailed ? 'bg-teal-600 text-white border-teal-700' :
+                                                  isStemiDetailed ? 'bg-red-600 text-white border-red-700' :
+                                                  isNstemiDetailed ? 'bg-amber-600 text-white border-amber-700' :
+                                                  'bg-blue-100 text-blue-800 border-blue-300'
                                                 }`}>
-                                                  {isHfDetailed ? 'Detailed HF Form' : (log.contact_mode || 'Phone Call')}
+                                                  {isHfDetailed ? 'DETAILED HF FORM' :
+                                                   isStemiDetailed ? 'DETAILED STEMI FORM' :
+                                                   isNstemiDetailed ? 'DETAILED NSTEMI FORM' :
+                                                   (log.contact_mode || 'PHONE CALL')}
                                                 </span>
 
                                                 {/* Episode ID & Status Badge */}
@@ -1300,7 +1571,12 @@ export default function NurseFollowUpReport() {
                                             </div>
 
                                             <div className="flex items-center justify-between flex-wrap gap-2 pt-1 border-t border-slate-200/60">
-                                              <div className={`font-black text-xs ${isHfDetailed ? 'text-teal-900' : isCurrent ? 'text-blue-700' : 'text-slate-800'}`}>
+                                              <div className={`font-black text-xs ${
+                                                isHfDetailed ? 'text-teal-900' :
+                                                isStemiDetailed ? 'text-red-900' :
+                                                isNstemiDetailed ? 'text-amber-900' :
+                                                isCurrent ? 'text-blue-700' : 'text-slate-800'
+                                              }`}>
                                                 {log.outcome}
                                               </div>
 
@@ -1309,7 +1585,31 @@ export default function NurseFollowUpReport() {
                                                   type="button"
                                                   onClick={() => openPdfModal(log, task)}
                                                   className="px-3.5 py-1.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-                                                  title="Download full 7-section Heart Failure follow-up PDF report"
+                                                  title="View Heart Failure follow-up PDF report"
+                                                >
+                                                  <FileText className="w-4 h-4" />
+                                                  <span>View PDF Response</span>
+                                                </button>
+                                              )}
+
+                                              {isStemiDetailed && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => openAcsPdfModal(log, task, 'STEMI')}
+                                                  className="px-3.5 py-1.5 bg-red-700 hover:bg-red-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                                  title="View STEMI follow-up PDF report"
+                                                >
+                                                  <FileText className="w-4 h-4" />
+                                                  <span>View PDF Response</span>
+                                                </button>
+                                              )}
+
+                                              {isNstemiDetailed && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => openAcsPdfModal(log, task, 'NSTEMI')}
+                                                  className="px-3.5 py-1.5 bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
+                                                  title="View NSTEMI follow-up PDF report"
                                                 >
                                                   <FileText className="w-4 h-4" />
                                                   <span>View PDF Response</span>
@@ -1317,13 +1617,13 @@ export default function NurseFollowUpReport() {
                                               )}
                                             </div>
 
-                                            {log.symptoms_status && log.symptoms_status !== 'N/A' && !isHfDetailed && (
+                                            {log.symptoms_status && log.symptoms_status !== 'N/A' && !isDetailedForm && (
                                               <div className="text-slate-600 text-[10px] flex items-center gap-1">
                                                 <span className="font-bold text-slate-500">Symptoms:</span> {log.symptoms_status}
                                               </div>
                                             )}
 
-                                            {log.notes && !isHfDetailed && (
+                                            {log.notes && !isDetailedForm && (
                                               <div className="text-slate-600 text-[11px] leading-relaxed p-2 rounded-lg border bg-white/80 border-slate-200/80">
                                                 {log.notes}
                                               </div>
@@ -1505,6 +1805,7 @@ export default function NurseFollowUpReport() {
                     required
                   >
                     <option value="Pending Nurse Outreach">Pending Nurse Outreach</option>
+                    <option value="Required">Required / Action Needed</option>
                     <option value="Scheduled">Scheduled</option>
                     <option value="Completed">Completed</option>
                     <option value="Missed / Overdue">Missed / Overdue</option>
@@ -1658,7 +1959,41 @@ export default function NurseFollowUpReport() {
         </div>
       )}
 
-      {/* In-App Live PDF Response View Modal (Stays on http://localhost:3000/nurse-followup) */}
+      {/* Log Detailed STEMI Follow-up Modal Dialog */}
+      {isStemiModalOpen && selectedStemiTask && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-fadeIn">
+          <div className="w-full max-w-[1440px] mx-auto my-auto flex justify-center">
+            <StemiFollowUpForm
+              patientData={selectedStemiTask}
+              taskData={selectedStemiTask}
+              onSave={(payload) => handleSaveAcsFollowup(payload, 'STEMI')}
+              onCancel={() => {
+                setIsStemiModalOpen(false);
+                setSelectedStemiTask(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Log Detailed NSTEMI Follow-up Modal Dialog */}
+      {isNstemiModalOpen && selectedNstemiTask && (
+        <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-fadeIn">
+          <div className="w-full max-w-[1440px] mx-auto my-auto flex justify-center">
+            <NstemiFollowUpForm
+              patientData={selectedNstemiTask}
+              taskData={selectedNstemiTask}
+              onSave={(payload) => handleSaveAcsFollowup(payload, 'NSTEMI')}
+              onCancel={() => {
+                setIsNstemiModalOpen(false);
+                setSelectedNstemiTask(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* In-App Live HF PDF Response View Modal */}
       <HfFollowupPdfModal
         isOpen={isPdfModalOpen}
         onClose={() => {
@@ -1668,6 +2003,19 @@ export default function NurseFollowUpReport() {
         }}
         logData={pdfModalLog}
         patientData={pdfModalTask}
+      />
+
+      {/* In-App Live STEMI & NSTEMI ACS PDF Response View Modal */}
+      <AcsFollowupPdfModal
+        isOpen={isAcsPdfModalOpen}
+        onClose={() => {
+          setIsAcsPdfModalOpen(false);
+          setAcsPdfModalLog(null);
+          setAcsPdfModalTask(null);
+        }}
+        logData={acsPdfModalLog}
+        patientData={acsPdfModalTask}
+        registryType={acsPdfModalType}
       />
     </div>
   );

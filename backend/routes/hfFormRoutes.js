@@ -30,10 +30,10 @@ router.post('/submit', async (req, res) => {
     // Step 1: Auto-Supersede existing active tasks for this reg_patient_id
     const supersedeSql = `
       UPDATE patient_followup_tasks
-      SET status = 'Superseded by new assessment'
+      SET status = 'Superseded by new encounter'
       WHERE reg_patient_id = @pid 
         AND status != 'Completed' 
-        AND status != 'Superseded by new assessment';
+        AND status NOT LIKE '%Superseded%';
     `;
     await connection.query(supersedeSql, { pid });
 

@@ -47,7 +47,21 @@ export default function ValidatedTextField({
     (label && (String(label).toLowerCase().includes('income') || String(label).toLowerCase().includes('salary') || String(label).toLowerCase().includes('amount') || String(label).toLowerCase().includes('cost') || String(label).toLowerCase().includes('price') || String(label).toLowerCase().includes('uhid') || String(label).toLowerCase().includes('abha')))
   );
 
-  const effectiveMaxLength = isPhoneField ? 10 : maxLength;
+  const fieldIdentifier = String(id || name || label || '').toLowerCase().replace(/[^a-z]/g, '');
+
+  let effectiveMaxLength = maxLength;
+  if (isPhoneField) {
+    effectiveMaxLength = 10;
+  } else if (['mrno', 'ipno', 'acsno', 'uhid'].includes(fieldIdentifier) || fieldIdentifier === 'ipno' || fieldIdentifier === 'acsno' || fieldIdentifier === 'mrno') {
+    effectiveMaxLength = Math.min(maxLength, 10);
+  } else if (fieldIdentifier.includes('income') || fieldIdentifier.includes('salary')) {
+    effectiveMaxLength = Math.min(maxLength, 15);
+  } else if (fieldIdentifier.includes('caregivername') || (fieldIdentifier.includes('caregiver') && !fieldIdentifier.includes('rel') && !fieldIdentifier.includes('phone'))) {
+    effectiveMaxLength = Math.min(maxLength, 50);
+  } else if (fieldIdentifier.includes('relationship') || fieldIdentifier.includes('caregiverrel')) {
+    effectiveMaxLength = Math.min(maxLength, 30);
+  }
+
   const shouldShowCounter = showCounter && !isPhoneField;
   const effectiveValidateAlphabetical = validateAlphabetical && !isPhoneField && !isNumericField;
 
@@ -78,6 +92,9 @@ export default function ValidatedTextField({
     let newVal = e && e.target !== undefined ? e.target.value : e;
     if (isPhoneField && typeof newVal === 'string') {
       newVal = newVal.replace(/\D/g, '').slice(0, 10);
+    }
+    if (typeof newVal === 'string' && effectiveMaxLength && newVal.length > effectiveMaxLength) {
+      newVal = newVal.slice(0, effectiveMaxLength);
     }
     if (onChange) {
       onChange(newVal);

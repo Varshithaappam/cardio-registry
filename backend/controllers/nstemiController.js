@@ -647,6 +647,18 @@ async function createNstemiRecord(req, res) {
     const regPid = parseInt(val('reg_patient_id', 1), 10);
     const baseFollowupDate = discharge_date || admission_date;
 
+    // Step 1: Auto-supersede any existing open (Required or Pending) follow-up tasks from previous admissions for this patient
+    const reqSupersede = new sql.Request(transaction);
+    reqSupersede.input('reg_patient_id', sql.Int, regPid);
+    await reqSupersede.query(`
+      UPDATE [patient_followup_tasks]
+      SET 
+        [status] = 'Superseded by new encounter',
+        [updated_at] = GETDATE()
+      WHERE [reg_patient_id] = @reg_patient_id
+        AND [status] NOT IN ('Completed', 'Superseded by new encounter', 'Superseded by new assessment', 'No Follow-Up Needed');
+    `);
+
     for (const row of rawFollowupRows) {
       if (!row || !row.followup_month) continue;
       const followupMonth = row.followup_month;
@@ -728,40 +740,23 @@ async function createNstemiRecord(req, res) {
           );
         END
 
-        -- 2. Synchronize into patient_followup_tasks checking both patientId and timeframe
-        IF EXISTS (
-          SELECT 1 FROM [patient_followup_tasks]
-          WHERE [reg_patient_id] = @reg_patient_id AND [timeframe] = @followup_month AND [source_registry] = 'NSTEMI Registry'
-        )
-        BEGIN
-          UPDATE [patient_followup_tasks]
-          SET
-            [target_date] = @followup_date,
-            [visit_mode] = @visit_mode,
-            [special_instructions] = @special_instructions,
-            [source_record_id] = @nstemi_id,
-            [updated_at] = GETDATE()
-          WHERE [reg_patient_id] = @reg_patient_id AND [timeframe] = @followup_month AND [source_registry] = 'NSTEMI Registry';
-        END
-        ELSE
-        BEGIN
-          SET IDENTITY_INSERT [patient_followup_tasks] ON;
+        -- 2. Insert new task into patient_followup_tasks for the new admission
+        SET IDENTITY_INSERT [patient_followup_tasks] ON;
 
-          DECLARE @nextTaskId INT;
-          SELECT @nextTaskId = ISNULL(MAX(task_id), 0) + 1 FROM [patient_followup_tasks] WITH (TABLOCKX, HOLDLOCK);
+        DECLARE @nextTaskId INT;
+        SELECT @nextTaskId = ISNULL(MAX(task_id), 0) + 1 FROM [patient_followup_tasks] WITH (TABLOCKX, HOLDLOCK);
 
-          INSERT INTO [patient_followup_tasks] (
-            [task_id], [reg_patient_id], [source_registry], [source_record_id], [is_followup_required],
-            [timeframe], [target_date], [clinic_location], [visit_mode], [special_instructions],
-            [status], [created_at], [updated_at]
-          ) VALUES (
-            @nextTaskId, @reg_patient_id, 'NSTEMI Registry', @nstemi_id, 'Yes',
-            @followup_month, @followup_date, 'CARE Heart Institute', @visit_mode, @special_instructions,
-            'Required', GETDATE(), GETDATE()
-          );
+        INSERT INTO [patient_followup_tasks] (
+          [task_id], [reg_patient_id], [source_registry], [source_record_id], [is_followup_required],
+          [timeframe], [target_date], [clinic_location], [visit_mode], [special_instructions],
+          [status], [created_at], [updated_at]
+        ) VALUES (
+          @nextTaskId, @reg_patient_id, 'NSTEMI Registry', @nstemi_id, 'Yes',
+          @followup_month, @followup_date, 'CARE Heart Institute', @visit_mode, @special_instructions,
+          'Required', GETDATE(), GETDATE()
+        );
 
-          SET IDENTITY_INSERT [patient_followup_tasks] OFF;
-        END
+        SET IDENTITY_INSERT [patient_followup_tasks] OFF;
       `);
     }
 

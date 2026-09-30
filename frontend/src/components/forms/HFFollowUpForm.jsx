@@ -3,7 +3,7 @@ import {
   User, Phone, Calendar, Heart, Shield, Activity, FileText, 
   AlertTriangle, Check, X, Pill, Stethoscope, ChevronDown, Sparkles 
 } from 'lucide-react';
-import { sanitizePositiveInteger, sanitizeUHID } from '../../utils/formSanitizers';
+import { sanitizePositiveInteger, sanitizeUHID, limitDecimalDigits } from '../../utils/formSanitizers';
 import HfFollowupPdfModal from '../modals/HfFollowupPdfModal';
 
 // Reusable Auto-Resizing Textarea with CSS Word-Wrapping
@@ -137,6 +137,9 @@ export default function HFFollowUpForm({
   );
   const [healthUnhealthyDetails, setHealthUnhealthyDetails] = useState(
     initialForm?.health_unhealthy_details || ''
+  );
+  const [overallRegistryStatus, setOverallRegistryStatus] = useState(
+    initialForm?.overall_registry_status || initialForm?.status || 'Completed'
   );
   const [medicationsStillTaking, setMedicationsStillTaking] = useState(
     initialForm?.medications_still_taking || ''
@@ -415,8 +418,8 @@ export default function HFFollowUpForm({
       cause_of_death: isDeceased === 'Yes' ? causeOfDeath : null,
       cause_of_death_other_details: isDeceased === 'Yes' && causeOfDeath === 'Others' ? causeOfDeathOther : null,
       join_program_opt_in: isDeceased === 'Yes' ? 'No' : joinProgramOptIn,
-      patient_feedback: isDeceased === 'Yes' ? null : patientFeedback,
-
+      overall_registry_status: overallRegistryStatus,
+      status: overallRegistryStatus,
       created_at: new Date().toISOString()
     };
 
@@ -449,6 +452,23 @@ export default function HFFollowUpForm({
         </div>
 
         <div className="flex items-center gap-2.5">
+          {/* Overall Registry Status (White background dropdown for clean readability) */}
+          <div className="flex items-center gap-2 bg-teal-900/70 px-3 py-1.5 rounded-xl border border-teal-400/40 shadow-xs">
+            <span className="text-xs font-bold text-teal-200">Overall Status:</span>
+            <select
+              disabled={readOnly}
+              value={overallRegistryStatus}
+              onChange={(e) => setOverallRegistryStatus(e.target.value)}
+              className="bg-white text-slate-900 font-bold text-xs px-2.5 py-1 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-400 cursor-pointer shadow-xs"
+            >
+              <option value="Completed" className="bg-white text-slate-900 font-medium py-1">Completed</option>
+              <option value="Pending" className="bg-white text-slate-900 font-medium py-1">Pending</option>
+              <option value="In Progress" className="bg-white text-slate-900 font-medium py-1">In Progress</option>
+              <option value="Unable to Contact" className="bg-white text-slate-900 font-medium py-1">Unable to Contact</option>
+              <option value="Deceased" className="bg-white text-slate-900 font-medium py-1">Deceased</option>
+            </select>
+          </div>
+
           {!readOnly && (
             <button
               type="button"
@@ -922,7 +942,7 @@ export default function HFFollowUpForm({
                   type="text"
                   disabled={readOnly}
                   value={bnpResult}
-                  onChange={(e) => setBnpResult(e.target.value)}
+                  onChange={(e) => setBnpResult(limitDecimalDigits(e.target.value, 3))}
                   placeholder="pg/mL..."
                   className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold h-8 break-all"
                 />
@@ -934,7 +954,7 @@ export default function HFFollowUpForm({
                   type="text"
                   disabled={readOnly}
                   value={creatinineResult}
-                  onChange={(e) => setCreatinineResult(e.target.value)}
+                  onChange={(e) => setCreatinineResult(limitDecimalDigits(e.target.value, 3))}
                   placeholder="mg/dL..."
                   className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold h-8 break-all"
                 />
@@ -946,7 +966,7 @@ export default function HFFollowUpForm({
                   type="text"
                   disabled={readOnly}
                   value={sodiumResult}
-                  onChange={(e) => setSodiumResult(e.target.value)}
+                  onChange={(e) => setSodiumResult(limitDecimalDigits(e.target.value, 3))}
                   placeholder="mEq/L..."
                   className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold h-8 break-all"
                 />
@@ -958,7 +978,7 @@ export default function HFFollowUpForm({
                   type="text"
                   disabled={readOnly}
                   value={hemoglobinResult}
-                  onChange={(e) => setHemoglobinResult(e.target.value)}
+                  onChange={(e) => setHemoglobinResult(limitDecimalDigits(e.target.value, 3))}
                   placeholder="g/dL..."
                   className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold h-8 break-all"
                 />

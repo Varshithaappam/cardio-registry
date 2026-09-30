@@ -38,12 +38,68 @@ const getPatientCentricTasks = async (req, res) => {
     const endDate = parseDateParam(rawEndDate);
 
     const pool = await db.getPool();
+
+    // Auto-cleanup: Supersede open tasks for older encounters where a newer encounter exists
+    try {
+      await pool.request().query(`
+        UPDATE t
+        SET t.status = 'Superseded by new encounter', t.updated_at = GETDATE()
+        FROM patient_followup_tasks t
+        INNER JOIN (
+          SELECT reg_patient_id, MAX(nstemi_id) AS max_id FROM nstemi_registry GROUP BY reg_patient_id
+        ) latest_nr ON t.reg_patient_id = latest_nr.reg_patient_id
+        WHERE t.source_registry LIKE '%NSTEMI%'
+          AND t.source_record_id < latest_nr.max_id
+          AND t.status NOT LIKE '%Superseded%'
+          AND t.status != 'Completed';
+
+        UPDATE t
+        SET t.status = 'Superseded by new encounter', t.updated_at = GETDATE()
+        FROM patient_followup_tasks t
+        INNER JOIN (
+          SELECT reg_patient_id, MAX(stemi_id) AS max_id FROM stemi_registry GROUP BY reg_patient_id
+        ) latest_sr ON t.reg_patient_id = latest_sr.reg_patient_id
+        WHERE t.source_registry LIKE '%STEMI%' AND t.source_registry NOT LIKE '%NSTEMI%'
+          AND t.source_record_id < latest_sr.max_id
+          AND t.status NOT LIKE '%Superseded%'
+          AND t.status != 'Completed';
+
+        UPDATE t
+        SET t.status = 'Superseded by new encounter', t.updated_at = GETDATE()
+        FROM patient_followup_tasks t
+        INNER JOIN (
+          SELECT reg_patient_id, MAX(hf_id) AS max_id FROM hf_registry GROUP BY reg_patient_id
+        ) latest_hf ON t.reg_patient_id = latest_hf.reg_patient_id
+        WHERE t.source_registry LIKE '%Heart Failure%'
+          AND t.source_record_id < latest_hf.max_id
+          AND t.status NOT LIKE '%Superseded%'
+          AND t.status != 'Completed';
+      `);
+    } catch (cleanupErr) {
+      console.warn('Auto-supersede cleanup warning:', cleanupErr.message);
+    }
+
     const request = pool.request();
     request.input('startDate', db.sql.VarChar(50), startDate || null);
     request.input('endDate', db.sql.VarChar(50), endDate || null);
 
     const queryStr = `
-      WITH LatestHF AS (
+      WITH LatestNSTEMI AS (
+        SELECT reg_patient_id, MAX(nstemi_id) AS max_nstemi_id
+        FROM nstemi_registry WITH (NOLOCK)
+        GROUP BY reg_patient_id
+      ),
+      LatestSTEMI AS (
+        SELECT reg_patient_id, MAX(stemi_id) AS max_stemi_id
+        FROM stemi_registry WITH (NOLOCK)
+        GROUP BY reg_patient_id
+      ),
+      LatestMaxHF AS (
+        SELECT reg_patient_id, MAX(hf_id) AS max_hf_id
+        FROM hf_registry WITH (NOLOCK)
+        GROUP BY reg_patient_id
+      ),
+      LatestHF AS (
         SELECT reg_patient_id, MAX(followup_id) AS max_followup_id
         FROM hf_followup_assessments WITH (NOLOCK)
         GROUP BY reg_patient_id
@@ -90,10 +146,28 @@ const getPatientCentricTasks = async (req, res) => {
           DATEDIFF(YEAR, p.date_of_birth, GETDATE()) - 
             CASE WHEN DATEADD(YEAR, DATEDIFF(YEAR, p.date_of_birth, GETDATE()), p.date_of_birth) > GETDATE() THEN 1 ELSE 0 END AS age,
           COALESCE(
+            CAST(sr.admission_date AS VARCHAR(10)),
+            CAST(nr.admission_date AS VARCHAR(10)),
             CAST(adm.visit_date AS VARCHAR(10)),
             CAST(adm.assessment_date AS VARCHAR(10))
           ) AS date_of_admission,
-          CAST(adm.discharge_date AS VARCHAR(10)) AS date_of_discharge,
+          COALESCE(
+            CAST(sr.discharge_date AS VARCHAR(10)),
+            CAST(nr.discharge_date AS VARCHAR(10)),
+            CAST(adm.discharge_date AS VARCHAR(10))
+          ) AS date_of_discharge,
+          COALESCE(
+            sr.ip_no,
+            nr.ip_no,
+            (SELECT TOP 1 sfr.ip_no FROM stemi_followup_records sfr WITH (NOLOCK) WHERE sfr.reg_patient_id = t.reg_patient_id ORDER BY sfr.created_at DESC),
+            (SELECT TOP 1 nfr.ip_no FROM nstemi_followup_records nfr WITH (NOLOCK) WHERE nfr.reg_patient_id = t.reg_patient_id ORDER BY nfr.created_at DESC)
+          ) AS ip_no,
+          COALESCE(
+            sr.acs_no,
+            nr.acs_no,
+            (SELECT TOP 1 sfr.acs_no FROM stemi_followup_records sfr WITH (NOLOCK) WHERE sfr.reg_patient_id = t.reg_patient_id ORDER BY sfr.created_at DESC),
+            (SELECT TOP 1 nfr.acs_no FROM nstemi_followup_records nfr WITH (NOLOCK) WHERE nfr.reg_patient_id = t.reg_patient_id ORDER BY nfr.created_at DESC)
+          ) AS acs_no,
           fa.primary_followup_reason,
           fa.primary_no_followup_reason,
           fa.pcp_transition_summary,
@@ -105,19 +179,43 @@ const getPatientCentricTasks = async (req, res) => {
           fa.investigation_6mw_test,
           NULL AS pre_visit_diagnostics,
           ROW_NUMBER() OVER (
-            PARTITION BY t.reg_patient_id, t.source_registry 
+            PARTITION BY t.reg_patient_id, 
+              CASE 
+                WHEN t.source_registry LIKE '%Heart Failure%' THEN 'HF'
+                WHEN t.source_registry LIKE '%NSTEMI%' THEN 'NSTEMI'
+                WHEN t.source_registry LIKE '%STEMI%' THEN 'STEMI'
+                ELSE 'HF'
+              END
             ORDER BY 
+              CASE 
+                WHEN t.source_registry LIKE '%NSTEMI%' AND (t.source_record_id = ln.max_nstemi_id OR t.source_record_id IS NULL) THEN 0
+                WHEN t.source_registry LIKE '%STEMI%' AND t.source_registry NOT LIKE '%NSTEMI%' AND (t.source_record_id = ls.max_stemi_id OR t.source_record_id IS NULL) THEN 0
+                WHEN t.source_registry LIKE '%Heart Failure%' AND (t.source_record_id = lmh.max_hf_id OR t.source_record_id IS NULL) THEN 0
+                ELSE 1
+              END ASC,
+              COALESCE(t.source_record_id, 0) DESC,
               t.task_id DESC
           ) AS row_num
         FROM patient_followup_tasks t WITH (NOLOCK)
         INNER JOIN patient_demographics p WITH (NOLOCK) ON t.reg_patient_id = p.reg_patient_id
+        LEFT JOIN LatestNSTEMI ln ON t.reg_patient_id = ln.reg_patient_id
+        LEFT JOIN LatestSTEMI ls ON t.reg_patient_id = ls.reg_patient_id
+        LEFT JOIN LatestMaxHF lmh ON t.reg_patient_id = lmh.reg_patient_id
         LEFT JOIN LatestHF lhf ON t.reg_patient_id = lhf.reg_patient_id
         LEFT JOIN hf_followup_assessments fa WITH (NOLOCK) ON (
           t.source_registry LIKE '%Heart Failure%' AND t.source_record_id = fa.followup_id
         )
         LEFT JOIN LatestHfAdmin adm ON (t.reg_patient_id = adm.reg_patient_id AND adm.rn = 1)
+        LEFT JOIN stemi_registry sr WITH (NOLOCK) ON (
+          (t.source_registry LIKE '%STEMI%' AND t.source_registry NOT LIKE '%NSTEMI%')
+          AND (t.source_record_id = sr.stemi_id OR (t.source_record_id IS NULL AND sr.stemi_id = ls.max_stemi_id))
+        )
+        LEFT JOIN nstemi_registry nr WITH (NOLOCK) ON (
+          t.source_registry LIKE '%NSTEMI%'
+          AND (t.source_record_id = nr.nstemi_id OR (t.source_record_id IS NULL AND nr.nstemi_id = ln.max_nstemi_id))
+        )
         WHERE t.status != 'No Follow-Up Needed'
-          AND t.status != 'Superseded by new assessment'
+          AND t.status NOT LIKE '%Superseded%'
       )
       SELECT 
         task_id,
@@ -141,6 +239,8 @@ const getPatientCentricTasks = async (req, res) => {
         uhid,
         date_of_admission,
         date_of_discharge,
+        ip_no,
+        acs_no,
         gender,
         phone_no,
         date_of_birth,
@@ -254,28 +354,68 @@ const getPatientTimelineLogs = async (req, res) => {
           nol.symptoms_status,
           nol.medication_adherence,
           nol.notes,
-          nol.raw_form_json,
-          'Manual Outreach Log' AS log_type,
+          COALESCE(nol.raw_form_json, nfr.raw_form_json, sfr.raw_form_json, hfr.raw_form_json) AS raw_form_json,
+          CASE 
+            WHEN nol.raw_form_json IS NOT NULL OR nol.outcome LIKE '%Detailed%' OR nol.notes LIKE '%Detailed%' THEN 'detailed_nstemi_log'
+            WHEN nfr.record_id IS NOT NULL THEN 'detailed_nstemi_log'
+            WHEN sfr.record_id IS NOT NULL THEN 'detailed_stemi_log'
+            WHEN hfr.record_id IS NOT NULL THEN 'detailed_hf_log'
+            ELSE 'standard_outreach'
+          END AS log_type,
           COALESCE(t.timeframe, nf.followup_month, 'Follow-Up') AS timeframe,
           -- Specific Registry & Episode Tracking
-          COALESCE(t.source_record_id, nf.nstemi_id, nr.nstemi_id, (SELECT MAX(nstemi_id) FROM nstemi_registry WHERE reg_patient_id = nol.reg_patient_id)) AS registry_id,
+          COALESCE(nol.nstemi_id, nfr.nstemi_id, nf.nstemi_id, nr.nstemi_id, t.source_record_id, (SELECT TOP 1 n.nstemi_id FROM nstemi_registry n WHERE n.reg_patient_id = nol.reg_patient_id AND n.created_at <= ISNULL(nol.created_at, GETDATE()) ORDER BY n.created_at DESC, n.nstemi_id DESC)) AS registry_id,
           COALESCE(
             nr.acs_no, 
             nr.ip_no, 
-            CONCAT('NSTEMI-', RIGHT(CONCAT('00', CAST(COALESCE(t.source_record_id, nf.nstemi_id, nr.nstemi_id, (SELECT MAX(nstemi_id) FROM nstemi_registry WHERE reg_patient_id = nol.reg_patient_id)) AS VARCHAR(10))), 2)),
+            CONCAT('NSTEMI-', CAST(COALESCE(nol.nstemi_id, nfr.nstemi_id, nf.nstemi_id, nr.nstemi_id, t.source_record_id, (SELECT TOP 1 n.nstemi_id FROM nstemi_registry n WHERE n.reg_patient_id = nol.reg_patient_id AND n.created_at <= ISNULL(nol.created_at, GETDATE()) ORDER BY n.created_at DESC, n.nstemi_id DESC)) AS VARCHAR(10))),
             'NSTEMI-EPISODE'
           ) AS episode_id,
           COALESCE(t.status, 'Completed') AS episode_status,
           CASE 
-            WHEN COALESCE(t.source_record_id, nf.nstemi_id, nr.nstemi_id, (SELECT MAX(nstemi_id) FROM nstemi_registry WHERE reg_patient_id = nol.reg_patient_id)) = (
-              SELECT MAX(nstemi_id) FROM nstemi_registry WHERE reg_patient_id = nol.reg_patient_id AND (status = 0 OR status IS NULL)
+            WHEN COALESCE(nol.nstemi_id, nfr.nstemi_id, nf.nstemi_id, nr.nstemi_id, t.source_record_id, (SELECT TOP 1 n.nstemi_id FROM nstemi_registry n WHERE n.reg_patient_id = nol.reg_patient_id AND n.created_at <= ISNULL(nol.created_at, GETDATE()) ORDER BY n.created_at DESC, n.nstemi_id DESC)) = (
+              SELECT MAX(nstemi_id) FROM nstemi_registry WHERE reg_patient_id = nol.reg_patient_id
             ) THEN 1 
             ELSE 0 
           END AS is_current_episode
         FROM nurse_outreach_logs nol
         LEFT JOIN patient_followup_tasks t ON nol.task_id = t.task_id
-        LEFT JOIN nstemi_followup nf ON (nol.nstemi_followup_id = nf.followup_id OR (t.source_record_id = nf.nstemi_id AND t.timeframe = nf.followup_month))
-        LEFT JOIN nstemi_registry nr ON (nf.nstemi_id = nr.nstemi_id OR t.source_record_id = nr.nstemi_id)
+        OUTER APPLY (
+          SELECT TOP 1 nf.followup_id, nf.nstemi_id, nf.followup_month
+          FROM nstemi_followup nf
+          WHERE (nol.nstemi_followup_id IS NOT NULL AND nf.followup_id = nol.nstemi_followup_id)
+             OR (t.source_record_id IS NOT NULL AND nf.nstemi_id = t.source_record_id AND (t.timeframe IS NULL OR nf.followup_month = t.timeframe))
+          ORDER BY CASE WHEN nol.nstemi_followup_id = nf.followup_id THEN 0 ELSE 1 END ASC, nf.followup_id DESC
+        ) nf
+        OUTER APPLY (
+          SELECT TOP 1 nr.nstemi_id, nr.acs_no, nr.ip_no
+          FROM nstemi_registry nr
+          WHERE (nf.nstemi_id IS NOT NULL AND nr.nstemi_id = nf.nstemi_id)
+             OR (t.source_record_id IS NOT NULL AND nr.nstemi_id = t.source_record_id)
+             OR (nr.reg_patient_id = nol.reg_patient_id)
+          ORDER BY CASE WHEN t.source_record_id = nr.nstemi_id THEN 0 ELSE 1 END ASC, nr.nstemi_id DESC
+        ) nr
+        OUTER APPLY (
+          SELECT TOP 1 sfr.record_id, sfr.raw_form_json, sfr.stemi_id
+          FROM stemi_followup_records sfr
+          WHERE (nol.task_id IS NOT NULL AND sfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 10)
+             OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 60)
+          ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) ASC
+        ) sfr
+        OUTER APPLY (
+          SELECT TOP 1 nfr.record_id, nfr.raw_form_json, nfr.nstemi_id
+          FROM nstemi_followup_records nfr
+          WHERE (nol.task_id IS NOT NULL AND nfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 10)
+             OR (nol.reg_patient_id = nfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
+          ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) ASC
+        ) nfr
+        OUTER APPLY (
+          SELECT TOP 1 hfr.followup_record_id AS record_id, hfr.raw_form_json, hfr.hf_id
+          FROM hf_followup_records hfr
+          WHERE (nol.task_id IS NOT NULL AND hfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 10)
+             OR (nol.reg_patient_id = hfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 60)
+          ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) ASC
+        ) hfr
         WHERE nol.reg_patient_id = @pid 
           AND (
             nol.registry_type = 'NSTEMI' 
@@ -301,20 +441,26 @@ const getPatientTimelineLogs = async (req, res) => {
           nol.symptoms_status,
           nol.medication_adherence,
           nol.notes,
-          nol.raw_form_json,
-          'Manual Outreach Log' AS log_type,
+          COALESCE(nol.raw_form_json, sfr.raw_form_json, nfr.raw_form_json, hfr.raw_form_json) AS raw_form_json,
+          CASE 
+            WHEN nol.raw_form_json IS NOT NULL OR nol.outcome LIKE '%Detailed%' OR nol.notes LIKE '%Detailed%' THEN 'detailed_stemi_log'
+            WHEN sfr.record_id IS NOT NULL THEN 'detailed_stemi_log'
+            WHEN nfr.record_id IS NOT NULL THEN 'detailed_nstemi_log'
+            WHEN hfr.record_id IS NOT NULL THEN 'detailed_hf_log'
+            ELSE 'standard_outreach'
+          END AS log_type,
           COALESCE(t.timeframe, sf.followup_month, 'Follow-Up') AS timeframe,
-          COALESCE(t.source_record_id, sf.stemi_id, sr.stemi_id, (SELECT MAX(stemi_id) FROM stemi_registry WHERE reg_patient_id = nol.reg_patient_id)) AS registry_id,
+          COALESCE(nol.stemi_id, sfr.stemi_id, sf.stemi_id, sr.stemi_id, t.source_record_id, (SELECT TOP 1 s.stemi_id FROM stemi_registry s WHERE s.reg_patient_id = nol.reg_patient_id AND s.created_at <= ISNULL(nol.created_at, GETDATE()) ORDER BY s.created_at DESC, s.stemi_id DESC)) AS registry_id,
           COALESCE(
             sr.acs_no, 
             sr.ip_no, 
-            CONCAT('STEMI-', RIGHT(CONCAT('00', CAST(COALESCE(t.source_record_id, sf.stemi_id, sr.stemi_id, (SELECT MAX(stemi_id) FROM stemi_registry WHERE reg_patient_id = nol.reg_patient_id)) AS VARCHAR(10))), 2)),
+            CONCAT('STEMI-', CAST(COALESCE(nol.stemi_id, sfr.stemi_id, sf.stemi_id, sr.stemi_id, t.source_record_id, (SELECT TOP 1 s.stemi_id FROM stemi_registry s WHERE s.reg_patient_id = nol.reg_patient_id AND s.created_at <= ISNULL(nol.created_at, GETDATE()) ORDER BY s.created_at DESC, s.stemi_id DESC)) AS VARCHAR(10))),
             'STEMI-EPISODE'
           ) AS episode_id,
           COALESCE(t.status, 'Completed') AS episode_status,
           CASE 
-            WHEN COALESCE(t.source_record_id, sf.stemi_id, sr.stemi_id, (SELECT MAX(stemi_id) FROM stemi_registry WHERE reg_patient_id = nol.reg_patient_id)) = (
-              SELECT MAX(stemi_id) FROM stemi_registry WHERE reg_patient_id = nol.reg_patient_id AND (status = 0 OR status IS NULL)
+            WHEN COALESCE(nol.stemi_id, sfr.stemi_id, sf.stemi_id, sr.stemi_id, t.source_record_id, (SELECT TOP 1 s.stemi_id FROM stemi_registry s WHERE s.reg_patient_id = nol.reg_patient_id AND s.created_at <= ISNULL(nol.created_at, GETDATE()) ORDER BY s.created_at DESC, s.stemi_id DESC)) = (
+              SELECT MAX(stemi_id) FROM stemi_registry WHERE reg_patient_id = nol.reg_patient_id
             ) THEN 1 
             ELSE 0 
           END AS is_current_episode
@@ -322,6 +468,27 @@ const getPatientTimelineLogs = async (req, res) => {
         LEFT JOIN patient_followup_tasks t ON nol.task_id = t.task_id
         LEFT JOIN stemi_followup sf ON (t.source_record_id = sf.stemi_id AND t.timeframe = sf.followup_month)
         LEFT JOIN stemi_registry sr ON (sf.stemi_id = sr.stemi_id OR t.source_record_id = sr.stemi_id)
+        OUTER APPLY (
+          SELECT TOP 1 sfr.record_id, sfr.raw_form_json, sfr.stemi_id
+          FROM stemi_followup_records sfr
+          WHERE (nol.task_id IS NOT NULL AND sfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 10)
+             OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 60)
+          ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) ASC
+        ) sfr
+        OUTER APPLY (
+          SELECT TOP 1 nfr.record_id, nfr.raw_form_json, nfr.nstemi_id
+          FROM nstemi_followup_records nfr
+          WHERE (nol.task_id IS NOT NULL AND nfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 10)
+             OR (nol.reg_patient_id = nfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
+          ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) ASC
+        ) nfr
+        OUTER APPLY (
+          SELECT TOP 1 hfr.followup_record_id AS record_id, hfr.raw_form_json, hfr.hf_id
+          FROM hf_followup_records hfr
+          WHERE (nol.task_id IS NOT NULL AND hfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 10)
+             OR (nol.reg_patient_id = hfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 60)
+          ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) ASC
+        ) hfr
         WHERE nol.reg_patient_id = @pid 
           AND (
             nol.registry_type = 'STEMI' 
@@ -346,19 +513,25 @@ const getPatientTimelineLogs = async (req, res) => {
           nol.symptoms_status,
           nol.medication_adherence,
           nol.notes,
-          COALESCE(nol.raw_form_json, hfr.raw_form_json) AS raw_form_json,
-          'Manual Outreach Log' AS log_type,
+          COALESCE(nol.raw_form_json, hfr.raw_form_json, sfr.raw_form_json, nfr.raw_form_json) AS raw_form_json,
+          CASE 
+            WHEN nol.raw_form_json IS NOT NULL OR nol.outcome LIKE '%Detailed%' OR nol.notes LIKE '%Detailed%' THEN 'detailed_hf_log'
+            WHEN hfr.record_id IS NOT NULL THEN 'detailed_hf_log'
+            WHEN sfr.record_id IS NOT NULL THEN 'detailed_stemi_log'
+            WHEN nfr.record_id IS NOT NULL THEN 'detailed_nstemi_log'
+            ELSE 'standard_outreach'
+          END AS log_type,
           COALESCE(t.timeframe, fa.followup_interval, 'Follow-Up') AS timeframe,
           -- Specific Registry & Episode Tracking
-          COALESCE(nol.hf_id, hfr.hf_id, fa.hf_id, hr.hf_id, t.source_record_id, (SELECT MAX(hf_id) FROM hf_registry WHERE reg_patient_id = nol.reg_patient_id)) AS registry_id,
+          COALESCE(nol.hf_id, hfr.hf_id, fa.hf_id, hr.hf_id, t.source_record_id, (SELECT TOP 1 h.hf_id FROM hf_registry h WHERE h.reg_patient_id = nol.reg_patient_id AND h.created_at <= ISNULL(nol.created_at, GETDATE()) ORDER BY h.created_at DESC, h.hf_id DESC)) AS registry_id,
           COALESCE(
             hr.hf_registry_no, 
-            CONCAT('HF-', RIGHT(CONCAT('00', CAST(COALESCE(nol.hf_id, hfr.hf_id, fa.hf_id, hr.hf_id, t.source_record_id, (SELECT MAX(hf_id) FROM hf_registry WHERE reg_patient_id = nol.reg_patient_id)) AS VARCHAR(10))), 2)),
+            CONCAT('HF00', CAST(COALESCE(nol.hf_id, hfr.hf_id, fa.hf_id, hr.hf_id, t.source_record_id, (SELECT TOP 1 h.hf_id FROM hf_registry h WHERE h.reg_patient_id = nol.reg_patient_id AND h.created_at <= ISNULL(nol.created_at, GETDATE()) ORDER BY h.created_at DESC, h.hf_id DESC)) AS VARCHAR(10))),
             'HF-EPISODE'
           ) AS episode_id,
           COALESCE(t.status, hr.status, 'Completed') AS episode_status,
           CASE 
-            WHEN COALESCE(nol.hf_id, hfr.hf_id, fa.hf_id, hr.hf_id, t.source_record_id, (SELECT MAX(hf_id) FROM hf_registry WHERE reg_patient_id = nol.reg_patient_id)) = (
+            WHEN COALESCE(nol.hf_id, hfr.hf_id, fa.hf_id, hr.hf_id, t.source_record_id, (SELECT TOP 1 h.hf_id FROM hf_registry h WHERE h.reg_patient_id = nol.reg_patient_id AND h.created_at <= ISNULL(nol.created_at, GETDATE()) ORDER BY h.created_at DESC, h.hf_id DESC)) = (
               SELECT MAX(hf_id) FROM hf_registry WHERE reg_patient_id = nol.reg_patient_id
             ) THEN 1 
             ELSE 0 
@@ -368,9 +541,23 @@ const getPatientTimelineLogs = async (req, res) => {
         LEFT JOIN hf_followup_assessments fa ON t.source_record_id = fa.followup_id
         LEFT JOIN hf_registry hr ON COALESCE(nol.hf_id, fa.hf_id, t.source_record_id) = hr.hf_id
         OUTER APPLY (
-          SELECT TOP 1 hfr.raw_form_json, hfr.hf_id
+          SELECT TOP 1 sfr.record_id, sfr.raw_form_json, sfr.stemi_id
+          FROM stemi_followup_records sfr
+          WHERE (nol.task_id IS NOT NULL AND sfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 10)
+             OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 60)
+          ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) ASC
+        ) sfr
+        OUTER APPLY (
+          SELECT TOP 1 nfr.record_id, nfr.raw_form_json, nfr.nstemi_id
+          FROM nstemi_followup_records nfr
+          WHERE (nol.task_id IS NOT NULL AND nfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 10)
+             OR (nol.reg_patient_id = nfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
+          ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) ASC
+        ) nfr
+        OUTER APPLY (
+          SELECT TOP 1 hfr.followup_record_id AS record_id, hfr.raw_form_json, hfr.hf_id
           FROM hf_followup_records hfr
-          WHERE (nol.task_id IS NOT NULL AND hfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 300)
+          WHERE (nol.task_id IS NOT NULL AND hfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 10)
              OR (nol.reg_patient_id = hfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 60)
           ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) ASC
         ) hfr
@@ -400,21 +587,34 @@ const getPatientTimelineLogs = async (req, res) => {
           nol.symptoms_status,
           nol.medication_adherence,
           nol.notes,
-          COALESCE(nol.raw_form_json, hfr.raw_form_json) AS raw_form_json,
-          'Manual Outreach Log' AS log_type,
+          COALESCE(nol.raw_form_json, sfr.raw_form_json, nfr.raw_form_json, hfr.raw_form_json) AS raw_form_json,
+          CASE 
+            WHEN nol.raw_form_json IS NOT NULL OR nol.outcome LIKE '%Detailed%' OR nol.notes LIKE '%Detailed%' THEN
+              CASE 
+                WHEN nol.registry_type = 'STEMI' OR t.source_registry LIKE '%STEMI%' THEN 'detailed_stemi_log'
+                WHEN nol.registry_type = 'NSTEMI' OR t.source_registry LIKE '%NSTEMI%' THEN 'detailed_nstemi_log'
+                ELSE 'detailed_hf_log'
+              END
+            WHEN sfr.record_id IS NOT NULL THEN 'detailed_stemi_log'
+            WHEN nfr.record_id IS NOT NULL THEN 'detailed_nstemi_log'
+            WHEN hfr.record_id IS NOT NULL THEN 'detailed_hf_log'
+            ELSE 'standard_outreach'
+          END AS log_type,
           COALESCE(t.timeframe, nf.followup_month, fa.followup_interval, 'Follow-Up') AS timeframe,
           -- Specific Registry & Episode Tracking
           CASE 
             WHEN nol.registry_type = 'NSTEMI' OR nol.nstemi_followup_id IS NOT NULL OR t.source_registry LIKE '%NSTEMI%' THEN
-              COALESCE(t.source_record_id, nf.nstemi_id, nr.nstemi_id, (SELECT MAX(nstemi_id) FROM nstemi_registry WHERE reg_patient_id = nol.reg_patient_id))
+              COALESCE(nol.nstemi_id, nfr.nstemi_id, nf.nstemi_id, nr.nstemi_id, t.source_record_id, (SELECT TOP 1 n.nstemi_id FROM nstemi_registry n WHERE n.reg_patient_id = nol.reg_patient_id AND n.created_at <= ISNULL(nol.created_at, GETDATE()) ORDER BY n.created_at DESC, n.nstemi_id DESC))
+            WHEN nol.registry_type = 'STEMI' OR t.source_registry LIKE '%STEMI%' THEN
+              COALESCE(nol.stemi_id, sfr.stemi_id, sf.stemi_id, sr.stemi_id, t.source_record_id, (SELECT TOP 1 s.stemi_id FROM stemi_registry s WHERE s.reg_patient_id = nol.reg_patient_id AND s.created_at <= ISNULL(nol.created_at, GETDATE()) ORDER BY s.created_at DESC, s.stemi_id DESC))
             ELSE
-              COALESCE(fa.hf_id, hr.hf_id, t.source_record_id, (SELECT MAX(hf_id) FROM hf_registry WHERE reg_patient_id = nol.reg_patient_id))
+              COALESCE(nol.hf_id, hfr.hf_id, fa.hf_id, hr.hf_id, t.source_record_id, (SELECT TOP 1 h.hf_id FROM hf_registry h WHERE h.reg_patient_id = nol.reg_patient_id AND h.created_at <= ISNULL(nol.created_at, GETDATE()) ORDER BY h.created_at DESC, h.hf_id DESC))
           END AS registry_id,
           CASE 
             WHEN nol.registry_type = 'NSTEMI' OR nol.nstemi_followup_id IS NOT NULL OR t.source_registry LIKE '%NSTEMI%' THEN
-              COALESCE(nr.acs_no, nr.ip_no, CONCAT('NSTEMI-', RIGHT(CONCAT('00', CAST(COALESCE(t.source_record_id, nf.nstemi_id, nr.nstemi_id, 1) AS VARCHAR(10))), 2)))
+              COALESCE(nr.acs_no, nr.ip_no, CONCAT('NSTEMI-', CAST(COALESCE(t.source_record_id, nf.nstemi_id, nr.nstemi_id, 1) AS VARCHAR(10))))
             ELSE
-              COALESCE(hr.hf_registry_no, CONCAT('HF-', RIGHT(CONCAT('00', CAST(COALESCE(fa.hf_id, hr.hf_id, t.source_record_id, 1) AS VARCHAR(10))), 2)))
+              COALESCE(hr.hf_registry_no, CONCAT('HF00', CAST(COALESCE(fa.hf_id, hr.hf_id, t.source_record_id, 1) AS VARCHAR(10))))
           END AS episode_id,
           COALESCE(t.status, hr.status, 'Completed') AS episode_status,
           1 AS is_current_episode
@@ -422,12 +622,39 @@ const getPatientTimelineLogs = async (req, res) => {
         LEFT JOIN patient_followup_tasks t ON nol.task_id = t.task_id
         LEFT JOIN hf_followup_assessments fa ON t.source_record_id = fa.followup_id
         LEFT JOIN hf_registry hr ON COALESCE(fa.hf_id, t.source_record_id) = hr.hf_id
-        LEFT JOIN nstemi_followup nf ON (nol.nstemi_followup_id = nf.followup_id OR (t.source_record_id = nf.nstemi_id AND t.timeframe = nf.followup_month))
-        LEFT JOIN nstemi_registry nr ON (nf.nstemi_id = nr.nstemi_id OR t.source_record_id = nr.nstemi_id)
         OUTER APPLY (
-          SELECT TOP 1 hfr.raw_form_json, hfr.hf_id
+          SELECT TOP 1 nf.followup_id, nf.nstemi_id, nf.followup_month
+          FROM nstemi_followup nf
+          WHERE (nol.nstemi_followup_id IS NOT NULL AND nf.followup_id = nol.nstemi_followup_id)
+             OR (t.source_record_id IS NOT NULL AND nf.nstemi_id = t.source_record_id AND (t.timeframe IS NULL OR nf.followup_month = t.timeframe))
+          ORDER BY CASE WHEN nol.nstemi_followup_id = nf.followup_id THEN 0 ELSE 1 END ASC, nf.followup_id DESC
+        ) nf
+        OUTER APPLY (
+          SELECT TOP 1 nr.nstemi_id, nr.acs_no, nr.ip_no
+          FROM nstemi_registry nr
+          WHERE (nf.nstemi_id IS NOT NULL AND nr.nstemi_id = nf.nstemi_id)
+             OR (t.source_record_id IS NOT NULL AND nr.nstemi_id = t.source_record_id)
+             OR (nr.reg_patient_id = nol.reg_patient_id)
+          ORDER BY CASE WHEN t.source_record_id = nr.nstemi_id THEN 0 ELSE 1 END ASC, nr.nstemi_id DESC
+        ) nr
+        OUTER APPLY (
+          SELECT TOP 1 sfr.record_id, sfr.raw_form_json, sfr.stemi_id
+          FROM stemi_followup_records sfr
+          WHERE (nol.task_id IS NOT NULL AND sfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 10)
+             OR (nol.reg_patient_id = sfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) <= 60)
+          ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, sfr.created_at)) ASC
+        ) sfr
+        OUTER APPLY (
+          SELECT TOP 1 nfr.record_id, nfr.raw_form_json, nfr.nstemi_id
+          FROM nstemi_followup_records nfr
+          WHERE (nol.task_id IS NOT NULL AND nfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 10)
+             OR (nol.reg_patient_id = nfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) <= 60)
+          ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, nfr.created_at)) ASC
+        ) nfr
+        OUTER APPLY (
+          SELECT TOP 1 hfr.followup_record_id AS record_id, hfr.raw_form_json, hfr.hf_id
           FROM hf_followup_records hfr
-          WHERE (nol.task_id IS NOT NULL AND hfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 300)
+          WHERE (nol.task_id IS NOT NULL AND hfr.task_id = nol.task_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 10)
              OR (nol.reg_patient_id = hfr.reg_patient_id AND ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) <= 60)
           ORDER BY ABS(DATEDIFF(SECOND, nol.created_at, hfr.created_at)) ASC
         ) hfr
@@ -465,11 +692,34 @@ router.get('/tasks/:regPatientId/logs', getPatientTimelineLogs);
  * 2. Immediately executes UPDATE on patient_followup_tasks (or nstemi_followup) within the same SQL transaction.
  */
 const parseSqlDate = (val) => {
-  if (!val || typeof val !== 'string') return null;
-  const trimmed = val.trim();
-  if (trimmed === '' || trimmed === 'null' || trimmed === 'undefined') return null;
-  const iso = trimmed.split('T')[0];
-  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : null;
+  if (!val) return null;
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return null;
+    return val.toISOString().split('T')[0];
+  }
+  let str = String(val).trim();
+  if (!str || str === 'null' || str === 'undefined' || str === 'N/A' || str === 'None') return null;
+  if (str.includes('T')) str = str.split('T')[0];
+
+  if (str.includes('-') || str.includes('/')) {
+    const parts = str.split(/[-/]/);
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD or YYYY/MM/DD
+        const y = parts[0];
+        const m = parts[1].padStart(2, '0');
+        const d = parts[2].padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      } else if (parts[2].length === 4) {
+        // DD-MM-YYYY or DD/MM/YYYY
+        const d = parts[0].padStart(2, '0');
+        const m = parts[1].padStart(2, '0');
+        const y = parts[2];
+        return `${y}-${m}-${d}`;
+      }
+    }
+  }
+  return /^\d{4}-\d{2}-\d{2}$/.test(str) ? str : null;
 };
 
 const parseSqlString = (val, maxLen = 100, fallback = null) => {
@@ -478,6 +728,123 @@ const parseSqlString = (val, maxLen = 100, fallback = null) => {
   const str = typeof val === 'object' ? JSON.stringify(val) : String(val).trim();
   if (!str || str === 'null' || str === 'undefined') return fallback;
   return str.length > maxLen ? str.slice(0, maxLen) : str;
+};
+
+const saveDetailedAcsRecord = async (transaction, reqBody, type, pid, finalTaskId, sourceRecordId, contactMode, assignedNurse) => {
+  const tableName = type === 'STEMI' ? 'stemi_followup_records' : 'nstemi_followup_records';
+  const idCol = type === 'STEMI' ? 'stemi_id' : 'nstemi_id';
+  const regTable = type === 'STEMI' ? 'stemi_registry' : 'nstemi_registry';
+
+  let resolvedId = sourceRecordId ? parseInt(sourceRecordId, 10) : null;
+  if (!resolvedId) {
+    const maxRes = await transaction.request()
+      .input('pid', db.sql.Int, pid)
+      .query(`SELECT MAX(${idCol}) AS max_id FROM ${regTable} WHERE reg_patient_id = @pid;`);
+    if (maxRes.recordset.length > 0 && maxRes.recordset[0].max_id) {
+      resolvedId = maxRes.recordset[0].max_id;
+    }
+  }
+
+  let admDate = parseSqlDate(reqBody.date_of_admission);
+  let disDate = parseSqlDate(reqBody.date_of_discharge);
+  let ipNo = parseSqlString(reqBody.ip_no, 50, null);
+  let acsNo = parseSqlString(reqBody.acs_no, 50, null);
+
+  if ((!admDate || !disDate || !ipNo || !acsNo) && resolvedId) {
+    const adminDatesRes = await transaction.request()
+      .input('recId', db.sql.Int, resolvedId)
+      .query(`SELECT admission_date, discharge_date, ip_no, acs_no FROM ${regTable} WHERE ${idCol} = @recId;`);
+    if (adminDatesRes.recordset.length > 0) {
+      const row = adminDatesRes.recordset[0];
+      if (!admDate) admDate = parseSqlDate(row.admission_date);
+      if (!disDate) disDate = parseSqlDate(row.discharge_date);
+      if (!ipNo) ipNo = parseSqlString(row.ip_no, 50, null);
+      if (!acsNo) acsNo = parseSqlString(row.acs_no, 50, null);
+    }
+  }
+
+  const hasTableRes = await transaction.request().query(
+    `SELECT 1 FROM sys.tables WHERE name = '${tableName}'`
+  );
+  if (hasTableRes.recordset.length > 0) {
+    await transaction.request()
+      .input('regPatientId', db.sql.Int, pid)
+      .input('taskId', db.sql.Int, finalTaskId || null)
+      .input('recId', db.sql.Int, resolvedId || null)
+      .input('ipNo', db.sql.NVarChar(50), ipNo)
+      .input('acsNo', db.sql.NVarChar(50), acsNo)
+      .input('followupDate', db.sql.Date, parseSqlDate(reqBody.patient_followup_date) || parseSqlDate(new Date().toISOString()))
+      .input('followupConducted', db.sql.NVarChar(100), parseSqlString(reqBody.followup_conducted || contactMode, 100, 'Telephonic follow-up'))
+      .input('attemptNumber', db.sql.Int, reqBody.attempt_number || 1)
+      .input('answeringStatus', db.sql.NVarChar(50), parseSqlString(reqBody.answering_status, 50, 'Yes'))
+      .input('noAnswerReason', db.sql.NVarChar(255), parseSqlString(reqBody.no_answer_reason, 255, null))
+      .input('healthStatus', db.sql.NVarChar(50), parseSqlString(reqBody.health_status, 50, 'Healthy'))
+      .input('healthUnhealthyDetails', db.sql.NVarChar(db.sql.MAX), reqBody.health_unhealthy_details || null)
+      .input('medicationsStillTaking', db.sql.NVarChar(db.sql.MAX), reqBody.medications_still_taking || null)
+      .input('sideEffectsObserved', db.sql.NVarChar(50), parseSqlString(reqBody.side_effects_observed, 50, 'No'))
+      .input('sideEffectsDetails', db.sql.NVarChar(db.sql.MAX), reqBody.side_effects_details || null)
+      .input('physicianMedicationChanges', db.sql.NVarChar(50), parseSqlString(reqBody.physician_medication_changes, 50, 'No'))
+      .input('physicianMedicationChangesDetails', db.sql.NVarChar(db.sql.MAX), reqBody.physician_medication_changes_details || null)
+      .input('newHealthComplaints', db.sql.NVarChar(db.sql.MAX), reqBody.new_health_complaints || null)
+      .input('hasNewSymptoms', db.sql.NVarChar(50), parseSqlString(reqBody.has_new_symptoms, 50, 'No'))
+      .input('selectedSymptoms', db.sql.NVarChar(db.sql.MAX), Array.isArray(reqBody.selected_symptoms) ? reqBody.selected_symptoms.join(', ') : (reqBody.selected_symptoms || null))
+      .input('symptomOtherDetails', db.sql.NVarChar(db.sql.MAX), reqBody.symptom_other_details || null)
+      .input('medicationAdherence', db.sql.NVarChar(50), parseSqlString(reqBody.medication_adherence, 50, null))
+      .input('medicationAdherenceNoReason', db.sql.NVarChar(db.sql.MAX), reqBody.medication_adherence_no_reason || null)
+      .input('drugGridJson', db.sql.NVarChar(db.sql.MAX), reqBody.drug_grid ? JSON.stringify(reqBody.drug_grid) : null)
+      .input('tropIResult', db.sql.NVarChar(100), parseSqlString(reqBody.trop_i_result, 100, null))
+      .input('creatinineResult', db.sql.NVarChar(100), parseSqlString(reqBody.creatinine_result, 100, null))
+      .input('bnpNtProbnpResult', db.sql.NVarChar(100), parseSqlString(reqBody.bnp_nt_probnp_result, 100, null))
+      .input('hemoglobinResult', db.sql.NVarChar(100), parseSqlString(reqBody.hemoglobin_result, 100, null))
+      .input('sodiumResult', db.sql.NVarChar(100), parseSqlString(reqBody.sodium_result, 100, null))
+      .input('potassiumResult', db.sql.NVarChar(100), parseSqlString(reqBody.potassium_result, 100, null))
+      .input('echoDone', db.sql.NVarChar(50), parseSqlString(reqBody.echo_done, 50, null))
+      .input('hasMajorClinicalEvent', db.sql.NVarChar(50), parseSqlString(reqBody.has_major_clinical_event, 50, null))
+      .input('selectedClinicalEvents', db.sql.NVarChar(db.sql.MAX), Array.isArray(reqBody.selected_clinical_events) ? reqBody.selected_clinical_events.join(', ') : (reqBody.selected_clinical_events || null))
+      .input('eventOtherDetails', db.sql.NVarChar(db.sql.MAX), reqBody.event_other_details || null)
+      .input('vaccinationsDetails', db.sql.NVarChar(db.sql.MAX), reqBody.vaccinations_details || null)
+      .input('isDeceased', db.sql.NVarChar(50), parseSqlString(reqBody.is_deceased, 50, 'No'))
+      .input('diedWithin30daysDischarge', db.sql.NVarChar(50), parseSqlString(reqBody.died_within_30days_discharge, 50, null))
+      .input('placeOfDeath', db.sql.NVarChar(255), parseSqlString(reqBody.place_of_death, 255, null))
+      .input('dateOfDeath', db.sql.Date, parseSqlDate(reqBody.date_of_death))
+      .input('causeOfDeath', db.sql.NVarChar(100), parseSqlString(reqBody.cause_of_death, 100, null))
+      .input('causeOfDeathOtherDetails', db.sql.NVarChar(db.sql.MAX), reqBody.cause_of_death_other_details || null)
+      .input('joinProgramOptIn', db.sql.NVarChar(50), parseSqlString(reqBody.join_program_opt_in, 50, 'Yes'))
+      .input('patientFeedback', db.sql.NVarChar(db.sql.MAX), reqBody.patient_feedback || null)
+      .input('dateOfAdmission', db.sql.Date, admDate)
+      .input('dateOfDischarge', db.sql.Date, disDate)
+      .input('assignedNurseName', db.sql.NVarChar(150), parseSqlString(assignedNurse, 150, 'Cardiac Care Nurse'))
+      .input('rawFormJson', db.sql.NVarChar(db.sql.MAX), JSON.stringify(reqBody))
+      .query(`
+        INSERT INTO ${tableName} (
+          reg_patient_id, task_id, ${idCol}, ip_no, acs_no, followup_date, followup_conducted, attempt_number,
+          answering_status, no_answer_reason, health_status, health_unhealthy_details,
+          medications_still_taking, side_effects_observed, side_effects_details,
+          physician_medication_changes, physician_medication_changes_details, new_health_complaints,
+          has_new_symptoms, selected_symptoms, symptom_other_details, medication_adherence,
+          medication_adherence_no_reason, drug_grid_json, trop_i_result, creatinine_result,
+          bnp_nt_probnp_result, hemoglobin_result, sodium_result, potassium_result, echo_done,
+          has_major_clinical_event, selected_clinical_events, event_other_details,
+          vaccinations_details, is_deceased, died_within_30days_discharge,
+          place_of_death, date_of_death, cause_of_death, cause_of_death_other_details,
+          join_program_opt_in, patient_feedback, date_of_admission, date_of_discharge,
+          assigned_nurse_name, raw_form_json, created_at
+        ) VALUES (
+          @regPatientId, @taskId, @recId, @ipNo, @acsNo, @followupDate, @followupConducted, @attemptNumber,
+          @answeringStatus, @noAnswerReason, @healthStatus, @healthUnhealthyDetails,
+          @medicationsStillTaking, @sideEffectsObserved, @sideEffectsDetails,
+          @physicianMedicationChanges, @physicianMedicationChangesDetails, @newHealthComplaints,
+          @hasNewSymptoms, @selectedSymptoms, @symptomOtherDetails, @medicationAdherence,
+          @medicationAdherenceNoReason, @drugGridJson, @tropIResult, @creatinineResult,
+          @bnpNtProbnpResult, @hemoglobinResult, @sodiumResult, @potassiumResult, @echoDone,
+          @hasMajorClinicalEvent, @selectedClinicalEvents, @eventOtherDetails,
+          @vaccinationsDetails, @isDeceased, @diedWithin30daysDischarge,
+          @placeOfDeath, @dateOfDeath, @causeOfDeath, @causeOfDeathOtherDetails,
+          @joinProgramOptIn, @patientFeedback, @dateOfAdmission, @dateOfDischarge,
+          @assignedNurseName, @rawFormJson, GETDATE()
+        );
+      `);
+  }
 };
 
 const postLog = async (req, res) => {
@@ -514,8 +881,8 @@ const postLog = async (req, res) => {
 
     const pid = parseInt(reg_patient_id, 10);
     const parsedTaskId = (rawTaskId && !isNaN(parseInt(rawTaskId, 10))) ? parseInt(rawTaskId, 10) : null;
-    const isStemi = (registry_type === 'STEMI') || (source_registry && source_registry.includes('STEMI'));
-    const isNstemi = (registry_type === 'NSTEMI') || (source_registry && source_registry.includes('NSTEMI'));
+    const isStemi = (registry_type === 'STEMI') || (source_registry && source_registry.includes('STEMI') && !source_registry.includes('NSTEMI')) || req.body.is_detailed_stemi_form;
+    const isNstemi = (registry_type === 'NSTEMI') || (source_registry && source_registry.includes('NSTEMI')) || req.body.is_detailed_nstemi_form;
     const overallStatus = parseSqlString(status || overall_status || task_status, 50, 'Completed');
     const resolvedSymptomsStatus = symptoms_status || req.body.selected_symptoms;
 
@@ -542,21 +909,25 @@ const postLog = async (req, res) => {
       }
 
       const stemiRecordId = source_record_id ? parseInt(source_record_id, 10) : null;
+      const isDetailedStemi = req.body.is_detailed_stemi_form || req.body.is_detailed_acs_form || req.body.drug_grid || req.body.selected_symptoms;
 
       // Step 1: Insert into nurse_outreach_logs
       const insertRes = await transaction.request()
         .input('finalTaskId', db.sql.Int, finalTaskId || null)
         .input('pid', db.sql.Int, pid)
         .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Cardiac Care Nurse'))
-        .input('contactMode', db.sql.NVarChar(50), parseSqlString(contact_mode, 50, 'Phone Call'))
-        .input('outcome', db.sql.NVarChar(100), parseSqlString(outcome, 100, 'Patient Contacted & Appointment Confirmed'))
+        .input('contactMode', db.sql.NVarChar(50), parseSqlString(contact_mode, 50, 'Detailed Form Submission'))
+        .input('outcome', db.sql.NVarChar(100), parseSqlString(outcome, 100, 'Detailed Form Logged'))
         .input('symptomsStatus', db.sql.NVarChar(150), parseSqlString(resolvedSymptomsStatus, 150, 'Stable - No symptoms'))
         .input('medicationAdherence', db.sql.NVarChar(150), parseSqlString(medication_adherence, 150, 'Compliant - Taking all meds as prescribed'))
         .input('notes', db.sql.NVarChar(db.sql.MAX), notes || '')
+        .input('rawFormJson', db.sql.NVarChar(db.sql.MAX), JSON.stringify(req.body))
+        .input('stemiId', db.sql.Int, stemiRecordId || null)
         .input('targetDate', db.sql.Date, parseSqlDate(target_date))
         .query(`
           INSERT INTO nurse_outreach_logs (
             task_id,
+            stemi_id,
             nstemi_followup_id,
             registry_type,
             reg_patient_id,
@@ -567,10 +938,12 @@ const postLog = async (req, res) => {
             symptoms_status,
             medication_adherence,
             notes,
+            raw_form_json,
             next_followup_date,
             created_at
           ) VALUES (
             @finalTaskId,
+            @stemiId,
             NULL,
             'STEMI',
             @pid,
@@ -581,17 +954,22 @@ const postLog = async (req, res) => {
             @symptomsStatus,
             @medicationAdherence,
             @notes,
+            @rawFormJson,
             @targetDate,
             GETDATE()
           );
           SELECT SCOPE_IDENTITY() AS log_id;
         `);
 
-      // Step 2: Immediately execute UPDATE on patient_followup_tasks parent record
+      // Step 2: Execute UPDATE on patient_followup_tasks parent record
+      // Strict rule: Detailed forms DO NOT set task status to 'Completed'. Standard outreach log sets status to 'Completed' ONLY IF explicitly marked 'Completed'.
       if (finalTaskId) {
+        const rawFormStatus = req.body.overall_registry_status || req.body.status || req.body.overall_status || req.body.task_status;
+        const statusToUpdate = (rawFormStatus === 'Completed' || rawFormStatus === 'Patient Contacted & Appointment Confirmed' || rawFormStatus === 'Detailed Form Logged' || !rawFormStatus) ? 'Completed' : rawFormStatus;
+
         await transaction.request()
           .input('taskId', db.sql.Int, finalTaskId)
-          .input('overallStatus', db.sql.NVarChar(50), overallStatus)
+          .input('overallStatus', db.sql.NVarChar(50), statusToUpdate)
           .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Cardiac Care Nurse'))
           .input('targetDate', db.sql.Date, parseSqlDate(target_date))
           .input('notes', db.sql.NVarChar(db.sql.MAX), notes || '')
@@ -608,7 +986,12 @@ const postLog = async (req, res) => {
           `);
       }
 
-      // Step 3: Update stemi_followup record if stemiRecordId and timeframe present
+      // Step 3: Insert detailed STEMI follow-up record if detailed form
+      if (isDetailedStemi) {
+        await saveDetailedAcsRecord(transaction, req.body, 'STEMI', pid, finalTaskId, stemiRecordId, contact_mode, assigned_nurse);
+      }
+
+      // Step 4: Update stemi_followup record if stemiRecordId and timeframe present
       if (stemiRecordId && timeframe) {
         const visitModeRes = await transaction.request().query(
           `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.stemi_followup') AND name = 'visit_mode'`
@@ -631,7 +1014,7 @@ const postLog = async (req, res) => {
             setClause += ', visit_mode = COALESCE(@visitMode, visit_mode)';
           }
           if (hasSpecialInstructions) {
-            reqStemiF.input('instructions', db.sql.NVarChar(500), notes || null);
+            reqStemiF.input('instructions', db.sql.NVarChar(500), parseSqlString(notes, 500, null));
             setClause += ', special_instructions = COALESCE(@instructions, special_instructions)';
           }
 
@@ -654,7 +1037,7 @@ const postLog = async (req, res) => {
 
     } else if (isNstemi) {
       // -------------------------------------------------------------
-      // 1. NSTEMI Registry Branch
+      // 2. NSTEMI Registry Branch
       // -------------------------------------------------------------
       let finalTaskId = parsedTaskId;
 
@@ -675,6 +1058,7 @@ const postLog = async (req, res) => {
       const nstemiFollowupId = source_record_id 
         ? parseInt(source_record_id, 10) 
         : (finalTaskId && finalTaskId >= 100000 ? finalTaskId - 100000 : null);
+      const isDetailedNstemi = req.body.is_detailed_nstemi_form || req.body.is_detailed_acs_form || req.body.drug_grid || req.body.selected_symptoms;
 
       // Step 1: Insert into nurse_outreach_logs
       const insertRes = await transaction.request()
@@ -682,15 +1066,18 @@ const postLog = async (req, res) => {
         .input('nstemiFollowupId', db.sql.Int, nstemiFollowupId || null)
         .input('pid', db.sql.Int, pid)
         .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Cardiac Care Nurse'))
-        .input('contactMode', db.sql.NVarChar(50), parseSqlString(contact_mode, 50, 'Phone Call'))
-        .input('outcome', db.sql.NVarChar(100), parseSqlString(outcome, 100, 'Patient Contacted & Appointment Confirmed'))
+        .input('contactMode', db.sql.NVarChar(50), parseSqlString(contact_mode, 50, 'Detailed Form Submission'))
+        .input('outcome', db.sql.NVarChar(100), parseSqlString(outcome, 100, 'Detailed Form Logged'))
         .input('symptomsStatus', db.sql.NVarChar(150), parseSqlString(resolvedSymptomsStatus, 150, 'Stable - No symptoms'))
         .input('medicationAdherence', db.sql.NVarChar(150), parseSqlString(medication_adherence, 150, 'Compliant - Taking all meds as prescribed'))
         .input('notes', db.sql.NVarChar(db.sql.MAX), notes || '')
+        .input('rawFormJson', db.sql.NVarChar(db.sql.MAX), JSON.stringify(req.body))
+        .input('nstemiId', db.sql.Int, nstemiFollowupId || null)
         .input('targetDate', db.sql.Date, parseSqlDate(target_date))
         .query(`
           INSERT INTO nurse_outreach_logs (
             task_id,
+            nstemi_id,
             nstemi_followup_id,
             registry_type,
             reg_patient_id,
@@ -701,10 +1088,12 @@ const postLog = async (req, res) => {
             symptoms_status,
             medication_adherence,
             notes,
+            raw_form_json,
             next_followup_date,
             created_at
           ) VALUES (
             @finalTaskId,
+            @nstemiId,
             @nstemiFollowupId,
             'NSTEMI',
             @pid,
@@ -715,17 +1104,21 @@ const postLog = async (req, res) => {
             @symptomsStatus,
             @medicationAdherence,
             @notes,
+            @rawFormJson,
             @targetDate,
             GETDATE()
           );
           SELECT SCOPE_IDENTITY() AS log_id;
         `);
 
-      // Step 2: Immediately execute UPDATE on patient_followup_tasks parent record
+      // Step 2: Execute UPDATE on patient_followup_tasks parent record
       if (finalTaskId) {
+        const rawFormStatus = req.body.overall_registry_status || req.body.status || req.body.overall_status || req.body.task_status;
+        const statusToUpdate = (rawFormStatus === 'Completed' || rawFormStatus === 'Patient Contacted & Appointment Confirmed' || rawFormStatus === 'Detailed Form Logged' || !rawFormStatus) ? 'Completed' : rawFormStatus;
+
         await transaction.request()
           .input('taskId', db.sql.Int, finalTaskId)
-          .input('overallStatus', db.sql.NVarChar(50), overallStatus)
+          .input('overallStatus', db.sql.NVarChar(50), statusToUpdate)
           .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Cardiac Care Nurse'))
           .input('targetDate', db.sql.Date, parseSqlDate(target_date))
           .input('notes', db.sql.NVarChar(db.sql.MAX), notes || '')
@@ -742,12 +1135,17 @@ const postLog = async (req, res) => {
           `);
       }
 
-      // Step 3: Update nstemi_followup record if present
+      // Step 3: Insert detailed NSTEMI follow-up record if detailed form
+      if (isDetailedNstemi) {
+        await saveDetailedAcsRecord(transaction, req.body, 'NSTEMI', pid, finalTaskId, source_record_id, contact_mode, assigned_nurse);
+      }
+
+      // Step 4: Update nstemi_followup record if present
       if (nstemiFollowupId) {
         await transaction.request()
           .input('nstemiFollowupId', db.sql.Int, nstemiFollowupId)
           .input('visitMode', db.sql.NVarChar(50), parseSqlString(visit_mode, 50, null))
-          .input('instructions', db.sql.NVarChar(500), notes || null)
+          .input('instructions', db.sql.NVarChar(500), parseSqlString(notes, 500, null))
           .query(`
             UPDATE nstemi_followup
             SET 
@@ -824,8 +1222,8 @@ const postLog = async (req, res) => {
         .input('pid', db.sql.Int, pid)
         .input('hfId', db.sql.Int, resolvedHfId || null)
         .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Staff Nurse'))
-        .input('contactMode', db.sql.NVarChar(50), parseSqlString(contact_mode, 50, 'Phone Call'))
-        .input('outcome', db.sql.NVarChar(100), parseSqlString(outcome, 100, 'Patient Contacted & Appointment Confirmed'))
+        .input('contactMode', db.sql.NVarChar(50), parseSqlString(contact_mode, 50, 'Detailed Form Submission'))
+        .input('outcome', db.sql.NVarChar(100), parseSqlString(outcome, 100, 'Detailed Form Logged'))
         .input('symptomsStatus', db.sql.NVarChar(150), parseSqlString(resolvedSymptomsStatus, 150, 'Stable - No worsening shortness of breath'))
         .input('medicationAdherence', db.sql.NVarChar(150), parseSqlString(medication_adherence, 150, 'Compliant - Taking all meds as prescribed'))
         .input('notes', db.sql.NVarChar(db.sql.MAX), formattedNotes)
@@ -868,12 +1266,14 @@ const postLog = async (req, res) => {
           SELECT SCOPE_IDENTITY() AS log_id;
         `);
 
-      // Step 2: Immediately execute UPDATE on patient_followup_tasks parent record
-      // IMPORTANT: Only update task status when submitting a standard Outreach Log (NOT HF Detailed Log)
-      if (finalTaskId && !isDetailedHf) {
+      // Step 2: Execute UPDATE on patient_followup_tasks parent record
+      if (finalTaskId) {
+        const rawFormStatus = req.body.overall_registry_status || req.body.status || req.body.overall_status || req.body.task_status;
+        const statusToUpdate = (rawFormStatus === 'Completed' || rawFormStatus === 'Patient Contacted & Appointment Confirmed' || rawFormStatus === 'Detailed Form Logged' || !rawFormStatus) ? 'Completed' : rawFormStatus;
+
         await transaction.request()
           .input('taskId', db.sql.Int, finalTaskId)
-          .input('overallStatus', db.sql.NVarChar(50), overallStatus)
+          .input('overallStatus', db.sql.NVarChar(50), statusToUpdate)
           .input('assignedNurse', db.sql.NVarChar(100), parseSqlString(assigned_nurse, 100, 'Staff Nurse'))
           .input('targetDate', db.sql.Date, parseSqlDate(target_date))
           .input('notes', db.sql.NVarChar(db.sql.MAX), formattedNotes)

@@ -465,7 +465,9 @@ async function ensureHfFollowupTable() {
     if (checkLogTbl.recordset?.[0]?.id) {
       const logCols = [
         { name: 'raw_form_json', type: 'NVARCHAR(MAX)' },
-        { name: 'hf_id', type: 'INT' }
+        { name: 'hf_id', type: 'INT' },
+        { name: 'stemi_id', type: 'INT' },
+        { name: 'nstemi_id', type: 'INT' }
       ];
       for (const lcol of logCols) {
         const checkLogCol = await query(

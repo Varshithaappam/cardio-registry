@@ -52,17 +52,18 @@ export const sanitizePercentage = (val) => {
 };
 
 /**
- * Sanitize Decimal values (max 2 decimal places)
+ * Sanitize Decimal values (max 3 decimal places by default)
  */
-export const sanitizeDecimal = (val, maxDecimals = 2, maxVal = null) => {
+export const sanitizeDecimal = (val, maxDecimals = 3, maxVal = null) => {
   if (val === '' || val === null || val === undefined) return '';
   let str = String(val).replace(/[^0-9.]/g, '');
   const parts = str.split('.');
   if (parts.length > 2) {
     str = `${parts[0]}.${parts.slice(1).join('')}`;
   }
-  if (parts[1] && parts[1].length > maxDecimals) {
-    str = `${parts[0]}.${parts.slice(0, maxDecimals)}`;
+  const splitParts = str.split('.');
+  if (splitParts[1] && splitParts[1].length > maxDecimals) {
+    str = `${splitParts[0]}.${splitParts[1].slice(0, maxDecimals)}`;
   }
   if (maxVal !== null) {
     const num = parseFloat(str);
@@ -71,6 +72,15 @@ export const sanitizeDecimal = (val, maxDecimals = 2, maxVal = null) => {
     }
   }
   return str;
+};
+
+/**
+ * Cap any floating point numbers in strings or numbers to max decimal places (default 3)
+ */
+export const limitDecimalDigits = (val, maxDecimals = 3) => {
+  if (val === '' || val === null || val === undefined) return '';
+  const regex = new RegExp(`(\\d+\\.\\d{${maxDecimals}})\\d+`, 'g');
+  return String(val).replace(regex, '$1');
 };
 
 /**

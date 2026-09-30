@@ -5,6 +5,7 @@ import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
 import { useAlert } from '../../context/AlertContext';
 import ClinicalMetricBadge from './common/ClinicalMetricBadge';
 import NoteInput from './common/NoteInput';
+import { sanitizeDecimal } from '../../utils/formSanitizers';
 
 const proceduresList = [
   { label: 'Indication for ICCU admission', key: 'appr_iccu_admission' },
@@ -765,8 +766,18 @@ const STEMIForm = forwardRef(function STEMIForm(
   };
 
   const handleChange = (field, value) => {
+    const decimalFields = [
+      'echo_ef', 'echo_e', 'echo_a', 'echo_dt', 'echo_e_prime', 'echo_tapsv',
+      'hemoglobin', 'creatinine', 'sodium', 'potassium', 'rbs_admission',
+      'stent_diameter', 'stent_length'
+    ];
+    let sanitizedVal = value;
+    if (decimalFields.includes(field)) {
+      sanitizedVal = sanitizeDecimal(value, 3);
+    }
+
     setFormData((prev) => {
-      const updated = { ...prev, [field]: value };
+      const updated = { ...prev, [field]: sanitizedVal };
 
       if (field === 'treatment_strategy') {
         updated.pami = value === 'PAMI' ? 'Yes' : 'No';
@@ -1415,11 +1426,11 @@ const STEMIForm = forwardRef(function STEMIForm(
                 <label className={LABEL_STYLES}>IP No:</label>
                 {!readOnly && (
                   <span className={`text-[10px] select-none ${
-                    Math.max(0, 30 - (formData.ip_no || '').length) <= 5
+                    Math.max(0, 10 - (formData.ip_no || '').length) <= 3
                       ? 'text-rose-500 font-bold animate-pulse'
                       : 'text-slate-400 font-medium'
                   }`}>
-                    {Math.max(0, 30 - (formData.ip_no || '').length)} left
+                    {Math.max(0, 10 - (formData.ip_no || '').length)} left
                   </span>
                 )}
               </div>
@@ -1427,8 +1438,8 @@ const STEMIForm = forwardRef(function STEMIForm(
                 type="text"
                 disabled={readOnly}
                 value={formData.ip_no}
-                maxLength={30}
-                onChange={(e) => handleChange('ip_no', e.target.value)}
+                maxLength={10}
+                onChange={(e) => handleChange('ip_no', e.target.value.slice(0, 10))}
                 placeholder="E.g. IP00001"
                 className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-red-500 focus:border-red-500"
               />
@@ -1438,11 +1449,11 @@ const STEMIForm = forwardRef(function STEMIForm(
                 <label className={LABEL_STYLES}>ACS No / Registry No:</label>
                 {!readOnly && (
                   <span className={`text-[10px] select-none ${
-                    Math.max(0, 50 - (formData.acs_no || '').length) <= 5
+                    Math.max(0, 10 - (formData.acs_no || '').length) <= 3
                       ? 'text-rose-500 font-bold animate-pulse'
                       : 'text-slate-400 font-medium'
                   }`}>
-                    {Math.max(0, 50 - (formData.acs_no || '').length)} left
+                    {Math.max(0, 10 - (formData.acs_no || '').length)} left
                   </span>
                 )}
               </div>
@@ -1452,8 +1463,8 @@ const STEMIForm = forwardRef(function STEMIForm(
                 type="text"
                 disabled={readOnly}
                 value={formData.acs_no}
-                maxLength={50}
-                onChange={(e) => handleChange('acs_no', e.target.value)}
+                maxLength={10}
+                onChange={(e) => handleChange('acs_no', e.target.value.slice(0, 10))}
                 placeholder="E.g. ACS00001"
                 className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-red-500 focus:border-red-500"
               />

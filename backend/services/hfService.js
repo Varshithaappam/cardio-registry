@@ -658,10 +658,10 @@ async function saveHfAssessment(data, userId = 1) {
                 // Auto-supersede previous active pending tasks for this reg_patient_id
                 await conn.query(
                     `UPDATE patient_followup_tasks
-                     SET status = 'Superseded by new assessment'
+                     SET status = 'Superseded by new encounter'
                      WHERE reg_patient_id = @regPatientId 
                        AND status != 'Completed' 
-                       AND status != 'Superseded by new assessment';`,
+                       AND status NOT LIKE '%Superseded%';`,
                     { regPatientId: targetPatientId }
                 );
 

@@ -14,7 +14,7 @@ import FormField from './common/FormField';
 import DrugTable from './common/DrugTable';
 import FollowupAssessmentForm from './FollowupAssessmentForm';
 import { validateField, getVitalsWarning } from '../../utils/validation';
-import { formatIndianCurrency } from '../../utils/formSanitizers';
+import { formatIndianCurrency, sanitizeDecimal } from '../../utils/formSanitizers';
 import { formatDateForDisplay, formatDateTimeForDisplay, formatDateForDatabase } from '../../utils/dateUtils';
 import {
   FORM_STYLES,
@@ -1343,6 +1343,7 @@ const hf = forwardRef(function hf(
       if (value !== '' && !/^[0-9]*\.?[0-9]*$/.test(value)) {
         return;
       }
+      value = sanitizeDecimal(value, 3);
     }
     const res = validateField(fieldName, value);
     if (!res.isValid) {
@@ -1357,7 +1358,7 @@ const hf = forwardRef(function hf(
 
   const handleNumericChange = (setter, val) => {
     if (val === '' || /^[0-9]*\.?[0-9]*$/.test(val)) {
-      setter(val);
+      setter(sanitizeDecimal(val, 3));
     }
   };
 
@@ -1365,8 +1366,9 @@ const hf = forwardRef(function hf(
     if (val !== '' && !/^[0-9]*\.?[0-9]*$/.test(val)) {
       return;
     }
-    const res = validateField('dose', val);
-    setDose(val);
+    const cleanVal = sanitizeDecimal(val, 3);
+    const res = validateField('dose', cleanVal);
+    setDose(cleanVal);
     setDoseErrors(prev => ({
       ...prev,
       [label]: res.isValid ? (res.warning || null) : res.error
@@ -1378,6 +1380,7 @@ const hf = forwardRef(function hf(
       if (value !== '' && !/^[0-9]*\.?[0-9]*$/.test(value)) {
         return;
       }
+      value = sanitizeDecimal(value, 3);
     }
     setLabTests(prev => ({
       ...prev,
@@ -3471,12 +3474,24 @@ const hf = forwardRef(function hf(
 
           {/* Visit ID */}
           <div>
-            <label className={LABEL_STYLES}>Visit ID / IP No</label>
+            <div className="flex justify-between items-center mb-1">
+              <label className={LABEL_STYLES}>Visit ID / IP No</label>
+              {!readOnly && (
+                <span className={`text-[10px] select-none ${
+                  Math.max(0, 10 - (visitId || '').length) <= 3
+                    ? 'text-rose-500 font-bold animate-pulse'
+                    : 'text-slate-400 font-medium'
+                }`}>
+                  {Math.max(0, 10 - (visitId || '').length)} left
+                </span>
+              )}
+            </div>
             <input
               type="text"
               readOnly={readOnly}
               value={visitId || ''}
-              onChange={(e) => setVisitId(e.target.value)}
+              maxLength={10}
+              onChange={(e) => setVisitId(e.target.value.slice(0, 10))}
               placeholder="E.g. IP00001 or OP00001"
               className="w-full p-2 border border-slate-300 rounded-md text-xs font-medium text-slate-900 font-mono focus:ring-teal-500 focus:border-teal-500"
             />
@@ -3560,6 +3575,7 @@ const hf = forwardRef(function hf(
               id="monthlyIncome"
               label="Monthly Income"
               value={monthlyIncome}
+              maxLength={15}
               onChange={(val) => handleFieldChange('monthlyIncome', val, setMonthlyIncome, setMonthlyIncomeError)}
               placeholder="E.g. 10,000"
               validateAlphabetical={false}
@@ -3585,6 +3601,7 @@ const hf = forwardRef(function hf(
               id="caregiverName"
               label="Caregiver Name"
               value={caregiverName}
+              maxLength={50}
               onChange={(val) => handleFieldChange('caregiverName', val, setCaregiverName, setCaregiverNameError)}
               placeholder="Caregiver Name"
               error={formErrors.caregiverName || caregiverNameError}
@@ -3596,6 +3613,7 @@ const hf = forwardRef(function hf(
               id="caregiverRelationship"
               label="Relationship to Patient"
               value={caregiverRelationship}
+              maxLength={30}
               onChange={setCaregiverRelationship}
               placeholder=""
               error={formErrors.caregiverRelationship}

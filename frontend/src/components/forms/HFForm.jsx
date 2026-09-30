@@ -503,6 +503,7 @@ const HFForm = forwardRef(function HFForm(
             id="hf-monthly-income"
             label="Monthly Income"
             value={monthlyIncome}
+            maxLength={15}
             onChange={(val) => setMonthlyIncome(formatIndianCurrency(val))}
             placeholder="E.g. 1,00,00,000"
             validateAlphabetical={false}
@@ -518,6 +519,7 @@ const HFForm = forwardRef(function HFForm(
             id="hf-caregiver-name"
             label="Caregiver Name"
             value={caregiverName}
+            maxLength={50}
             onChange={setCaregiverName}
             placeholder="Caregiver name"
           />
@@ -525,6 +527,7 @@ const HFForm = forwardRef(function HFForm(
             id="hf-caregiver-rel"
             label="Caregiver Relationship"
             value={caregiverRelationship}
+            maxLength={30}
             onChange={setCaregiverRelationship}
             placeholder="E.g. Son / Spouse"
           />
@@ -563,7 +566,8 @@ const HFForm = forwardRef(function HFForm(
             id="hf-encounter-id"
             label="Encounter / IP Number"
             value={encounterId}
-            onChange={setEncounterId}
+            maxLength={10}
+            onChange={(val) => setEncounterId(val.slice(0, 10))}
             placeholder="Optional encounter reference"
           />
           <TextInput

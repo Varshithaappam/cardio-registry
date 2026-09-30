@@ -1,31 +1,19 @@
 /**
  * Date Utilities for CARE Registry
- * Standardized for Indian Locale:
- * - Date format: DD-MM-YYYY (e.g. 27-08-2026)
- * - Date & Time format: DD-MM-YYYY, HH:mm (e.g. 27-08-2026, 15:09)
- * - Time format: HH:mm (e.g. 15:09)
+ * Standardized for Indian Local Wall-Clock Time (IST):
+ * - Date format: DD-MM-YYYY (e.g. 29-09-2026)
+ * - Date & Time format: DD-MM-YYYY, HH:mm (e.g. 29-09-2026, 12:16)
+ * - Time format: HH:mm (e.g. 12:16)
  */
 
-/**
- * Converts a date value (Date, ISO string, or timestamp) to DD-MM-YYYY
- */
 export const formatDateForDisplay = (dateVal) => {
   if (!dateVal) return '';
   let str = String(dateVal).trim();
   if (!str || str === 'null' || str === 'undefined') return '';
 
-  // Sanitize: strip non-digits and non-dash/slash, limit to 10 chars max
-  if (!str.includes('T') && !str.includes('GMT')) {
-    str = str.replace(/[^0-9-/]/g, '');
-    if (str.length > 10) str = str.slice(0, 10);
-  }
-
-  // If already DD-MM-YYYY
   if (/^\d{2}-\d{2}-\d{4}$/.test(str)) return str;
-  // If DD/MM/YYYY, convert to DD-MM-YYYY
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return str.replace(/\//g, '-');
 
-  // Handle YYYY-MM-DD
   const datePart = str.includes('T') ? str.split('T')[0] : (str.includes(' ') ? str.split(' ')[0] : str);
   if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
     const [year, month, day] = datePart.split('-');
@@ -41,14 +29,28 @@ export const formatDateForDisplay = (dateVal) => {
   return `${day}-${month}-${year}`;
 };
 
-/**
- * Converts a date value (Date, ISO string, or timestamp) to Indian Date & Time format:
- * e.g. "27-08-2026, 15:09"
- */
 export const formatDateTimeForDisplay = (dateVal) => {
   if (!dateVal) return 'N/A';
-  const str = String(dateVal).trim();
+  let str = String(dateVal).trim();
   if (!str || str === 'null' || str === 'undefined') return 'N/A';
+
+  // Extract raw date & time components without applying UTC-to-IST offset doubling
+  if (str.includes('T') || str.includes(' ')) {
+    const cleanStr = str.replace('T', ' ').split('.')[0].replace('Z', '');
+    const [datePart, timePart] = cleanStr.split(' ');
+    if (datePart && timePart) {
+      const dateComponents = datePart.split('-');
+      const timeComponents = timePart.split(':');
+      if (dateComponents.length === 3 && timeComponents.length >= 2) {
+        const [year, month, day] = dateComponents;
+        const hour = timeComponents[0].padStart(2, '0');
+        const minute = timeComponents[1].padStart(2, '0');
+        const formattedDay = day.padStart(2, '0');
+        const formattedMonth = month.padStart(2, '0');
+        return `${formattedDay}-${formattedMonth}-${year}, ${hour}:${minute}`;
+      }
+    }
+  }
 
   const dateObj = new Date(str);
   if (isNaN(dateObj.getTime())) {
@@ -64,27 +66,33 @@ export const formatDateTimeForDisplay = (dateVal) => {
   return `${day}-${month}-${year}, ${hours}:${minutes}`;
 };
 
-/**
- * Converts a date value to 24-hr Indian time: HH:mm (e.g. 15:09)
- */
 export const formatTimeForDisplay = (dateVal) => {
   if (!dateVal) return '';
-  const dateObj = new Date(dateVal);
+  let str = String(dateVal).trim();
+  if (!str) return '';
+
+  if (str.includes('T') || str.includes(' ')) {
+    const cleanStr = str.replace('T', ' ').split('.')[0].replace('Z', '');
+    const parts = cleanStr.split(' ');
+    const timePart = parts.length > 1 ? parts[1] : parts[0];
+    const timeComponents = timePart.split(':');
+    if (timeComponents.length >= 2) {
+      return `${timeComponents[0].padStart(2, '0')}:${timeComponents[1].padStart(2, '0')}`;
+    }
+  }
+
+  const dateObj = new Date(str);
   if (isNaN(dateObj.getTime())) return '';
   const hours = String(dateObj.getHours()).padStart(2, '0');
   const minutes = String(dateObj.getMinutes()).padStart(2, '0');
   return `${hours}:${minutes}`;
 };
 
-/**
- * Converts DD-MM-YYYY or DD/MM/YYYY input string back to YYYY-MM-DD for database payload submission
- */
 export const formatDateForDatabase = (dmYDate) => {
   if (!dmYDate) return null;
   const str = String(dmYDate).trim();
   if (!str) return null;
 
-  // If already YYYY-MM-DD format
   if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
     return str.split('T')[0].split(' ')[0];
   }
@@ -100,7 +108,6 @@ export const formatDateForDatabase = (dmYDate) => {
   return str;
 };
 
-// Aliases for convenience
 export const formatDate = formatDateForDisplay;
 export const formatDateTime = formatDateTimeForDisplay;
 export const formatTime = formatTimeForDisplay;
