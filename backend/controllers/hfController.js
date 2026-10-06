@@ -29,7 +29,7 @@ async function resolveCurrentUserId(req) {
         if (recordset.length > 0) return recordset[0].user_id;
     } catch {}
 
-    return 7;
+    return 1;
 }
 
 function isFilled(val) {

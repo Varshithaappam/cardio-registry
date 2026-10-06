@@ -38,16 +38,16 @@ const nstemiRoutes = require("./routes/nstemiRoutes");
 const stemiRoutes = require("./routes/stemiRoutes");
 const mpiConfigRoutes = require("./routes/mpiConfigRoutes");
 
+const hfRegistryController = require('./controllers/hfRegistryController');
+const { authenticateToken } = require('./middleware/authMiddleware');
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/mpi-config", mpiConfigRoutes);
 app.use("/api/hf-registry", hfRegistryRoutes);
-app.post("/api/resolve-staging", patientController.resolveStaging);
+app.post("/api/resolve-staging", authenticateToken, patientController.resolveStaging);
 app.use("/api/patients", patientRoutes);
-app.use("/api/audit", (req, res, next) => {
-    req.url = "/audit" + (req.url === "/" ? "" : req.url);
-    patientRoutes(req, res, next);
-});
+app.get("/api/audit", authenticateToken, patientController.getAuditLogs);
 app.use("/api/nurse-dashboard", nurseFollowUpReportRoutes);
 app.use("/api/nurse-followup-report", nurseFollowUpReportRoutes);
 app.use("/api/hf-form", hfFormRoutes);
@@ -57,9 +57,9 @@ app.use("/api/stemi", stemiRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/hf-files", hfFilesRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-app.get('/api/hf/history/:regPatientId', hfController.getHfHistory);
-app.patch('/api/hf/:id/undelete', hfRegistryRoutes);
-app.put('/api/hf/:id/undelete', hfRegistryRoutes);
+app.get('/api/hf/history/:regPatientId', authenticateToken, hfController.getHfHistory);
+app.patch('/api/hf/:id/undelete', authenticateToken, hfRegistryController.undeleteRecord);
+app.put('/api/hf/:id/undelete', authenticateToken, hfRegistryController.undeleteRecord);
 
 // Handle Unknown Routes
 app.use((req, res) => {

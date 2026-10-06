@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const mpiConfigController = require('../controllers/mpiConfigController');
+const { authenticateToken } = require('../middleware/authMiddleware');
+
+router.use(authenticateToken);
 
 // GET /api/mpi-config - View active configuration and all rules
 router.get('/', mpiConfigController.getConfigs);

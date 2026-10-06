@@ -137,12 +137,13 @@ const config = {
   user: process.env.DB_USER || 'dbuser',
   password: process.env.DB_PASSWORD || 'Admin123!',
   requestTimeout: 60000, // <-- Add this line here
+  port: 1433, // <-- EXPLICITLY DEFINE THE PORT HERE
   pool: { max: 100, min: 0, idleTimeoutMillis: 30000 },
   options: {
     trustedConnection: authMode === 'windows',
     encrypt: process.env.DB_ENCRYPT === 'true',
     trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE !== 'false',
-    instanceName: instanceName || undefined,
+    // instanceName removed completely to prevent dynamic port routing
     enableArithAbort: true
   }
 };
@@ -262,7 +263,8 @@ async function ensureAppropriatenessColumns() {
       if (checkTbl.recordset?.[0]?.id) {
         for (const col of columns) {
           const checkCol = await query(
-            `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.[${table}]') AND name = '${col}'`
+            `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.[${table}]') AND name = @colName`,
+            { colName: col }
           );
           if (!checkCol.recordset || checkCol.recordset.length === 0) {
             try {
@@ -448,7 +450,8 @@ async function ensureHfFollowupTable() {
 
     for (const col of columns) {
       const checkCol = await query(
-        `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.hf_followup_records') AND name = '${col.name}'`
+        `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.hf_followup_records') AND name = @colName`,
+        { colName: col.name }
       );
       if (!checkCol.recordset || checkCol.recordset.length === 0) {
         try {
@@ -471,7 +474,8 @@ async function ensureHfFollowupTable() {
       ];
       for (const lcol of logCols) {
         const checkLogCol = await query(
-          `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.nurse_outreach_logs') AND name = '${lcol.name}'`
+          `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.nurse_outreach_logs') AND name = @colName`,
+          { colName: lcol.name }
         );
         if (!checkLogCol.recordset || checkLogCol.recordset.length === 0) {
           try {
@@ -509,7 +513,8 @@ async function ensureAcsFollowupTables() {
       if (checkTbl.recordset?.[0]?.id) {
         for (const col of acsCols) {
           const checkCol = await query(
-            `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.${tbl}') AND name = '${col.name}'`
+            `SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.${tbl}') AND name = @colName`,
+            { colName: col.name }
           );
           if (!checkCol.recordset || checkCol.recordset.length === 0) {
             try {

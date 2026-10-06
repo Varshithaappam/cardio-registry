@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
+const { authenticateToken } = require("../middleware/authMiddleware");
+
+router.use(authenticateToken);
 
 // PUT Endpoint: Edit Health Facility
 router.put("/:id", async (req, res) => {

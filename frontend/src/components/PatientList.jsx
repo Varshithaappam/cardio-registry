@@ -333,11 +333,19 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                               UHID: {record.patient.uhid}
                             </span>
                           }
-                          {record.patient.abhaNumber &&
-                            <span className="block text-[10px] text-slate-500 font-semibold px-2 font-mono">
-                              ABHA: {record.patient.abhaNumber}
-                            </span>
-                          }
+                          {record.patient.nationalIdType === 'Aadhaar' ? (
+                            record.patient.aadhaarNumber && (
+                              <span className="block text-[10px] text-indigo-600 font-semibold px-2 font-mono">
+                                Aadhaar: {record.patient.aadhaarNumber}
+                              </span>
+                            )
+                          ) : (
+                            record.patient.abhaNumber && (
+                              <span className="block text-[10px] text-slate-500 font-semibold px-2 font-mono">
+                                ABHA: {record.patient.abhaNumber}
+                              </span>
+                            )
+                          )}
                         </div>
                       </td>
 

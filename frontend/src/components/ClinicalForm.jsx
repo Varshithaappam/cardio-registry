@@ -17,7 +17,7 @@ import LaboratoryForm from './forms/LaboratoryForm';
 import InvestigationForm from './forms/InvestigationForm';
 
 // Feature flag to control dev helper UI (Draft checkbox & Fill Dummy Data button)
-const SHOW_DEV_HELPERS = false;
+const SHOW_DEV_HELPERS = true;
 
 export default function ClinicalForm({ patientRecord, formType, editingRecord, onCancel, onSave, onBackPatients }) {
   const navigate = useNavigate();
@@ -263,34 +263,49 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
             </p>
           </div>
         </div>
-        {formType === 'HF' && (
-          <div className="flex rounded-xl border border-teal-800 bg-slate-950/30 p-1 shadow-inner" role="group" aria-label="Heart Failure form view">
+        <div className="flex flex-wrap items-center gap-3">
+          {(isHfForm || isNstemiForm || isStemiForm) && (
             <button
+              id="btn-dummy-form-header"
               type="button"
-              onClick={() => setViewMode('detailed')}
-              aria-pressed={viewMode === 'detailed'}
-              className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
-                viewMode === 'detailed'
-                  ? 'bg-teal-500 text-white shadow-sm'
-                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
-              }`}
+              onClick={() => formRef.current?.fillDummyData?.()}
+              className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/40 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
+              title="Auto-fill sample dummy data for testing all form sections"
             >
-              Detailed Form
+              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+              <span>Fill Dummy Data</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('tabular')}
-              aria-pressed={viewMode === 'tabular'}
-              className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
-                viewMode === 'tabular'
-                  ? 'bg-teal-500 text-white shadow-sm'
-                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              Tabular View
-            </button>
-          </div>
-        )}
+          )}
+
+          {formType === 'HF' && (
+            <div className="flex rounded-xl border border-teal-800 bg-slate-950/30 p-1 shadow-inner" role="group" aria-label="Heart Failure form view">
+              <button
+                type="button"
+                onClick={() => setViewMode('detailed')}
+                aria-pressed={viewMode === 'detailed'}
+                className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                  viewMode === 'detailed'
+                    ? 'bg-teal-500 text-white shadow-sm'
+                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                Detailed Form
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('tabular')}
+                aria-pressed={viewMode === 'tabular'}
+                className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
+                  viewMode === 'tabular'
+                    ? 'bg-teal-500 text-white shadow-sm'
+                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                Tabular View
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Primary Interactive Fields */}
@@ -302,16 +317,16 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
           <div />
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            {SHOW_DEV_HELPERS && (isHfForm || isNstemiForm || isStemiForm) && (
+            {(isHfForm || isNstemiForm || isStemiForm) && (
               <button
                 id="btn-dummy-form"
                 type="button"
                 onClick={() => formRef.current?.fillDummyData?.()}
-                className="w-full sm:w-auto px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                className="w-full sm:w-auto px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
                 title="Populate form with sample testing data"
               >
-                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Fill Dummy Data (Test)</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                <span>Fill Dummy Data</span>
               </button>
             )}
             <button

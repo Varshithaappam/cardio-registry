@@ -2,11 +2,13 @@ const { getPool, sql } = require('../config/db');
 const { logAuditTrail } = require('../utils/logAuditTrail');
 
 async function saveAppropriatenessHelper(transaction, tableName, idField, idVal, isUpdate, getVal) {
-  const colRes = await new sql.Request(transaction).query(
-    `SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH 
-     FROM INFORMATION_SCHEMA.COLUMNS 
-     WHERE TABLE_NAME = '${tableName}'`
-  );
+  const colRes = await new sql.Request(transaction)
+    .input('tblName', sql.VarChar(128), tableName)
+    .query(
+      `SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH 
+       FROM INFORMATION_SCHEMA.COLUMNS 
+       WHERE TABLE_NAME = @tblName`
+    );
   let colLimits = {};
   let existingCols = new Set();
   if (colRes.recordset) {
@@ -175,23 +177,47 @@ async function createNstemiRecord(req, res) {
     let finalIpNo = val('ip_no');
     if (!finalIpNo) {
       const { recordset: maxIpRows } = await transaction.request().query(
-        `SELECT TOP 1 [ip_no] 
-         FROM [nstemi_registry] 
-         WHERE [ip_no] LIKE 'IP%' 
-         ORDER BY [ip_no] DESC;`
+        `SELECT MAX(TRY_CAST(ip_no AS INT)) AS max_ip FROM [nstemi_registry];`
       );
-
       let nextNum = 1;
-      if (maxIpRows.length > 0 && maxIpRows[0].ip_no) {
-        const lastIpNo = maxIpRows[0].ip_no;
-        const numMatch = lastIpNo.match(/\d+/);
+      if (maxIpRows.length > 0 && maxIpRows[0].max_ip != null) {
+        nextNum = maxIpRows[0].max_ip + 1;
+      }
+      finalIpNo = String(nextNum);
+    }
+
+    let candidateAcsNo = val('acs_no');
+    if (!candidateAcsNo) {
+      const { recordset: maxAcsRows } = await transaction.request().query(
+        `SELECT TOP 1 [acs_no] 
+         FROM [nstemi_registry] 
+         WHERE [acs_no] LIKE 'ACS.%' 
+         ORDER BY [acs_no] DESC;`
+      );
+      let nextAcs = 1;
+      if (maxAcsRows.length > 0 && maxAcsRows[0].acs_no) {
+        const numMatch = maxAcsRows[0].acs_no.match(/\d+/);
         if (numMatch) {
-          nextNum = parseInt(numMatch[0], 10) + 1;
+          nextAcs = parseInt(numMatch[0], 10) + 1;
         }
       }
-      finalIpNo = `IP${String(nextNum).padStart(5, '0')}`;
+      candidateAcsNo = `ACS.${String(nextAcs).padStart(4, '0')}`;
     }
-    const finalAcsNo = val('acs_no') || finalIpNo;
+
+    // Verify uniqueness of ACS No
+    const dupCheck = await transaction.request()
+      .input('candidate_acs', sql.VarChar(50), candidateAcsNo)
+      .query(`SELECT 1 FROM [dbo].[nstemi_registry] WHERE [acs_no] = @candidate_acs`);
+
+    if (dupCheck.recordset.length > 0) {
+      if (val('acs_no')) {
+        throw new Error(`An NSTEMI record with ACS No "${candidateAcsNo}" already exists.`);
+      } else {
+        let nextAcsNum = (parseInt(candidateAcsNo.replace(/\D/g, ''), 10) || 1) + 1;
+        candidateAcsNo = `ACS.${String(nextAcsNum).padStart(4, '0')}`;
+      }
+    }
+    const finalAcsNo = candidateAcsNo;
 
     // ==========================================
     // TABLE 1: nstemi_registry (Parent Table)

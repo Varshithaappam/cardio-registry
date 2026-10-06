@@ -4,6 +4,7 @@ import {
   AlertTriangle, Check, X, Pill, Stethoscope, ChevronDown, Sparkles 
 } from 'lucide-react';
 import { limitDecimalDigits } from '../../utils/formSanitizers';
+import { getLocalDateString } from '../../utils/dateUtils';
 
 function AutoTextarea({ value, onChange, placeholder, disabled, className = '', minRows = 1 }) {
   const textareaRef = useRef(null);
@@ -95,7 +96,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
     is_detailed_nstemi_form: !isStemi,
     is_detailed_acs_form: true,
     overall_registry_status: 'Completed',
-    patient_followup_date: new Date().toISOString().split('T')[0],
+    patient_followup_date: getLocalDateString(),
     followup_conducted: 'Telephonic follow-up',
     attempt_number: 1,
     answering_status: 'Yes',
@@ -199,7 +200,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
       ...prev,
       ip_no: prev.ip_no || patientData.ip_no || taskData.ip_no || (isStemi ? 'IP-2026-8891' : 'IP00002'),
       acs_no: prev.acs_no || patientData.acs_no || taskData.acs_no || (isStemi ? 'ACS-STEMI-2026-904' : 'IP00002'),
-      patient_followup_date: new Date().toISOString().split('T')[0],
+      patient_followup_date: getLocalDateString(),
       followup_conducted: 'Telephonic follow-up',
       attempt_number: 1,
       answering_status: 'Yes',
@@ -260,7 +261,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
       <div className={`px-6 py-4 flex items-center justify-between text-white ${isStemi ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700' : 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700'}`}>
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-white/15 backdrop-blur-md rounded-xl">
-            <Heart className="w-6 h-6 text-white animate-pulse" />
+            <FileText className="w-6 h-6 text-white" />
           </div>
           <div>
             <h2 className="font-extrabold text-lg tracking-tight">
@@ -312,8 +313,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
         
         {/* Section 1: Outreach Metadata & Dates */}
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-200 pb-2">
-            <Calendar className="w-4 h-4 text-blue-600" />
+          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-200 pb-2">
             1. Patient & Outreach Details
           </h3>
 
@@ -405,8 +405,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
         {/* Section 2: General Health & Medication Overview */}
         <div className="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-            <Heart className="w-4 h-4 text-rose-500" />
+          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
             2. General Health Overview
           </h3>
 
@@ -525,8 +524,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
         {/* Section 3: New Symptoms Checklist */}
         <div className="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-            <Activity className="w-4 h-4 text-amber-500" />
+          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
             3. New Symptoms Checklist
           </h3>
 
@@ -569,8 +567,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
         {/* Section 4: Medication Adherence & Drug Grid Table */}
         <div className="border border-slate-200 rounded-xl p-4 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2">
-              <Pill className="w-4 h-4 text-indigo-600" />
+            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
               4. Medication Adherence & Drug Grid
             </h3>
             <div className="flex items-center gap-3">
@@ -695,8 +692,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
         {/* Section 5: Lab Tests & Investigations */}
         <div className="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-            <Stethoscope className="w-4 h-4 text-purple-600" />
+          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
             5. Lab Tests & Investigations
           </h3>
 
@@ -783,8 +779,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
         {/* Section 6: Major Clinical Events & Mortality */}
         <div className="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-            <AlertTriangle className="w-4 h-4 text-red-500" />
+          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
             6. Major Clinical Events & Mortality Tracking
           </h3>
 
@@ -902,8 +897,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
         {/* Section 7: Vaccinations & Program Opt-In */}
         <div className="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-            <Shield className="w-4 h-4 text-emerald-600" />
+          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
             7. Vaccinations, Program Opt-in & Feedback
           </h3>
 

@@ -181,6 +181,28 @@ function DashboardPage({ records }) {
 
 function PatientListPage({ records, loadPatients }) {
   const navigate = useNavigate();
+  const [fetching, setFetching] = useState(records.length === 0);
+
+  useEffect(() => {
+    let active = true;
+    async function sync() {
+      if (records.length === 0) setFetching(true);
+      await loadPatients();
+      if (active) setFetching(false);
+    }
+    sync();
+    return () => { active = false; };
+  }, []);
+
+  if (fetching && records.length === 0) {
+    return (
+      <div className="p-12 text-center bg-white rounded-2xl border border-slate-200 shadow-xs my-6">
+        <div className="w-8 h-8 border-3 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Loading Master Patient Registry...</p>
+      </div>
+    );
+  }
+
   return (
     <PatientList
       patients={records}
@@ -528,8 +550,11 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadPatients();
-  }, []);
+    const token = sessionStorage.getItem('token');
+    if (token || nurse) {
+      loadPatients();
+    }
+  }, [nurse]);
 
   const handleLogout = () => {
     sessionStorage.removeItem('token');

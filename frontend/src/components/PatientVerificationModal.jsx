@@ -194,10 +194,14 @@ export default function PatientVerificationModal({
                 </div>
 
                 <div>
-                  <span className="text-slate-400 block font-medium">UHID / ABHA</span>
+                  <span className="text-slate-400 block font-medium">UHID / National ID</span>
                   <div className="font-mono text-slate-700 mt-0.5 space-y-0.5">
                     <div><span className="text-slate-400 font-sans text-[10px]">UHID:</span> {incomingPatient?.uhid || '—'}</div>
-                    <div><span className="text-slate-400 font-sans text-[10px]">ABHA:</span> {incomingPatient?.abha_number || incomingPatient?.abha || '—'}</div>
+                    {incomingPatient?.national_id_type === 'Aadhaar' || incomingPatient?.aadhaar_number ? (
+                      <div><span className="text-slate-400 font-sans text-[10px]">Aadhaar:</span> {incomingPatient?.aadhaar_number || '—'}</div>
+                    ) : (
+                      <div><span className="text-slate-400 font-sans text-[10px]">ABHA:</span> {incomingPatient?.abha_number || incomingPatient?.abha || '—'}</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -254,10 +258,14 @@ export default function PatientVerificationModal({
                   </div>
 
                   <div>
-                    <span className="text-slate-400 block font-medium">UHID / ABHA</span>
+                    <span className="text-slate-400 block font-medium">UHID / National ID</span>
                     <div className="font-mono text-slate-700 mt-0.5 space-y-0.5">
                       <div><span className="text-slate-400 font-sans text-[10px]">UHID:</span> {activeCandidate.uhid || '—'}</div>
-                      <div><span className="text-slate-400 font-sans text-[10px]">ABHA:</span> {activeCandidate.abha_number || '—'}</div>
+                      {activeCandidate.national_id_type === 'Aadhaar' || activeCandidate.aadhaar_number ? (
+                        <div><span className="text-slate-400 font-sans text-[10px]">Aadhaar:</span> {activeCandidate.aadhaar_number || '—'}</div>
+                      ) : (
+                        <div><span className="text-slate-400 font-sans text-[10px]">ABHA:</span> {activeCandidate.abha_number || '—'}</div>
+                      )}
                     </div>
                   </div>
                 </div>

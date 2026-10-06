@@ -11,7 +11,11 @@ const authenticateToken = (req, res, next) => {
     });
   }
 
-  const secret = process.env.JWT_SECRET || 'cardio_registry_secret_key_2026';
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    console.error('FATAL SECURITY ERROR: JWT_SECRET environment variable is missing.');
+    return res.status(500).json({ success: false, message: 'Server security configuration error.' });
+  }
 
   jwt.verify(token, secret, (err, decoded) => {
     if (err) {

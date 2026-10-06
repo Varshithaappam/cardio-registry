@@ -31,8 +31,8 @@ function getAuthenticatedUser(req) {
     const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
     if (token) {
       try {
-        const secret = process.env.JWT_SECRET || 'cardio_registry_secret_key_2026';
-        const decoded = jwt.decode(token) || jwt.verify(token, secret);
+        const secret = process.env.JWT_SECRET;
+        const decoded = jwt.decode(token) || (secret ? jwt.verify(token, secret) : null);
         if (decoded) {
           const resolvedUsername = decoded.username || headerUserName || decoded.name || decoded.email || 'Authenticated User';
           return {

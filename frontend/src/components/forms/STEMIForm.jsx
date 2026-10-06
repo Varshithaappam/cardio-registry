@@ -6,6 +6,7 @@ import { useAlert } from '../../context/AlertContext';
 import ClinicalMetricBadge from './common/ClinicalMetricBadge';
 import NoteInput from './common/NoteInput';
 import { sanitizeDecimal, sanitizePercentage } from '../../utils/formSanitizers';
+import { getLocalDateString } from '../../utils/dateUtils';
 
 const proceduresList = [
   { label: 'Indication for ICCU admission', key: 'appr_iccu_admission' },
@@ -461,19 +462,21 @@ const STEMIForm = forwardRef(function STEMIForm(
     total_cost: editingRecord?.total_cost || '',
 
     // Section 19: Follow-up grid state
+    visit_mode: editingRecord?.visit_mode ?? editingRecord?.followup?.[0]?.visit_mode ?? null,
+    special_instructions: editingRecord?.special_instructions || editingRecord?.followup?.[0]?.special_instructions || editingRecord?.special_clinical_instructions || '',
     ...getFollowupInitialState(
       editingRecord?.followup || editingRecord?.stemi_followup,
-      editingRecord?.discharge_date || editingRecord?.admission_date || new Date().toISOString().split('T')[0]
+      editingRecord?.discharge_date || editingRecord?.admission_date || getLocalDateString()
     )
   });
 
   const [formErrors, setFormErrors] = useState({});
 
   const fillDummyData = () => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateString();
     const d = new Date();
     d.setDate(d.getDate() + 5);
-    const dischargeVal = d.toISOString().split('T')[0];
+    const dischargeVal = getLocalDateString(d);
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
 
     setFormData({
@@ -481,9 +484,9 @@ const STEMIForm = forwardRef(function STEMIForm(
       name: patient.name || patient.patient_name || 'Dummy Patient',
       age: patientAge || 58,
       gender: patient.gender || 'M',
-      mr_no: patient.mrNo || patient.mr_no || 'MR-DEMO-001',
-      ip_no: `IP-2026-${randomSuffix}`,
-      acs_no: editingRecord?.acs_no || `ACS-STEMI-2026-${randomSuffix}`,
+      mr_no: patient.mrNo || patient.mr_no || 'DDH.0001',
+      ip_no: String(randomSuffix),
+      acs_no: editingRecord?.acs_no || 'ACS.0001',
       admission_date: todayStr,
       discharge_date: dischargeVal,
       primary_consultant: 'Dr. K. Sridhar (Cardiologist)',
@@ -767,9 +770,6 @@ const STEMIForm = forwardRef(function STEMIForm(
 
   const handleChange = (field, value) => {
     let sanitizedVal = value;
-    if (typeof sanitizedVal === 'string' && sanitizedVal.includes('-')) {
-      sanitizedVal = sanitizedVal.replace(/-/g, '');
-    }
     const percentageFields = ['echo_ef'];
     const decimalFields = [
       'echo_e', 'echo_a', 'echo_dt', 'echo_e_prime', 'echo_tapsv',
@@ -777,12 +777,15 @@ const STEMIForm = forwardRef(function STEMIForm(
       'stent_diameter', 'stent_length'
     ];
     if (percentageFields.includes(field)) {
+      if (typeof sanitizedVal === 'string' && sanitizedVal.includes('-')) {
+        sanitizedVal = sanitizedVal.replace(/-/g, '');
+      }
       sanitizedVal = sanitizePercentage(sanitizedVal, 3);
     } else if (decimalFields.includes(field)) {
+      if (typeof sanitizedVal === 'string' && sanitizedVal.includes('-')) {
+        sanitizedVal = sanitizedVal.replace(/-/g, '');
+      }
       sanitizedVal = sanitizeDecimal(sanitizedVal, 3);
-    } else if (typeof sanitizedVal === 'string' && /^\d+$/.test(sanitizedVal)) {
-      const num = parseInt(sanitizedVal, 10);
-      if (num < 0) sanitizedVal = '0';
     }
 
     setFormData((prev) => {
@@ -937,7 +940,7 @@ const STEMIForm = forwardRef(function STEMIForm(
           cabg: formData[`cabg_${k}`] || 'No',
           death: formData[`death_${k}`] || 'No',
           other_event: formData[`other_${k}`] || null,
-          visit_mode: formData.visit_mode || 'In-Person',
+          visit_mode: formData.visit_mode || null,
           special_instructions: formData.special_instructions || null
         });
       }
@@ -1389,6 +1392,22 @@ const STEMIForm = forwardRef(function STEMIForm(
       {/* Patient Profile & Administrative Details */}
       <div id="section-1">
         <SectionCard title="Patient Profile & Administrative Details">
+          {!readOnly && (
+            <div className="flex justify-end pb-2">
+              <button
+                type="button"
+                onClick={() => {
+                  fillDummyData();
+                  setFormErrors({});
+                }}
+                className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+                title="Auto-fill sample test data for all STEMI form sections"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                <span>Fill Dummy Data</span>
+              </button>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
             <div>
               <label className={LABEL_STYLES}>Patient Name:</label>
@@ -1449,7 +1468,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 value={formData.ip_no}
                 maxLength={10}
                 onChange={(e) => handleChange('ip_no', e.target.value.slice(0, 10))}
-                placeholder="E.g. IP00001"
+                placeholder="E.g. 1"
                 className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-red-500 focus:border-red-500"
               />
             </div>
@@ -1474,7 +1493,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 value={formData.acs_no}
                 maxLength={10}
                 onChange={(e) => handleChange('acs_no', e.target.value.slice(0, 10))}
-                placeholder="E.g. ACS00001"
+                placeholder="E.g. ACS.0001"
                 className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-red-500 focus:border-red-500"
               />
             </div>
@@ -3151,6 +3170,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                   {['In-Person', 'Phone Check-in'].map((mode) => (
                     <label
                       key={mode}
+                      onClick={() => !readOnly && handleChange('visit_mode', mode)}
                       className={`flex items-center gap-2.5 p-3 rounded-lg border text-xs font-medium cursor-pointer transition-all ${
                         formData.visit_mode === mode
                           ? 'bg-red-50 border-red-500 text-red-950 font-semibold shadow-xs'
@@ -3160,7 +3180,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                       <input
                         type="radio"
                         disabled={readOnly}
-                        name="visit_mode"
+                        name={`stemi_visit_mode_${formData.record_id || 'new'}`}
                         value={mode}
                         checked={formData.visit_mode === mode}
                         onChange={(e) => handleChange('visit_mode', e.target.value)}

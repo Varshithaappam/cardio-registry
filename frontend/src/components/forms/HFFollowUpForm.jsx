@@ -4,6 +4,7 @@ import {
   AlertTriangle, Check, X, Pill, Stethoscope, ChevronDown, Sparkles 
 } from 'lucide-react';
 import { sanitizePositiveInteger, sanitizeUHID, limitDecimalDigits } from '../../utils/formSanitizers';
+import { getLocalDateString } from '../../utils/dateUtils';
 import HfFollowupPdfModal from '../modals/HfFollowupPdfModal';
 
 // Reusable Auto-Resizing Textarea with CSS Word-Wrapping
@@ -116,7 +117,7 @@ export default function HFFollowUpForm({
     initialForm?.date_of_discharge || initialForm?.discharge_date || patientData?.date_of_discharge || patientData?.discharge_date || patientData?.dischargeDate || taskData?.date_of_discharge || taskData?.discharge_date || ''
   );
   const [followupDate, setFollowupDate] = useState(
-    initialForm?.patient_followup_date || new Date().toISOString().split('T')[0]
+    initialForm?.patient_followup_date || getLocalDateString()
   );
   const [followupConducted, setFollowupConducted] = useState(
     initialForm?.followup_conducted || 'Telephonic follow-up'
@@ -287,7 +288,7 @@ export default function HFFollowUpForm({
     setUhid(uhid || 'UHID992817');
     setDateOfAdmission(dateOfAdmission || '2026-08-10');
     setDateOfDischarge(dateOfDischarge || '2026-08-18');
-    setFollowupDate(new Date().toISOString().split('T')[0]);
+    setFollowupDate(getLocalDateString());
     setAttemptNumber(1);
     setAnsweringStatus('Yes');
     setNoAnswerReason('');
@@ -477,7 +478,7 @@ export default function HFFollowUpForm({
               title="Auto-fill sample data for testing all form sections"
             >
               <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-              <span>Fill Sample</span>
+              <span>Fill Dummy Data</span>
             </button>
           )}
 

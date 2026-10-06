@@ -57,11 +57,13 @@ const calculateBackendExpectedDate = (baseDateStr, months) => {
 };
 
 async function saveAppropriatenessHelper(transaction, tableName, idField, idVal, isUpdate, getVal) {
-  const colRes = await new sql.Request(transaction).query(
-    `SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH 
-     FROM INFORMATION_SCHEMA.COLUMNS 
-     WHERE TABLE_NAME = '${tableName}'`
-  );
+  const colRes = await new sql.Request(transaction)
+    .input('tblName', sql.VarChar(128), tableName)
+    .query(
+      `SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH 
+       FROM INFORMATION_SCHEMA.COLUMNS 
+       WHERE TABLE_NAME = @tblName`
+    );
   let colLimits = {};
   let existingCols = new Set();
   if (colRes.recordset) {
@@ -200,29 +202,46 @@ async function createStemiRecord(req, res) {
     let finalIpNo = getVal('ip_no');
     if (!finalIpNo) {
       const { recordset: maxIpRows } = await transaction.request().query(
-        `SELECT TOP 1 [ip_no] 
-         FROM [stemi_registry] 
-         WHERE [ip_no] LIKE 'IP%' 
-         ORDER BY [ip_no] DESC;`
+        `SELECT MAX(TRY_CAST(ip_no AS INT)) AS max_ip FROM [stemi_registry];`
       );
-
       let nextNum = 1;
-      if (maxIpRows.length > 0 && maxIpRows[0].ip_no) {
-        const lastIpNo = maxIpRows[0].ip_no;
-        const numMatch = lastIpNo.match(/\d+/);
+      if (maxIpRows.length > 0 && maxIpRows[0].max_ip != null) {
+        nextNum = maxIpRows[0].max_ip + 1;
+      }
+      finalIpNo = String(nextNum);
+    }
+
+    // Generate next acs_no if not provided
+    let candidateAcsNo = getVal('acs_no');
+    if (!candidateAcsNo) {
+      const { recordset: maxAcsRows } = await transaction.request().query(
+        `SELECT TOP 1 [acs_no] 
+         FROM [stemi_registry] 
+         WHERE [acs_no] LIKE 'ACS.%' 
+         ORDER BY [acs_no] DESC;`
+      );
+      let nextAcs = 1;
+      if (maxAcsRows.length > 0 && maxAcsRows[0].acs_no) {
+        const numMatch = maxAcsRows[0].acs_no.match(/\d+/);
         if (numMatch) {
-          nextNum = parseInt(numMatch[0], 10) + 1;
+          nextAcs = parseInt(numMatch[0], 10) + 1;
         }
       }
-      finalIpNo = `IP${String(nextNum).padStart(5, '0')}`;
+      candidateAcsNo = `ACS.${String(nextAcs).padStart(4, '0')}`;
     }
-    let candidateAcsNo = getVal('acs_no') || finalIpNo;
+
+    // Verify uniqueness of ACS No
     const dupCheck = await transaction.request()
       .input('candidate_acs', sql.VarChar(50), candidateAcsNo)
       .query(`SELECT 1 FROM [dbo].[stemi_registry] WHERE [acs_no] = @candidate_acs`);
 
     if (dupCheck.recordset.length > 0) {
-      candidateAcsNo = `ACS-STEMI-${Date.now().toString().slice(-5)}-${Math.floor(100 + Math.random() * 900)}`;
+      if (getVal('acs_no')) {
+        throw new Error(`A STEMI record with ACS No "${candidateAcsNo}" already exists.`);
+      } else {
+        let nextAcsNum = (parseInt(candidateAcsNo.replace(/\D/g, ''), 10) || 1) + 1;
+        candidateAcsNo = `ACS.${String(nextAcsNum).padStart(4, '0')}`;
+      }
     }
     const finalAcsNo = candidateAcsNo;
 

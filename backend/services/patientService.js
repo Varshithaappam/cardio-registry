@@ -8,18 +8,18 @@ const patientMatchAuditService = require("./patientMatchAuditService");
 
 /**
  * Generate MR Number
- * Format: MR00001
+ * Format: DDH.0001
  */
 function generateMRNumber(regPatientId) {
-    return `MR${String(regPatientId).padStart(5, "0")}`;
+    return `DDH.${String(regPatientId).padStart(4, "0")}`;
 }
 
 /**
  * Generate IP Number
- * Format: IP00001
+ * Format: Sequential integer (1, 2, 3, 4...)
  */
 function generateIPNumber(regPatientId) {
-    return `IP${String(regPatientId).padStart(5, "0")}`;
+    return String(regPatientId);
 }
 
 /**
@@ -45,6 +45,48 @@ async function registerPatient(patientData, userId = 1) {
         error.status = 409;
         error.code = 2627;
         throw error;
+    }
+
+    // Validate uniqueness of UHID if provided
+    if (normalizedData.uhid) {
+        const { recordset: existingUhid } = await db.query(
+            'SELECT [reg_patient_id] FROM [patient_demographics] WHERE [uhid] = @uhid;',
+            { uhid: normalizedData.uhid }
+        );
+        if (existingUhid.length > 0) {
+            const error = new Error(`A patient with UHID "${normalizedData.uhid}" already exists.`);
+            error.status = 409;
+            error.code = 2627;
+            throw error;
+        }
+    }
+
+    // Validate uniqueness of ABHA Number if provided
+    if (normalizedData.national_id_type === 'ABHA' && normalizedData.abha_number) {
+        const { recordset: existingAbha } = await db.query(
+            'SELECT [reg_patient_id] FROM [patient_demographics] WHERE [abha_number] = @abha_number;',
+            { abha_number: normalizedData.abha_number }
+        );
+        if (existingAbha.length > 0) {
+            const error = new Error(`A patient with ABHA Number "${normalizedData.abha_number}" already exists.`);
+            error.status = 409;
+            error.code = 2627;
+            throw error;
+        }
+    }
+
+    // Validate uniqueness of Aadhaar Number if provided
+    if (normalizedData.national_id_type === 'Aadhaar' && normalizedData.aadhaar_number) {
+        const { recordset: existingAadhaar } = await db.query(
+            'SELECT [reg_patient_id] FROM [patient_demographics] WHERE [aadhaar_number] = @aadhaar_number;',
+            { aadhaar_number: normalizedData.aadhaar_number }
+        );
+        if (existingAadhaar.length > 0) {
+            const error = new Error(`A patient with Aadhaar Number "${normalizedData.aadhaar_number}" already exists.`);
+            error.status = 409;
+            error.code = 2627;
+            throw error;
+        }
     }
 
     console.log("Registering patient:", {
@@ -119,6 +161,45 @@ async function updatePatient(regPatientId, patientData, userId = 1) {
         );
         if (existingMr.length > 0) {
             const error = new Error(`A patient with MR Number "${mr_no}" already exists.`);
+            error.status = 409;
+            error.code = 2627;
+            throw error;
+        }
+    }
+
+    if (normalizedData.uhid) {
+        const { recordset: existingUhid } = await db.query(
+            'SELECT [reg_patient_id] FROM [patient_demographics] WHERE [uhid] = @uhid AND [reg_patient_id] != @regPatientId;',
+            { uhid: normalizedData.uhid, regPatientId }
+        );
+        if (existingUhid.length > 0) {
+            const error = new Error(`A patient with UHID "${normalizedData.uhid}" already exists.`);
+            error.status = 409;
+            error.code = 2627;
+            throw error;
+        }
+    }
+
+    if (normalizedData.national_id_type === 'ABHA' && normalizedData.abha_number) {
+        const { recordset: existingAbha } = await db.query(
+            'SELECT [reg_patient_id] FROM [patient_demographics] WHERE [abha_number] = @abha_number AND [reg_patient_id] != @regPatientId;',
+            { abha_number: normalizedData.abha_number, regPatientId }
+        );
+        if (existingAbha.length > 0) {
+            const error = new Error(`A patient with ABHA Number "${normalizedData.abha_number}" already exists.`);
+            error.status = 409;
+            error.code = 2627;
+            throw error;
+        }
+    }
+
+    if (normalizedData.national_id_type === 'Aadhaar' && normalizedData.aadhaar_number) {
+        const { recordset: existingAadhaar } = await db.query(
+            'SELECT [reg_patient_id] FROM [patient_demographics] WHERE [aadhaar_number] = @aadhaar_number AND [reg_patient_id] != @regPatientId;',
+            { aadhaar_number: normalizedData.aadhaar_number, regPatientId }
+        );
+        if (existingAadhaar.length > 0) {
+            const error = new Error(`A patient with Aadhaar Number "${normalizedData.aadhaar_number}" already exists.`);
             error.status = 409;
             error.code = 2627;
             throw error;

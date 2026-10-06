@@ -6,6 +6,7 @@ import { useAlert } from '../../context/AlertContext';
 import ClinicalMetricBadge from './common/ClinicalMetricBadge';
 import NoteInput from './common/NoteInput';
 import { sanitizeDecimal, sanitizePercentage } from '../../utils/formSanitizers';
+import { getLocalDateString } from '../../utils/dateUtils';
 
 const proceduresList = [
   { label: 'Indication for ICCU admission', key: 'appr_iccu_admission' },
@@ -97,7 +98,9 @@ const getFollowupInitialState = (followupArray, baseDate) => {
     ptca_1m: null, ptca_3m: null, ptca_6m: null, ptca_12m: null,
     cabg_1m: null, cabg_3m: null, cabg_6m: null, cabg_12m: null,
     death_1m: null, death_3m: null, death_6m: null, death_12m: null,
-    other_1m: '', other_3m: '', other_6m: '', other_12m: ''
+    other_1m: '', other_3m: '', other_6m: '', other_12m: '',
+    visit_mode: null,
+    special_instructions: ''
   };
 
   if (!followupArray || !Array.isArray(followupArray)) return state;
@@ -389,8 +392,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     total_cost: editingRecord?.total_cost || '',
 
     // Follow-up grid states from database followup array
-    ...getFollowupInitialState(editingRecord?.followup, editingRecord?.discharge_date || editingRecord?.admission_date || new Date().toISOString().split('T')[0]),
-    visit_mode: editingRecord?.visit_mode || editingRecord?.followup?.[0]?.visit_mode || null,
+    ...getFollowupInitialState(editingRecord?.followup, editingRecord?.discharge_date || editingRecord?.admission_date || getLocalDateString()),
+    visit_mode: editingRecord?.visit_mode ?? editingRecord?.followup?.[0]?.visit_mode ?? null,
     special_instructions: editingRecord?.special_instructions || editingRecord?.followup?.[0]?.special_instructions || editingRecord?.special_clinical_instructions || '',
 
     // Appropriateness Assessment -> Procedures:
@@ -480,9 +483,6 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
   const handleChange = (field, value) => {
     let sanitizedVal = value;
-    if (typeof sanitizedVal === 'string' && sanitizedVal.includes('-')) {
-      sanitizedVal = sanitizedVal.replace(/-/g, '');
-    }
     const percentageFields = ['echo_ef'];
     const decimalFields = [
       'echo_e', 'echo_a', 'echo_dt', 'echo_e_prime', 'echo_tapsv',
@@ -490,12 +490,15 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       'stent_diameter', 'stent_length'
     ];
     if (percentageFields.includes(field)) {
+      if (typeof sanitizedVal === 'string' && sanitizedVal.includes('-')) {
+        sanitizedVal = sanitizedVal.replace(/-/g, '');
+      }
       sanitizedVal = sanitizePercentage(sanitizedVal, 3);
     } else if (decimalFields.includes(field)) {
+      if (typeof sanitizedVal === 'string' && sanitizedVal.includes('-')) {
+        sanitizedVal = sanitizedVal.replace(/-/g, '');
+      }
       sanitizedVal = sanitizeDecimal(sanitizedVal, 3);
-    } else if (typeof sanitizedVal === 'string' && /^\d+$/.test(sanitizedVal)) {
-      const num = parseInt(sanitizedVal, 10);
-      if (num < 0) sanitizedVal = '0';
     }
 
     setFormData((prev) => {
@@ -652,7 +655,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
           cabg,
           death,
           other_event: other,
-          visit_mode: formData.visit_mode || 'In-Person',
+          visit_mode: formData.visit_mode || null,
           special_instructions: formData.special_instructions || 'Follow-up in cardiology OPD with repeat lipid profile and ECG.'
         };
       });
@@ -724,7 +727,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     payload.appr_other_drug_appropriateness_note = (formData.appr_other_drug_appropriateness_note || '').slice(0, 150);
 
     // Follow-up visit mode & special instructions
-    payload.visit_mode = formData.visit_mode || 'In-Person';
+    payload.visit_mode = formData.visit_mode || null;
     payload.special_instructions = formData.special_instructions || '';
 
     return payload;
@@ -735,8 +738,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       reg_patient_id: patient.id || patient.reg_patient_id || 1,
       acs_no: formData.acs_no,
       ip_no: formData.ip_no,
-      admission_date: new Date().toISOString().split('T')[0],
-      discharge_date: new Date(Date.now() + 5 * 24 * 3600 * 1000).toISOString().split('T')[0],
+      admission_date: getLocalDateString(),
+      discharge_date: getLocalDateString(new Date(Date.now() + 5 * 24 * 3600 * 1000)),
       primary_consultant: 'Dr. K. Sridhar (Cardiologist)',
 
       hypertension: 'Yes',
@@ -1122,6 +1125,19 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
       {/* Patient Profile & Administrative Details */}
       <SectionCard title="Patient Profile & Administrative Details">
+        {!readOnly && (
+          <div className="flex justify-end pb-2">
+            <button
+              type="button"
+              onClick={fillDummyData}
+              className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+              title="Auto-fill sample test data for all NSTEMI form sections"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+              <span>Fill Dummy Data</span>
+            </button>
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
           <div>
             <label className={LABEL_STYLES}>Patient Name:</label>
@@ -1182,7 +1198,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               value={formData.ip_no || ''}
               maxLength={10}
               onChange={(e) => handleChange('ip_no', e.target.value.slice(0, 10))}
-              placeholder="E.g. IP00001"
+              placeholder="E.g. 1"
               className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
@@ -1207,7 +1223,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               value={formData.acs_no || ''}
               maxLength={10}
               onChange={(e) => handleChange('acs_no', e.target.value.slice(0, 10))}
-              placeholder="E.g. ACS00001"
+              placeholder="E.g. ACS.0001"
               className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-orange-500 focus:border-orange-500"
             />
           </div>
@@ -2766,6 +2782,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 {['In-Person', 'Phone Check-in'].map((mode) => (
                   <label
                     key={mode}
+                    onClick={() => !readOnly && handleChange('visit_mode', mode)}
                     className={`flex items-center gap-2.5 p-3 rounded-lg border text-xs font-medium cursor-pointer transition-all ${
                       formData.visit_mode === mode
                         ? 'bg-orange-50 border-orange-500 text-orange-950 font-semibold shadow-xs'
@@ -2775,7 +2792,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                     <input
                       type="radio"
                       disabled={readOnly}
-                      name="visit_mode"
+                      name={`nstemi_visit_mode_${formData.record_id || 'new'}`}
                       value={mode}
                       checked={formData.visit_mode === mode}
                       onChange={(e) => handleChange('visit_mode', e.target.value)}

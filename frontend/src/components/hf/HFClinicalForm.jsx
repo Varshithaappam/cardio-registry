@@ -1,5 +1,6 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { calculateAge } from '../../utils/calculateAge';
+import { getLocalDateString } from '../../utils/dateUtils';
 import SectionCard from './SectionCard';
 import FormField from './FormField';
 import RadioGroup from './RadioGroup';
@@ -174,7 +175,7 @@ const HFClinicalForm = forwardRef(function HFClinicalForm(
   const patient = patientRecord?.patient || {};
   const comorbidities = patientRecord?.comorbidities || {};
 
-  const [assessmentDate, setAssessmentDate] = useState(editingRecord?.assessmentDate ?? new Date().toISOString().split('T')[0]);
+  const [assessmentDate, setAssessmentDate] = useState(editingRecord?.assessmentDate ?? getLocalDateString());
   const [visitType, setVisitType] = useState(editingRecord?.visitType ?? 'Outpatient');
   const [treatingCardiologist, setTreatingCardiologist] = useState(
     editingRecord?.inpatientDetails?.treatingCardiologist ?? patient.primaryConsultant ?? CARDIOLOGISTS[0]

@@ -298,8 +298,19 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
             <span className="text-slate-700 font-bold block mt-1">{record.patient.uhid || '—'}</span>
           </div>
           <div>
-            <span className="text-slate-400 font-semibold block uppercase">ABHA Number</span>
-            <span className="text-slate-700 font-bold block mt-1">{record.patient.abhaNumber || '—'}</span>
+            <span className="text-slate-400 font-semibold block uppercase">
+              {record.patient.nationalIdType === 'Aadhaar' ? 'National ID (Aadhaar)' : 'National ID (ABHA)'}
+            </span>
+            <span className="text-slate-700 font-bold block mt-1">
+              {record.patient.nationalIdType === 'Aadhaar'
+                ? (record.patient.aadhaarNumber || record.patient.aadhaar_number || '—')
+                : (record.patient.abhaNumber || record.patient.abha_number || '—')}
+              {record.patient.nationalIdType === 'ABHA' && (record.patient.abhaAddress || record.patient.abha_address) && (
+                <span className="block text-[11px] text-slate-500 font-normal">
+                  {record.patient.abhaAddress || record.patient.abha_address}
+                </span>
+              )}
+            </span>
           </div>
           <div>
             <span className="text-slate-400 font-semibold block uppercase">Contact Phone</span>

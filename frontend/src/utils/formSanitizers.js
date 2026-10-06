@@ -137,19 +137,101 @@ export const formatIndianCurrency = (val) => {
 };
 
 /**
- * Sanitize UHID input (Max 10 characters)
+ * Sanitize UHID input (IAC Code format e.g. DDCH.14250, Max 30 characters)
  */
 export const sanitizeUHID = (val) => {
   if (val === null || val === undefined) return '';
-  return String(val).trim().slice(0, 10);
+  return String(val).trim().slice(0, 30);
 };
 
 /**
- * Sanitize ABHA number input (Max 14 characters)
+ * Sanitize & Format ABHA number (14 digits grouped as XX-XXXX-XXXX-XXXX)
+ * Automatically appends hyphens after 2, 6, and 10 digits as the user types
  */
-export const sanitizeABHA = (val) => {
+export const sanitizeABHA = (val, prevVal = '') => {
   if (val === null || val === undefined) return '';
-  return String(val).trim().slice(0, 14);
+  let str = String(val);
+  const prevStr = String(prevVal || '');
+
+  // Detect if user pressed backspace on a trailing hyphen or separator
+  const isDeleting = prevStr.length > str.length;
+  if (isDeleting && (prevStr.endsWith('-') || prevStr.endsWith(' ')) && str === prevStr.slice(0, -1)) {
+    str = str.slice(0, -1);
+  }
+
+  const digits = str.replace(/\D/g, '').slice(0, 14);
+  const parts = [];
+  if (digits.length > 0) parts.push(digits.slice(0, 2));
+  if (digits.length > 2) parts.push(digits.slice(2, 6));
+  if (digits.length > 6) parts.push(digits.slice(6, 10));
+  if (digits.length > 10) parts.push(digits.slice(10, 14));
+
+  let formatted = parts.join('-');
+
+  // Auto-append hyphen when user types the 2nd, 6th, or 10th digit
+  if (!isDeleting && (digits.length === 2 || digits.length === 6 || digits.length === 10)) {
+    formatted += '-';
+  }
+
+  return formatted;
 };
+
+/**
+ * Sanitize & Format Aadhaar number (12 digits grouped as XXXX XXXX XXXX)
+ * Automatically appends spaces after 4 and 8 digits as the user types
+ */
+export const sanitizeAadhaar = (val, prevVal = '') => {
+  if (val === null || val === undefined) return '';
+  let str = String(val);
+  const prevStr = String(prevVal || '');
+
+  // Detect if user pressed backspace on a trailing space or separator
+  const isDeleting = prevStr.length > str.length;
+  if (isDeleting && (prevStr.endsWith(' ') || prevStr.endsWith('-')) && str === prevStr.slice(0, -1)) {
+    str = str.slice(0, -1);
+  }
+
+  const digits = str.replace(/\D/g, '').slice(0, 12);
+  const parts = [];
+  for (let i = 0; i < digits.length; i += 4) {
+    parts.push(digits.slice(i, i + 4));
+  }
+  let formatted = parts.join(' ');
+
+  // Auto-append space when user types the 4th or 8th digit
+  if (!isDeleting && (digits.length === 4 || digits.length === 8)) {
+    formatted += ' ';
+  }
+
+  return formatted;
+};
+
+/**
+ * Validate ABHA address username (8 to 18 characters, max 1 dot, max 1 underscore, no leading/trailing dot/underscore)
+ */
+export const validateABHAAddress = (val) => {
+  if (!val || typeof val !== 'string') return { valid: false, message: 'ABHA Address is required' };
+  const parts = val.trim().split('@');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    return { valid: false, message: 'Must follow format: username@consent_manager (e.g. username@abdm)' };
+  }
+  const username = parts[0];
+  if (username.length < 8 || username.length > 18) {
+    return { valid: false, message: 'Username portion must be between 8 and 18 characters' };
+  }
+  if (/^[._]|[._]$/.test(username)) {
+    return { valid: false, message: 'Username cannot start or end with a dot (.) or underscore (_)' };
+  }
+  const dotCount = (username.match(/\./g) || []).length;
+  const underscoreCount = (username.match(/_/g) || []).length;
+  if (dotCount > 1 || underscoreCount > 1) {
+    return { valid: false, message: 'Allows at most one dot (.) and/or one underscore (_)' };
+  }
+  if (!/^[a-zA-Z0-9._]+$/.test(username)) {
+    return { valid: false, message: 'Contains invalid special characters' };
+  }
+  return { valid: true };
+};
+
 
 

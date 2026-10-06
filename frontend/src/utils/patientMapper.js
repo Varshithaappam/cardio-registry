@@ -72,6 +72,12 @@ export function buildPatientPayload({
   occupation,
   uhid,
   abhaNumber,
+  nationalIdType,
+  national_id_type,
+  aadhaarNumber,
+  aadhaar_number,
+  abhaAddress,
+  abha_address,
   patientStatus,
   patient_status,
   dateOfDeath,
@@ -88,6 +94,9 @@ export function buildPatientPayload({
   ].filter(Boolean);
   const combinedAddress = address || (parts.length > 0 ? parts.join(', ') : null);
   const status = patientStatus || patient_status || "ACTIVE";
+  const idType = nationalIdType || national_id_type || null;
+  const aadhaar = aadhaarNumber || aadhaar_number || null;
+  const abhaAddr = abhaAddress || abha_address || null;
 
   return {
     mr_no: mrNo ? String(mrNo).trim() : null,
@@ -117,6 +126,9 @@ export function buildPatientPayload({
     occupation: occupation ? String(occupation).trim() : null,
     uhid: uhid ? String(uhid).trim() : null,
     abha_number: abhaNumber ? String(abhaNumber).trim() : null,
+    national_id_type: idType,
+    aadhaar_number: aadhaar ? String(aadhaar).trim() : null,
+    abha_address: abhaAddr ? String(abhaAddr).trim() : null,
     patient_status: status,
     date_of_death: status === 'DECEASED' ? (dateOfDeath || date_of_death || null) : null
   };
@@ -159,6 +171,9 @@ const normalizeRecord = (dbPatient) => {
   const ipNo = patient.ip_no || patient.ipNo || "";
   const uhid = patient.uhid || patient.uhi || "";
   const abhaNumber = patient.abha_number || patient.abhaNumber || "";
+  const nationalIdType = patient.national_id_type || patient.nationalIdType || (patient.aadhaar_number || patient.aadhaarNumber ? 'Aadhaar' : (abhaNumber ? 'ABHA' : 'ABHA'));
+  const aadhaarNumber = patient.aadhaar_number || patient.aadhaarNumber || "";
+  const abhaAddress = patient.abha_address || patient.abhaAddress || "";
   const createdAt = patient.created_at || patient.createdAt || new Date().toISOString();
   const updatedAt = patient.updated_at || patient.updatedAt || createdAt;
 
@@ -191,6 +206,12 @@ const normalizeRecord = (dbPatient) => {
       uhi: uhid,
       abhaNumber,
       abha_number: abhaNumber,
+      nationalIdType,
+      national_id_type: nationalIdType,
+      aadhaarNumber,
+      aadhaar_number: aadhaarNumber,
+      abhaAddress,
+      abha_address: abhaAddress,
       patient_status: patient.patient_status || patient.status || "ACTIVE",
       status: patient.patient_status || patient.status || "ACTIVE",
       date_of_death: patient.date_of_death || patient.dateOfDeath || null,

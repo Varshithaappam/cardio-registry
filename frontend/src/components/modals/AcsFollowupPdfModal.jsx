@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { FileText, Printer, Download, X, Check, Activity, Heart, Shield, AlertTriangle } from 'lucide-react';
+import { FileText, Printer, Download, X, Check } from 'lucide-react';
 import { formatDateForDisplay, formatDateTimeForDisplay } from '../../utils/dateUtils';
 
 const DEFAULT_ACS_DRUG_LIST = [
@@ -116,7 +116,9 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
             cssStyles += rule.cssText + '\n';
           });
         }
-      } catch (_) {}
+      } catch (cssErr) {
+        console.debug('[Print Stylesheet Notice]: Cross-origin stylesheet rules restricted.');
+      }
     });
 
     const oldIframe = document.getElementById('acs-pdf-print-frame');
@@ -173,7 +175,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-fadeIn">
-      <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] my-auto">
+      <div className="bg-white w-full max-w-[1440px] rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] mx-auto my-auto animate-fadeIn">
         {/* Header */}
         <div className={`px-6 py-4 border-b flex items-center justify-between text-white ${isStemi ? 'bg-gradient-to-r from-red-600 to-red-700' : 'bg-gradient-to-r from-amber-600 to-orange-700'}`}>
           <div className="flex items-center gap-3">
@@ -214,37 +216,75 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
 
         {/* Modal Body */}
         <div id="acs-pdf-printable-area" className="p-6 overflow-y-auto space-y-6 text-slate-800 text-sm">
-          {/* Patient Overview Card */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-            <div>
-              <span className="text-slate-500 font-medium block">Patient Name / UHID:</span>
-              <span className="font-bold text-slate-900 text-sm">
-                {patientData.patient_name || rawData.patient_name || 'N/A'} ({patientData.uhid || rawData.uhid || 'N/A'})
-              </span>
-            </div>
-            <div>
-              <span className="text-slate-500 font-medium block">Episode / IP No:</span>
-              <span className="font-bold text-slate-800">
-                {rawData.ip_no || patientData.ip_no || 'N/A'} {rawData.acs_no ? `(ACS: ${rawData.acs_no})` : ''}
-              </span>
-            </div>
-            <div>
-              <span className="text-slate-500 font-medium block">Follow-up Conducted:</span>
-              <span className="font-bold text-slate-800">{rawData.followup_conducted || logData.contact_mode || 'Telephonic follow-up'}</span>
-            </div>
-            <div>
-              <span className="text-slate-500 font-medium block">Attempt / Answering:</span>
-              <span className="font-bold text-slate-800">
-                Attempt #{rawData.attempt_number || 1} — {rawData.answering_status || 'Yes'}
-              </span>
+          {/* Section 1: Encounter Metadata */}
+          <div className="border border-slate-200 rounded-xl p-4 space-y-3 bg-slate-50/50">
+            <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
+              1. Encounter Metadata
+            </h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+              <div>
+                <span className="text-slate-500 font-medium block">Patient Name / UHID:</span>
+                <span className="font-bold text-slate-900 text-sm">
+                  {patientData.patient_name || rawData.patient_name || 'N/A'} ({patientData.uhid || rawData.uhid || 'N/A'})
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 font-medium block">Episode / IP No:</span>
+                <span className="font-bold text-slate-800">
+                  {rawData.ip_no || patientData.ip_no || 'N/A'} {rawData.acs_no ? `(ACS: ${rawData.acs_no})` : ''}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 font-medium block">Follow-up Date:</span>
+                <span className="font-bold text-slate-800">
+                  {formatDateForDisplay(rawData.patient_followup_date || logData.created_at) || 'N/A'}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 font-medium block">Follow-up Conducted:</span>
+                <span className="font-bold text-slate-800">{rawData.followup_conducted || logData.contact_mode || 'Telephonic follow-up'}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 font-medium block">Follow-up Attempt:</span>
+                <span className="font-bold text-slate-800">
+                  Attempt #{rawData.attempt_number || 1}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 font-medium block">Answering Status:</span>
+                <span className={`font-bold inline-block px-2 py-0.5 rounded text-xs mt-0.5 ${rawData.answering_status === 'No' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}`}>
+                  {rawData.answering_status || 'Yes'}
+                </span>
+              </div>
+              {(rawData.date_of_admission || patientData.date_of_admission || patientData.admission_date) && (
+                <div>
+                  <span className="text-slate-500 font-medium block">Date of Admission:</span>
+                  <span className="font-bold text-slate-800">
+                    {formatDateForDisplay(rawData.date_of_admission || patientData.date_of_admission || patientData.admission_date)}
+                  </span>
+                </div>
+              )}
+              {(rawData.date_of_discharge || patientData.date_of_discharge || patientData.discharge_date) && (
+                <div>
+                  <span className="text-slate-500 font-medium block">Date of Discharge:</span>
+                  <span className="font-bold text-slate-800">
+                    {formatDateForDisplay(rawData.date_of_discharge || patientData.date_of_discharge || patientData.discharge_date)}
+                  </span>
+                </div>
+              )}
+              {rawData.answering_status === 'No' && rawData.no_answer_reason && (
+                <div className="col-span-full">
+                  <span className="text-slate-500 font-medium block">Reason for No Answer:</span>
+                  <p className="text-red-700 bg-red-50 p-2 rounded border border-red-200 mt-1 font-semibold">{rawData.no_answer_reason}</p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Section 1: Health Status & Medication Changes */}
+          {/* Section 2: General Health Overview & Medication Changes */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-            <h4 className="font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
-              <Heart className="w-4 h-4 text-red-500" />
-              1. General Health Overview & Medication Changes
+            <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
+              2. General Health Overview & Medication Changes
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div>
@@ -285,11 +325,10 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
             )}
           </div>
 
-          {/* Section 2: Symptoms Checklist */}
+          {/* Section 3: New Symptoms Checklist */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-            <h4 className="font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
-              <Activity className="w-4 h-4 text-blue-500" />
-              2. New Symptoms Checklist
+            <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
+              3. New Symptoms Checklist
             </h4>
             {selectedSymptoms.length > 0 ? (
               <div className="flex flex-wrap gap-2">
@@ -310,12 +349,11 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
             )}
           </div>
 
-          {/* Section 3: Medication Adherence & Drug Grid */}
+          {/* Section 4: Medication Adherence & ACS Drug Grid */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h4 className="font-bold text-slate-900 flex items-center gap-2 text-xs uppercase tracking-wider text-slate-600">
-                <Shield className="w-4 h-4 text-indigo-500" />
-                3. Medication Adherence & ACS Drug Grid
+              <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider text-slate-600">
+                4. Medication Adherence & ACS Drug Grid
               </h4>
               <span className="text-xs font-semibold text-slate-700">
                 Adherence: <span className={rawData.medication_adherence === 'No' ? 'text-red-600 font-bold' : 'text-emerald-700 font-bold'}>{rawData.medication_adherence || 'Yes'}</span>
@@ -332,7 +370,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
               <table className="w-full text-xs text-left border-collapse border border-slate-200 rounded-lg overflow-hidden">
                 <thead>
                   <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                    <th className="p-2 border.r border-slate-200">Generic Drug Name</th>
+                    <th className="p-2 border-r border-slate-200">Generic Drug Name</th>
                     <th className="p-2 border-r border-slate-200 text-center w-28">Taking Currently</th>
                     <th className="p-2 text-center w-36">In Recent IP/OP Visit</th>
                   </tr>
@@ -361,11 +399,10 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
             </div>
           </div>
 
-          {/* Section 4: Lab Tests & Investigations */}
+          {/* Section 5: Lab Tests & Investigations */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-            <h4 className="font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
-              <FileText className="w-4 h-4 text-purple-500" />
-              4. Lab Tests & Investigations
+            <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
+              5. Lab Tests & Investigations
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
@@ -399,11 +436,10 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
             </div>
           </div>
 
-          {/* Section 5: Major Clinical Events & Death Details */}
+          {/* Section 6: Major Clinical Events & Mortality Tracking */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-            <h4 className="font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
-              <AlertTriangle className="w-4 h-4 text-rose-500" />
-              5. Major Clinical Events & Mortality Tracking
+            <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
+              6. Major Clinical Events & Mortality Tracking
             </h4>
             <div className="text-xs">
               <span className="text-slate-500 block font-medium mb-1">Has Major Clinical Event:</span>
@@ -445,29 +481,39 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
                   </div>
                   <div>
                     <span className="text-rose-600 block">Cause of Death:</span>
-                    <span className="font-bold">{rawData.cause_of_death || 'N/A'}</span>
+                    <span className="font-bold">
+                      {rawData.cause_of_death || 'N/A'}
+                      {rawData.cause_of_death === 'Others specify' && rawData.cause_of_death_other_details ? ` (${rawData.cause_of_death_other_details})` : ''}
+                    </span>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Section 6: Program Opt-in & Feedback */}
-          <div className="border border-slate-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div>
-              <span className="text-slate-500 font-medium block">Vaccinations Details:</span>
-              <p className="text-slate-800 mt-0.5">{rawData.vaccinations_details || 'None specified'}</p>
-            </div>
-            <div>
-              <span className="text-slate-500 font-medium block">Opt-in to Follow-up Program:</span>
-              <span className="font-bold text-slate-800">{rawData.join_program_opt_in || 'Yes'}</span>
-            </div>
-            {rawData.patient_feedback && (
-              <div className="col-span-full border-t border-slate-100 pt-2">
-                <span className="text-slate-500 font-medium block">Patient Feedback:</span>
-                <p className="text-slate-800 mt-0.5 italic">{rawData.patient_feedback}</p>
+          {/* Section 7: Vaccinations, Program Opt-In & Feedback */}
+          <div className="border border-slate-200 rounded-xl p-4 space-y-3">
+            <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
+              7. Vaccinations, Program Opt-In & Feedback
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <span className="text-slate-500 font-medium block">Vaccinations Details:</span>
+                <p className="text-slate-800 mt-0.5">{rawData.vaccinations_details || 'None specified'}</p>
               </div>
-            )}
+              <div>
+                <span className="text-slate-500 font-medium block">Opt-in to Follow-up Program:</span>
+                <span className={`font-bold inline-block px-2 py-0.5 rounded text-xs mt-0.5 ${rawData.join_program_opt_in === 'No' ? 'bg-slate-100 text-slate-700' : 'bg-emerald-100 text-emerald-800'}`}>
+                  {rawData.join_program_opt_in || 'Yes'}
+                </span>
+              </div>
+              {rawData.patient_feedback && (
+                <div className="col-span-full border-t border-slate-100 pt-2">
+                  <span className="text-slate-500 font-medium block">Patient Feedback:</span>
+                  <p className="text-slate-800 mt-0.5 italic">{rawData.patient_feedback}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

@@ -6,6 +6,7 @@ const patientFields = [
   'diabetes_control_type', 'renal_failure', 'active_dialysis_status', 'address',
   'house_flat_no', 'street_locality', 'village_town', 'mandal', 'district', 'state', 'pincode',
   'higher_education', 'occupation', 'uhid', 'abha_number',
+  'national_id_type', 'aadhaar_number', 'abha_address',
   'patient_status', 'date_of_death', 'merged_into_patient_id'
 ];
 
@@ -40,6 +41,9 @@ async function createPatient(patientData) {
   request.input('occupation', db.sql.VarChar(255), patientData.occupation || null);
   request.input('uhid', db.sql.VarChar(50), patientData.uhid || null);
   request.input('abha_number', db.sql.VarChar(50), patientData.abha_number || null);
+  request.input('national_id_type', db.sql.VarChar(20), patientData.national_id_type || null);
+  request.input('aadhaar_number', db.sql.VarChar(20), patientData.aadhaar_number || null);
+  request.input('abha_address', db.sql.VarChar(100), patientData.abha_address || null);
   request.input('patient_status', db.sql.VarChar(20), patientData.patient_status || 'ACTIVE');
   request.input('date_of_death', db.sql.Date, patientData.date_of_death || null);
   request.input('merged_into_patient_id', db.sql.Int, patientData.merged_into_patient_id || null);
@@ -64,6 +68,7 @@ async function createPatient(patientData) {
         diabetes_control_type, renal_failure, active_dialysis_status, address,
         house_flat_no, street_locality, village_town, mandal, district, state, pincode,
         higher_education, occupation, uhid, abha_number,
+        national_id_type, aadhaar_number, abha_address,
         patient_status, date_of_death, merged_into_patient_id,
         created_at, updated_at
       )
@@ -74,6 +79,7 @@ async function createPatient(patientData) {
         @diabetes_control_type, @renal_failure, @active_dialysis_status, @address,
         @house_flat_no, @street_locality, @village_town, @mandal, @district, @state, @pincode,
         @higher_education, @occupation, @uhid, @abha_number,
+        @national_id_type, @aadhaar_number, @abha_address,
         ISNULL(@patient_status, 'ACTIVE'), @date_of_death, @merged_into_patient_id,
         SYSDATETIME(), SYSDATETIME()
       );
@@ -138,6 +144,9 @@ async function updatePatient(regPatientId, patientData) {
   request.input('occupation', db.sql.VarChar(255), patientData.occupation || null);
   request.input('uhid', db.sql.VarChar(50), patientData.uhid || null);
   request.input('abha_number', db.sql.VarChar(50), patientData.abha_number || null);
+  request.input('national_id_type', db.sql.VarChar(20), patientData.national_id_type || null);
+  request.input('aadhaar_number', db.sql.VarChar(20), patientData.aadhaar_number || null);
+  request.input('abha_address', db.sql.VarChar(100), patientData.abha_address || null);
   request.input('patient_status', db.sql.VarChar(20), patientData.patient_status || 'ACTIVE');
   request.input('date_of_death', db.sql.Date, patientData.date_of_death || null);
   request.input('merged_into_patient_id', db.sql.Int, patientData.merged_into_patient_id || null);
@@ -170,6 +179,9 @@ async function updatePatient(regPatientId, patientData) {
         [occupation] = @occupation,
         [uhid] = @uhid,
         [abha_number] = @abha_number,
+        [national_id_type] = @national_id_type,
+        [aadhaar_number] = @aadhaar_number,
+        [abha_address] = @abha_address,
         [patient_status] = COALESCE(@patient_status, [patient_status]),
         [date_of_death] = @date_of_death,
         [merged_into_patient_id] = @merged_into_patient_id,

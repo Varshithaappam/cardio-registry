@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { User, MapPin, Briefcase, GraduationCap, X, Check, Phone, Mail, Shield, CreditCard, Sparkles } from 'lucide-react';
 import { buildPatientPayload } from '../utils/patientMapper';
 import { validateField } from '../utils/validation';
-import { formatDateForDisplay } from '../utils/dateUtils';
-import { sanitizePhone, sanitizePincode, sanitizeAlphaOnly, sanitizeUHID, sanitizeABHA } from '../utils/formSanitizers';
+import { formatDateForDisplay, getLocalDateString } from '../utils/dateUtils';
+import { sanitizePhone, sanitizePincode, sanitizeAlphaOnly, sanitizeUHID, sanitizeABHA, sanitizeAadhaar, validateABHAAddress } from '../utils/formSanitizers';
 import { createPatient, updatePatient, verifyPatient, confirmPatientMatch, rejectPatientMatch, resolveStagingPatient } from '../../api/patientApi';
 import PatientVerificationModal from './PatientVerificationModal';
 
@@ -69,7 +69,10 @@ export default function RegisterNewPatient({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [uhid, setUhid] = useState('');
+  const [nationalIdType, setNationalIdType] = useState('ABHA');
   const [abhaNumber, setAbhaNumber] = useState('');
+  const [abhaAddress, setAbhaAddress] = useState('');
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
 
   // Address, Higher Education, Occupation
   const [address, setAddress] = useState('');
@@ -112,7 +115,11 @@ export default function RegisterNewPatient({
       setPhone(p.phone || p.phone_no || '');
       setEmail(p.email || '');
       setUhid(p.uhi || p.uhid || '');
-      setAbhaNumber(p.abha_number || p.abhaNumber || '');
+      const idType = p.national_id_type || p.nationalIdType || (p.aadhaar_number || p.aadhaarNumber ? 'Aadhaar' : 'ABHA');
+      setNationalIdType(idType);
+      setAbhaNumber(p.abha_number || p.abhaNumber ? sanitizeABHA(p.abha_number || p.abhaNumber) : '');
+      setAbhaAddress(p.abha_address || p.abhaAddress || '');
+      setAadhaarNumber(p.aadhaar_number || p.aadhaarNumber ? sanitizeAadhaar(p.aadhaar_number || p.aadhaarNumber) : '');
       setAddress(p.address || '');
 
       let hNo = p.houseFlatNo || p.house_flat_no || '';
@@ -161,15 +168,17 @@ export default function RegisterNewPatient({
   // Autofill test data matching existing Patient XYZ to trigger duplicate detection
   const handleAutofillDuplicate = () => {
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    setMrNo(`MR${randomSuffix}`);
+    setMrNo(`DDH.${randomSuffix}`);
     setName('Patient XYZ');
     setDob('1966-01-01');
     setGender('Male');
     setBloodGroup('A+');
     setPhone('9878950020');
     setEmail('PatientXYZ@gmail.com');
-    setUhid('UHID12321');
-    setAbhaNumber('ABHA0987654321');
+    setUhid('DDCH.14250');
+    setNationalIdType('ABHA');
+    setAbhaNumber('12-3456-7890-1234');
+    setAbhaAddress('patient.xyz@abdm');
     setHouseFlatNo('Flat 402, Sai Residency');
     setStreetLocality('Road No 12, Banjara Hills');
     setVillageTown('Hyderabad');
@@ -340,6 +349,31 @@ export default function RegisterNewPatient({
       }
     }
 
+    if (nationalIdType === 'Aadhaar' && aadhaarNumber) {
+      const cleanAadhaar = aadhaarNumber.replace(/\D/g, '');
+      if (cleanAadhaar.length !== 12) {
+        alert('Aadhaar Number must be exactly 12 numeric digits.');
+        return;
+      }
+    }
+
+    if (nationalIdType === 'ABHA') {
+      if (abhaNumber) {
+        const cleanAbha = abhaNumber.replace(/\D/g, '');
+        if (cleanAbha.length !== 14) {
+          alert('ABHA Number must be exactly 14 numeric digits.');
+          return;
+        }
+      }
+      if (abhaAddress) {
+        const addrCheck = validateABHAAddress(abhaAddress);
+        if (!addrCheck.valid) {
+          alert(`Invalid ABHA Address: ${addrCheck.message}`);
+          return;
+        }
+      }
+    }
+
     const payload = buildPatientPayload({
       name,
       mrNo,
@@ -365,7 +399,14 @@ export default function RegisterNewPatient({
       renalFailure,
       dialysisStatus,
       uhid,
-      abhaNumber,
+      nationalIdType,
+      national_id_type: nationalIdType,
+      aadhaarNumber: nationalIdType === 'Aadhaar' && aadhaarNumber ? aadhaarNumber.replace(/\D/g, '') : null,
+      aadhaar_number: nationalIdType === 'Aadhaar' && aadhaarNumber ? aadhaarNumber.replace(/\D/g, '') : null,
+      abhaNumber: nationalIdType === 'ABHA' && abhaNumber ? abhaNumber.replace(/\D/g, '') : null,
+      abha_number: nationalIdType === 'ABHA' && abhaNumber ? abhaNumber.replace(/\D/g, '') : null,
+      abhaAddress: nationalIdType === 'ABHA' ? abhaAddress : null,
+      abha_address: nationalIdType === 'ABHA' ? abhaAddress : null,
       patientStatus: patientStatus || 'ACTIVE',
       dateOfDeath: patientStatus === 'DECEASED' ? dateOfDeath : null
     });
@@ -446,131 +487,29 @@ export default function RegisterNewPatient({
         )}
       </div>
 
-      {/* Main 3-Column Content Body (Tight vertical padding, no scroll) */}
-      <div className="flex-1 overflow-y-auto py-2 px-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
+      {/* Main 3-Column Content Body (Balanced, No scrolling required for core fields) */}
+      <div className="flex-1 overflow-y-auto py-2.5 px-3.5 grid grid-cols-1 md:grid-cols-3 gap-3.5 items-start">
         
-        {/* COLUMN 1: Demographics & Profile */}
-        <div className="space-y-2 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
-          <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">
+        {/* COLUMN 1: Demographics & Profile (Primary Core Demographics first) */}
+        <div className="space-y-2.5 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
+          <div className="flex items-center justify-between border-b border-slate-200/80 pb-1.5">
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-blue-600" />
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Demographics & Profile</h4>
             </div>
+            <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">Primary Info</span>
           </div>
 
-          {/* Patient Status Dropdown */}
-          <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/50 p-2 rounded-xl border border-blue-200/80 shadow-2xs space-y-1">
-            <div className="flex items-center justify-between">
-              <label htmlFor="reg-patient-status" className="block text-[11px] font-bold text-slate-700">
-                Patient Status <span className="text-red-500 font-bold">*</span>
-              </label>
-              <span className={`px-2 py-0.5 text-[9px] font-extrabold rounded-md uppercase tracking-wider ${
-                patientStatus === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
-                patientStatus === 'DECEASED' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
-                'bg-slate-100 text-slate-700 border border-slate-300'
-              }`}>
-                {patientStatus}
-              </span>
-            </div>
-            <select
-              id="reg-patient-status"
-              value={patientStatus}
-              onChange={(e) => setPatientStatus(e.target.value)}
-              className="w-full p-1.5 text-xs font-semibold bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 cursor-pointer shadow-2xs"
-            >
-              {PATIENT_STATUS_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-
-            {/* Conditional Date of Death Field (when status is DECEASED) */}
-            {patientStatus === 'DECEASED' && (
-              <div className="bg-rose-50/90 p-2.5 rounded-lg border border-rose-200 mt-2 space-y-1.5 animate-fadeIn">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="reg-date-of-death" className="block text-[11px] font-bold text-rose-900">
-                    Date of Death <span className="text-red-600 font-bold">*</span>
-                  </label>
-                  <span className="text-[9px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-200 uppercase">
-                    DD-MM-YYYY
-                  </span>
-                </div>
-                <input
-                  id="reg-date-of-death"
-                  type="date"
-                  required
-                  max={new Date().toISOString().split('T')[0]}
-                  min={dob || undefined}
-                  className="w-full p-1.5 text-xs font-semibold bg-white border border-rose-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-slate-900 shadow-2xs cursor-pointer"
-                  value={dateOfDeath}
-                  onChange={(e) => setDateOfDeath(e.target.value)}
-                />
-                {dateOfDeath && (
-                  <p className="text-[10px] text-rose-700 font-medium">
-                    Formatted: <strong>{formatDateForDisplay(dateOfDeath)}</strong> (DD-MM-YYYY)
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* 1. MR No (Medical Record Number) */}
+          {/* 1. Full Name */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-0.5">
-              MR No (Medical Record Number) <span className="text-red-500 font-bold ml-0.5">*</span>
+            <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+              Full Name <span className="text-red-500 font-bold ml-0.5">*</span>
             </label>
-            <input
-              id="reg-mr-no"
-              type="text"
-              required
-              maxLength={10}
-              className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-slate-900"
-              value={mrNo}
-              onChange={(e) => setMrNo(e.target.value)}
-              placeholder="E.g. MR00001"
-            />
-          </div>
-
-          {/* UHID & ABHA Number */}
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">
-                UHID <span className="text-red-500 font-bold ml-0.5">*</span>
-              </label>
-              <input
-                id="reg-uhid"
-                type="text"
-                required
-                maxLength={10}
-                placeholder="E.g. UHI12345"
-                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
-                value={uhid}
-                onChange={(e) => setUhid(sanitizeUHID(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">ABHA Number</label>
-              <input
-                id="reg-abha"
-                type="text"
-                maxLength={14}
-                placeholder="14-digit ABHA"
-                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
-                value={abhaNumber}
-                onChange={(e) => setAbhaNumber(sanitizeABHA(e.target.value))}
-              />
-            </div>
-          </div>
-
-          {/* 2. Full Name */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-0.5">Full Name <span className="text-red-500 font-bold ml-0.5">*</span></label>
             <input
               id="reg-name"
               type="text"
               required
-              className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              className="w-full p-2 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-semibold text-slate-900 shadow-2xs"
               value={name}
               onChange={(e) => {
                 const val = e.target.value;
@@ -585,95 +524,374 @@ export default function RegisterNewPatient({
               placeholder="E.g. Ramesh Chandra Malhotra"
             />
             {nameError && (
-              <span className="text-red-500 text-[10px] block mt-1 font-bold">{nameError}</span>
+              <span className="text-red-500 text-[10px] block mt-0.5 font-bold">{nameError}</span>
             )}
           </div>
 
-          {/* 2. Date of Birth */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-0.5">Date of Birth <span className="text-red-500 font-bold ml-0.5">*</span></label>
-            <input
-              id="reg-dob"
-              type="date"
-              required
-              className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              value={dob}
-              onChange={(e) => setDob(e.target.value)}
-            />
+          {/* 2. Gender, Date of Birth & Age (Inline 3-column row) */}
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+                Gender <span className="text-red-500 font-bold ml-0.5">*</span>
+              </label>
+              <select
+                id="reg-gender"
+                required
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+              >
+                <option value="">Select</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+                Date of Birth <span className="text-red-500 font-bold ml-0.5">*</span>
+              </label>
+              <input
+                id="reg-dob"
+                type="date"
+                required
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-0.5">Age</label>
+              <input
+                id="reg-age"
+                type="text"
+                readOnly
+                disabled
+                className="w-full p-1.5 text-xs bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-bold focus:outline-none cursor-not-allowed text-center"
+                value={calculateAge(dob) !== null ? `${calculateAge(dob)} Yrs` : '—'}
+              />
+            </div>
           </div>
 
-          {/* 3. Gender */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-0.5">Gender <span className="text-red-500 font-bold ml-0.5">*</span></label>
-            <select
-              id="reg-gender"
-              required
-              className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              value={gender}
-              onChange={(e) => setGender(e.target.value)}
-            >
-              <option value="">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
+          {/* 3. Blood Group & Patient Status (Inline 2-column row) */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+                Blood Group <span className="text-red-500 font-bold ml-0.5">*</span>
+              </label>
+              <select
+                id="reg-bloodgroup"
+                required
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
+                value={bloodGroup}
+                onChange={(e) => setBloodGroup(e.target.value)}
+              >
+                <option value="">Select Blood Group</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="Unknown">Unknown</option>
+              </select>
+            </div>
 
-          {/* 4. Age (Calculated automatically) */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-0.5">Age (Years)</label>
-            <input
-              id="reg-age"
-              type="text"
-              readOnly
-              disabled
-              className="w-full p-1.5 text-xs bg-slate-100 border border-slate-300 rounded-lg text-slate-700 font-bold focus:outline-none cursor-not-allowed"
-              value={calculateAge(dob) !== null ? `${calculateAge(dob)} Years` : '—'}
-            />
-          </div>
-
-          {/* 5. Occupation */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-0.5">Occupation</label>
-            <input
-              id="reg-occupation"
-              type="text"
-              maxLength={255}
-              className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              value={occupation}
-              onChange={(e) => setOccupation(e.target.value)}
-              placeholder="E.g. Engineer, Teacher, Farmer"
-            />
-          </div>
-
-          {/* 6. Higher Education (Radio Group) */}
-          <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Higher Education</label>
-            <div className="grid grid-cols-2 gap-1 bg-white p-2 rounded-lg border border-slate-300">
-              {HIGHER_EDUCATION_OPTIONS.map((eduOption) => (
-                <label key={eduOption} className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer py-0.5">
-                  <input
-                    type="radio"
-                    name="higherEducationRadio"
-                    value={eduOption}
-                    checked={higherEducation === eduOption}
-                    onChange={(e) => setHigherEducation(e.target.value)}
-                    className="text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
-                  />
-                  <span>{eduOption}</span>
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <label htmlFor="reg-patient-status" className="block text-xs font-semibold text-slate-700">
+                  Patient Status <span className="text-red-500 font-bold">*</span>
                 </label>
-              ))}
+                <span className={`px-1.5 py-0.2 text-[9px] font-extrabold rounded uppercase tracking-wider ${
+                  patientStatus === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' :
+                  patientStatus === 'DECEASED' ? 'bg-rose-100 text-rose-800' :
+                  'bg-slate-100 text-slate-700'
+                }`}>
+                  {patientStatus}
+                </span>
+              </div>
+              <select
+                id="reg-patient-status"
+                value={patientStatus}
+                onChange={(e) => setPatientStatus(e.target.value)}
+                className="w-full p-1.5 text-xs font-semibold bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-900 cursor-pointer"
+              >
+                {PATIENT_STATUS_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Conditional Date of Death Field (when status is DECEASED) */}
+          {patientStatus === 'DECEASED' && (
+            <div className="bg-rose-50/90 p-2 rounded-lg border border-rose-200 space-y-1 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <label htmlFor="reg-date-of-death" className="block text-[11px] font-bold text-rose-900">
+                  Date of Death <span className="text-red-600 font-bold">*</span>
+                </label>
+                <span className="text-[9px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-200 uppercase">
+                  DD-MM-YYYY
+                </span>
+              </div>
+              <input
+                id="reg-date-of-death"
+                type="date"
+                required
+                max={getLocalDateString()}
+                min={dob || undefined}
+                className="w-full p-1.5 text-xs font-semibold bg-white border border-rose-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 text-slate-900 shadow-2xs cursor-pointer"
+                value={dateOfDeath}
+                onChange={(e) => setDateOfDeath(e.target.value)}
+              />
+              {dateOfDeath && (
+                <p className="text-[10px] text-rose-700 font-medium">
+                  Formatted: <strong>{formatDateForDisplay(dateOfDeath)}</strong> (DD-MM-YYYY)
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* 4. Contact Phone & Email Address */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+                Contact Phone <span className="text-red-500 font-bold ml-0.5">*</span>
+              </label>
+              <input
+                id="reg-phone"
+                type="text"
+                required
+                maxLength={10}
+                placeholder="9848012345"
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                value={phone}
+                onChange={(e) => {
+                  const cleanPhone = sanitizePhone(e.target.value);
+                  const res = validateField('phone', cleanPhone);
+                  setPhoneError(res.isValid ? null : res.error);
+                  setPhone(cleanPhone);
+                }}
+                onBlur={(e) => {
+                  const res = validateField('phone', e.target.value);
+                  setPhoneError(res.isValid ? null : res.error);
+                }}
+              />
+              {phoneError && (
+                <span className="text-red-500 text-[10px] block mt-0.5 font-bold">{phoneError}</span>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-0.5">Email Address</label>
+              <input
+                id="reg-email"
+                type="email"
+                placeholder="patient@example.com"
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* 5. Occupation & Higher Education */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-0.5">Occupation</label>
+              <input
+                id="reg-occupation"
+                type="text"
+                maxLength={255}
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                value={occupation}
+                onChange={(e) => setOccupation(e.target.value)}
+                placeholder="E.g. Engineer, Teacher"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-0.5">Higher Education</label>
+              <select
+                id="reg-education"
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                value={higherEducation}
+                onChange={(e) => setHigherEducation(e.target.value)}
+              >
+                {HIGHER_EDUCATION_OPTIONS.map((eduOption) => (
+                  <option key={eduOption} value={eduOption}>
+                    {eduOption}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
 
-        {/* COLUMN 2: Contact & Address + Distinct Medical Information */}
-        <div className="space-y-3">
-          {/* Card A: PATIENT CONTACT & RESIDENTIAL ADDRESS */}
-          <div className="space-y-2.5 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
+        {/* COLUMN 2: Hospital & National Identifiers + Residential Address */}
+        <div className="space-y-2.5">
+          {/* Card A: Hospital & National Identifiers */}
+          <div className="space-y-2 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
+            <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-blue-600" />
+                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Hospital & National ID</h4>
+              </div>
+            </div>
+
+            {/* MR No & UHID */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+                  MR No. <span className="text-red-500 font-bold ml-0.5">*</span>
+                </label>
+                <input
+                  id="reg-mr-no"
+                  type="text"
+                  required
+                  maxLength={10}
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-slate-900"
+                  value={mrNo}
+                  onChange={(e) => setMrNo(e.target.value.toUpperCase())}
+                  placeholder="E.g. DDH.0001"
+                />
+                <span className="text-[9px] text-slate-400 block mt-0.5">Format: DDH.0001 to DDH.9999</span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+                  UHID (Triotree) <span className="text-red-500 font-bold ml-0.5">*</span>
+                </label>
+                <input
+                  id="reg-uhid"
+                  type="text"
+                  required
+                  maxLength={30}
+                  placeholder="E.g. DDCH.14250"
+                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                  value={uhid}
+                  onChange={(e) => setUhid(sanitizeUHID(e.target.value.toUpperCase()))}
+                />
+                <span className="text-[9px] text-slate-400 block mt-0.5">IAC Code (e.g. DDCH.14250)</span>
+              </div>
+            </div>
+
+            {/* National ID Section */}
+            <div className="p-2.5 bg-white border border-slate-200 rounded-xl space-y-2">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+                  National ID
+                </span>
+                <div className="flex items-center gap-3 bg-slate-50 px-2 py-0.5 border border-slate-200 rounded-md">
+                  <label className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="nationalIdType"
+                      value="ABHA"
+                      checked={nationalIdType === 'ABHA'}
+                      onChange={() => setNationalIdType('ABHA')}
+                      className="w-3 h-3 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span>ABHA</span>
+                  </label>
+                  <label className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="nationalIdType"
+                      value="Aadhaar"
+                      checked={nationalIdType === 'Aadhaar'}
+                      onChange={() => setNationalIdType('Aadhaar')}
+                      className="w-3 h-3 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <span>Aadhaar</span>
+                  </label>
+                </div>
+              </div>
+
+              {nationalIdType === 'ABHA' ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <label className="block text-[10px] font-bold text-slate-700">
+                        ABHA Number
+                      </label>
+                      <span className={`text-[9px] font-mono px-1 py-0.2 rounded font-semibold ${
+                        abhaNumber.replace(/\D/g, '').length === 14
+                          ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                          : abhaNumber.replace(/\D/g, '').length > 0
+                            ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                            : 'bg-slate-100 text-slate-500 border border-slate-200'
+                      }`}>
+                        {abhaNumber.replace(/\D/g, '').length}/14{abhaNumber.replace(/\D/g, '').length === 14 ? ' ✓' : ''}
+                      </span>
+                    </div>
+                    <input
+                      id="reg-abha"
+                      type="text"
+                      maxLength={25}
+                      placeholder="XX-XXXX-XXXX-XXXX"
+                      className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                      value={abhaNumber}
+                      onChange={(e) => setAbhaNumber(sanitizeABHA(e.target.value, abhaNumber))}
+                    />
+                    <span className="text-[9px] text-slate-400 block mt-0.5">14-digit NHA Health ID</span>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-700 mb-0.5">
+                      ABHA Address
+                    </label>
+                    <input
+                      id="reg-abha-address"
+                      type="text"
+                      maxLength={35}
+                      placeholder="username@abdm"
+                      className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                      value={abhaAddress}
+                      onChange={(e) => setAbhaAddress(e.target.value.toLowerCase().trim())}
+                    />
+                    <span className="text-[9px] text-slate-400 block mt-0.5">8-18 chars @abdm</span>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="block text-[10px] font-bold text-slate-700">
+                      Aadhaar Number
+                    </label>
+                    <span className={`text-[9px] font-mono px-1 py-0.2 rounded font-semibold ${
+                      aadhaarNumber.replace(/\D/g, '').length === 12
+                        ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                        : aadhaarNumber.replace(/\D/g, '').length > 0
+                          ? 'bg-amber-100 text-amber-700 border border-amber-300'
+                          : 'bg-slate-100 text-slate-500 border border-slate-200'
+                    }`}>
+                      {aadhaarNumber.replace(/\D/g, '').length}/12{aadhaarNumber.replace(/\D/g, '').length === 12 ? ' ✓' : ''}
+                    </span>
+                  </div>
+                  <input
+                    id="reg-aadhaar"
+                    type="text"
+                    maxLength={25}
+                    placeholder="XXXX XXXX XXXX"
+                    className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                    value={aadhaarNumber}
+                    onChange={(e) => setAadhaarNumber(sanitizeAadhaar(e.target.value, aadhaarNumber))}
+                  />
+                  <span className="text-[9px] text-slate-400 block mt-0.5">12-digit UIDAI unique ID</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Card B: Residential Address */}
+          <div className="space-y-2 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
             <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1">
               <MapPin className="w-4 h-4 text-blue-600" />
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Residential Address & Contact</h4>
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Residential Address</h4>
             </div>
 
             {/* Row 1: House/Flat No + Street/Locality */}
@@ -684,7 +902,7 @@ export default function RegisterNewPatient({
                   id="reg-house-flat-no"
                   type="text"
                   maxLength={100}
-                  placeholder="E.g. Flat 402, Sai Residency"
+                  placeholder="E.g. Flat 402"
                   className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   value={houseFlatNo}
                   onChange={(e) => setHouseFlatNo(e.target.value)}
@@ -696,7 +914,7 @@ export default function RegisterNewPatient({
                   id="reg-street-locality"
                   type="text"
                   maxLength={255}
-                  placeholder="E.g. Road No 12, Banjara Hills"
+                  placeholder="E.g. Banjara Hills"
                   className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   value={streetLocality}
                   onChange={(e) => setStreetLocality(e.target.value)}
@@ -707,7 +925,7 @@ export default function RegisterNewPatient({
             {/* Row 2: Village/Town/City + Mandal */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-0.5">Village / Town / City</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-0.5">City / Town</label>
                 <input
                   id="reg-village-town"
                   type="text"
@@ -740,7 +958,7 @@ export default function RegisterNewPatient({
                   id="reg-district"
                   type="text"
                   maxLength={100}
-                  placeholder="E.g. Hyderabad"
+                  placeholder="Hyderabad"
                   className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   value={district}
                   onChange={(e) => setDistrict(sanitizeAlphaOnly(e.target.value))}
@@ -752,7 +970,7 @@ export default function RegisterNewPatient({
                   id="reg-state"
                   type="text"
                   maxLength={100}
-                  placeholder="E.g. Telangana"
+                  placeholder="Telangana"
                   className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   value={state}
                   onChange={(e) => setState(sanitizeAlphaOnly(e.target.value))}
@@ -770,76 +988,6 @@ export default function RegisterNewPatient({
                   onChange={(e) => setPincode(sanitizePincode(e.target.value))}
                 />
               </div>
-            </div>
-
-            {/* Contact Phone & Email */}
-            <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-200/80">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-0.5">Contact Phone <span className="text-red-500 font-bold ml-0.5">*</span></label>
-                <input
-                  id="reg-phone"
-                  type="text"
-                  required
-                  maxLength={10}
-                  placeholder="9848012345"
-                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
-                  value={phone}
-                  onChange={(e) => {
-                    const cleanPhone = sanitizePhone(e.target.value);
-                    const res = validateField('phone', cleanPhone);
-                    setPhoneError(res.isValid ? null : res.error);
-                    setPhone(cleanPhone);
-                  }}
-                  onBlur={(e) => {
-                    const res = validateField('phone', e.target.value);
-                    setPhoneError(res.isValid ? null : res.error);
-                  }}
-                />
-                {phoneError && (
-                  <span className="text-red-500 text-[10px] block mt-1 font-bold">{phoneError}</span>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-0.5">Email Address</label>
-                <input
-                  id="reg-email"
-                  type="email"
-                  placeholder="patient@example.com"
-                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Card B: MEDICAL INFORMATION */}
-          <div className="space-y-2 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
-            <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1">
-              <User className="w-4 h-4 text-blue-600" />
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Medical Information</h4>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-0.5">Blood Group <span className="text-red-500 font-bold ml-0.5">*</span></label>
-              <select
-                id="reg-bloodgroup"
-                required
-                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                value={bloodGroup}
-                onChange={(e) => setBloodGroup(e.target.value)}
-              >
-                <option value="">Select Blood Group</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-                <option value="Unknown">Unknown</option>
-              </select>
             </div>
           </div>
         </div>

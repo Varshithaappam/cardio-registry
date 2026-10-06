@@ -4,6 +4,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const db = require("../config/db");
+const { authenticateToken } = require("../middleware/authMiddleware");
 
 // Configure Multer Storage
 const storage = multer.diskStorage({
@@ -47,7 +48,7 @@ const getParam = (param, idx) => {
 };
 
 // POST Endpoint: Upload Documents
-router.post("/upload", (req, res) => {
+router.post("/upload", authenticateToken, (req, res) => {
     // Multer upload execution
     upload.array("files", 5)(req, res, async (err) => {
         if (err instanceof multer.MulterError) {
@@ -116,7 +117,7 @@ router.post("/upload", (req, res) => {
 });
 
 // GET Endpoint: Fetch Uploaded Documents
-router.get("/:hf_id", async (req, res) => {
+router.get("/:hf_id", authenticateToken, async (req, res) => {
     try {
         const hf_id = req.params.hf_id;
         if (!hf_id || String(hf_id).startsWith('temp-')) {
@@ -134,7 +135,7 @@ router.get("/:hf_id", async (req, res) => {
 });
 
 // DELETE Endpoint: Remove Document
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authenticateToken, async (req, res) => {
     try {
         const id = req.params.id;
         const { recordset: rows } = await db.query(

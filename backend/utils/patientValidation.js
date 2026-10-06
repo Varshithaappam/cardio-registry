@@ -103,7 +103,51 @@ function normalizePatientInput(body = {}) {
     const mr_no = body.mr_no || body.mrNo ? String(body.mr_no || body.mrNo).trim().substring(0, 10) : null;
     const ip_no = body.ip_no || body.ipNo ? String(body.ip_no || body.ipNo).trim().substring(0, 10) : null;
     const uhid = body.uhid || body.uhi ? String(body.uhid || body.uhi).trim() : null;
-    const abha_number = body.abha_number || body.abhaNumber || body.abha ? String(body.abha_number || body.abhaNumber || body.abha).trim() : null;
+    let abha_number = body.abha_number || body.abhaNumber || body.abha ? String(body.abha_number || body.abhaNumber || body.abha).trim() : null;
+    const national_id_type = body.national_id_type || body.nationalIdType || (body.aadhaar_number || body.aadhaarNumber ? 'Aadhaar' : (body.abha_number || body.abhaNumber ? 'ABHA' : null));
+    let aadhaar_number = body.aadhaar_number || body.aadhaarNumber || body.aadhaar ? String(body.aadhaar_number || body.aadhaarNumber || body.aadhaar).trim() : null;
+    let abha_address = body.abha_address || body.abhaAddress ? String(body.abha_address || body.abhaAddress).trim() : null;
+
+    if (national_id_type === 'Aadhaar') {
+        abha_number = null;
+        abha_address = null;
+        if (aadhaar_number) {
+            const rawAadhaar = aadhaar_number.replace(/\s+/g, '');
+            if (!/^\d{12}$/.test(rawAadhaar)) {
+                throw new Error("Aadhaar Number must be a 12-digit numeric identification number.");
+            }
+        }
+    } else if (national_id_type === 'ABHA') {
+        aadhaar_number = null;
+        if (abha_number) {
+            const rawAbha = abha_number.replace(/[-]/g, '');
+            if (!/^\d{14}$/.test(rawAbha)) {
+                throw new Error("ABHA Number must be a 14-digit numeric identification number.");
+            }
+        }
+        if (abha_address) {
+            const parts = abha_address.split('@');
+            if (parts.length !== 2 || !parts[0] || !parts[1]) {
+                throw new Error("ABHA Address must be in the format 'username@consent_manager' (e.g. username@abdm).");
+            }
+            const username = parts[0];
+            if (username.length < 8 || username.length > 18) {
+                throw new Error("ABHA Address username must be between 8 and 18 characters.");
+            }
+            if (/^[._]|[._]$/.test(username)) {
+                throw new Error("ABHA Address username cannot start or end with a dot (.) or underscore (_).");
+            }
+            const dotCount = (username.match(/\./g) || []).length;
+            const underscoreCount = (username.match(/_/g) || []).length;
+            if (dotCount > 1 || underscoreCount > 1) {
+                throw new Error("ABHA Address username allows at most one dot (.) and/or one underscore (_).");
+            }
+            if (!/^[a-zA-Z0-9._]+$/.test(username)) {
+                throw new Error("ABHA Address contains invalid characters.");
+            }
+        }
+    }
+
     const patient_status = body.patient_status ? String(body.patient_status).trim().toUpperCase() : "ACTIVE";
     const date_of_death = (patient_status === "DECEASED" && (body.date_of_death || body.dateOfDeath))
         ? (body.date_of_death || body.dateOfDeath)
@@ -161,6 +205,9 @@ function normalizePatientInput(body = {}) {
         occupation,
         uhid,
         abha_number,
+        national_id_type,
+        aadhaar_number,
+        abha_address,
         patient_status,
         date_of_death,
         merged_into_patient_id

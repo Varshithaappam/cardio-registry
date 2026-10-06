@@ -36,7 +36,7 @@ async function insertHfInitialAssessment(conn, data) {
         'hf_id', 'assessed_by', 'assessment_date', 'previous_diagnosis', 'history_cabg',
         'history_ptca', 'history_stroke', 'history_major_bleed', 'history_thrombolysis', 'history_past_mi',
         'past_mi_years_ago', 'past_mi_location', 'history_other', 'previous_hf_hospitalization', 'recent_hospitalization_dates',
-        'recent_hospitalization_reasons', 'documented_vt_vf', 'documented_pvcs', 'complaints_syncope_presyncope', 'pvc_count',
+        'recent_hospitalization_reasons', 'documented_vt_vf', 'documented_pvcs', 'complaints_syncope_presyncope', 'syncope_frequency', 'pvc_count',
         'pvc_frequency', 'documented_nsvt', 'nsvt_frequency', 'weight', 'unable_to_weigh',
         'unable_to_weigh_reason', 'height', 'bmi', 'heart_rate', 'heart_rate_regular',
         'heart_rate_irregular', 'respiratory_rate', 'oxygen_saturation', 'systolic_bp_sitting', 'diastolic_bp_sitting',

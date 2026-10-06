@@ -9,38 +9,38 @@ const { authenticateToken, requireRole } = require("../middleware/authMiddleware
  */
 
 // Verify Patient Identity (Pre-registration check)
-router.post("/verify", patientController.verifyPatient);
+router.post("/verify", authenticateToken, patientController.verifyPatient);
 
 // Resolve Staging (Action: FORCE_CREATE or MERGE)
-router.post("/resolve-staging", patientController.resolveStaging);
+router.post("/resolve-staging", authenticateToken, patientController.resolveStaging);
 
 // Register New Patient
-router.post("/register", patientController.registerPatient);
-router.post("/", patientController.registerPatient);
+router.post("/register", authenticateToken, patientController.registerPatient);
+router.post("/", authenticateToken, patientController.registerPatient);
 
 // Confirm / Reject Matches (Audit & Action)
-router.post("/confirm-match", patientController.confirmMatch);
-router.post("/:id/confirm-match", patientController.confirmMatch);
-router.post("/reject-match", patientController.rejectMatch);
-router.post("/:id/reject-match", patientController.rejectMatch);
+router.post("/confirm-match", authenticateToken, patientController.confirmMatch);
+router.post("/:id/confirm-match", authenticateToken, patientController.confirmMatch);
+router.post("/reject-match", authenticateToken, patientController.rejectMatch);
+router.post("/:id/reject-match", authenticateToken, patientController.rejectMatch);
 
 // Get Patient Match Audit History
-router.get("/audit", authenticateToken, requireRole("ADMIN"), patientController.getAuditLogs);
+router.get("/audit", authenticateToken, patientController.getAuditLogs);
 
 // Get Patient Counts
-router.get("/counts/all", patientController.getAllPatientCounts);
-router.get("/counts/:regPatientId", patientController.getPatientCounts);
+router.get("/counts/all", authenticateToken, patientController.getAllPatientCounts);
+router.get("/counts/:regPatientId", authenticateToken, patientController.getPatientCounts);
 
 // Get All Patients
-router.get("/", patientController.getAllPatients);
+router.get("/", authenticateToken, patientController.getAllPatients);
 
 // Get Patient By ID
-router.get("/:id", patientController.getPatientById);
+router.get("/:id", authenticateToken, patientController.getPatientById);
 
 // Update Patient
-router.put("/:id", patientController.updatePatient);
+router.put("/:id", authenticateToken, patientController.updatePatient);
 
 // Delete Patient
-router.delete("/:id", patientController.deletePatient);
+router.delete("/:id", authenticateToken, patientController.deletePatient);
 
 module.exports = router;

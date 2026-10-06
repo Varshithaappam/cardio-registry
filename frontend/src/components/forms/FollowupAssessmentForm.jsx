@@ -41,7 +41,9 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
         const day = String(d.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[Date Parse Notice]: Could not parse date string:', e.message);
+    }
     return str;
   };
 

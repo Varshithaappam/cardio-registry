@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const { authenticateToken } = require('../middleware/authMiddleware');
+
+router.use(authenticateToken);
 
 // Helper to safely parse and normalize date params (YYYY-MM-DD, DD-MM-YYYY, or ISO string)
 const parseDateParam = (val) => {
@@ -716,9 +719,10 @@ const parseSqlString = (val, maxLen = 100, fallback = null) => {
 };
 
 const saveDetailedAcsRecord = async (transaction, reqBody, type, pid, finalTaskId, sourceRecordId, contactMode, assignedNurse) => {
-  const tableName = type === 'STEMI' ? 'stemi_followup_records' : 'nstemi_followup_records';
-  const idCol = type === 'STEMI' ? 'stemi_id' : 'nstemi_id';
-  const regTable = type === 'STEMI' ? 'stemi_registry' : 'nstemi_registry';
+  const isStemi = type === 'STEMI';
+  const tableName = isStemi ? 'stemi_followup_records' : 'nstemi_followup_records';
+  const idCol = isStemi ? '[stemi_id]' : '[nstemi_id]';
+  const regTable = isStemi ? '[stemi_registry]' : '[nstemi_registry]';
 
   let resolvedId = sourceRecordId ? parseInt(sourceRecordId, 10) : null;
   if (!resolvedId) {
@@ -748,9 +752,9 @@ const saveDetailedAcsRecord = async (transaction, reqBody, type, pid, finalTaskI
     }
   }
 
-  const hasTableRes = await transaction.request().query(
-    `SELECT 1 FROM sys.tables WHERE name = '${tableName}'`
-  );
+  const hasTableRes = await transaction.request()
+    .input('tableName', db.sql.VarChar(128), tableName)
+    .query(`SELECT 1 FROM sys.tables WHERE name = @tableName`);
   if (hasTableRes.recordset.length > 0) {
     await transaction.request()
       .input('regPatientId', db.sql.Int, pid)
@@ -1398,7 +1402,9 @@ const postLog = async (req, res) => {
   } catch (error) {
     try {
       await transaction.rollback();
-    } catch (_) {}
+    } catch (rollbackErr) {
+      console.warn('[DB Rollback Notice]: Could not rollback transaction:', rollbackErr.message);
+    }
     console.error('Error recording nurse outreach log:', error);
     return res.status(500).json({
       success: false,

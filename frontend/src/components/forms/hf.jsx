@@ -1,5 +1,5 @@
 import React, { useState, forwardRef, useImperativeHandle, useMemo, useEffect } from 'react';
-import { AlertCircle, ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { AlertCircle, ChevronLeft, ChevronRight, Check, Sparkles } from 'lucide-react';
 import api from '../../../api/axios';
 import { calculateAge } from '../../utils/calculateAge';
 import SectionCard from './common/SectionCard';
@@ -15,7 +15,7 @@ import DrugTable from './common/DrugTable';
 import FollowupAssessmentForm from './FollowupAssessmentForm';
 import { validateField, getVitalsWarning } from '../../utils/validation';
 import { formatIndianCurrency, sanitizeDecimal, sanitizePercentage, sanitizePositiveInteger } from '../../utils/formSanitizers';
-import { formatDateForDisplay, formatDateTimeForDisplay, formatDateForDatabase } from '../../utils/dateUtils';
+import { formatDateForDisplay, formatDateTimeForDisplay, formatDateForDatabase, getLocalDateString } from '../../utils/dateUtils';
 import {
   FORM_STYLES,
   INPUT_NORMAL_STYLES,
@@ -1071,7 +1071,7 @@ const hf = forwardRef(function hf(
   const [daysHospitalized, setDaysHospitalized] = useState(editingRecord?.inpatientDetails?.daysHospitalized ?? '');
 
   // Visit Info Context
-  const [assessmentDate, setAssessmentDate] = useState(editingRecord?.assessmentDate ?? new Date().toISOString().split('T')[0]);
+  const [assessmentDate, setAssessmentDate] = useState(editingRecord?.assessmentDate ?? getLocalDateString());
   const [visitType, setVisitType] = useState(editingRecord?.visitType ?? null);
   const [treatingCardiologist, setTreatingCardiologist] = useState(
     editingRecord?.inpatientDetails?.treatingCardiologist ?? patient.primaryConsultant ?? null
@@ -1105,13 +1105,15 @@ const hf = forwardRef(function hf(
   // VT/VF Risk Assessment Details
   const [documentedVtVf, setDocumentedVtVf] = useState(editingRecord?.documented_vt_vf ?? null);
   const [complaintsSyncope, setComplaintsSyncope] = useState(() => {
-    if (editingRecord?.complaints_syncope === 'Yes' || editingRecord?.complaints_syncope_presyncope === 'Yes') return 'Yes';
-    if (editingRecord?.syncope_frequency || editingRecord?.syncopeFrequency) return 'Yes';
+    const sFreq = editingRecord?.syncope_frequency ?? editingRecord?.syncopeFrequency ?? editingRecord?.vtvfRiskAssessment?.syncopeFrequency ?? editingRecord?.vtvfRiskAssessment?.syncope_frequency ?? '';
+    if (sFreq && String(sFreq).trim() !== '') return 'Yes';
+    if (editingRecord?.complaints_syncope === 'Yes' || editingRecord?.complaints_syncope_presyncope === 'Yes' || editingRecord?.vtvfRiskAssessment?.syncopeComplaints === true || editingRecord?.vtvfRiskAssessment?.complaintsSyncope === 'Yes') return 'Yes';
     if (editingRecord?.complaints_syncope === 'No' || editingRecord?.complaints_syncope_presyncope === 'No') return 'No';
     return null;
   });
   const [syncopeFrequency, setSyncopeFrequency] = useState(() => {
-    return editingRecord?.syncope_frequency || editingRecord?.syncopeFrequency || '';
+    const sFreq = editingRecord?.syncope_frequency ?? editingRecord?.syncopeFrequency ?? editingRecord?.vtvfRiskAssessment?.syncopeFrequency ?? editingRecord?.vtvfRiskAssessment?.syncope_frequency ?? '';
+    return sFreq || '';
   });
   const [documentedPvcs, setDocumentedPvcs] = useState(editingRecord?.documented_pvcs ?? null);
   const [pvcCount, setPvcCount] = useState(editingRecord?.pvc_count ?? '');
@@ -2279,10 +2281,17 @@ const hf = forwardRef(function hf(
       const pDiag = editingRecord.previous_diagnosis ?? editingRecord.previousDiagnosis;
       if (pDiag !== undefined) setPreviousDiagnosis(pDiag || '');
 
-      const cSyncope = editingRecord.complaints_syncope ?? editingRecord.complaints_syncope_presyncope;
-      if (cSyncope !== undefined) setComplaintsSyncope(cSyncope === 'Yes' ? 'Yes' : 'No');
-      const sFreq = editingRecord.syncope_frequency ?? editingRecord.syncopeFrequency;
-      if (sFreq !== undefined) setSyncopeFrequency(sFreq || '');
+      const sFreq = editingRecord.syncope_frequency ?? editingRecord.syncopeFrequency ?? editingRecord.vtvfRiskAssessment?.syncopeFrequency ?? editingRecord.vtvfRiskAssessment?.syncope_frequency;
+      if (sFreq !== undefined && sFreq !== null) {
+        setSyncopeFrequency(String(sFreq) || '');
+        if (String(sFreq).trim() !== '') {
+          setComplaintsSyncope('Yes');
+        }
+      }
+      const cSyncope = editingRecord.complaints_syncope ?? editingRecord.complaints_syncope_presyncope ?? editingRecord.vtvfRiskAssessment?.complaintsSyncope ?? editingRecord.vtvfRiskAssessment?.syncopeComplaints;
+      if (cSyncope !== undefined && cSyncope !== null) {
+        setComplaintsSyncope(cSyncope === 'Yes' || cSyncope === true ? 'Yes' : ((sFreq && String(sFreq).trim() !== '') ? 'Yes' : 'No'));
+      }
     }
   }, [editingRecord]);
 
@@ -2515,6 +2524,7 @@ const hf = forwardRef(function hf(
     complaints_syncope: (complaintsSyncope === 'Yes' || (syncopeFrequency && String(syncopeFrequency).trim() !== '')) ? 'Yes' : 'No',
     complaints_syncope_presyncope: (complaintsSyncope === 'Yes' || (syncopeFrequency && String(syncopeFrequency).trim() !== '')) ? 'Yes' : 'No',
     syncope_frequency: syncopeFrequency || null,
+    syncopeFrequency: syncopeFrequency || null,
     documented_pvcs: documentedPvcs === 'Yes' ? 'Yes' : 'No',
     pvc_count: documentedPvcs === 'Yes' && pvcCount !== '' ? Number(pvcCount) : null,
     pvc_frequency: documentedPvcs === 'Yes' ? pvcFrequency : null,
@@ -3475,6 +3485,19 @@ const hf = forwardRef(function hf(
       >
       {/* 1. Patient Profile */}
       <SectionCard title="1. Patient Profile">
+        {!readOnly && (
+          <div className="flex justify-end pb-2">
+            <button
+              type="button"
+              onClick={fillDummyData}
+              className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+              title="Auto-fill sample test data for all HF form sections"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+              <span>Fill Dummy Data</span>
+            </button>
+          </div>
+        )}
         
         {/* Top Demographics Grid (4-Column Layout) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 mb-4">
