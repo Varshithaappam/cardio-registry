@@ -17,6 +17,7 @@ import PatientTimeline from "./components/PatientTimeline";
 import ClinicalForm from "./components/ClinicalForm";
 import NurseLogin from "./components/NurseLogin";
 import NurseFollowUpReport from "./components/NurseFollowUpReport";
+import ScrollToTop from "./components/ScrollToTop";
 import { sanitizePayload } from "./utils/payloadSanitizer";
 
 import {
@@ -566,6 +567,7 @@ export default function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         <Route
           path="/login"
