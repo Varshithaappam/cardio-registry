@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CheckCircle2, AlertTriangle, Info, Trash2, X } from 'lucide-react';
 import { getFriendlyErrorMessage } from '../utils/errorMapper';
 import { scrollToAndHighlightField } from '../utils/fieldScrollHelper';
@@ -25,12 +25,16 @@ export function AlertProvider({ children }) {
   });
 
   const closeModal = (targetField = null) => {
+    const passedField = typeof targetField === 'string' ? targetField : null;
+    const fieldToScroll = passedField || modalConfig.targetField;
     setModalConfig((prev) => ({ ...prev, isOpen: false }));
-    const fieldToScroll = targetField || modalConfig.targetField;
     if (fieldToScroll) {
       setTimeout(() => {
         scrollToAndHighlightField(fieldToScroll);
-      }, 100);
+      }, 50);
+      setTimeout(() => {
+        scrollToAndHighlightField(fieldToScroll);
+      }, 250);
     }
   };
 
@@ -163,8 +167,17 @@ export function AlertProvider({ children }) {
     return 'bg-blue-600 hover:bg-blue-700 text-white focus:ring-2 focus:ring-blue-500/50';
   };
 
+  // Automatically dismiss open modals if navigation / browser back/forward occurs
+  useEffect(() => {
+    const handlePopState = () => {
+      setModalConfig((prev) => ({ ...prev, isOpen: false }));
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   return (
-    <AlertContext.Provider value={{ showAlert, showConfirm }}>
+    <AlertContext.Provider value={{ showAlert, showConfirm, closeModal }}>
       {children}
 
       {/* Global Custom Modal Dialogue Overlay */}

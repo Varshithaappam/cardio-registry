@@ -10,7 +10,8 @@ import {
   formatDateTimeForDisplay,
   formatTimeForDisplay,
   formatDateForDatabase,
-  getLocalDateString
+  getLocalDateString,
+  formatFollowUpLabel
 } from '../utils/dateUtils';
 import {
   PhoneCall,
@@ -139,10 +140,10 @@ export default function NurseFollowUpReport() {
     // Fuzzy matching for spaces, alternate hyphens, or extra characters
     if (normalized.includes('1-week') || normalized.includes('1 week')) return 1;
     if (normalized.includes('2-week') || normalized.includes('2 week')) return 2;
-    if (normalized.includes('1-month') || normalized.includes('1 month')) return 3;
-    if (normalized.includes('3-month') || normalized.includes('3 month')) return 4;
-    if (normalized.includes('6-month') || normalized.includes('6 month')) return 5;
-    if (normalized.includes('1-year') || normalized.includes('1 year')) return 6;
+    if (normalized.includes('1st') || normalized.includes('1-month') || normalized.includes('1 month')) return 3;
+    if (normalized.includes('2nd') || normalized.includes('3-month') || normalized.includes('3 month')) return 4;
+    if (normalized.includes('3rd') || normalized.includes('6-month') || normalized.includes('6 month')) return 5;
+    if (normalized.includes('4th') || normalized.includes('1-year') || normalized.includes('1 year') || normalized.includes('12-month') || normalized.includes('12 month')) return 6;
     if (normalized.includes('no follow-up') || normalized.includes('none')) return 99;
 
     return 999;
@@ -1238,7 +1239,7 @@ export default function NurseFollowUpReport() {
                             {getStatusBadge(task.overall_registry_status || task.status, task)}
                             <div className="flex items-center gap-1 text-slate-500 font-bold text-[11px]">
                               <Clock className="w-3 h-3 text-slate-400" />
-                              <span>{task.timeframe || '1-Month'}</span>
+                              <span>{formatFollowUpLabel(task.timeframe)}</span>
                             </div>
                           </div>
                         </td>
@@ -1388,7 +1389,7 @@ export default function NurseFollowUpReport() {
                                         TIMEFRAME / URGENCY:
                                       </span>
                                       <span className="text-xs font-black text-slate-800 block mt-0.5">
-                                        {task.timeframe || '1-Month'}
+                                        {formatFollowUpLabel(task.timeframe)}
                                       </span>
                                     </div>
                                     <div>

@@ -92,7 +92,7 @@ const getPatientCentricTasks = async (req, res) => {
         FROM nstemi_followup_records WITH (NOLOCK)
       ),
       RankedTasks AS (
-        SELECT TOP (@limit)
+        SELECT
           t.task_id,
           t.reg_patient_id,
           t.source_registry,
@@ -164,6 +164,7 @@ const getPatientCentricTasks = async (req, res) => {
                 ELSE 'HF'
               END
             ORDER BY 
+              -- Priority 1: Match to latest admission/episode
               CASE 
                 WHEN t.source_registry LIKE '%NSTEMI%' AND (t.source_record_id = ln.max_nstemi_id OR t.source_record_id IS NULL) THEN 0
                 WHEN t.source_registry LIKE '%STEMI%' AND t.source_registry NOT LIKE '%NSTEMI%' AND (t.source_record_id = ls.max_stemi_id OR t.source_record_id IS NULL) THEN 0
@@ -171,6 +172,64 @@ const getPatientCentricTasks = async (req, res) => {
                 ELSE 1
               END ASC,
               COALESCE(t.source_record_id, 0) DESC,
+
+              -- Priority 2: Pending / active follow-ups come BEFORE Completed ones
+              CASE 
+                WHEN t.status = 'Completed' THEN 1 
+                ELSE 0 
+              END ASC,
+
+              -- Priority 3: For pending/active follow-ups, select the earliest milestone first (1st -> 2nd -> 3rd -> 4th)
+              CASE 
+                WHEN t.status != 'Completed' AND COALESCE(t.target_date, fa.scheduled_followup_date) IS NULL THEN 1 
+                ELSE 0 
+              END ASC,
+              CASE 
+                WHEN t.status != 'Completed' THEN COALESCE(t.target_date, fa.scheduled_followup_date) 
+                ELSE NULL 
+              END ASC,
+              CASE 
+                WHEN t.status != 'Completed' THEN (
+                  CASE 
+                    WHEN t.timeframe LIKE '%1%Month%' OR t.timeframe LIKE '%1st%' OR t.timeframe LIKE '%30%Day%' THEN 1
+                    WHEN t.timeframe LIKE '%2%Month%' THEN 2
+                    WHEN t.timeframe LIKE '%3%Month%' OR t.timeframe LIKE '%2nd%' THEN 3
+                    WHEN t.timeframe LIKE '%6%Month%' OR t.timeframe LIKE '%3rd%' THEN 6
+                    WHEN t.timeframe LIKE '%9%Month%' THEN 9
+                    WHEN t.timeframe LIKE '%12%Month%' OR t.timeframe LIKE '%1%Year%' OR t.timeframe LIKE '%4th%' THEN 12
+                    ELSE 99
+                  END
+                )
+                ELSE NULL 
+              END ASC,
+              CASE 
+                WHEN t.status != 'Completed' THEN t.task_id 
+                ELSE NULL 
+              END ASC,
+
+              -- Priority 4: If all follow-ups are Completed, show the latest completed milestone
+              CASE 
+                WHEN t.status = 'Completed' AND COALESCE(t.target_date, fa.scheduled_followup_date) IS NULL THEN 1 
+                ELSE 0 
+              END ASC,
+              CASE 
+                WHEN t.status = 'Completed' THEN COALESCE(t.target_date, fa.scheduled_followup_date) 
+                ELSE NULL 
+              END DESC,
+              CASE 
+                WHEN t.status = 'Completed' THEN (
+                  CASE 
+                    WHEN t.timeframe LIKE '%12%Month%' OR t.timeframe LIKE '%1%Year%' OR t.timeframe LIKE '%4th%' THEN 12
+                    WHEN t.timeframe LIKE '%9%Month%' THEN 9
+                    WHEN t.timeframe LIKE '%6%Month%' OR t.timeframe LIKE '%3rd%' THEN 6
+                    WHEN t.timeframe LIKE '%3%Month%' OR t.timeframe LIKE '%2nd%' THEN 3
+                    WHEN t.timeframe LIKE '%2%Month%' THEN 2
+                    WHEN t.timeframe LIKE '%1%Month%' OR t.timeframe LIKE '%1st%' OR t.timeframe LIKE '%30%Day%' THEN 1
+                    ELSE 0
+                  END
+                )
+                ELSE 0 
+              END DESC,
               t.task_id DESC
           ) AS row_num
         FROM patient_followup_tasks t WITH (NOLOCK)
@@ -195,12 +254,8 @@ const getPatientCentricTasks = async (req, res) => {
         )
         WHERE t.status != 'No Follow-Up Needed'
           AND t.status NOT LIKE '%Superseded%'
-        ORDER BY 
-          CASE WHEN t.target_date IS NULL THEN 1 ELSE 0 END ASC,
-          t.target_date ASC,
-          t.task_id ASC
       )
-      SELECT 
+      SELECT TOP (@limit)
         task_id,
         reg_patient_id,
         source_registry,
@@ -1179,8 +1234,8 @@ const postLog = async (req, res) => {
           .query(`
             SELECT TOP 1 task_id 
             FROM patient_followup_tasks 
-            WHERE reg_patient_id = @pid 
-            ORDER BY CASE WHEN status != 'Completed' THEN 0 ELSE 1 END ASC, task_id DESC;
+            WHERE reg_patient_id = @pid AND source_registry LIKE '%Heart Failure%'
+            ORDER BY CASE WHEN status != 'Completed' THEN 0 ELSE 1 END ASC, target_date ASC, task_id ASC;
           `);
         if (findTaskRes.recordset.length > 0) {
           finalTaskId = findTaskRes.recordset[0].task_id;

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { FileText, Bookmark, ArrowLeft, Sparkles } from 'lucide-react';
+import { FileText, Bookmark, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import HospitalizationForm from './forms/HospitalizationForm';
@@ -15,9 +15,6 @@ import CABGForm from './forms/CABGForm';
 import FollowUpForm from './forms/FollowUpForm';
 import LaboratoryForm from './forms/LaboratoryForm';
 import InvestigationForm from './forms/InvestigationForm';
-
-// Feature flag to control dev helper UI (Draft checkbox & Fill Dummy Data button)
-const SHOW_DEV_HELPERS = true;
 
 export default function ClinicalForm({ patientRecord, formType, editingRecord, onCancel, onSave, onBackPatients }) {
   const navigate = useNavigate();
@@ -35,6 +32,11 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
     if (e) e.preventDefault();
     if (!formRef.current) return;
 
+    if (formRef.current.validateForm) {
+      const isValid = await formRef.current.validateForm(true);
+      if (!isValid) return;
+    }
+
     const submissionData = formRef.current.getSubmissionData();
     submissionData.isDraft = true;
 
@@ -45,12 +47,15 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formRef.current) return;
 
-    if (formRef.current.validateForm && !formRef.current.validateForm(false)) {
-      return;
+    if (formRef.current.validateForm) {
+      const isValid = await formRef.current.validateForm(false);
+      if (!isValid) {
+        return;
+      }
     }
 
     const submissionData = formRef.current.getSubmissionData();
@@ -264,19 +269,6 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {(isHfForm || isNstemiForm || isStemiForm) && (
-            <button
-              id="btn-dummy-form-header"
-              type="button"
-              onClick={() => formRef.current?.fillDummyData?.()}
-              className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/40 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-all"
-              title="Auto-fill sample dummy data for testing all form sections"
-            >
-              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-              <span>Fill Dummy Data</span>
-            </button>
-          )}
-
           {formType === 'HF' && (
             <div className="flex rounded-xl border border-teal-800 bg-slate-950/30 p-1 shadow-inner" role="group" aria-label="Heart Failure form view">
               <button
@@ -317,18 +309,6 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
           <div />
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            {(isHfForm || isNstemiForm || isStemiForm) && (
-              <button
-                id="btn-dummy-form"
-                type="button"
-                onClick={() => formRef.current?.fillDummyData?.()}
-                className="w-full sm:w-auto px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition-colors"
-                title="Populate form with sample testing data"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                <span>Fill Dummy Data</span>
-              </button>
-            )}
             <button
               id="btn-draft-form"
               type="button"

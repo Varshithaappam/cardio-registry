@@ -329,10 +329,10 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
                 options={[
                   { label: '1-Week', value: '1-Week' },
                   { label: '2-Weeks', value: '2-Weeks' },
-                  { label: '1-Month', value: '1-Month' },
-                  { label: '3-Months', value: '3-Months' },
-                  { label: '6-Months', value: '6-Months' },
-                  { label: '1-Year', value: '1-Year' }
+                  { label: '1st Follow-Up', value: '1-Month' },
+                  { label: '2nd Follow-Up', value: '3-Months' },
+                  { label: '3rd Follow-Up', value: '6-Months' },
+                  { label: '4th Follow-Up', value: '1-Year' }
                 ]}
               />
 

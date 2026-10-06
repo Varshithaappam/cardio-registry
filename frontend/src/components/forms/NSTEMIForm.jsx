@@ -1,5 +1,5 @@
 import React, { useState, forwardRef, useImperativeHandle, useMemo } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import SectionCard from './common/SectionCard';
 import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
 import { useAlert } from '../../context/AlertContext';
@@ -7,6 +7,7 @@ import ClinicalMetricBadge from './common/ClinicalMetricBadge';
 import NoteInput from './common/NoteInput';
 import { sanitizeDecimal, sanitizePercentage } from '../../utils/formSanitizers';
 import { getLocalDateString } from '../../utils/dateUtils';
+import useUniqueCheck from '../../hooks/useUniqueCheck';
 
 const proceduresList = [
   { label: 'Indication for ICCU admission', key: 'appr_iccu_admission' },
@@ -106,10 +107,10 @@ const getFollowupInitialState = (followupArray, baseDate) => {
   if (!followupArray || !Array.isArray(followupArray)) return state;
 
   const mapping = {
-    '1-Month': '1m',
-    '3-Month': '3m',
-    '6-Month': '6m',
-    '12-Month': '12m'
+    '1-Month': '1m', '1-month': '1m', '1m': '1m', '1st Follow-Up': '1m', '1st follow-up': '1m',
+    '3-Month': '3m', '3-month': '3m', '3m': '3m', '2nd Follow-Up': '3m', '2nd follow-up': '3m',
+    '6-Month': '6m', '6-month': '6m', '6m': '6m', '3rd Follow-Up': '6m', '3rd follow-up': '6m',
+    '12-Month': '12m', '12-month': '12m', '12m': '12m', '4th Follow-Up': '12m', '4th follow-up': '12m'
   };
 
   followupArray.forEach(row => {
@@ -149,8 +150,19 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
   { patientRecord, patient: directPatient, editingRecord, readOnly = false },
   ref
 ) {
-  const { showConfirm } = useAlert();
+  const { showAlert, showConfirm } = useAlert();
   const patient = patientRecord?.patient || directPatient || patientRecord || {};
+  const currentNstemiId = editingRecord?.nstemi_id || editingRecord?.id || null;
+
+  const {
+    errors: uniqueErrors,
+    loading: uniqueLoading,
+    isChecking: isUniqueChecking,
+    hasUniquenessErrors,
+    verifyFieldUnique,
+    showDuplicateModal,
+    clearFieldError: clearUniqueError
+  } = useUniqueCheck();
 
   const patientAge = useMemo(() => {
     const dobVal = patient.dob || patient.date_of_birth;
@@ -995,7 +1007,52 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
   useImperativeHandle(ref, () => ({
     fillDummyData,
     getSubmissionData: () => getFlattenedData(),
-    validateForm: () => {
+    validateForm: async () => {
+      if (isUniqueChecking) {
+        if (showAlert) {
+          showAlert({
+            type: 'info',
+            title: 'Verifying Identifier',
+            message: 'Please wait while identifier uniqueness is being verified.',
+            confirmText: 'OK',
+            targetField: 'ip_no'
+          });
+        }
+        return false;
+      }
+      if (hasUniquenessErrors) {
+        const firstDupField = Object.keys(uniqueErrors).find(k => !!uniqueErrors[k]) || 'ip_no';
+        showDuplicateModal(firstDupField, firstDupField === 'acs_no' ? 'ACS Number' : 'IP Number');
+        return false;
+      }
+      // Proactively re-check IP number uniqueness before allowing submit
+      if (formData.ip_no && String(formData.ip_no).trim()) {
+        const isUnique = await verifyFieldUnique('ip_no', {
+          table: 'nstemi_registry',
+          column: 'ip_no',
+          value: formData.ip_no,
+          excludeId: currentNstemiId,
+          label: 'IP Number',
+          showModal: true
+        });
+        if (!isUnique) {
+          return false;
+        }
+      }
+      // Proactively re-check ACS number uniqueness before allowing submit
+      if (formData.acs_no && String(formData.acs_no).trim()) {
+        const isUnique = await verifyFieldUnique('acs_no', {
+          table: 'nstemi_registry',
+          column: 'acs_no',
+          value: formData.acs_no,
+          excludeId: currentNstemiId,
+          label: 'ACS Number',
+          showModal: true
+        });
+        if (!isUnique) {
+          return false;
+        }
+      }
       if (formData.admission_date && formData.discharge_date) {
         if (new Date(formData.discharge_date) <= new Date(formData.admission_date)) {
           alert('Form submission blocked: Date of Discharge must be greater than Date of Admission.');
@@ -1125,19 +1182,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
       {/* Patient Profile & Administrative Details */}
       <SectionCard title="Patient Profile & Administrative Details">
-        {!readOnly && (
-          <div className="flex justify-end pb-2">
-            <button
-              type="button"
-              onClick={fillDummyData}
-              className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-              title="Auto-fill sample test data for all NSTEMI form sections"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-              <span>Fill Dummy Data</span>
-            </button>
-          </div>
-        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
           <div>
             <label className={LABEL_STYLES}>Patient Name:</label>
@@ -1192,16 +1237,48 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 </span>
               )}
             </div>
-            <input
-              type="text"
-              disabled={readOnly}
-              value={formData.ip_no || ''}
-              maxLength={10}
-              onChange={(e) => handleChange('ip_no', e.target.value.slice(0, 10))}
-              placeholder="E.g. 1"
-              className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-orange-500 focus:border-orange-500"
-            />
-          </div>
+              <div className="relative">
+                <input
+                  id="ip_no"
+                  name="ip_no"
+                  data-field="ip_no"
+                  type="text"
+                  disabled={readOnly}
+                  value={formData.ip_no || ''}
+                  maxLength={10}
+                  onChange={(e) => {
+                    handleChange('ip_no', e.target.value.slice(0, 10));
+                    clearUniqueError('ip_no');
+                  }}
+                  onBlur={() => {
+                    if (formData.ip_no && String(formData.ip_no).trim()) {
+                      verifyFieldUnique('ip_no', {
+                        table: 'nstemi_registry',
+                        column: 'ip_no',
+                        value: formData.ip_no,
+                        excludeId: currentNstemiId,
+                        label: 'IP Number'
+                      });
+                    }
+                  }}
+                  placeholder="E.g. 1"
+                  className={`w-full p-2 border rounded-md font-medium text-slate-900 font-mono pr-8 ${
+                    uniqueErrors.ip_no
+                      ? 'border-red-500 bg-red-50/50 focus:ring-orange-500 focus:border-orange-500'
+                      : 'border-slate-300 focus:ring-orange-500 focus:border-orange-500'
+                  }`}
+                />
+                {uniqueLoading.ip_no && (
+                  <Loader2 className="w-4 h-4 text-orange-500 animate-spin absolute right-2.5 top-2.5" />
+                )}
+              </div>
+              {uniqueErrors.ip_no && (
+                <span className="text-red-500 text-[10px] block mt-1 font-bold flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {uniqueErrors.ip_no}
+                </span>
+              )}
+            </div>
           <div>
             <div className="flex justify-between items-center mb-1">
               <label className={LABEL_STYLES}>ACS No / Registry No:</label>
@@ -1215,17 +1292,47 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 </span>
               )}
             </div>
-            <input
-              id="acs_no"
-              name="acs_no"
-              type="text"
-              disabled={readOnly}
-              value={formData.acs_no || ''}
-              maxLength={10}
-              onChange={(e) => handleChange('acs_no', e.target.value.slice(0, 10))}
-              placeholder="E.g. ACS.0001"
-              className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900 font-mono focus:ring-orange-500 focus:border-orange-500"
-            />
+            <div className="relative">
+              <input
+                id="acs_no"
+                name="acs_no"
+                data-field="acs_no"
+                type="text"
+                disabled={readOnly}
+                value={formData.acs_no || ''}
+                maxLength={10}
+                onChange={(e) => {
+                  handleChange('acs_no', e.target.value.slice(0, 10));
+                  clearUniqueError('acs_no');
+                }}
+                onBlur={() => {
+                  if (formData.acs_no && String(formData.acs_no).trim()) {
+                    verifyFieldUnique('acs_no', {
+                      table: 'nstemi_registry',
+                      column: 'acs_no',
+                      value: formData.acs_no,
+                      excludeId: currentNstemiId,
+                      label: 'ACS Number'
+                    });
+                  }
+                }}
+                placeholder="E.g. ACS.0001"
+                className={`w-full p-2 border rounded-md font-medium text-slate-900 font-mono pr-8 ${
+                  uniqueErrors.acs_no
+                    ? 'border-red-500 bg-red-50/50 focus:ring-orange-500 focus:border-orange-500'
+                    : 'border-slate-300 focus:ring-orange-500 focus:border-orange-500'
+                }`}
+              />
+              {uniqueLoading.acs_no && (
+                <Loader2 className="w-4 h-4 text-orange-500 animate-spin absolute right-2.5 top-2.5" />
+              )}
+            </div>
+            {uniqueErrors.acs_no && (
+              <span className="text-red-500 text-[10px] block mt-1 font-bold flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                {uniqueErrors.acs_no}
+              </span>
+            )}
           </div>
           <div>
             <label className="font-bold text-slate-700 block mb-1">Date of Admission:</label>
@@ -2524,10 +2631,10 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <tr className="bg-slate-100 text-slate-900">
                 <th className="p-2.5 border border-slate-200 font-bold w-[220px] text-slate-800">Parameter</th>
                 {[
-                  { key: '1m', label: '1-Month', months: 1 },
-                  { key: '3m', label: '3-Month', months: 3 },
-                  { key: '6m', label: '6-Month', months: 6 },
-                  { key: '12m', label: '12-Month', months: 12 }
+                  { key: '1m', label: '1st Follow-Up', months: 1 },
+                  { key: '3m', label: '2nd Follow-Up', months: 3 },
+                  { key: '6m', label: '3rd Follow-Up', months: 6 },
+                  { key: '12m', label: '4th Follow-Up', months: 12 }
                 ].map(({ key, label, months }) => {
                   const isEnabled = !!formData[`enabled_${key}`];
                   const baseDate = formData.discharge_date || formData.admission_date;

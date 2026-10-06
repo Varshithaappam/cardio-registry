@@ -1,6 +1,8 @@
 import React, { useState, forwardRef, useImperativeHandle, useMemo, useEffect } from 'react';
-import { AlertCircle, ChevronLeft, ChevronRight, Check, Sparkles } from 'lucide-react';
+import { AlertCircle, ChevronLeft, ChevronRight, Check, Sparkles, Loader2 } from 'lucide-react';
 import api from '../../../api/axios';
+import useUniqueCheck from '../../hooks/useUniqueCheck';
+import { useAlert } from '../../context/AlertContext';
 import { calculateAge } from '../../utils/calculateAge';
 import SectionCard from './common/SectionCard';
 import TextInput from './common/TextInput';
@@ -1082,6 +1084,19 @@ const hf = forwardRef(function hf(
   const [dischargeDate, setDischargeDate] = useState(editingRecord?.inpatientDetails?.dischargeDate ?? '');
   const [encounterId, setEncounterId] = useState(editingRecord?.inpatientDetails?.encounterId ?? editingRecord?.encounterId ?? '');
   const [visitId, setVisitId] = useState(editingRecord?.visitId ?? editingRecord?.visit_id ?? '');
+
+  const currentHfId = editingRecord?.hf_id || editingRecord?.id || null;
+  const { showAlert } = useAlert();
+
+  const {
+    errors: uniqueErrors,
+    loading: uniqueLoading,
+    isChecking: isUniqueChecking,
+    hasUniquenessErrors,
+    verifyFieldUnique,
+    showDuplicateModal,
+    clearFieldError: clearUniqueError
+  } = useUniqueCheck();
 
   // 3. Initial Clinical Assessment States
   const [previousDiagnosis, setPreviousDiagnosis] = useState(editingRecord?.previous_diagnosis ?? editingRecord?.previousDiagnosis ?? '');
@@ -2974,6 +2989,21 @@ const hf = forwardRef(function hf(
 
   const handleSubmit = async (event) => {
     if (event && event.preventDefault) event.preventDefault();
+    if (isUniqueChecking) {
+      if (showAlert) {
+        showAlert({
+          type: 'info',
+          title: 'Verifying Identifier',
+          message: 'Please wait while identifier uniqueness is being verified.',
+          confirmText: 'OK'
+        });
+      }
+      return;
+    }
+    if (hasUniquenessErrors) {
+      showDuplicateModal('visit_id', 'Visit ID / IP No');
+      return;
+    }
     if (isFormCompletelyEmpty()) {
       alert("Please fill out at least one field to submit.");
       return;
@@ -2994,8 +3024,38 @@ const hf = forwardRef(function hf(
     }
   };
 
-  const validateForm = (isDraft = false) => {
+  const validateForm = async (isDraft = false) => {
     setFormErrors({});
+    if (isUniqueChecking) {
+      if (showAlert) {
+        showAlert({
+          type: 'info',
+          title: 'Verifying Identifier',
+          message: 'Please wait while identifier uniqueness is being verified.',
+          confirmText: 'OK',
+          targetField: 'visit_id'
+        });
+      }
+      return false;
+    }
+    if (hasUniquenessErrors) {
+      showDuplicateModal('visit_id', 'Visit ID / IP No');
+      return false;
+    }
+    // Proactively re-check Visit ID uniqueness before allowing submit
+    if (visitId && String(visitId).trim()) {
+      const isUnique = await verifyFieldUnique('visit_id', {
+        table: 'hf_administrative',
+        column: 'visit_id',
+        value: visitId,
+        excludeId: currentHfId,
+        label: 'Visit ID',
+        showModal: true
+      });
+      if (!isUnique) {
+        return false;
+      }
+    }
     if (assessmentDate && dischargeDate && new Date(dischargeDate) <= new Date(assessmentDate)) {
       alert('Date of Discharge must be greater than Date of Visit / Admission.');
       setFormErrors(prev => ({ ...prev, dischargeDate: 'Discharge date must be greater than admission date.' }));
@@ -3485,19 +3545,7 @@ const hf = forwardRef(function hf(
       >
       {/* 1. Patient Profile */}
       <SectionCard title="1. Patient Profile">
-        {!readOnly && (
-          <div className="flex justify-end pb-2">
-            <button
-              type="button"
-              onClick={fillDummyData}
-              className="px-3.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-              title="Auto-fill sample test data for all HF form sections"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-              <span>Fill Dummy Data</span>
-            </button>
-          </div>
-        )}
+
         
         {/* Top Demographics Grid (4-Column Layout) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 mb-4">
@@ -3554,15 +3602,47 @@ const hf = forwardRef(function hf(
                 </span>
               )}
             </div>
-            <input
-              type="text"
-              readOnly={readOnly}
-              value={visitId || ''}
-              maxLength={10}
-              onChange={(e) => setVisitId(e.target.value.slice(0, 10))}
-              placeholder="E.g. IP00001 or OP00001"
-              className="w-full p-2 border border-slate-300 rounded-md text-xs font-medium text-slate-900 font-mono focus:ring-teal-500 focus:border-teal-500"
-            />
+            <div className="relative">
+              <input
+                id="visit_id"
+                name="visit_id"
+                data-field="visit_id"
+                type="text"
+                readOnly={readOnly}
+                value={visitId || ''}
+                maxLength={10}
+                onChange={(e) => {
+                  setVisitId(e.target.value.slice(0, 10));
+                  clearUniqueError('visit_id');
+                }}
+                onBlur={() => {
+                  if (visitId && String(visitId).trim()) {
+                    verifyFieldUnique('visit_id', {
+                      table: 'hf_administrative',
+                      column: 'visit_id',
+                      value: visitId,
+                      excludeId: currentHfId,
+                      label: 'Visit ID'
+                    });
+                  }
+                }}
+                placeholder="E.g. IP00001 or OP00001"
+                className={`w-full p-2 border rounded-md text-xs font-medium text-slate-900 font-mono pr-8 ${
+                  uniqueErrors.visit_id
+                    ? 'border-red-500 bg-red-50/50 focus:ring-red-500 focus:border-red-500'
+                    : 'border-slate-300 focus:ring-teal-500 focus:border-teal-500'
+                }`}
+              />
+              {uniqueLoading.visit_id && (
+                <Loader2 className="w-4 h-4 text-teal-600 animate-spin absolute right-2.5 top-2.5" />
+              )}
+            </div>
+            {uniqueErrors.visit_id && (
+              <span className="text-red-500 text-[10px] block mt-1 font-bold flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                {uniqueErrors.visit_id}
+              </span>
+            )}
           </div>
 
           {/* Patient Name */}

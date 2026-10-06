@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { User, MapPin, Briefcase, GraduationCap, X, Check, Phone, Mail, Shield, CreditCard, Sparkles } from 'lucide-react';
+import { User, MapPin, Briefcase, GraduationCap, X, Check, Phone, Mail, Shield, CreditCard, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { buildPatientPayload } from '../utils/patientMapper';
 import { validateField } from '../utils/validation';
 import { formatDateForDisplay, getLocalDateString } from '../utils/dateUtils';
 import { sanitizePhone, sanitizePincode, sanitizeAlphaOnly, sanitizeUHID, sanitizeABHA, sanitizeAadhaar, validateABHAAddress } from '../utils/formSanitizers';
 import { createPatient, updatePatient, verifyPatient, confirmPatientMatch, rejectPatientMatch, resolveStagingPatient } from '../../api/patientApi';
 import PatientVerificationModal from './PatientVerificationModal';
+import useUniqueCheck from '../hooks/useUniqueCheck';
+import { useAlert } from '../context/AlertContext';
 
 const HIGHER_EDUCATION_OPTIONS = [
   'Primary',
@@ -100,6 +102,19 @@ export default function RegisterNewPatient({
   const [verificationModalOpen, setVerificationModalOpen] = useState(false);
   const [verificationResult, setVerificationResult] = useState(null);
   const [pendingPayload, setPendingPayload] = useState(null);
+
+  const currentPatientId = initialData?.patient?.id || initialData?.patient?.reg_patient_id || initialData?.reg_patient_id || initialData?.id || null;
+  const { showAlert } = useAlert();
+
+  const {
+    errors: uniqueErrors,
+    loading: uniqueLoading,
+    isChecking: isUniqueChecking,
+    hasUniquenessErrors,
+    verifyFieldUnique,
+    showDuplicateModal,
+    clearFieldError: clearUniqueError
+  } = useUniqueCheck();
 
   // Pre-fill state when initialData / patient record changes (Data Hydration)
   useEffect(() => {
@@ -215,13 +230,22 @@ export default function RegisterNewPatient({
         });
       }
       setVerificationModalOpen(false);
-      alert(`Existing patient file selected: ${candidate.full_name} (MR: ${candidate.mr_no || candidate.patient_id}).`);
+      await showAlert({
+        type: 'info',
+        title: 'Existing Patient Record',
+        message: `Existing patient file selected: ${candidate.full_name} (MR: ${candidate.mr_no || candidate.patient_id}).`,
+        confirmText: 'OK'
+      });
       if (onSuccess) {
         onSuccess(candidate);
       }
     } catch (err) {
       console.error('Error confirming match:', err);
-      alert('Failed to select existing patient.');
+      await showAlert({
+        type: 'danger',
+        title: 'Selection Failed',
+        message: 'Failed to select existing patient.'
+      });
     }
   };
 
@@ -247,16 +271,29 @@ export default function RegisterNewPatient({
       }
 
       if (response?.success || response?.action === 'MANUAL_CREATED' || response?.data) {
-        alert('Patient registered successfully.');
+        await showAlert({
+          type: 'success',
+          title: 'Patient Registered Successfully',
+          message: `Patient "${pendingPayload?.name || 'record'}" registered successfully into the Master Registry.`,
+          confirmText: 'OK'
+        });
         if (onSuccess) {
           onSuccess(response.data || response.patient);
         }
       } else {
-        alert(response?.message || 'Registration failed.');
+        await showAlert({
+          type: 'danger',
+          title: 'Registration Failed',
+          message: response?.message || 'Registration failed.'
+        });
       }
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || 'Registration failed.';
-      alert(message);
+      await showAlert({
+        type: 'danger',
+        title: 'Registration Error',
+        message
+      });
     } finally {
       setLoading(false);
     }
@@ -265,86 +302,183 @@ export default function RegisterNewPatient({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (isUniqueChecking) {
+      if (showAlert) {
+        await showAlert({
+          type: 'info',
+          title: 'Verifying Identifier',
+          message: 'Please wait while identifier uniqueness is being verified.',
+          confirmText: 'OK'
+        });
+      }
+      return;
+    }
+
+    if (hasUniquenessErrors) {
+      const firstDupField = Object.keys(uniqueErrors).find(k => !!uniqueErrors[k]) || 'mr_no';
+      showDuplicateModal(firstDupField);
+      return;
+    }
+
     if (!mrNo.trim()) {
-      alert('MR No (Medical Record Number) is required.');
+      await showAlert({
+        type: 'warning',
+        title: 'Required Field',
+        message: 'MR No (Medical Record Number) is required.',
+        targetField: 'mr_no'
+      });
       return;
     }
 
     if (!uhid.trim()) {
-      alert('UHID is required.');
+      await showAlert({
+        type: 'warning',
+        title: 'Required Field',
+        message: 'UHID is required.',
+        targetField: 'uhid'
+      });
       return;
     }
 
     if (!name.trim()) {
-      alert('Patient Full Name is required.');
+      await showAlert({
+        type: 'warning',
+        title: 'Required Field',
+        message: 'Patient Full Name is required.',
+        targetField: 'name'
+      });
       return;
     }
     const nameValRes = validateField('name', name);
     if (!nameValRes.isValid) {
-      alert(nameValRes.error);
+      await showAlert({
+        type: 'warning',
+        title: 'Invalid Name',
+        message: nameValRes.error,
+        targetField: 'name'
+      });
       return;
     }
 
     if (!dob) {
-      alert('Date of Birth is required.');
+      await showAlert({
+        type: 'warning',
+        title: 'Required Field',
+        message: 'Date of Birth is required.',
+        targetField: 'dob'
+      });
       return;
     }
 
     if (!gender) {
-      alert('Gender is required.');
+      await showAlert({
+        type: 'warning',
+        title: 'Required Field',
+        message: 'Gender is required.',
+        targetField: 'gender'
+      });
       return;
     }
 
     const fullAddressCombined = [houseFlatNo, streetLocality, villageTown, mandal, district, state, pincode].filter(Boolean).join(', ');
     if (!fullAddressCombined.trim() && !address.trim()) {
-      alert('Residential address details are required.');
+      await showAlert({
+        type: 'warning',
+        title: 'Required Field',
+        message: 'Residential address details are required.',
+        targetField: 'house_flat_no'
+      });
       return;
     }
 
     if (!phone.trim()) {
-      alert('Contact Phone is required.');
+      await showAlert({
+        type: 'warning',
+        title: 'Required Field',
+        message: 'Contact Phone is required.',
+        targetField: 'phone'
+      });
       return;
     }
     const phoneValRes = validateField('phone', phone);
     if (!phoneValRes.isValid) {
-      alert(phoneValRes.error);
+      await showAlert({
+        type: 'warning',
+        title: 'Invalid Phone Number',
+        message: phoneValRes.error,
+        targetField: 'phone'
+      });
       return;
     }
 
     if (email && email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email.trim())) {
-        alert('Please enter a valid email address.');
+        await showAlert({
+          type: 'warning',
+          title: 'Invalid Email',
+          message: 'Please enter a valid email address.',
+          targetField: 'email'
+        });
         return;
       }
     }
 
     if (!bloodGroup) {
-      alert('Blood Group is required.');
+      await showAlert({
+        type: 'warning',
+        title: 'Required Field',
+        message: 'Blood Group is required.',
+        targetField: 'blood_group'
+      });
       return;
     }
 
     if (occupation.length > 255) {
-      alert('Occupation cannot exceed 255 characters.');
+      await showAlert({
+        type: 'warning',
+        title: 'Length Exceeded',
+        message: 'Occupation cannot exceed 255 characters.',
+        targetField: 'occupation'
+      });
       return;
     }
 
     if (!HIGHER_EDUCATION_OPTIONS.includes(higherEducation)) {
-      alert('Please select a valid Higher Education option.');
+      await showAlert({
+        type: 'warning',
+        title: 'Invalid Selection',
+        message: 'Please select a valid Higher Education option.'
+      });
       return;
     }
 
     if (patientStatus === 'DECEASED') {
       if (!dateOfDeath) {
-        alert('Date of Death is required when Patient Status is DECEASED.');
+        await showAlert({
+          type: 'warning',
+          title: 'Required Field',
+          message: 'Date of Death is required when Patient Status is DECEASED.',
+          targetField: 'date_of_death'
+        });
         return;
       }
       if (dob && new Date(dateOfDeath) < new Date(dob)) {
-        alert('Date of Death cannot be earlier than Date of Birth.');
+        await showAlert({
+          type: 'warning',
+          title: 'Invalid Date',
+          message: 'Date of Death cannot be earlier than Date of Birth.',
+          targetField: 'date_of_death'
+        });
         return;
       }
       if (new Date(dateOfDeath) > new Date()) {
-        alert('Date of Death cannot be in the future.');
+        await showAlert({
+          type: 'warning',
+          title: 'Invalid Date',
+          message: 'Date of Death cannot be in the future.',
+          targetField: 'date_of_death'
+        });
         return;
       }
     }
@@ -352,7 +486,12 @@ export default function RegisterNewPatient({
     if (nationalIdType === 'Aadhaar' && aadhaarNumber) {
       const cleanAadhaar = aadhaarNumber.replace(/\D/g, '');
       if (cleanAadhaar.length !== 12) {
-        alert('Aadhaar Number must be exactly 12 numeric digits.');
+        await showAlert({
+          type: 'warning',
+          title: 'Invalid Aadhaar',
+          message: 'Aadhaar Number must be exactly 12 numeric digits.',
+          targetField: 'aadhaar'
+        });
         return;
       }
     }
@@ -361,16 +500,70 @@ export default function RegisterNewPatient({
       if (abhaNumber) {
         const cleanAbha = abhaNumber.replace(/\D/g, '');
         if (cleanAbha.length !== 14) {
-          alert('ABHA Number must be exactly 14 numeric digits.');
+          await showAlert({
+            type: 'warning',
+            title: 'Invalid ABHA',
+            message: 'ABHA Number must be exactly 14 numeric digits.',
+            targetField: 'abha_number'
+          });
           return;
         }
       }
       if (abhaAddress) {
         const addrCheck = validateABHAAddress(abhaAddress);
         if (!addrCheck.valid) {
-          alert(`Invalid ABHA Address: ${addrCheck.message}`);
+          await showAlert({
+            type: 'warning',
+            title: 'Invalid ABHA Address',
+            message: `Invalid ABHA Address: ${addrCheck.message}`,
+            targetField: 'abha_address'
+          });
           return;
         }
+      }
+    }
+
+    // Proactively verify uniqueness of MR No, UHID, and ABHA Number before submitting
+    if (mrNo && mrNo.trim()) {
+      const isMrUnique = await verifyFieldUnique('mr_no', {
+        table: 'patient_registry',
+        column: 'mr_no',
+        value: mrNo.trim(),
+        excludeId: currentPatientId,
+        label: 'MR Number',
+        showModal: true
+      });
+      if (!isMrUnique) {
+        return;
+      }
+    }
+
+    if (uhid && uhid.trim()) {
+      const isUhidUnique = await verifyFieldUnique('uhid', {
+        table: 'patient_registry',
+        column: 'uhid',
+        value: uhid.trim(),
+        excludeId: currentPatientId,
+        label: 'UHID',
+        showModal: true
+      });
+      if (!isUhidUnique) {
+        return;
+      }
+    }
+
+    const cleanAbhaDigits = abhaNumber ? abhaNumber.replace(/\D/g, '') : '';
+    if (nationalIdType === 'ABHA' && cleanAbhaDigits && cleanAbhaDigits.length === 14) {
+      const isAbhaUnique = await verifyFieldUnique('abha_number', {
+        table: 'patient_registry',
+        column: 'abha_number',
+        value: cleanAbhaDigits,
+        excludeId: currentPatientId,
+        label: 'ABHA Number',
+        showModal: true
+      });
+      if (!isAbhaUnique) {
+        return;
       }
     }
 
@@ -418,12 +611,21 @@ export default function RegisterNewPatient({
         const regPatientId = initialData?.patient?.id || initialData?.id;
         const response = await updatePatient(regPatientId, payload);
         if (response?.success) {
-          alert('Patient updated successfully.');
+          await showAlert({
+            type: 'success',
+            title: 'Patient Updated Successfully',
+            message: `Patient "${payload.name}" updated successfully in the Master Registry.`,
+            confirmText: 'OK'
+          });
           if (onSuccess) {
             onSuccess(response.data);
           }
         } else {
-          alert(response?.message || 'Patient update failed.');
+          await showAlert({
+            type: 'danger',
+            title: 'Update Failed',
+            message: response?.message || 'Patient update failed.'
+          });
         }
       } else {
         // Direct Unified Staging Intercept Call (POST /api/patients)
@@ -431,12 +633,21 @@ export default function RegisterNewPatient({
         try {
           const response = await createPatient(payload);
           if (response?.success) {
-            alert('Patient registered successfully.');
+            await showAlert({
+              type: 'success',
+              title: 'Patient Registered Successfully',
+              message: `Patient "${payload.name}" registered successfully into the Master Registry.`,
+              confirmText: 'OK'
+            });
             if (onSuccess) {
               onSuccess(response.data);
             }
           } else {
-            alert(response?.message || 'Patient registration failed.');
+            await showAlert({
+              type: 'danger',
+              title: 'Registration Failed',
+              message: response?.message || 'Patient registration failed.'
+            });
           }
         } catch (postErr) {
           const errData = postErr?.response?.data;
@@ -458,8 +669,12 @@ export default function RegisterNewPatient({
         }
       }
     } catch (error) {
-      const message = error?.response?.data?.message || error?.message || 'Operation failed.';
-      alert(message);
+      console.error('Registration error:', error);
+      await showAlert({
+        type: 'danger',
+        title: 'Registration Failed',
+        message: error?.response?.data?.message || error?.message || 'Operation failed.'
+      });
     } finally {
       setLoading(false);
     }
@@ -749,34 +964,98 @@ export default function RegisterNewPatient({
                 <label className="block text-xs font-semibold text-slate-700 mb-0.5">
                   MR No. <span className="text-red-500 font-bold ml-0.5">*</span>
                 </label>
-                <input
-                  id="reg-mr-no"
-                  type="text"
-                  required
-                  maxLength={10}
-                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono text-slate-900"
-                  value={mrNo}
-                  onChange={(e) => setMrNo(e.target.value.toUpperCase())}
-                  placeholder="E.g. DDH.0001"
-                />
-                <span className="text-[9px] text-slate-400 block mt-0.5">Format: DDH.0001 to DDH.9999</span>
+                <div className="relative">
+                  <input
+                    id="reg-mr-no"
+                    name="mr_no"
+                    data-field="mr_no"
+                    type="text"
+                    required
+                    maxLength={10}
+                    className={`w-full p-1.5 text-xs bg-white border rounded-lg focus:outline-none focus:ring-2 font-mono text-slate-900 pr-7 ${
+                      uniqueErrors.mr_no
+                        ? 'border-red-500 bg-red-50/50 focus:ring-red-400'
+                        : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-500'
+                    }`}
+                    value={mrNo}
+                    onChange={(e) => {
+                      setMrNo(e.target.value.toUpperCase());
+                      clearUniqueError('mr_no');
+                    }}
+                    onBlur={() => {
+                      if (mrNo.trim()) {
+                        verifyFieldUnique('mr_no', {
+                          table: 'patient_registry',
+                          column: 'mr_no',
+                          value: mrNo,
+                          excludeId: currentPatientId,
+                          label: 'MR Number'
+                        });
+                      }
+                    }}
+                    placeholder="E.g. DDH.0001"
+                  />
+                  {uniqueLoading.mr_no && (
+                    <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin absolute right-2 top-2" />
+                  )}
+                </div>
+                {uniqueErrors.mr_no ? (
+                  <span className="text-red-500 text-[10px] block mt-0.5 font-bold flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 shrink-0" />
+                    {uniqueErrors.mr_no}
+                  </span>
+                ) : (
+                  <span className="text-[9px] text-slate-400 block mt-0.5">Format: DDH.0001 to DDH.9999</span>
+                )}
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-0.5">
                   UHID (Triotree) <span className="text-red-500 font-bold ml-0.5">*</span>
                 </label>
-                <input
-                  id="reg-uhid"
-                  type="text"
-                  required
-                  maxLength={30}
-                  placeholder="E.g. DDCH.14250"
-                  className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
-                  value={uhid}
-                  onChange={(e) => setUhid(sanitizeUHID(e.target.value.toUpperCase()))}
-                />
-                <span className="text-[9px] text-slate-400 block mt-0.5">IAC Code (e.g. DDCH.14250)</span>
+                <div className="relative">
+                  <input
+                    id="reg-uhid"
+                    name="uhid"
+                    data-field="uhid"
+                    type="text"
+                    required
+                    maxLength={30}
+                    placeholder="E.g. DDCH.14250"
+                    className={`w-full p-1.5 text-xs bg-white border rounded-lg focus:outline-none focus:ring-2 font-mono pr-7 ${
+                      uniqueErrors.uhid
+                        ? 'border-red-500 bg-red-50/50 focus:ring-red-400'
+                        : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-500'
+                    }`}
+                    value={uhid}
+                    onChange={(e) => {
+                      setUhid(sanitizeUHID(e.target.value.toUpperCase()));
+                      clearUniqueError('uhid');
+                    }}
+                    onBlur={() => {
+                      if (uhid.trim()) {
+                        verifyFieldUnique('uhid', {
+                          table: 'patient_registry',
+                          column: 'uhid',
+                          value: uhid,
+                          excludeId: currentPatientId,
+                          label: 'UHID'
+                        });
+                      }
+                    }}
+                  />
+                  {uniqueLoading.uhid && (
+                    <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin absolute right-2 top-2" />
+                  )}
+                </div>
+                {uniqueErrors.uhid ? (
+                  <span className="text-red-500 text-[10px] block mt-0.5 font-bold flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3 shrink-0" />
+                    {uniqueErrors.uhid}
+                  </span>
+                ) : (
+                  <span className="text-[9px] text-slate-400 block mt-0.5">IAC Code (e.g. DDCH.14250)</span>
+                )}
               </div>
             </div>
 
@@ -829,16 +1108,49 @@ export default function RegisterNewPatient({
                         {abhaNumber.replace(/\D/g, '').length}/14{abhaNumber.replace(/\D/g, '').length === 14 ? ' ✓' : ''}
                       </span>
                     </div>
-                    <input
-                      id="reg-abha"
-                      type="text"
-                      maxLength={25}
-                      placeholder="XX-XXXX-XXXX-XXXX"
-                      className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
-                      value={abhaNumber}
-                      onChange={(e) => setAbhaNumber(sanitizeABHA(e.target.value, abhaNumber))}
-                    />
-                    <span className="text-[9px] text-slate-400 block mt-0.5">14-digit NHA Health ID</span>
+                    <div className="relative">
+                      <input
+                        id="reg-abha"
+                        name="abha_number"
+                        data-field="abha_number"
+                        type="text"
+                        maxLength={25}
+                        placeholder="XX-XXXX-XXXX-XXXX"
+                        className={`w-full p-1.5 text-xs bg-white border rounded-lg focus:outline-none focus:ring-2 font-mono pr-7 ${
+                          uniqueErrors.abha_number
+                            ? 'border-red-500 bg-red-50/50 focus:ring-red-400'
+                            : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-500'
+                        }`}
+                        value={abhaNumber}
+                        onChange={(e) => {
+                          setAbhaNumber(sanitizeABHA(e.target.value, abhaNumber));
+                          clearUniqueError('abha_number');
+                        }}
+                        onBlur={() => {
+                          const cleanDigits = abhaNumber.replace(/\D/g, '');
+                          if (cleanDigits.length === 14) {
+                            verifyFieldUnique('abha_number', {
+                              table: 'patient_registry',
+                              column: 'abha_number',
+                              value: cleanDigits,
+                              excludeId: currentPatientId,
+                              label: 'ABHA Number'
+                            });
+                          }
+                        }}
+                      />
+                      {uniqueLoading.abha_number && (
+                        <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin absolute right-2 top-2" />
+                      )}
+                    </div>
+                    {uniqueErrors.abha_number ? (
+                      <span className="text-red-500 text-[10px] block mt-0.5 font-bold flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3 shrink-0" />
+                        {uniqueErrors.abha_number}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] text-slate-400 block mt-0.5">14-digit NHA Health ID</span>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-700 mb-0.5">
@@ -1143,11 +1455,30 @@ export default function RegisterNewPatient({
         )}
         <button
           type="submit"
-          disabled={loading}
-          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          disabled={loading || isUniqueChecking || hasUniquenessErrors}
+          title={hasUniquenessErrors ? 'Cannot submit with duplicate identifiers' : ''}
+          className={`px-6 py-2 rounded-lg text-xs font-bold transition-all shadow-md flex items-center gap-2 ${
+            loading || isUniqueChecking || hasUniquenessErrors
+              ? 'bg-slate-400 text-white cursor-not-allowed opacity-60'
+              : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer active:scale-95'
+          }`}
         >
-          <Check className="w-4 h-4" />
-          <span>{loading ? 'Saving...' : isEditMode ? 'Update Patient Record' : 'Verify & Register Patient'}</span>
+          {isUniqueChecking ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Verifying Identifiers...</span>
+            </>
+          ) : loading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Saving...</span>
+            </>
+          ) : (
+            <>
+              <Check className="w-4 h-4" />
+              <span>{isEditMode ? 'Update Patient Record' : 'Verify & Register Patient'}</span>
+            </>
+          )}
         </button>
       </div>
 

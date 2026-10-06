@@ -470,17 +470,7 @@ export default function HFFollowUpForm({
             </select>
           </div>
 
-          {!readOnly && (
-            <button
-              type="button"
-              onClick={handleFillDummyData}
-              className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold text-xs rounded-xl border border-amber-400/40 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-              title="Auto-fill sample data for testing all form sections"
-            >
-              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-              <span>Fill Dummy Data</span>
-            </button>
-          )}
+
 
           <button
             type="button"

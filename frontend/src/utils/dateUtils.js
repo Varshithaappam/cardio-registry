@@ -120,3 +120,36 @@ export const getLocalDateString = (d = new Date()) => {
 export const formatDate = formatDateForDisplay;
 export const formatDateTime = formatDateTimeForDisplay;
 export const formatTime = formatTimeForDisplay;
+
+/**
+ * Formats follow-up timeframe / interval strings to clean ordinal names for UI display:
+ * '1-Month' / '1m' / '1 month' -> '1st Follow-Up'
+ * '3-Month' / '3m' / '3 month' -> '2nd Follow-Up'
+ * '6-Month' / '6m' / '6 month' -> '3rd Follow-Up'
+ * '12-Month' / '12m' / '12 month' / '1-Year' -> '4th Follow-Up'
+ */
+export const formatFollowUpLabel = (timeframe) => {
+  if (!timeframe) return '1st Follow-Up';
+  const clean = String(timeframe).trim().toLowerCase();
+  
+  if (clean === '1st follow-up' || clean === '1st followup') return '1st Follow-Up';
+  if (clean === '2nd follow-up' || clean === '2nd followup') return '2nd Follow-Up';
+  if (clean === '3rd follow-up' || clean === '3rd followup') return '3rd Follow-Up';
+  if (clean === '4th follow-up' || clean === '4th followup') return '4th Follow-Up';
+
+  if (clean.includes('12') && (clean.includes('month') || clean.includes('m')) || clean.includes('1-year') || clean.includes('1 year')) {
+    return '4th Follow-Up';
+  }
+  if (clean.includes('6') && (clean.includes('month') || clean.includes('m'))) {
+    return '3rd Follow-Up';
+  }
+  if (clean.includes('3') && (clean.includes('month') || clean.includes('m'))) {
+    return '2nd Follow-Up';
+  }
+  if (clean.includes('1') && (clean.includes('month') || clean.includes('m'))) {
+    return '1st Follow-Up';
+  }
+
+  return timeframe;
+};
+

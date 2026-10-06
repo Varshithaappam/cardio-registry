@@ -12,6 +12,7 @@ import { calculateAge } from '../utils/calculateAge';
 import { formatDateForDisplay } from '../utils/dateUtils';
 import { buildPatientPayload, mapPatientRecord } from '../utils/patientMapper';
 import RegisterNewPatient from './RegisterNewPatient';
+import { useAlert } from '../context/AlertContext';
 import { Edit, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -76,6 +77,7 @@ function EncounterCounter({ counts, loading }) {
 
 export default function PatientList({ patients, onSelectPatient, onRegisterPatient, onAddEventClick, onBack }) {
   const navigate = useNavigate();
+  const { showAlert } = useAlert();
   const [searchTerm, setSearchTerm] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [editingPatientRecord, setEditingPatientRecord] = useState(null);
@@ -160,7 +162,12 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
         const createdPatient = response.data;
         const newRecord = mapPatientRecord(createdPatient);
 
-        alert('Patient registered successfully.');
+        await showAlert({
+          type: 'success',
+          title: 'Patient Registered Successfully',
+          message: `Patient "${name}" registered successfully into the Master Registry.`,
+          confirmText: 'OK'
+        });
         setIsRegistering(false);
         setName('');
         setDob('');
@@ -177,11 +184,19 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
         setDialysisStatus('No');
         onRegisterPatient(newRecord);
       } else {
-        alert(response?.message || 'Patient registration failed.');
+        await showAlert({
+          type: 'danger',
+          title: 'Registration Failed',
+          message: response?.message || 'Patient registration failed.'
+        });
       }
     } catch (error) {
       const message = error?.response?.data?.message || error?.message || 'Patient registration failed.';
-      alert(message);
+      await showAlert({
+        type: 'danger',
+        title: 'Registration Error',
+        message
+      });
     }
   };
 

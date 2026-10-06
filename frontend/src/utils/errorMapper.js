@@ -14,8 +14,20 @@ export function detectFieldFromError(str) {
   if (lower.includes('acs_no') || lower.includes('acsno') || lower.includes('acs_number') || lower.includes('acs registry')) {
     return { targetField: 'acs_no', targetFieldName: 'ACS No / Registry No' };
   }
+  if (lower.includes('ip_no') || lower.includes('ipno') || lower.includes('ip number')) {
+    return { targetField: 'ip_no', targetFieldName: 'IP No.' };
+  }
   if (lower.includes('mr_no') || lower.includes('mrno') || lower.includes('mr_number') || lower.includes('medical record')) {
     return { targetField: 'mr_no', targetFieldName: 'MR No.' };
+  }
+  if (lower.includes('uhid')) {
+    return { targetField: 'uhid', targetFieldName: 'UHID' };
+  }
+  if (lower.includes('abha')) {
+    return { targetField: 'abha_number', targetFieldName: 'ABHA Number' };
+  }
+  if (lower.includes('visit_id') || lower.includes('visit id')) {
+    return { targetField: 'visit_id', targetFieldName: 'Visit ID / IP No' };
   }
   if (lower.includes('hf_registry_no') || lower.includes('hf_no') || lower.includes('hfno')) {
     return { targetField: 'hf_registry_no', targetFieldName: 'HF Registry No.' };

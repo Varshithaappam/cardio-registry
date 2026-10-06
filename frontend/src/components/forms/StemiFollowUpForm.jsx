@@ -290,15 +290,6 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
           </div>
 
           <button
-            type="button"
-            onClick={handleFillDummyData}
-            className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-100 font-bold text-xs rounded-xl border border-amber-300/40 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
-            title="Auto-fill sample dummy data for testing all form sections"
-          >
-            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-            <span>Fill Dummy Data</span>
-          </button>
-          <button
             onClick={onCancel}
             type="button"
             className="p-2 hover:bg-white/20 text-white rounded-xl transition-all cursor-pointer"

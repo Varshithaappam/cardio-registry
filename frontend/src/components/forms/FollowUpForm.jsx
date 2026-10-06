@@ -63,10 +63,10 @@ const FollowUpForm = forwardRef(function FollowUpForm(
           value={interval}
           onChange={setInterval}
           options={[
-            { value: '1-month', label: '1-month Follow-up' },
-            { value: '3-month', label: '3-month Follow-up' },
-            { value: '6-month', label: '6-month Follow-up' },
-            { value: '12-month', label: '12-month Follow-up' }
+            { value: '1-month', label: '1st Follow-Up' },
+            { value: '3-month', label: '2nd Follow-Up' },
+            { value: '6-month', label: '3rd Follow-Up' },
+            { value: '12-month', label: '4th Follow-Up' }
           ]}
           required
         />

@@ -41,7 +41,10 @@ const mpiConfigRoutes = require("./routes/mpiConfigRoutes");
 const hfRegistryController = require('./controllers/hfRegistryController');
 const { authenticateToken } = require('./middleware/authMiddleware');
 
+const validationRoutes = require("./routes/validationRoutes");
+
 // API Routes
+app.use("/api", validationRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/mpi-config", mpiConfigRoutes);
 app.use("/api/hf-registry", hfRegistryRoutes);
