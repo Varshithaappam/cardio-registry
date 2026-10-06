@@ -137,11 +137,160 @@ export const formatIndianCurrency = (val) => {
 };
 
 /**
- * Sanitize UHID input (IAC Code format e.g. DDCH.14250, Max 30 characters)
+ * Sanitize input with a strictly enforced prefix (e.g. 'DDH.', 'DDCH.', 'ACS.').
+ * - Preserves the prefix at the beginning.
+ * - Extracts and appends only numeric digits [0-9].
+ * - Disallows any other letters or characters.
+ * - Enforces max length constraint.
+ */
+/**
+ * Sanitize input with a strictly enforced prefix (e.g. 'DDH.', 'DDCH.', 'ACS.').
+ * - Preserves the prefix at the beginning.
+ * - Extracts and appends only numeric digits [0-9].
+ * - Disallows any other letters or characters.
+ * - Restricts the number of digits after the dot to maxDigits.
+ */
+export const sanitizePrefixedCode = (val, prefix, maxDigits = null) => {
+  if (val === null || val === undefined || val === '') return prefix;
+  const str = String(val).trim();
+  if (!str) return prefix;
+
+  let digits = '';
+  const lowerPrefix = prefix.toLowerCase();
+  const lowerStr = str.toLowerCase();
+
+  if (lowerStr.startsWith(lowerPrefix)) {
+    const afterPrefix = str.slice(prefix.length);
+    digits = afterPrefix.replace(/\D/g, '');
+  } else if (/^\d+$/.test(str)) {
+    // If user pasted pure numbers without the prefix
+    digits = str;
+  } else {
+    // String contains non-numeric characters and does not start with prefix (e.g. legacy 'MR00008')
+    return prefix;
+  }
+
+  if (typeof maxDigits === 'number') {
+    digits = digits.slice(0, maxDigits);
+  }
+
+  return prefix + digits;
+};
+
+/**
+ * KeyDown handler for prefixed inputs to:
+ * 1. Prevent backspacing or deleting the locked prefix.
+ * 2. Prevent entering any letters or symbols other than numeric digits [0-9].
+ * 3. Prevent typing more than maxDigits after the prefix.
+ */
+export const handlePrefixedKeyDown = (e, prefix, maxDigits = null) => {
+  // Allow system shortcuts (Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z, Cmd+...)
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+  // Allow navigation and functional keys
+  if (['Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+    return;
+  }
+
+  const input = e.target;
+  const start = input.selectionStart ?? 0;
+  const end = input.selectionEnd ?? 0;
+
+  // Prevent Backspace when caret is at or inside the prefix with no trailing selection
+  if (e.key === 'Backspace') {
+    if (start <= prefix.length && end <= prefix.length) {
+      e.preventDefault();
+      input.setSelectionRange(prefix.length, prefix.length);
+      return;
+    }
+  }
+
+  // Prevent Delete key when deleting within the prefix
+  if (e.key === 'Delete') {
+    if (start < prefix.length && end <= prefix.length) {
+      e.preventDefault();
+      input.setSelectionRange(prefix.length, prefix.length);
+      return;
+    }
+  }
+
+  // Strictly block any non-digit character (no letters, no symbols, no spaces)
+  if (e.key.length === 1 && !/^[0-9]$/.test(e.key)) {
+    e.preventDefault();
+    return;
+  }
+
+  // If a digit is typed:
+  if (e.key.length === 1 && /^[0-9]$/.test(e.key)) {
+    // If caret is placed before/inside the prefix, redirect caret to after the prefix
+    if (start < prefix.length && end <= prefix.length) {
+      input.setSelectionRange(prefix.length, prefix.length);
+    }
+    // Prevent typing beyond maxDigits when no text is selected to replace
+    if (typeof maxDigits === 'number' && start === end) {
+      const currentDigits = (input.value || '').slice(prefix.length).replace(/\D/g, '');
+      if (currentDigits.length >= maxDigits) {
+        e.preventDefault();
+        return;
+      }
+    }
+  }
+};
+
+/**
+ * Focus / Click handler for prefixed inputs:
+ * Automatically positions caret after the prefix if placed before it or when field contains just the prefix.
+ */
+export const handlePrefixedFocus = (e, prefix) => {
+  const input = e.target;
+  if (!input) return;
+  const pos = input.selectionStart ?? 0;
+  if (pos < prefix.length || input.value === prefix) {
+    setTimeout(() => {
+      if (input.selectionStart < prefix.length || input.value === prefix) {
+        input.setSelectionRange(prefix.length, prefix.length);
+      }
+    }, 0);
+  }
+};
+
+/**
+ * Sanitize MR No input (Strict format: 'DDH.' prefix followed by max 4 numbers only, e.g. DDH.0001)
+ */
+export const sanitizeMRNo = (val) => {
+  if (val === null || val === undefined || val === '') return 'DDH.';
+  const str = String(val).trim();
+  if (str === 'DDH.0000' || str === '0000' || str.toLowerCase() === 'ddh.') {
+    return 'DDH.';
+  }
+  const result = sanitizePrefixedCode(val, 'DDH.', 4);
+  return result === 'DDH.0000' ? 'DDH.' : result;
+};
+
+/**
+ * Sanitize UHID input (Strict format: 'DDCH.' prefix followed by max 5 numbers only, e.g. DDCH.14250)
  */
 export const sanitizeUHID = (val) => {
-  if (val === null || val === undefined) return '';
-  return String(val).trim().slice(0, 30);
+  if (val === null || val === undefined || val === '') return 'DDCH.';
+  const str = String(val).trim();
+  if (str === 'DDCH.00000' || str === '00000' || str.toLowerCase() === 'ddch.') {
+    return 'DDCH.';
+  }
+  const result = sanitizePrefixedCode(val, 'DDCH.', 5);
+  return result === 'DDCH.00000' ? 'DDCH.' : result;
+};
+
+/**
+ * Sanitize ACS No input (Strict format: 'ACS.' prefix followed by max 4 numbers only, e.g. ACS.0001)
+ */
+export const sanitizeACSNo = (val) => {
+  if (val === null || val === undefined || val === '') return 'ACS.';
+  const str = String(val).trim();
+  if (str === 'ACS.0000' || str === '0000' || str.toLowerCase() === 'acs.') {
+    return 'ACS.';
+  }
+  const result = sanitizePrefixedCode(val, 'ACS.', 4);
+  return result === 'ACS.0000' ? 'ACS.' : result;
 };
 
 /**

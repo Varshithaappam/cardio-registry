@@ -5,7 +5,7 @@ import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
 import { useAlert } from '../../context/AlertContext';
 import ClinicalMetricBadge from './common/ClinicalMetricBadge';
 import NoteInput from './common/NoteInput';
-import { sanitizeDecimal, sanitizePercentage } from '../../utils/formSanitizers';
+import { sanitizeDecimal, sanitizePercentage, sanitizeACSNo, handlePrefixedKeyDown, handlePrefixedFocus } from '../../utils/formSanitizers';
 import { getLocalDateString } from '../../utils/dateUtils';
 import useUniqueCheck from '../../hooks/useUniqueCheck';
 
@@ -182,7 +182,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
   const [formData, setFormData] = useState({
     // Demographic Information
     reg_patient_id: patient.id || patient.reg_patient_id || '',
-    acs_no: editingRecord?.acs_no || '',
+    acs_no: editingRecord?.acs_no ? sanitizeACSNo(editingRecord.acs_no) : 'ACS.',
     ip_no: editingRecord?.ip_no || '',
     admission_date: editingRecord?.admission_date || '',
     discharge_date: editingRecord?.discharge_date || '',
@@ -564,9 +564,11 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     });
   };
 
-  // Build flattener payload for backend compatibility matching nstemi_* DB tables
   const getFlattenedData = () => {
     const payload = { ...formData };
+    if (!payload.acs_no || String(payload.acs_no).trim() === 'ACS.' || String(payload.acs_no).trim().length <= 4) {
+      payload.acs_no = null;
+    }
     
     // Map statin doses
     payload.statin_10mg = formData.statin === 'Yes' && formData.statin_dose === '10 mg' ? 'Yes' : 'No';
@@ -1040,7 +1042,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
         }
       }
       // Proactively re-check ACS number uniqueness before allowing submit
-      if (formData.acs_no && String(formData.acs_no).trim()) {
+      if (formData.acs_no && String(formData.acs_no).trim() && String(formData.acs_no).trim() !== 'ACS.' && String(formData.acs_no).trim().length > 4) {
         const isUnique = await verifyFieldUnique('acs_no', {
           table: 'nstemi_registry',
           column: 'acs_no',
@@ -1284,11 +1286,11 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <label className={LABEL_STYLES}>ACS No / Registry No:</label>
               {!readOnly && (
                 <span className={`text-[10px] select-none ${
-                  Math.max(0, 10 - (formData.acs_no || '').length) <= 3
+                  Math.max(0, 8 - (formData.acs_no || '').length) <= 2
                     ? 'text-rose-500 font-bold animate-pulse'
                     : 'text-slate-400 font-medium'
                 }`}>
-                  {Math.max(0, 10 - (formData.acs_no || '').length)} left
+                  {Math.max(0, 8 - (formData.acs_no || '').length)} left
                 </span>
               )}
             </div>
@@ -1299,14 +1301,17 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 data-field="acs_no"
                 type="text"
                 disabled={readOnly}
-                value={formData.acs_no || ''}
-                maxLength={10}
+                value={formData.acs_no || 'ACS.'}
+                maxLength={8}
                 onChange={(e) => {
-                  handleChange('acs_no', e.target.value.slice(0, 10));
+                  handleChange('acs_no', sanitizeACSNo(e.target.value));
                   clearUniqueError('acs_no');
                 }}
+                onKeyDown={(e) => handlePrefixedKeyDown(e, 'ACS.', 4)}
+                onFocus={(e) => handlePrefixedFocus(e, 'ACS.')}
+                onClick={(e) => handlePrefixedFocus(e, 'ACS.')}
                 onBlur={() => {
-                  if (formData.acs_no && String(formData.acs_no).trim()) {
+                  if (formData.acs_no && String(formData.acs_no).trim() && String(formData.acs_no).trim() !== 'ACS.' && String(formData.acs_no).trim().length > 4) {
                     verifyFieldUnique('acs_no', {
                       table: 'nstemi_registry',
                       column: 'acs_no',
@@ -1316,7 +1321,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                     });
                   }
                 }}
-                placeholder="E.g. ACS.0001"
+                placeholder="ACS.0001"
                 className={`w-full p-2 border rounded-md font-medium text-slate-900 font-mono pr-8 ${
                   uniqueErrors.acs_no
                     ? 'border-red-500 bg-red-50/50 focus:ring-orange-500 focus:border-orange-500'

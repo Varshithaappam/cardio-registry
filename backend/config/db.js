@@ -127,7 +127,7 @@ require('dotenv').config();
 
 const authMode = (process.env.DB_AUTH_MODE || 'sql').toLowerCase();
 const configuredServer = process.env.DB_SERVER || 'localhost';
-const database = process.env.DB_DATABASE || 'test_sample';
+const database = process.env.DB_DATABASE || 'care';
 
 const [server, instanceName] = configuredServer.split('\\', 2);
 

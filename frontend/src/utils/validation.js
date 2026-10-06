@@ -107,11 +107,23 @@ export const validateField = (fieldName, value) => {
   // 1. Patient Profile & Admin Constraints (Max 10 for Medical IDs, Max 15 for Income, Max 50 for Caregiver Name, Max 30 for Relationship)
   const normField = String(fieldName || '').toLowerCase().replace(/[^a-z]/g, '');
 
-  if (['mrno', 'ipno', 'acsno', 'uhid'].includes(normField)) {
+  if (['mrno', 'ipno', 'acsno'].includes(normField)) {
     if (strVal.length > 10) {
       return {
         isValid: false,
         error: 'Max 10 characters allowed.',
+        warning: null,
+        status: 'Invalid',
+        color: 'text-red-500 font-bold'
+      };
+    }
+  }
+
+  if (normField === 'uhid') {
+    if (strVal.length > 30) {
+      return {
+        isValid: false,
+        error: 'Max 30 characters allowed.',
         warning: null,
         status: 'Invalid',
         color: 'text-red-500 font-bold'

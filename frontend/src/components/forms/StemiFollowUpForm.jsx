@@ -3,7 +3,7 @@ import {
   User, Phone, Calendar, Heart, Shield, Activity, FileText, 
   AlertTriangle, Check, X, Pill, Stethoscope, ChevronDown, Sparkles 
 } from 'lucide-react';
-import { limitDecimalDigits } from '../../utils/formSanitizers';
+import { limitDecimalDigits, sanitizeACSNo, handlePrefixedKeyDown, handlePrefixedFocus } from '../../utils/formSanitizers';
 import { getLocalDateString } from '../../utils/dateUtils';
 
 function AutoTextarea({ value, onChange, placeholder, disabled, className = '', minRows = 1 }) {
@@ -199,7 +199,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
     setFormData((prev) => ({
       ...prev,
       ip_no: prev.ip_no || patientData.ip_no || taskData.ip_no || (isStemi ? 'IP-2026-8891' : 'IP00002'),
-      acs_no: prev.acs_no || patientData.acs_no || taskData.acs_no || (isStemi ? 'ACS-STEMI-2026-904' : 'IP00002'),
+      acs_no: prev.acs_no || patientData.acs_no || taskData.acs_no || (isStemi ? 'ACS.0001' : 'IP00002'),
       patient_followup_date: getLocalDateString(),
       followup_conducted: 'Telephonic follow-up',
       attempt_number: 1,
@@ -324,10 +324,13 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
               <label className="block text-slate-600 font-semibold mb-1">ACS No. / Episode ID</label>
               <input
                 type="text"
-                placeholder="e.g. ACS-STEMI-2026-904"
-                value={formData.acs_no}
-                onChange={(e) => setFormData({ ...formData, acs_no: e.target.value })}
-                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-slate-800"
+                placeholder="e.g. ACS.0001"
+                maxLength={8}
+                value={formData.acs_no || ''}
+                onChange={(e) => setFormData({ ...formData, acs_no: sanitizeACSNo(e.target.value) })}
+                onKeyDown={(e) => handlePrefixedKeyDown(e, 'ACS.', 4)}
+                onFocus={(e) => handlePrefixedFocus(e, 'ACS.')}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium text-slate-800 font-mono"
               />
             </div>
 

@@ -3,7 +3,7 @@ import { User, MapPin, Briefcase, GraduationCap, X, Check, Phone, Mail, Shield, 
 import { buildPatientPayload } from '../utils/patientMapper';
 import { validateField } from '../utils/validation';
 import { formatDateForDisplay, getLocalDateString } from '../utils/dateUtils';
-import { sanitizePhone, sanitizePincode, sanitizeAlphaOnly, sanitizeUHID, sanitizeABHA, sanitizeAadhaar, validateABHAAddress } from '../utils/formSanitizers';
+import { sanitizePhone, sanitizePincode, sanitizeAlphaOnly, sanitizeMRNo, sanitizeUHID, handlePrefixedKeyDown, handlePrefixedFocus, sanitizeABHA, sanitizeAadhaar, validateABHAAddress } from '../utils/formSanitizers';
 import { createPatient, updatePatient, verifyPatient, confirmPatientMatch, rejectPatientMatch, resolveStagingPatient } from '../../api/patientApi';
 import PatientVerificationModal from './PatientVerificationModal';
 import useUniqueCheck from '../hooks/useUniqueCheck';
@@ -64,13 +64,13 @@ export default function RegisterNewPatient({
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState(null);
   const [phoneError, setPhoneError] = useState(null);
-  const [mrNo, setMrNo] = useState('');
+  const [mrNo, setMrNo] = useState('DDH.');
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
   const [bloodGroup, setBloodGroup] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [uhid, setUhid] = useState('');
+  const [uhid, setUhid] = useState('DDCH.');
   const [nationalIdType, setNationalIdType] = useState('ABHA');
   const [abhaNumber, setAbhaNumber] = useState('');
   const [abhaAddress, setAbhaAddress] = useState('');
@@ -121,7 +121,13 @@ export default function RegisterNewPatient({
     if (initialData) {
       const p = initialData.patient || initialData;
       setName(p.name || p.patient_name || '');
-      setMrNo(p.mrNo || p.mr_no || '');
+      const rawMr = p.mrNo || p.mr_no || '';
+      if (!rawMr || rawMr === 'DDH.0000' || rawMr === '0000' || !rawMr.toUpperCase().startsWith('DDH.')) {
+        setMrNo('DDH.');
+      } else {
+        const sanitized = sanitizeMRNo(rawMr);
+        setMrNo(sanitized === 'DDH.0000' ? 'DDH.' : sanitized);
+      }
       setDob(formatDateForInput(p.dob || p.date_of_birth));
       setGender(p.gender || '');
       setPatientStatus(p.patient_status || p.status || 'ACTIVE');
@@ -129,7 +135,13 @@ export default function RegisterNewPatient({
       setBloodGroup(p.bloodGroup || p.blood_group || '');
       setPhone(p.phone || p.phone_no || '');
       setEmail(p.email || '');
-      setUhid(p.uhi || p.uhid || '');
+      const rawUhid = p.uhi || p.uhid || '';
+      if (!rawUhid || rawUhid === 'DDCH.00000' || rawUhid === '00000' || !rawUhid.toUpperCase().startsWith('DDCH.')) {
+        setUhid('DDCH.');
+      } else {
+        const sanitizedUhid = sanitizeUHID(rawUhid);
+        setUhid(sanitizedUhid === 'DDCH.00000' ? 'DDCH.' : sanitizedUhid);
+      }
       const idType = p.national_id_type || p.nationalIdType || (p.aadhaar_number || p.aadhaarNumber ? 'Aadhaar' : 'ABHA');
       setNationalIdType(idType);
       setAbhaNumber(p.abha_number || p.abhaNumber ? sanitizeABHA(p.abha_number || p.abhaNumber) : '');
@@ -274,7 +286,7 @@ export default function RegisterNewPatient({
         await showAlert({
           type: 'success',
           title: 'Patient Registered Successfully',
-          message: `Patient "${pendingPayload?.name || 'record'}" registered successfully into the Master Registry.`,
+          message: '',
           confirmText: 'OK'
         });
         if (onSuccess) {
@@ -320,21 +332,53 @@ export default function RegisterNewPatient({
       return;
     }
 
-    if (!mrNo.trim()) {
+    const cleanMrDigits = (mrNo || '').replace(/^DDH\./i, '').trim();
+    if (!cleanMrDigits) {
       await showAlert({
         type: 'warning',
         title: 'Required Field',
-        message: 'MR No (Medical Record Number) is required.',
+        message: 'MR No (Medical Record Number) is required. Please enter 4 digits after DDH. (e.g. DDH.0001).',
         targetField: 'mr_no'
       });
       return;
     }
 
-    if (!uhid.trim()) {
+    if (cleanMrDigits.length !== 4) {
+      await showAlert({
+        type: 'warning',
+        title: 'Invalid MR No',
+        message: 'MR No must contain exactly 4 digits after DDH. (Format: DDH.0001 to DDH.9999).',
+        targetField: 'mr_no'
+      });
+      return;
+    }
+
+    if (cleanMrDigits === '0000') {
+      await showAlert({
+        type: 'warning',
+        title: 'Invalid MR No',
+        message: 'MR No cannot be DDH.0000. Please enter a valid 4-digit number (DDH.0001 to DDH.9999).',
+        targetField: 'mr_no'
+      });
+      return;
+    }
+
+    const cleanUhidDigits = (uhid || '').replace(/^DDCH\./i, '').trim();
+    if (!cleanUhidDigits) {
       await showAlert({
         type: 'warning',
         title: 'Required Field',
-        message: 'UHID is required.',
+        message: 'UHID is required. Please enter 5 digits after DDCH. (e.g. DDCH.14250).',
+        targetField: 'uhid'
+      });
+      return;
+    }
+
+    if (cleanUhidDigits.length !== 5) {
+      await showAlert({
+        type: 'warning',
+        title: 'Invalid UHID',
+        message: 'UHID must contain exactly 5 digits after DDCH. (e.g. DDCH.14250).',
         targetField: 'uhid'
       });
       return;
@@ -524,7 +568,7 @@ export default function RegisterNewPatient({
     }
 
     // Proactively verify uniqueness of MR No, UHID, and ABHA Number before submitting
-    if (mrNo && mrNo.trim()) {
+    if (mrNo && mrNo.trim() && cleanMrDigits) {
       const isMrUnique = await verifyFieldUnique('mr_no', {
         table: 'patient_registry',
         column: 'mr_no',
@@ -538,7 +582,7 @@ export default function RegisterNewPatient({
       }
     }
 
-    if (uhid && uhid.trim()) {
+    if (uhid && uhid.trim() && cleanUhidDigits) {
       const isUhidUnique = await verifyFieldUnique('uhid', {
         table: 'patient_registry',
         column: 'uhid',
@@ -614,7 +658,7 @@ export default function RegisterNewPatient({
           await showAlert({
             type: 'success',
             title: 'Patient Updated Successfully',
-            message: `Patient "${payload.name}" updated successfully in the Master Registry.`,
+            message: '',
             confirmText: 'OK'
           });
           if (onSuccess) {
@@ -636,7 +680,7 @@ export default function RegisterNewPatient({
             await showAlert({
               type: 'success',
               title: 'Patient Registered Successfully',
-              message: `Patient "${payload.name}" registered successfully into the Master Registry.`,
+              message: '',
               confirmText: 'OK'
             });
             if (onSuccess) {
@@ -971,7 +1015,7 @@ export default function RegisterNewPatient({
                     data-field="mr_no"
                     type="text"
                     required
-                    maxLength={10}
+                    maxLength={8}
                     className={`w-full p-1.5 text-xs bg-white border rounded-lg focus:outline-none focus:ring-2 font-mono text-slate-900 pr-7 ${
                       uniqueErrors.mr_no
                         ? 'border-red-500 bg-red-50/50 focus:ring-red-400'
@@ -979,11 +1023,15 @@ export default function RegisterNewPatient({
                     }`}
                     value={mrNo}
                     onChange={(e) => {
-                      setMrNo(e.target.value.toUpperCase());
+                      setMrNo(sanitizeMRNo(e.target.value));
                       clearUniqueError('mr_no');
                     }}
+                    onKeyDown={(e) => handlePrefixedKeyDown(e, 'DDH.', 4)}
+                    onFocus={(e) => handlePrefixedFocus(e, 'DDH.')}
+                    onClick={(e) => handlePrefixedFocus(e, 'DDH.')}
                     onBlur={() => {
-                      if (mrNo.trim()) {
+                      const digits = mrNo.replace(/^DDH\./i, '').trim();
+                      if (digits.length === 4 && digits !== '0000') {
                         verifyFieldUnique('mr_no', {
                           table: 'patient_registry',
                           column: 'mr_no',
@@ -993,7 +1041,7 @@ export default function RegisterNewPatient({
                         });
                       }
                     }}
-                    placeholder="E.g. DDH.0001"
+                    placeholder="DDH.0001"
                   />
                   {uniqueLoading.mr_no && (
                     <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin absolute right-2 top-2" />
@@ -1005,7 +1053,7 @@ export default function RegisterNewPatient({
                     {uniqueErrors.mr_no}
                   </span>
                 ) : (
-                  <span className="text-[9px] text-slate-400 block mt-0.5">Format: DDH.0001 to DDH.9999</span>
+                  <span className="text-[9px] text-slate-400 block mt-0.5">Format: DDH.0001 to DDH.9999 (4 digits)</span>
                 )}
               </div>
 
@@ -1020,8 +1068,8 @@ export default function RegisterNewPatient({
                     data-field="uhid"
                     type="text"
                     required
-                    maxLength={30}
-                    placeholder="E.g. DDCH.14250"
+                    maxLength={10}
+                    placeholder="DDCH.14250"
                     className={`w-full p-1.5 text-xs bg-white border rounded-lg focus:outline-none focus:ring-2 font-mono pr-7 ${
                       uniqueErrors.uhid
                         ? 'border-red-500 bg-red-50/50 focus:ring-red-400'
@@ -1029,11 +1077,15 @@ export default function RegisterNewPatient({
                     }`}
                     value={uhid}
                     onChange={(e) => {
-                      setUhid(sanitizeUHID(e.target.value.toUpperCase()));
+                      setUhid(sanitizeUHID(e.target.value));
                       clearUniqueError('uhid');
                     }}
+                    onKeyDown={(e) => handlePrefixedKeyDown(e, 'DDCH.', 5)}
+                    onFocus={(e) => handlePrefixedFocus(e, 'DDCH.')}
+                    onClick={(e) => handlePrefixedFocus(e, 'DDCH.')}
                     onBlur={() => {
-                      if (uhid.trim()) {
+                      const digits = uhid.replace(/^DDCH\./i, '').trim();
+                      if (digits.length === 5 && digits !== '00000') {
                         verifyFieldUnique('uhid', {
                           table: 'patient_registry',
                           column: 'uhid',
@@ -1054,7 +1106,7 @@ export default function RegisterNewPatient({
                     {uniqueErrors.uhid}
                   </span>
                 ) : (
-                  <span className="text-[9px] text-slate-400 block mt-0.5">IAC Code (e.g. DDCH.14250)</span>
+                  <span className="text-[9px] text-slate-400 block mt-0.5">IAC Code (e.g. DDCH.14250 - 5 digits)</span>
                 )}
               </div>
             </div>
