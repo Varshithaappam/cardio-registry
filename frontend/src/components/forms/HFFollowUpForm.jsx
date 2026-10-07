@@ -551,7 +551,7 @@ export default function HFFollowUpForm({
                 type="text"
                 disabled={readOnly}
                 maxLength={10}
-                value={uhid}
+                value={uhid ?? ''}
                 onChange={(e) => setUhid(sanitizeUHID(e.target.value))}
                 placeholder="UHID..."
                 className="w-full px-2 py-1.5 bg-white border border-rose-300 rounded-md focus:ring-1 focus:ring-rose-500 text-xs font-medium h-8 break-all font-mono"
@@ -563,9 +563,9 @@ export default function HFFollowUpForm({
               <input
                 type="date"
                 disabled={readOnly}
-                value={dateOfAdmission}
+                value={dateOfAdmission ?? ''}
                 onChange={(e) => setDateOfAdmission(e.target.value)}
-                className="w-full px-1.5 py-1.5 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-teal-500 text-xs font-medium h-8"
+                className="w-full px-1.5 py-1.5 bg-white border border-slate-300 rounded-md focus:ring-1 focus:teal-500 text-xs font-medium h-8"
               />
             </div>
 
@@ -574,9 +574,9 @@ export default function HFFollowUpForm({
               <input
                 type="date"
                 disabled={readOnly}
-                value={dateOfDischarge}
+                value={dateOfDischarge ?? ''}
                 onChange={(e) => setDateOfDischarge(e.target.value)}
-                className="w-full px-1.5 py-1.5 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-teal-500 text-xs font-medium h-8"
+                className="w-full px-1.5 py-1.5 bg-white border border-slate-300 rounded-md focus:ring-1 focus:teal-500 text-xs font-medium h-8"
               />
             </div>
 
@@ -585,9 +585,9 @@ export default function HFFollowUpForm({
               <input
                 type="date"
                 disabled={readOnly}
-                value={followupDate}
+                value={followupDate ?? ''}
                 onChange={(e) => setFollowupDate(e.target.value)}
-                className="w-full px-1.5 py-1.5 bg-white border border-slate-300 rounded-md focus:ring-1 focus:ring-teal-500 text-xs font-medium h-8"
+                className="w-full px-1.5 py-1.5 bg-white border border-slate-300 rounded-md focus:ring-1 focus:teal-500 text-xs font-medium h-8"
               />
             </div>
 
@@ -596,7 +596,7 @@ export default function HFFollowUpForm({
               <input
                 type="text"
                 disabled
-                value={followupConducted}
+                value={followupConducted ?? ''}
                 className="w-full px-2 py-1.5 bg-slate-100 text-slate-700 font-medium border border-slate-300 rounded-md cursor-not-allowed text-xs h-8"
               />
             </div>
@@ -932,7 +932,7 @@ export default function HFFollowUpForm({
                 <input
                   type="text"
                   disabled={readOnly}
-                  value={bnpResult}
+                  value={bnpResult ?? ''}
                   onChange={(e) => setBnpResult(limitDecimalDigits(e.target.value, 3))}
                   placeholder="pg/mL..."
                   className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold h-8 break-all"
@@ -944,7 +944,7 @@ export default function HFFollowUpForm({
                 <input
                   type="text"
                   disabled={readOnly}
-                  value={creatinineResult}
+                  value={creatinineResult ?? ''}
                   onChange={(e) => setCreatinineResult(limitDecimalDigits(e.target.value, 3))}
                   placeholder="mg/dL..."
                   className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold h-8 break-all"
@@ -956,7 +956,7 @@ export default function HFFollowUpForm({
                 <input
                   type="text"
                   disabled={readOnly}
-                  value={sodiumResult}
+                  value={sodiumResult ?? ''}
                   onChange={(e) => setSodiumResult(limitDecimalDigits(e.target.value, 3))}
                   placeholder="mEq/L..."
                   className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold h-8 break-all"
@@ -968,7 +968,7 @@ export default function HFFollowUpForm({
                 <input
                   type="text"
                   disabled={readOnly}
-                  value={hemoglobinResult}
+                  value={hemoglobinResult ?? ''}
                   onChange={(e) => setHemoglobinResult(limitDecimalDigits(e.target.value, 3))}
                   placeholder="g/dL..."
                   className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs font-semibold h-8 break-all"
@@ -1052,7 +1052,7 @@ export default function HFFollowUpForm({
                   <span className="text-xs font-bold text-slate-600 shrink-0 mt-1.5">Other:</span>
                   <AutoTextarea
                     disabled={readOnly}
-                    value={eventOtherDetails}
+                    value={eventOtherDetails ?? ''}
                     onChange={(e) => setEventOtherDetails(e.target.value)}
                     placeholder="Specify..."
                     className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs min-h-[32px] focus:ring-teal-500/20 focus:border-teal-500"
@@ -1069,7 +1069,7 @@ export default function HFFollowUpForm({
                 <label className="block text-xs font-bold text-slate-800 leading-tight mb-1">Any Vaccinations (please specify)</label>
                 <AutoTextarea
                   disabled={readOnly || isDeceased === 'Yes'}
-                  value={isDeceased === 'Yes' ? 'N/A (Deceased)' : vaccinationsDetails}
+                  value={isDeceased === 'Yes' ? 'N/A (Deceased)' : (vaccinationsDetails ?? '')}
                   onChange={(e) => setVaccinationsDetails(e.target.value)}
                   placeholder={isDeceased === 'Yes' ? 'N/A (Deceased)' : 'Specify vaccinations...'}
                   className={`px-2.5 py-1.5 border rounded-md text-xs min-h-[32px] ${
@@ -1146,7 +1146,7 @@ export default function HFFollowUpForm({
                     <label className="block font-bold text-rose-900 text-[11px] leading-tight mb-1">Place of death</label>
                     <AutoTextarea
                       disabled={readOnly}
-                      value={placeOfDeath}
+                      value={placeOfDeath ?? ''}
                       onChange={(e) => setPlaceOfDeath(e.target.value)}
                       placeholder="Place of death..."
                       className="px-2.5 py-1.5 bg-white border border-rose-300 rounded-md text-xs min-h-[32px] focus:ring-rose-500/20 focus:border-rose-500"
@@ -1158,7 +1158,7 @@ export default function HFFollowUpForm({
                     <input
                       type="date"
                       disabled={readOnly}
-                      value={dateOfDeath}
+                      value={dateOfDeath ?? ''}
                       onChange={(e) => setDateOfDeath(e.target.value)}
                       className="w-full px-2 py-1.5 bg-white border border-rose-300 rounded-md text-xs h-8"
                     />
@@ -1187,7 +1187,7 @@ export default function HFFollowUpForm({
                         <div className="pt-1.5 border-t border-rose-100">
                           <AutoTextarea
                             disabled={readOnly}
-                            value={causeOfDeathOther}
+                            value={causeOfDeathOther ?? ''}
                             onChange={(e) => setCauseOfDeathOther(e.target.value)}
                             placeholder="Others specify..."
                             className="px-2.5 py-1.5 bg-rose-50/50 border border-rose-300 rounded-md text-xs min-h-[32px] focus:ring-rose-500/20 focus:border-rose-500"
@@ -1205,7 +1205,7 @@ export default function HFFollowUpForm({
               <AutoTextarea
                 minRows={1}
                 disabled={readOnly || isDeceased === 'Yes'}
-                value={isDeceased === 'Yes' ? 'N/A (Deceased)' : patientFeedback}
+                value={isDeceased === 'Yes' ? 'N/A (Deceased)' : (patientFeedback ?? '')}
                 onChange={(e) => setPatientFeedback(e.target.value)}
                 placeholder={isDeceased === 'Yes' ? 'N/A (Deceased)' : 'Patient Feedback...'}
                 className={`px-2.5 py-1.5 border rounded-md text-xs min-h-[48px] ${
