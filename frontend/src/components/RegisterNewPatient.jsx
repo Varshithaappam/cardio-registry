@@ -89,12 +89,12 @@ export default function RegisterNewPatient({
   const [occupation, setOccupation] = useState('');
 
   // Co-morbidities State
-  const [hypertension, setHypertension] = useState('No');
-  const [diabetes, setDiabetes] = useState('No');
-  const [diabetesControl, setDiabetesControl] = useState('None');
-  const [smoking, setSmoking] = useState('No');
-  const [renalFailure, setRenalFailure] = useState('No');
-  const [dialysisStatus, setDialysisStatus] = useState('No');
+  const [hypertension, setHypertension] = useState('');
+  const [diabetes, setDiabetes] = useState('');
+  const [diabetesControl, setDiabetesControl] = useState('');
+  const [smoking, setSmoking] = useState('');
+  const [renalFailure, setRenalFailure] = useState('');
+  const [dialysisStatus, setDialysisStatus] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [patientStatus, setPatientStatus] = useState('ACTIVE');
@@ -183,12 +183,12 @@ export default function RegisterNewPatient({
 
       setHigherEducation(p.higherEducation || p.higher_education || 'None');
       setOccupation(p.occupation || '');
-      setHypertension(p.hypertension || initialData.comorbidities?.hypertension || 'No');
-      setDiabetes(p.diabetes || initialData.comorbidities?.diabetes || 'No');
-      setDiabetesControl(p.diabetesControl || initialData.comorbidities?.diabetesControl || 'None');
-      setSmoking(p.smoking || initialData.comorbidities?.smoking || 'No');
-      setRenalFailure(p.renalFailure || initialData.comorbidities?.renalFailure || 'No');
-      setDialysisStatus(p.dialysisStatus || initialData.comorbidities?.dialysisStatus || 'No');
+      setHypertension(p.hypertension || initialData.comorbidities?.hypertension || '');
+      setDiabetes(p.diabetes || initialData.comorbidities?.diabetes || '');
+      setDiabetesControl(p.diabetesControl || initialData.comorbidities?.diabetesControl || '');
+      setSmoking(p.smoking || initialData.comorbidities?.smoking || '');
+      setRenalFailure(p.renalFailure || initialData.comorbidities?.renalFailure || '');
+      setDialysisStatus(p.dialysisStatus || initialData.comorbidities?.dialysisStatus || '');
     }
   }, [initialData]);
 

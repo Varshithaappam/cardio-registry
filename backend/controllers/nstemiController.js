@@ -149,7 +149,7 @@ async function createNstemiRecord(req, res) {
     };
 
     // Helper to convert to string ('Yes', 'No', 'Unknown', etc.)
-    const strVal = (key, defaultVal = 'No') => {
+    const strVal = (key, defaultVal = null) => {
       const v = payload[key];
       if (v === true || v === 1 || v === '1' || v === 'Yes' || v === 'yes' || v === 'True' || v === 'Done') return 'Yes';
       if (v === false || v === 0 || v === '0' || v === 'No' || v === 'no' || v === 'False' || v === 'Not done') return 'No';
@@ -694,18 +694,18 @@ async function createNstemiRecord(req, res) {
       reqFollowup.input('nstemi_id', sql.Int, nstemi_id);
       reqFollowup.input('reg_patient_id', sql.Int, regPid);
       reqFollowup.input('followup_month', sql.NVarChar(50), followupMonth);
-      reqFollowup.input('angina', sql.VarChar(50), row.angina || 'No');
-      reqFollowup.input('functional_class', sql.VarChar(50), row.functional_class || 'None');
+      reqFollowup.input('angina', sql.VarChar(50), row.angina || null);
+      reqFollowup.input('functional_class', sql.VarChar(50), row.functional_class || null);
       reqFollowup.input('number_of_antianginals', sql.Int, row.number_of_antianginals !== undefined && row.number_of_antianginals !== null && row.number_of_antianginals !== '' ? parseInt(row.number_of_antianginals, 10) : null);
-      reqFollowup.input('dual_antiplatelets', sql.NVarChar(50), row.dual_antiplatelets || 'No');
-      reqFollowup.input('statins', sql.NVarChar(50), row.statins || 'No');
-      reqFollowup.input('beta_blocker', sql.NVarChar(50), row.beta_blocker || 'No');
-      reqFollowup.input('acei_arb', sql.NVarChar(50), row.acei_arb || 'No');
-      reqFollowup.input('aldosterone_antagonist', sql.NVarChar(50), row.aldosterone_antagonist || 'No');
-      reqFollowup.input('acs_hospitalization', sql.NVarChar(50), row.acs_hospitalization || 'No');
-      reqFollowup.input('ptca', sql.NVarChar(50), row.ptca || 'No');
-      reqFollowup.input('cabg', sql.NVarChar(50), row.cabg || 'No');
-      reqFollowup.input('death', sql.NVarChar(50), row.death || 'No');
+      reqFollowup.input('dual_antiplatelets', sql.NVarChar(50), row.dual_antiplatelets || null);
+      reqFollowup.input('statins', sql.NVarChar(50), row.statins || null);
+      reqFollowup.input('beta_blocker', sql.NVarChar(50), row.beta_blocker || null);
+      reqFollowup.input('acei_arb', sql.NVarChar(50), row.acei_arb || null);
+      reqFollowup.input('aldosterone_antagonist', sql.NVarChar(50), row.aldosterone_antagonist || null);
+      reqFollowup.input('acs_hospitalization', sql.NVarChar(50), row.acs_hospitalization || null);
+      reqFollowup.input('ptca', sql.NVarChar(50), row.ptca || null);
+      reqFollowup.input('cabg', sql.NVarChar(50), row.cabg || null);
+      reqFollowup.input('death', sql.NVarChar(50), row.death || null);
       reqFollowup.input('other_event', sql.NVarChar(255), row.other_event || '');
       reqFollowup.input('visit_mode', sql.VarChar(50), row.visit_mode || val('visit_mode', null) || 'In-Person');
       reqFollowup.input('special_instructions', sql.NVarChar(500), row.special_instructions !== undefined && row.special_instructions !== null && row.special_instructions !== '' ? row.special_instructions : (val('special_instructions', null) || val('special_clinical_instructions', null) || 'Follow-up in cardiology OPD with repeat lipid profile and ECG.'));
@@ -1208,7 +1208,7 @@ async function updateNstemiRecord(req, res) {
       return null;
     };
 
-    const strVal = (key, defaultVal = 'No') => {
+    const strVal = (key, defaultVal = null) => {
       const v = payload[key];
       if (v === true || v === 1 || v === '1' || v === 'Yes' || v === 'yes' || v === 'True' || v === 'Done') return 'Yes';
       if (v === false || v === 0 || v === '0' || v === 'No' || v === 'no' || v === 'False' || v === 'Not done') return 'No';
@@ -1687,18 +1687,18 @@ async function updateNstemiRecord(req, res) {
       reqFollowup.input('nstemi_id', sql.Int, nstemi_id);
       reqFollowup.input('reg_patient_id', sql.Int, regPid);
       reqFollowup.input('followup_month', sql.NVarChar(50), followupMonth);
-      reqFollowup.input('angina', sql.VarChar(50), row.angina || 'No');
-      reqFollowup.input('functional_class', sql.VarChar(50), row.functional_class || 'None');
+      reqFollowup.input('angina', sql.VarChar(50), row.angina || null);
+      reqFollowup.input('functional_class', sql.VarChar(50), row.functional_class || null);
       reqFollowup.input('number_of_antianginals', sql.Int, row.number_of_antianginals !== undefined && row.number_of_antianginals !== null && row.number_of_antianginals !== '' ? parseInt(row.number_of_antianginals, 10) : null);
-      reqFollowup.input('dual_antiplatelets', sql.NVarChar(50), row.dual_antiplatelets || 'No');
-      reqFollowup.input('statins', sql.NVarChar(50), row.statins || 'No');
-      reqFollowup.input('beta_blocker', sql.NVarChar(50), row.beta_blocker || 'No');
-      reqFollowup.input('acei_arb', sql.NVarChar(50), row.acei_arb || 'No');
-      reqFollowup.input('aldosterone_antagonist', sql.NVarChar(50), row.aldosterone_antagonist || 'No');
-      reqFollowup.input('acs_hospitalization', sql.NVarChar(50), row.acs_hospitalization || 'No');
-      reqFollowup.input('ptca', sql.NVarChar(50), row.ptca || 'No');
-      reqFollowup.input('cabg', sql.NVarChar(50), row.cabg || 'No');
-      reqFollowup.input('death', sql.NVarChar(50), row.death || 'No');
+      reqFollowup.input('dual_antiplatelets', sql.NVarChar(50), row.dual_antiplatelets || null);
+      reqFollowup.input('statins', sql.NVarChar(50), row.statins || null);
+      reqFollowup.input('beta_blocker', sql.NVarChar(50), row.beta_blocker || null);
+      reqFollowup.input('acei_arb', sql.NVarChar(50), row.acei_arb || null);
+      reqFollowup.input('aldosterone_antagonist', sql.NVarChar(50), row.aldosterone_antagonist || null);
+      reqFollowup.input('acs_hospitalization', sql.NVarChar(50), row.acs_hospitalization || null);
+      reqFollowup.input('ptca', sql.NVarChar(50), row.ptca || null);
+      reqFollowup.input('cabg', sql.NVarChar(50), row.cabg || null);
+      reqFollowup.input('death', sql.NVarChar(50), row.death || null);
       reqFollowup.input('other_event', sql.NVarChar(255), row.other_event || '');
       reqFollowup.input('visit_mode', sql.VarChar(50), row.visit_mode || val('visit_mode', null) || 'In-Person');
       reqFollowup.input('special_instructions', sql.NVarChar(500), row.special_instructions !== undefined && row.special_instructions !== null && row.special_instructions !== '' ? row.special_instructions : (val('special_instructions', null) || val('special_clinical_instructions', null) || 'Follow-up in cardiology OPD with repeat lipid profile and ECG.'));

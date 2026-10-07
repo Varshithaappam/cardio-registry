@@ -415,7 +415,7 @@ function EditFormPage({ records, loadPatients }) {
                 message: 'Heart Failure Assessment details submitted and finalized in database successfully.'
               });
             }
-            await loadPatients();
+            loadPatients().catch(console.error);
             navigate(`/patient/${regPatientId}`);
           } catch (err) {
             console.error('Error saving HF assessment:', err);

@@ -280,13 +280,13 @@ const HFForm = forwardRef(function HFForm(
   );
 
   // 7. Device Therapy
-  const [hfDevHas, setHfDevHas] = useState(editingRecord?.currentDeviceTherapy?.hasDevice ?? 'No');
+  const [hfDevHas, setHfDevHas] = useState(editingRecord?.currentDeviceTherapy?.hasDevice ?? '');
   const [hfDevType, setHfDevType] = useState(editingRecord?.currentDeviceTherapy?.deviceType ?? '');
   const [hfDevBrand, setHfDevBrand] = useState(editingRecord?.currentDeviceTherapy?.brand ?? '');
-  const [deviceEligible, setDeviceEligible] = useState(editingRecord?.deviceEligibility?.eligible ?? 'No');
+  const [deviceEligible, setDeviceEligible] = useState(editingRecord?.deviceEligibility?.eligible ?? '');
   const [eligibleDeviceType, setEligibleDeviceType] = useState(editingRecord?.deviceEligibility?.deviceType ?? '');
   const [eligibleDeviceBrand, setEligibleDeviceBrand] = useState(editingRecord?.deviceEligibility?.brand ?? '');
-  const [patientAcceptance, setPatientAcceptance] = useState(editingRecord?.deviceEligibility?.patientAcceptance ?? 'Unknown');
+  const [patientAcceptance, setPatientAcceptance] = useState(editingRecord?.deviceEligibility?.patientAcceptance ?? '');
 
   // 8. Patient Education
   const [educationRecommended, setEducationRecommended] = useState(editingRecord?.educationRecommended ?? []);
@@ -437,15 +437,15 @@ const HFForm = forwardRef(function HFForm(
     },
     drugContraindications,
     currentDeviceTherapy: {
-      hasDevice: hfDevHas,
+      hasDevice: hfDevHas || undefined,
       deviceType: hfDevHas === 'Yes' ? hfDevType : undefined,
       brand: hfDevHas === 'Yes' ? hfDevBrand : undefined
     },
     deviceEligibility: {
-      eligible: deviceEligible,
+      eligible: deviceEligible || undefined,
       deviceType: deviceEligible === 'Yes' ? eligibleDeviceType : undefined,
       brand: deviceEligible === 'Yes' ? eligibleDeviceBrand : undefined,
-      patientAcceptance: deviceEligible === 'Yes' ? patientAcceptance : undefined
+      patientAcceptance: deviceEligible === 'Yes' ? (patientAcceptance || undefined) : undefined
     },
     educationRecommended,
     recommendations: {

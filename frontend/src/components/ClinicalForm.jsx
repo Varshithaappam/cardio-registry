@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useRef } from 'react';
-import { FileText, Bookmark, ArrowLeft } from 'lucide-react';
+import { FileText, Bookmark, ArrowLeft, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import HospitalizationForm from './forms/HospitalizationForm';
@@ -25,43 +25,58 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
   const [isDraft, setIsDraft] = useState(
     editingRecord?.isDraft ?? (editingRecord?.status === 'draft' || editingRecord?.status === 2)
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [completionPercent, setCompletionPercent] = useState(15);
   const [viewMode, setViewMode] = useState('detailed');
 
   const handleSaveDraft = async (e) => {
     if (e) e.preventDefault();
-    if (!formRef.current) return;
+    if (!formRef.current || isSubmitting) return;
 
-    if (formRef.current.validateForm) {
-      const isValid = await formRef.current.validateForm(true);
-      if (!isValid) return;
-    }
-
-    const submissionData = formRef.current.getSubmissionData();
-    submissionData.isDraft = true;
-
+    setIsSubmitting(true);
     try {
+      if (formRef.current.validateForm) {
+        const isValid = await formRef.current.validateForm(true);
+        if (!isValid) {
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      const submissionData = formRef.current.getSubmissionData();
+      submissionData.isDraft = true;
+
       await onSave(submissionData, formType);
     } catch (err) {
       console.error("Error saving draft:", err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formRef.current) return;
+    if (!formRef.current || isSubmitting) return;
 
-    if (formRef.current.validateForm) {
-      const isValid = await formRef.current.validateForm(false);
-      if (!isValid) {
-        return;
+    setIsSubmitting(true);
+    try {
+      if (formRef.current.validateForm) {
+        const isValid = await formRef.current.validateForm(false);
+        if (!isValid) {
+          setIsSubmitting(false);
+          return;
+        }
       }
+
+      const submissionData = formRef.current.getSubmissionData();
+      submissionData.isDraft = false;
+
+      await onSave(submissionData, formType);
+    } catch (err) {
+      console.error("Error submitting form:", err);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const submissionData = formRef.current.getSubmissionData();
-    submissionData.isDraft = false;
-
-    onSave(submissionData, formType);
   };
 
   const formStyles = {
@@ -312,8 +327,11 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
             <button
               id="btn-draft-form"
               type="button"
+              disabled={isSubmitting}
               onClick={handleSaveDraft}
-              className="w-full sm:w-auto px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+              className={`w-full sm:w-auto px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs ${
+                isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+              }`}
             >
               <Bookmark className="w-3.5 h-3.5 text-amber-600" />
               <span>Save as Draft</span>
@@ -321,17 +339,30 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
             <button
               id="btn-cancel-form"
               type="button"
+              disabled={isSubmitting}
               onClick={onCancel}
-              className="w-full sm:w-auto px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-bold"
+              className={`w-full sm:w-auto px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-bold ${
+                isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+              }`}
             >
               Cancel
             </button>
             <button
               id="btn-submit-form"
               type="submit"
-              className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm"
+              disabled={isSubmitting}
+              className={`w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm flex items-center justify-center gap-2 ${
+                isSubmitting ? 'opacity-75 cursor-wait' : 'cursor-pointer'
+              }`}
             >
-              {editingRecord?.id && !String(editingRecord.id).startsWith("hfa-") ? "Update Registry Entry" : "Verify & Submit Registry"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                  <span>Submitting Assessment...</span>
+                </>
+              ) : (
+                editingRecord?.id && !String(editingRecord.id).startsWith("hfa-") ? "Update Registry Entry" : "Verify & Submit Registry"
+              )}
             </button>
           </div>
         </div>

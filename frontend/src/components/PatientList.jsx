@@ -115,12 +115,12 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
   const [bloodGroup, setBloodGroup] = useState('Unknown');
 
   // Co-morbidities state
-  const [hypertension, setHypertension] = useState('No');
-  const [diabetes, setDiabetes] = useState('No');
-  const [diabetesControl, setDiabetesControl] = useState('None');
-  const [smoking, setSmoking] = useState('No');
-  const [renalFailure, setRenalFailure] = useState('No');
-  const [dialysisStatus, setDialysisStatus] = useState('No');
+  const [hypertension, setHypertension] = useState('');
+  const [diabetes, setDiabetes] = useState('');
+  const [diabetesControl, setDiabetesControl] = useState('');
+  const [smoking, setSmoking] = useState('');
+  const [renalFailure, setRenalFailure] = useState('');
+  const [dialysisStatus, setDialysisStatus] = useState('');
 
   // Filter patients based on search
   const filteredPatients = patients.filter((p) => {
@@ -176,12 +176,12 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
         setEmail('');
         setInsuranceMode('Direct Cash / Self-Pay');
         setBloodGroup('Unknown');
-        setHypertension('No');
-        setDiabetes('No');
-        setDiabetesControl('None');
-        setSmoking('No');
-        setRenalFailure('No');
-        setDialysisStatus('No');
+        setHypertension('');
+        setDiabetes('');
+        setDiabetesControl('');
+        setSmoking('');
+        setRenalFailure('');
+        setDialysisStatus('');
         onRegisterPatient(newRecord);
       } else {
         await showAlert({

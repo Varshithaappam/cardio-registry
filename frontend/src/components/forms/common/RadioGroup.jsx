@@ -22,6 +22,7 @@ export const isRadioChecked = (stateVal, optVal) => {
   if (stateVal === undefined || stateVal === null || optVal === undefined || optVal === null) return false;
   const sStr = String(stateVal).trim().toLowerCase();
   const oStr = String(optVal).trim().toLowerCase();
+  if (!sStr || !oStr) return false;
   if (sStr === oStr) return true;
   
   // Custom aliases matching (e.g. 'direct', 'self-pay / direct', 'arogyasree', etc.)

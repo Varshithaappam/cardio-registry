@@ -29,19 +29,19 @@ const DIALYSIS_TO_DB = {
 };
 
 export function mapDiabetesControlToDb(value) {
-  return DIABETES_CONTROL_TO_DB[value] || value || "Unknown";
+  return DIABETES_CONTROL_TO_DB[value] || value || null;
 }
 
 export function mapDiabetesControlToUi(value) {
-  return DIABETES_CONTROL_TO_UI[value] || value || "None";
+  return DIABETES_CONTROL_TO_UI[value] || value || "";
 }
 
 export function mapDialysisStatusToDb(value) {
-  return DIALYSIS_TO_DB[value] || value || "Unknown";
+  return DIALYSIS_TO_DB[value] || value || null;
 }
 
 export function mapDialysisStatusToUi(value) {
-  return DIALYSIS_TO_UI[value] || value || "No";
+  return DIALYSIS_TO_UI[value] || value || "";
 }
 
 export function buildPatientPayload({
@@ -108,12 +108,12 @@ export function buildPatientPayload({
     insurance_mode: insuranceMode || "Unknown",
     phone_no: phone,
     email,
-    hypertension,
-    smoking,
-    diabetes,
-    diabetes_control_type: diabetes === "Yes" ? mapDiabetesControlToDb(diabetesControl) : "Unknown",
-    renal_failure: renalFailure,
-    active_dialysis_status: renalFailure === "Yes" ? mapDialysisStatusToDb(dialysisStatus) : "Unknown",
+    hypertension: hypertension || null,
+    smoking: smoking || null,
+    diabetes: diabetes || null,
+    diabetes_control_type: diabetes === "Yes" ? mapDiabetesControlToDb(diabetesControl) : (diabetes === "No" ? "None (Uncontrolled)" : null),
+    renal_failure: renalFailure || null,
+    active_dialysis_status: renalFailure === "Yes" ? mapDialysisStatusToDb(dialysisStatus) : (renalFailure === "No" ? "No Dialysis" : null),
     address: combinedAddress ? String(combinedAddress).trim() : null,
     house_flat_no: houseFlatNo ? String(houseFlatNo).trim() : null,
     street_locality: streetLocality ? String(streetLocality).trim() : null,
@@ -147,10 +147,10 @@ const normalizeRecord = (dbPatient) => {
   const phone = patient.phone_no || patient.phone || "";
   const email = patient.email || "";
   const gender = patient.gender || "Unknown";
-  const hypertension = patient.hypertension || patient.comorbidities?.hypertension || "No";
-  const smoking = patient.smoking || patient.comorbidities?.smoking || "No";
-  const diabetes = patient.diabetes || patient.comorbidities?.diabetes || "No";
-  const renalFailure = patient.renal_failure || patient.comorbidities?.renalFailure || "No";
+  const hypertension = patient.hypertension ?? patient.comorbidities?.hypertension ?? "";
+  const smoking = patient.smoking ?? patient.comorbidities?.smoking ?? "";
+  const diabetes = patient.diabetes ?? patient.comorbidities?.diabetes ?? "";
+  const renalFailure = patient.renal_failure ?? patient.comorbidities?.renalFailure ?? "";
   const diabetesControl = mapDiabetesControlToUi(
     patient.diabetes_control_type || patient.diabetesControl || patient.comorbidities?.diabetesControl
   );

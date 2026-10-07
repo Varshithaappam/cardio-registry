@@ -176,7 +176,12 @@ function HFFormWizard({ activeSection, onSectionChange, sectionErrors, viewMode,
       )}
 
       {sections.map((section, index) => (
-        <div key={section.key ?? index} data-hf-step-index={index} hidden={isTabularView && index !== activeStep}>
+        <div
+          key={section.key ?? index}
+          data-hf-step-index={index}
+          hidden={isTabularView && index !== activeStep}
+          className={!isTabularView && index > 1 ? 'section-card-optimized' : ''}
+        >
           {section}
         </div>
       ))}
@@ -373,6 +378,8 @@ function normalizeInsuranceModeForForm(val) {
   }
   return trimmed;
 }
+
+const toNullableYesNo = (val) => (val === 'Yes' ? 'Yes' : (val === 'No' ? 'No' : null));
 
 const hf = forwardRef(function hf(
   { patientRecord, editingRecord, onCompletionChange, readOnly: propsReadOnly = false, viewMode = 'detailed' },
@@ -1589,170 +1596,170 @@ const hf = forwardRef(function hf(
 
   // 6. Medical Therapy
   // Part 1: Beta Blockers, ACE Inhibitors, ARBs, Aldosterone Antagonists
-  const [carvedilol, setCarvedilol] = useState(editingRecord?.medicalTherapy?.carvedilol ?? 'No');
+  const [carvedilol, setCarvedilol] = useState(editingRecord?.medicalTherapy?.carvedilol ?? null);
   const [carvedilolDose, setCarvedilolDose] = useState(editingRecord?.medicalTherapy?.carvedilol_dose ?? editingRecord?.medicalTherapy?.carvedilolDose ?? '');
-  const [bisoprolol, setBisoprolol] = useState(editingRecord?.medicalTherapy?.bisoprolol ?? 'No');
+  const [bisoprolol, setBisoprolol] = useState(editingRecord?.medicalTherapy?.bisoprolol ?? null);
   const [bisoprololDose, setBisoprololDose] = useState(editingRecord?.medicalTherapy?.bisoprolol_dose ?? editingRecord?.medicalTherapy?.bisoprololDose ?? '');
-  const [metoprololSuccinate, setMetoprololSuccinate] = useState(editingRecord?.medicalTherapy?.metoprolol_succinate ?? editingRecord?.medicalTherapy?.metoprololSuccinate ?? 'No');
+  const [metoprololSuccinate, setMetoprololSuccinate] = useState(editingRecord?.medicalTherapy?.metoprolol_succinate ?? editingRecord?.medicalTherapy?.metoprololSuccinate ?? null);
   const [metoprololSuccinateDose, setMetoprololSuccinateDose] = useState(editingRecord?.medicalTherapy?.metoprolol_succinate_dose ?? editingRecord?.medicalTherapy?.metoprololSuccinateDose ?? '');
-  const [nebivolol, setNebivolol] = useState(editingRecord?.medicalTherapy?.nebivolol ?? 'No');
+  const [nebivolol, setNebivolol] = useState(editingRecord?.medicalTherapy?.nebivolol ?? null);
   const [nebivololDose, setNebivololDose] = useState(editingRecord?.medicalTherapy?.nebivolol_dose ?? editingRecord?.medicalTherapy?.nebivololDose ?? '');
-  const [betaBlockerOther, setBetaBlockerOther] = useState(editingRecord?.medicalTherapy?.beta_blocker_other ?? editingRecord?.medicalTherapy?.betaBlockerOther ?? 'No');
+  const [betaBlockerOther, setBetaBlockerOther] = useState(editingRecord?.medicalTherapy?.beta_blocker_other ?? editingRecord?.medicalTherapy?.betaBlockerOther ?? null);
   const [betaBlockerOtherName, setBetaBlockerOtherName] = useState(editingRecord?.medicalTherapy?.beta_blocker_other_name ?? editingRecord?.medicalTherapy?.betaBlockerOtherName ?? '');
   const [betaBlockerOtherDose, setBetaBlockerOtherDose] = useState(editingRecord?.medicalTherapy?.beta_blocker_other_dose ?? editingRecord?.medicalTherapy?.betaBlockerOtherDose ?? '');
-  const [betaNotUsedBradycardia, setBetaNotUsedBradycardia] = useState(editingRecord?.medicalTherapy?.beta_not_used_bradycardia ?? editingRecord?.medicalTherapy?.betaNotUsedBradycardia ?? 'No');
-  const [betaNotUsedHeartBlocks, setBetaNotUsedHeartBlocks] = useState(editingRecord?.medicalTherapy?.beta_not_used_heart_blocks ?? editingRecord?.medicalTherapy?.betaNotUsedHeartBlocks ?? 'No');
-  const [betaNotUsedCopdAsthma, setBetaNotUsedCopdAsthma] = useState(editingRecord?.medicalTherapy?.beta_not_used_copd_asthma ?? editingRecord?.medicalTherapy?.betaNotUsedCopdAsthma ?? 'No');
-  const [betaNotUsedHypotension, setBetaNotUsedHypotension] = useState(editingRecord?.medicalTherapy?.beta_not_used_hypotension ?? editingRecord?.medicalTherapy?.betaNotUsedHypotension ?? 'No');
-  const [betaNotUsedOther, setBetaNotUsedOther] = useState(editingRecord?.medicalTherapy?.beta_not_used_other ?? editingRecord?.medicalTherapy?.betaNotUsedOther ?? 'No');
+  const [betaNotUsedBradycardia, setBetaNotUsedBradycardia] = useState(editingRecord?.medicalTherapy?.beta_not_used_bradycardia ?? editingRecord?.medicalTherapy?.betaNotUsedBradycardia ?? null);
+  const [betaNotUsedHeartBlocks, setBetaNotUsedHeartBlocks] = useState(editingRecord?.medicalTherapy?.beta_not_used_heart_blocks ?? editingRecord?.medicalTherapy?.betaNotUsedHeartBlocks ?? null);
+  const [betaNotUsedCopdAsthma, setBetaNotUsedCopdAsthma] = useState(editingRecord?.medicalTherapy?.beta_not_used_copd_asthma ?? editingRecord?.medicalTherapy?.betaNotUsedCopdAsthma ?? null);
+  const [betaNotUsedHypotension, setBetaNotUsedHypotension] = useState(editingRecord?.medicalTherapy?.beta_not_used_hypotension ?? editingRecord?.medicalTherapy?.betaNotUsedHypotension ?? null);
+  const [betaNotUsedOther, setBetaNotUsedOther] = useState(editingRecord?.medicalTherapy?.beta_not_used_other ?? editingRecord?.medicalTherapy?.betaNotUsedOther ?? null);
   const [betaNotUsedOtherReason, setBetaNotUsedOtherReason] = useState(editingRecord?.medicalTherapy?.beta_not_used_other_reason ?? editingRecord?.medicalTherapy?.betaNotUsedOtherReason ?? '');
 
-  const [enalapril, setEnalapril] = useState(editingRecord?.medicalTherapy?.enalapril ?? 'No');
+  const [enalapril, setEnalapril] = useState(editingRecord?.medicalTherapy?.enalapril ?? null);
   const [enalaprilDose, setEnalaprilDose] = useState(editingRecord?.medicalTherapy?.enalapril_dose ?? editingRecord?.medicalTherapy?.enalaprilDose ?? '');
-  const [ramipril, setRamipril] = useState(editingRecord?.medicalTherapy?.ramipril ?? 'No');
+  const [ramipril, setRamipril] = useState(editingRecord?.medicalTherapy?.ramipril ?? null);
   const [ramiprilDose, setRamiprilDose] = useState(editingRecord?.medicalTherapy?.ramipril_dose ?? editingRecord?.medicalTherapy?.ramiprilDose ?? '');
-  const [lisinopril, setLisinopril] = useState(editingRecord?.medicalTherapy?.lisinopril ?? 'No');
+  const [lisinopril, setLisinopril] = useState(editingRecord?.medicalTherapy?.lisinopril ?? null);
   const [lisinoprilDose, setLisinoprilDose] = useState(editingRecord?.medicalTherapy?.lisinopril_dose ?? editingRecord?.medicalTherapy?.lisinoprilDose ?? '');
-  const [perindopril, setPerindopril] = useState(editingRecord?.medicalTherapy?.perindopril ?? 'No');
+  const [perindopril, setPerindopril] = useState(editingRecord?.medicalTherapy?.perindopril ?? null);
   const [perindoprilDose, setPerindoprilDose] = useState(editingRecord?.medicalTherapy?.perindopril_dose ?? editingRecord?.medicalTherapy?.perindoprilDose ?? '');
-  const [aceOther, setAceOther] = useState(editingRecord?.medicalTherapy?.ace_other ?? editingRecord?.medicalTherapy?.aceOther ?? 'No');
+  const [aceOther, setAceOther] = useState(editingRecord?.medicalTherapy?.ace_other ?? editingRecord?.medicalTherapy?.aceOther ?? null);
   const [aceOtherName, setAceOtherName] = useState(editingRecord?.medicalTherapy?.ace_other_name ?? editingRecord?.medicalTherapy?.aceOtherName ?? '');
   const [aceOtherDose, setAceOtherDose] = useState(editingRecord?.medicalTherapy?.ace_other_dose ?? editingRecord?.medicalTherapy?.aceOtherDose ?? '');
-  const [aceNotUsedElevatedCreatinine, setAceNotUsedElevatedCreatinine] = useState(editingRecord?.medicalTherapy?.ace_not_used_elevated_creatinine ?? editingRecord?.medicalTherapy?.aceNotUsedElevatedCreatinine ?? 'No');
-  const [aceNotUsedHyperkalemia, setAceNotUsedHyperkalemia] = useState(editingRecord?.medicalTherapy?.ace_not_used_hyperkalemia ?? editingRecord?.medicalTherapy?.aceNotUsedHyperkalemia ?? 'No');
-  const [aceNotUsedCough, setAceNotUsedCough] = useState(editingRecord?.medicalTherapy?.ace_not_used_cough ?? editingRecord?.medicalTherapy?.aceNotUsedCough ?? 'No');
-  const [aceNotUsedHypotension, setAceNotUsedHypotension] = useState(editingRecord?.medicalTherapy?.ace_not_used_hypotension ?? editingRecord?.medicalTherapy?.aceNotUsedHypotension ?? 'No');
-  const [aceNotUsedOther, setAceNotUsedOther] = useState(editingRecord?.medicalTherapy?.ace_not_used_other ?? editingRecord?.medicalTherapy?.aceNotUsedOther ?? 'No');
+  const [aceNotUsedElevatedCreatinine, setAceNotUsedElevatedCreatinine] = useState(editingRecord?.medicalTherapy?.ace_not_used_elevated_creatinine ?? editingRecord?.medicalTherapy?.aceNotUsedElevatedCreatinine ?? null);
+  const [aceNotUsedHyperkalemia, setAceNotUsedHyperkalemia] = useState(editingRecord?.medicalTherapy?.ace_not_used_hyperkalemia ?? editingRecord?.medicalTherapy?.aceNotUsedHyperkalemia ?? null);
+  const [aceNotUsedCough, setAceNotUsedCough] = useState(editingRecord?.medicalTherapy?.ace_not_used_cough ?? editingRecord?.medicalTherapy?.aceNotUsedCough ?? null);
+  const [aceNotUsedHypotension, setAceNotUsedHypotension] = useState(editingRecord?.medicalTherapy?.ace_not_used_hypotension ?? editingRecord?.medicalTherapy?.aceNotUsedHypotension ?? null);
+  const [aceNotUsedOther, setAceNotUsedOther] = useState(editingRecord?.medicalTherapy?.ace_not_used_other ?? editingRecord?.medicalTherapy?.aceNotUsedOther ?? null);
   const [aceNotUsedOtherReason, setAceNotUsedOtherReason] = useState(editingRecord?.medicalTherapy?.ace_not_used_other_reason ?? editingRecord?.medicalTherapy?.aceNotUsedOtherReason ?? '');
 
-  const [valsartan, setValsartan] = useState(editingRecord?.medicalTherapy?.valsartan ?? 'No');
+  const [valsartan, setValsartan] = useState(editingRecord?.medicalTherapy?.valsartan ?? null);
   const [valsartanDose, setValsartanDose] = useState(editingRecord?.medicalTherapy?.valsartan_dose ?? editingRecord?.medicalTherapy?.valsartanDose ?? '');
-  const [losartan, setLosartan] = useState(editingRecord?.medicalTherapy?.losartan ?? 'No');
+  const [losartan, setLosartan] = useState(editingRecord?.medicalTherapy?.losartan ?? null);
   const [losartanDose, setLosartanDose] = useState(editingRecord?.medicalTherapy?.losartan_dose ?? editingRecord?.medicalTherapy?.losartanDose ?? '');
-  const [telmisartan, setTelmisartan] = useState(editingRecord?.medicalTherapy?.telmisartan ?? 'No');
+  const [telmisartan, setTelmisartan] = useState(editingRecord?.medicalTherapy?.telmisartan ?? null);
   const [telmisartanDose, setTelmisartanDose] = useState(editingRecord?.medicalTherapy?.telmisartan_dose ?? editingRecord?.medicalTherapy?.telmisartanDose ?? '');
-  const [olmesartan, setOlmesartan] = useState(editingRecord?.medicalTherapy?.olmesartan ?? 'No');
+  const [olmesartan, setOlmesartan] = useState(editingRecord?.medicalTherapy?.olmesartan ?? null);
   const [olmesartanDose, setOlmesartanDose] = useState(editingRecord?.medicalTherapy?.olmesartan_dose ?? editingRecord?.medicalTherapy?.olmesartanDose ?? '');
-  const [arbOther, setArbOther] = useState(editingRecord?.medicalTherapy?.arb_other ?? editingRecord?.medicalTherapy?.arbOther ?? 'No');
+  const [arbOther, setArbOther] = useState(editingRecord?.medicalTherapy?.arb_other ?? editingRecord?.medicalTherapy?.arbOther ?? null);
   const [arbOtherName, setArbOtherName] = useState(editingRecord?.medicalTherapy?.arb_other_name ?? editingRecord?.medicalTherapy?.arbOtherName ?? '');
   const [arbOtherDose, setArbOtherDose] = useState(editingRecord?.medicalTherapy?.arb_other_dose ?? editingRecord?.medicalTherapy?.arbOtherDose ?? '');
-  const [arbNotUsedElevatedCreatinine, setArbNotUsedElevatedCreatinine] = useState(editingRecord?.medicalTherapy?.arb_not_used_elevated_creatinine ?? editingRecord?.medicalTherapy?.arbNotUsedElevatedCreatinine ?? 'No');
-  const [arbNotUsedHyperkalemia, setArbNotUsedHyperkalemia] = useState(editingRecord?.medicalTherapy?.arb_not_used_hyperkalemia ?? editingRecord?.medicalTherapy?.arbNotUsedHyperkalemia ?? 'No');
-  const [arbNotUsedHypotension, setArbNotUsedHypotension] = useState(editingRecord?.medicalTherapy?.arb_not_used_hypotension ?? editingRecord?.medicalTherapy?.arbNotUsedHypotension ?? 'No');
-  const [arbNotUsedOther, setArbNotUsedOther] = useState(editingRecord?.medicalTherapy?.arb_not_used_other ?? editingRecord?.medicalTherapy?.arbNotUsedOther ?? 'No');
+  const [arbNotUsedElevatedCreatinine, setArbNotUsedElevatedCreatinine] = useState(editingRecord?.medicalTherapy?.arb_not_used_elevated_creatinine ?? editingRecord?.medicalTherapy?.arbNotUsedElevatedCreatinine ?? null);
+  const [arbNotUsedHyperkalemia, setArbNotUsedHyperkalemia] = useState(editingRecord?.medicalTherapy?.arb_not_used_hyperkalemia ?? editingRecord?.medicalTherapy?.arbNotUsedHyperkalemia ?? null);
+  const [arbNotUsedHypotension, setArbNotUsedHypotension] = useState(editingRecord?.medicalTherapy?.arb_not_used_hypotension ?? editingRecord?.medicalTherapy?.arbNotUsedHypotension ?? null);
+  const [arbNotUsedOther, setArbNotUsedOther] = useState(editingRecord?.medicalTherapy?.arb_not_used_other ?? editingRecord?.medicalTherapy?.arbNotUsedOther ?? null);
   const [arbNotUsedOtherReason, setArbNotUsedOtherReason] = useState(editingRecord?.medicalTherapy?.arb_not_used_other_reason ?? editingRecord?.medicalTherapy?.arbNotUsedOtherReason ?? '');
 
-  const [spironolactone, setSpironolactone] = useState(editingRecord?.medicalTherapy?.spironolactone ?? 'No');
+  const [spironolactone, setSpironolactone] = useState(editingRecord?.medicalTherapy?.spironolactone ?? null);
   const [spironolactoneDose, setSpironolactoneDose] = useState(editingRecord?.medicalTherapy?.spironolactone_dose ?? editingRecord?.medicalTherapy?.spironolactoneDose ?? '');
-  const [eplerenone, setEplerenone] = useState(editingRecord?.medicalTherapy?.eplerenone ?? 'No');
+  const [eplerenone, setEplerenone] = useState(editingRecord?.medicalTherapy?.eplerenone ?? null);
   const [eplerenoneDose, setEplerenoneDose] = useState(editingRecord?.medicalTherapy?.eplerenone_dose ?? editingRecord?.medicalTherapy?.eplerenoneDose ?? '');
-  const [aldosteroneNotUsedHyperkalemia, setAldosteroneNotUsedHyperkalemia] = useState(editingRecord?.medicalTherapy?.aldosterone_not_used_hyperkalemia ?? editingRecord?.medicalTherapy?.aldosteroneNotUsedHyperkalemia ?? 'No');
-  const [aldosteroneNotUsedHyponatremia, setAldosteroneNotUsedHyponatremia] = useState(editingRecord?.medicalTherapy?.aldosterone_not_used_hyponatremia ?? editingRecord?.medicalTherapy?.aldosteroneNotUsedHyponatremia ?? 'No');
-  const [aldosteroneNotUsedElevatedCreatinine, setAldosteroneNotUsedElevatedCreatinine] = useState(editingRecord?.medicalTherapy?.aldosterone_not_used_elevated_creatinine ?? editingRecord?.medicalTherapy?.aldosteroneNotUsedElevatedCreatinine ?? 'No');
-  const [aldosteroneNotUsedOther, setAldosteroneNotUsedOther] = useState(editingRecord?.medicalTherapy?.aldosterone_not_used_other ?? editingRecord?.medicalTherapy?.aldosteroneNotUsedOther ?? 'No');
+  const [aldosteroneNotUsedHyperkalemia, setAldosteroneNotUsedHyperkalemia] = useState(editingRecord?.medicalTherapy?.aldosterone_not_used_hyperkalemia ?? editingRecord?.medicalTherapy?.aldosteroneNotUsedHyperkalemia ?? null);
+  const [aldosteroneNotUsedHyponatremia, setAldosteroneNotUsedHyponatremia] = useState(editingRecord?.medicalTherapy?.aldosterone_not_used_hyponatremia ?? editingRecord?.medicalTherapy?.aldosteroneNotUsedHyponatremia ?? null);
+  const [aldosteroneNotUsedElevatedCreatinine, setAldosteroneNotUsedElevatedCreatinine] = useState(editingRecord?.medicalTherapy?.aldosterone_not_used_elevated_creatinine ?? editingRecord?.medicalTherapy?.aldosteroneNotUsedElevatedCreatinine ?? null);
+  const [aldosteroneNotUsedOther, setAldosteroneNotUsedOther] = useState(editingRecord?.medicalTherapy?.aldosterone_not_used_other ?? editingRecord?.medicalTherapy?.aldosteroneNotUsedOther ?? null);
   const [aldosteroneNotUsedOtherReason, setAldosteroneNotUsedOtherReason] = useState(editingRecord?.medicalTherapy?.aldosterone_not_used_other_reason ?? editingRecord?.medicalTherapy?.aldosteroneNotUsedOtherReason ?? '');
 
   // Part 2: Vasodilators, Anticoagulation, Antiplatelets, Antiarrhythmics, Diuretics
-  const [hydralazine, setHydralazine] = useState(editingRecord?.medicalTherapy?.hydralazine ?? 'No');
+  const [hydralazine, setHydralazine] = useState(editingRecord?.medicalTherapy?.hydralazine ?? null);
   const [hydralazineName, setHydralazineName] = useState(editingRecord?.medicalTherapy?.hydralazine_name ?? editingRecord?.medicalTherapy?.hydralazineName ?? '');
   const [hydralazineDose, setHydralazineDose] = useState(editingRecord?.medicalTherapy?.hydralazine_dose ?? editingRecord?.medicalTherapy?.hydralazineDose ?? '');
-  const [nitrate1, setNitrate1] = useState(editingRecord?.medicalTherapy?.nitrate_1 ?? editingRecord?.medicalTherapy?.nitrate1 ?? 'No');
+  const [nitrate1, setNitrate1] = useState(editingRecord?.medicalTherapy?.nitrate_1 ?? editingRecord?.medicalTherapy?.nitrate1 ?? null);
   const [nitrate1Name, setNitrate1Name] = useState(editingRecord?.medicalTherapy?.nitrate_1_name ?? editingRecord?.medicalTherapy?.nitrate1Name ?? '');
   const [nitrate1Dose, setNitrate1Dose] = useState(editingRecord?.medicalTherapy?.nitrate_1_dose ?? editingRecord?.medicalTherapy?.nitrate1Dose ?? '');
-  const [nitrate2, setNitrate2] = useState(editingRecord?.medicalTherapy?.nitrate_2 ?? editingRecord?.medicalTherapy?.nitrate2 ?? 'No');
+  const [nitrate2, setNitrate2] = useState(editingRecord?.medicalTherapy?.nitrate_2 ?? editingRecord?.medicalTherapy?.nitrate2 ?? null);
   const [nitrate2Name, setNitrate2Name] = useState(editingRecord?.medicalTherapy?.nitrate_2_name ?? editingRecord?.medicalTherapy?.nitrate2Name ?? '');
   const [nitrate2Dose, setNitrate2Dose] = useState(editingRecord?.medicalTherapy?.nitrate_2_dose ?? editingRecord?.medicalTherapy?.nitrate2Dose ?? '');
 
-  const [warfarin, setWarfarin] = useState(editingRecord?.medicalTherapy?.warfarin ?? 'No');
+  const [warfarin, setWarfarin] = useState(editingRecord?.medicalTherapy?.warfarin ?? null);
   const [warfarinInr, setWarfarinInr] = useState(editingRecord?.medicalTherapy?.warfarin_inr ?? editingRecord?.medicalTherapy?.warfarinInr ?? '');
   const [warfarinTargetInr, setWarfarinTargetInr] = useState(editingRecord?.medicalTherapy?.warfarin_target_inr ?? editingRecord?.medicalTherapy?.warfarinTargetInr ?? '');
-  const [vitaminKInhibitor, setVitaminKInhibitor] = useState(editingRecord?.medicalTherapy?.vitamin_k_inhibitor ?? editingRecord?.medicalTherapy?.vitaminKInhibitor ?? 'No');
+  const [vitaminKInhibitor, setVitaminKInhibitor] = useState(editingRecord?.medicalTherapy?.vitamin_k_inhibitor ?? editingRecord?.medicalTherapy?.vitaminKInhibitor ?? null);
   const [vitaminKInhibitorName, setVitaminKInhibitorName] = useState(editingRecord?.medicalTherapy?.vitamin_k_inhibitor_name ?? editingRecord?.medicalTherapy?.vitaminKInhibitorName ?? '');
   const [vitaminKInhibitorDose, setVitaminKInhibitorDose] = useState(editingRecord?.medicalTherapy?.vitamin_k_inhibitor_dose ?? editingRecord?.medicalTherapy?.vitaminKInhibitorDose ?? '');
-  const [noac, setNoac] = useState(editingRecord?.medicalTherapy?.noac ?? 'No');
+  const [noac, setNoac] = useState(editingRecord?.medicalTherapy?.noac ?? null);
   const [noacName, setNoacName] = useState(editingRecord?.medicalTherapy?.noac_name ?? editingRecord?.medicalTherapy?.noacName ?? '');
   const [noacDose, setNoacDose] = useState(editingRecord?.medicalTherapy?.noac_dose ?? editingRecord?.medicalTherapy?.noacDose ?? '');
-  const [acitrom, setAcitrom] = useState(editingRecord?.medicalTherapy?.acitrom ?? 'No');
+  const [acitrom, setAcitrom] = useState(editingRecord?.medicalTherapy?.acitrom ?? null);
   const [acitromDose, setAcitromDose] = useState(editingRecord?.medicalTherapy?.acitrom_dose ?? editingRecord?.medicalTherapy?.acitromDose ?? '');
-  const [ufh, setUfh] = useState(editingRecord?.medicalTherapy?.ufh ?? 'No');
+  const [ufh, setUfh] = useState(editingRecord?.medicalTherapy?.ufh ?? null);
   const [ufhDose, setUfhDose] = useState(editingRecord?.medicalTherapy?.ufh_dose ?? editingRecord?.medicalTherapy?.ufhDose ?? '');
-  const [lmwh, setLmwh] = useState(editingRecord?.medicalTherapy?.lmwh ?? 'No');
+  const [lmwh, setLmwh] = useState(editingRecord?.medicalTherapy?.lmwh ?? null);
   const [lmwhDose, setLmwhDose] = useState(editingRecord?.medicalTherapy?.lmwh_dose ?? editingRecord?.medicalTherapy?.lmwhDose ?? '');
 
-  const [aspirin, setAspirin] = useState(editingRecord?.medicalTherapy?.aspirin ?? 'No');
+  const [aspirin, setAspirin] = useState(editingRecord?.medicalTherapy?.aspirin ?? null);
   const [aspirinDose, setAspirinDose] = useState(editingRecord?.medicalTherapy?.aspirin_dose ?? editingRecord?.medicalTherapy?.aspirinDose ?? '');
-  const [clopidogrel, setClopidogrel] = useState(editingRecord?.medicalTherapy?.clopidogrel ?? 'No');
+  const [clopidogrel, setClopidogrel] = useState(editingRecord?.medicalTherapy?.clopidogrel ?? null);
   const [clopidogrelDose, setClopidogrelDose] = useState(editingRecord?.medicalTherapy?.clopidogrel_dose ?? editingRecord?.medicalTherapy?.clopidogrelDose ?? '');
-  const [prasugrel, setPrasugrel] = useState(editingRecord?.medicalTherapy?.prasugrel ?? 'No');
+  const [prasugrel, setPrasugrel] = useState(editingRecord?.medicalTherapy?.prasugrel ?? null);
   const [prasugrelDose, setPrasugrelDose] = useState(editingRecord?.medicalTherapy?.prasugrel_dose ?? editingRecord?.medicalTherapy?.prasugrelDose ?? '');
-  const [ticagrelor, setTicagrelor] = useState(editingRecord?.medicalTherapy?.ticagrelor ?? 'No');
+  const [ticagrelor, setTicagrelor] = useState(editingRecord?.medicalTherapy?.ticagrelor ?? null);
   const [ticagrelorDose, setTicagrelorDose] = useState(editingRecord?.medicalTherapy?.ticagrelor_dose ?? editingRecord?.medicalTherapy?.ticagrelorDose ?? '');
 
-  const [amiodarone, setAmiodarone] = useState(editingRecord?.medicalTherapy?.amiodarone ?? 'No');
+  const [amiodarone, setAmiodarone] = useState(editingRecord?.medicalTherapy?.amiodarone ?? null);
   const [amiodaroneDose, setAmiodaroneDose] = useState(editingRecord?.medicalTherapy?.amiodarone_dose ?? editingRecord?.medicalTherapy?.amiodaroneDose ?? '');
-  const [antiarrhythmicOther, setAntiarrhythmicOther] = useState(editingRecord?.medicalTherapy?.antiarrhythmic_other ?? editingRecord?.medicalTherapy?.antiarrhythmicOther ?? 'No');
+  const [antiarrhythmicOther, setAntiarrhythmicOther] = useState(editingRecord?.medicalTherapy?.antiarrhythmic_other ?? editingRecord?.medicalTherapy?.antiarrhythmicOther ?? null);
   const [antiarrhythmicOtherName, setAntiarrhythmicOtherName] = useState(editingRecord?.medicalTherapy?.antiarrhythmic_other_name ?? editingRecord?.medicalTherapy?.antiarrhythmicOtherName ?? '');
   const [antiarrhythmicOtherDose, setAntiarrhythmicOtherDose] = useState(editingRecord?.medicalTherapy?.antiarrhythmic_other_dose ?? editingRecord?.medicalTherapy?.antiarrhythmicOtherDose ?? '');
 
-  const [furosemide, setFurosemide] = useState(editingRecord?.medicalTherapy?.furosemide ?? 'No');
+  const [furosemide, setFurosemide] = useState(editingRecord?.medicalTherapy?.furosemide ?? null);
   const [furosemideDose, setFurosemideDose] = useState(editingRecord?.medicalTherapy?.furosemide_dose ?? editingRecord?.medicalTherapy?.furosemideDose ?? '');
-  const [torsemide, setTorsemide] = useState(editingRecord?.medicalTherapy?.torsemide ?? 'No');
+  const [torsemide, setTorsemide] = useState(editingRecord?.medicalTherapy?.torsemide ?? null);
   const [torsemideDose, setTorsemideDose] = useState(editingRecord?.medicalTherapy?.torsemide_dose ?? editingRecord?.medicalTherapy?.torsemideDose ?? '');
-  const [metolazone, setMetolazone] = useState(editingRecord?.medicalTherapy?.metolazone ?? 'No');
+  const [metolazone, setMetolazone] = useState(editingRecord?.medicalTherapy?.metolazone ?? null);
   const [metolazoneDose, setMetolazoneDose] = useState(editingRecord?.medicalTherapy?.metolazone_dose ?? editingRecord?.medicalTherapy?.metolazoneDose ?? '');
-  const [diureticOther, setDiureticOther] = useState(editingRecord?.medicalTherapy?.diuretic_other ?? editingRecord?.medicalTherapy?.diureticOther ?? 'No');
+  const [diureticOther, setDiureticOther] = useState(editingRecord?.medicalTherapy?.diuretic_other ?? editingRecord?.medicalTherapy?.diureticOther ?? null);
   const [diureticOtherName, setDiureticOtherName] = useState(editingRecord?.medicalTherapy?.diuretic_other_name ?? editingRecord?.medicalTherapy?.diureticOtherName ?? '');
   const [diureticOtherDose, setDiureticOtherDose] = useState(editingRecord?.medicalTherapy?.diuretic_other_dose ?? editingRecord?.medicalTherapy?.diureticOtherDose ?? '');
-  const [diureticNotUsedHyponatremia, setDiureticNotUsedHyponatremia] = useState(editingRecord?.medicalTherapy?.diuretic_not_used_hyponatremia ?? editingRecord?.medicalTherapy?.diureticNotUsedHyponatremia ?? 'No');
-  const [diureticNotUsedHypokalemia, setDiureticNotUsedHypokalemia] = useState(editingRecord?.medicalTherapy?.diuretic_not_used_hypokalemia ?? editingRecord?.medicalTherapy?.diureticNotUsedHypokalemia ?? 'No');
-  const [diureticNotUsedWorseningRenalFailure, setDiureticNotUsedWorseningRenalFailure] = useState(editingRecord?.medicalTherapy?.diuretic_not_used_worsening_renal_failure ?? editingRecord?.medicalTherapy?.diureticNotUsedWorseningRenalFailure ?? 'No');
-  const [diureticNotUsedHypotension, setDiureticNotUsedHypotension] = useState(editingRecord?.medicalTherapy?.diuretic_not_used_hypotension ?? editingRecord?.medicalTherapy?.diureticNotUsedHypotension ?? 'No');
-  const [diureticNotUsedOther, setDiureticNotUsedOther] = useState(editingRecord?.medicalTherapy?.diuretic_not_used_other ?? editingRecord?.medicalTherapy?.diureticNotUsedOther ?? 'No');
+  const [diureticNotUsedHyponatremia, setDiureticNotUsedHyponatremia] = useState(editingRecord?.medicalTherapy?.diuretic_not_used_hyponatremia ?? editingRecord?.medicalTherapy?.diureticNotUsedHyponatremia ?? null);
+  const [diureticNotUsedHypokalemia, setDiureticNotUsedHypokalemia] = useState(editingRecord?.medicalTherapy?.diuretic_not_used_hypokalemia ?? editingRecord?.medicalTherapy?.diureticNotUsedHypokalemia ?? null);
+  const [diureticNotUsedWorseningRenalFailure, setDiureticNotUsedWorseningRenalFailure] = useState(editingRecord?.medicalTherapy?.diuretic_not_used_worsening_renal_failure ?? editingRecord?.medicalTherapy?.diureticNotUsedWorseningRenalFailure ?? null);
+  const [diureticNotUsedHypotension, setDiureticNotUsedHypotension] = useState(editingRecord?.medicalTherapy?.diuretic_not_used_hypotension ?? editingRecord?.medicalTherapy?.diureticNotUsedHypotension ?? null);
+  const [diureticNotUsedOther, setDiureticNotUsedOther] = useState(editingRecord?.medicalTherapy?.diuretic_not_used_other ?? editingRecord?.medicalTherapy?.diureticNotUsedOther ?? null);
   const [diureticNotUsedOtherReason, setDiureticNotUsedOtherReason] = useState(editingRecord?.medicalTherapy?.diuretic_not_used_other_reason ?? editingRecord?.medicalTherapy?.diureticNotUsedOtherReason ?? '');
 
   // Part 3: Digoxin, Ivabradine, Statins, Diabetes, Antihypertensive, Thyroxine, Others
-  const [digoxin, setDigoxin] = useState(editingRecord?.medicalTherapy?.digoxin ?? 'No');
+  const [digoxin, setDigoxin] = useState(editingRecord?.medicalTherapy?.digoxin ?? null);
   const [digoxinName, setDigoxinName] = useState(editingRecord?.medicalTherapy?.digoxin_name ?? editingRecord?.medicalTherapy?.digoxinName ?? '');
   const [digoxinDose, setDigoxinDose] = useState(editingRecord?.medicalTherapy?.digoxin_dose ?? editingRecord?.medicalTherapy?.digoxinDose ?? '');
-  const [ivabradine, setIvabradine] = useState(editingRecord?.medicalTherapy?.ivabradine ?? 'No');
+  const [ivabradine, setIvabradine] = useState(editingRecord?.medicalTherapy?.ivabradine ?? null);
   const [ivabradineDose, setIvabradineDose] = useState(editingRecord?.medicalTherapy?.ivabradine_dose ?? editingRecord?.medicalTherapy?.ivabradineDose ?? '');
-  const [atorvastatin, setAtorvastatin] = useState(editingRecord?.medicalTherapy?.atorvastatin ?? 'No');
+  const [atorvastatin, setAtorvastatin] = useState(editingRecord?.medicalTherapy?.atorvastatin ?? null);
   const [atorvastatinDose, setAtorvastatinDose] = useState(editingRecord?.medicalTherapy?.atorvastatin_dose ?? editingRecord?.medicalTherapy?.atorvastatinDose ?? '');
-  const [simvastatin, setSimvastatin] = useState(editingRecord?.medicalTherapy?.simvastatin ?? 'No');
+  const [simvastatin, setSimvastatin] = useState(editingRecord?.medicalTherapy?.simvastatin ?? null);
   const [simvastatinDose, setSimvastatinDose] = useState(editingRecord?.medicalTherapy?.simvastatin_dose ?? editingRecord?.medicalTherapy?.simvastatinDose ?? '');
-  const [rosuvastatin, setRosuvastatin] = useState(editingRecord?.medicalTherapy?.rosuvastatin ?? 'No');
+  const [rosuvastatin, setRosuvastatin] = useState(editingRecord?.medicalTherapy?.rosuvastatin ?? null);
   const [rosuvastatinDose, setRosuvastatinDose] = useState(editingRecord?.medicalTherapy?.rosuvastatin_dose ?? editingRecord?.medicalTherapy?.rosuvastatinDose ?? '');
-  const [sulfonylureas, setSulfonylureas] = useState(editingRecord?.medicalTherapy?.sulfonylureas ?? 'No');
+  const [sulfonylureas, setSulfonylureas] = useState(editingRecord?.medicalTherapy?.sulfonylureas ?? null);
   const [sulfonylureasDose, setSulfonylureasDose] = useState(editingRecord?.medicalTherapy?.sulfonylureas_dose ?? editingRecord?.medicalTherapy?.sulfonylureasDose ?? '');
-  const [metformin, setMetformin] = useState(editingRecord?.medicalTherapy?.metformin ?? 'No');
+  const [metformin, setMetformin] = useState(editingRecord?.medicalTherapy?.metformin ?? null);
   const [metforminDose, setMetforminDose] = useState(editingRecord?.medicalTherapy?.metformin_dose ?? editingRecord?.medicalTherapy?.metforminDose ?? '');
-  const [glitazone, setGlitazone] = useState(editingRecord?.medicalTherapy?.glitazone ?? 'No');
+  const [glitazone, setGlitazone] = useState(editingRecord?.medicalTherapy?.glitazone ?? null);
   const [glitazoneDose, setGlitazoneDose] = useState(editingRecord?.medicalTherapy?.glitazone_dose ?? editingRecord?.medicalTherapy?.glitazoneDose ?? '');
-  const [gliptin, setGliptin] = useState(editingRecord?.medicalTherapy?.gliptin ?? 'No');
+  const [gliptin, setGliptin] = useState(editingRecord?.medicalTherapy?.gliptin ?? null);
   const [gliptinDose, setGliptinDose] = useState(editingRecord?.medicalTherapy?.gliptin_dose ?? editingRecord?.medicalTherapy?.gliptinDose ?? '');
-  const [acarboseDerivative, setAcarboseDerivative] = useState(editingRecord?.medicalTherapy?.acarbose_derivative ?? editingRecord?.medicalTherapy?.acarboseDerivative ?? 'No');
+  const [acarboseDerivative, setAcarboseDerivative] = useState(editingRecord?.medicalTherapy?.acarbose_derivative ?? editingRecord?.medicalTherapy?.acarboseDerivative ?? null);
   const [acarboseDerivativeDose, setAcarboseDerivativeDose] = useState(editingRecord?.medicalTherapy?.acarbose_derivative_dose ?? editingRecord?.medicalTherapy?.acarboseDerivativeDose ?? '');
-  const [humanInsulin, setHumanInsulin] = useState(editingRecord?.medicalTherapy?.human_insulin ?? editingRecord?.medicalTherapy?.humanInsulin ?? 'No');
+  const [humanInsulin, setHumanInsulin] = useState(editingRecord?.medicalTherapy?.human_insulin ?? editingRecord?.medicalTherapy?.humanInsulin ?? null);
   const [humanInsulinDose, setHumanInsulinDose] = useState(editingRecord?.medicalTherapy?.human_insulin_dose ?? editingRecord?.medicalTherapy?.humanInsulinDose ?? '');
-  const [syntheticInsulin, setSyntheticInsulin] = useState(editingRecord?.medicalTherapy?.synthetic_insulin ?? editingRecord?.medicalTherapy?.syntheticInsulin ?? 'No');
+  const [syntheticInsulin, setSyntheticInsulin] = useState(editingRecord?.medicalTherapy?.synthetic_insulin ?? editingRecord?.medicalTherapy?.syntheticInsulin ?? null);
   const [syntheticInsulinDose, setSyntheticInsulinDose] = useState(editingRecord?.medicalTherapy?.synthetic_insulin_dose ?? editingRecord?.medicalTherapy?.syntheticInsulinDose ?? '');
-  const [antihypertensive, setAntihypertensive] = useState(editingRecord?.medicalTherapy?.antihypertensive ?? 'No');
+  const [antihypertensive, setAntihypertensive] = useState(editingRecord?.medicalTherapy?.antihypertensive ?? null);
   const [antihypertensiveName, setAntihypertensiveName] = useState(editingRecord?.medicalTherapy?.antihypertensive_name ?? editingRecord?.medicalTherapy?.antihypertensiveName ?? '');
   const [antihypertensiveDose, setAntihypertensiveDose] = useState(editingRecord?.medicalTherapy?.antihypertensive_dose ?? editingRecord?.medicalTherapy?.antihypertensiveDose ?? '');
-  const [thyroxine, setThyroxine] = useState(editingRecord?.medicalTherapy?.thyroxine ?? 'No');
+  const [thyroxine, setThyroxine] = useState(editingRecord?.medicalTherapy?.thyroxine ?? null);
   const [thyroxineName, setThyroxineName] = useState(editingRecord?.medicalTherapy?.thyroxine_name ?? editingRecord?.medicalTherapy?.thyroxineName ?? '');
   const [thyroxineDose, setThyroxineDose] = useState(editingRecord?.medicalTherapy?.thyroxine_dose ?? editingRecord?.medicalTherapy?.thyroxineDose ?? '');
 
-  const [otherMedication1, setOtherMedication1] = useState(editingRecord?.medicalTherapy?.other_medication_1 ?? editingRecord?.medicalTherapy?.otherMedication1 ?? 'No');
+  const [otherMedication1, setOtherMedication1] = useState(editingRecord?.medicalTherapy?.other_medication_1 ?? editingRecord?.medicalTherapy?.otherMedication1 ?? null);
   const [otherMedication1Name, setOtherMedication1Name] = useState(editingRecord?.medicalTherapy?.other_medication_1_name ?? editingRecord?.medicalTherapy?.otherMedication1Name ?? '');
   const [otherMedication1Dose, setOtherMedication1Dose] = useState(editingRecord?.medicalTherapy?.other_medication_1_dose ?? editingRecord?.medicalTherapy?.otherMedication1Dose ?? '');
-  const [otherMedication2, setOtherMedication2] = useState(editingRecord?.medicalTherapy?.other_medication_2 ?? editingRecord?.medicalTherapy?.otherMedication2 ?? 'No');
+  const [otherMedication2, setOtherMedication2] = useState(editingRecord?.medicalTherapy?.other_medication_2 ?? editingRecord?.medicalTherapy?.otherMedication2 ?? null);
   const [otherMedication2Name, setOtherMedication2Name] = useState(editingRecord?.medicalTherapy?.other_medication_2_name ?? editingRecord?.medicalTherapy?.otherMedication2Name ?? '');
   const [otherMedication2Dose, setOtherMedication2Dose] = useState(editingRecord?.medicalTherapy?.other_medication_2_dose ?? editingRecord?.medicalTherapy?.otherMedication2Dose ?? '');
-  const [otherMedication3, setOtherMedication3] = useState(editingRecord?.medicalTherapy?.other_medication_3 ?? editingRecord?.medicalTherapy?.otherMedication3 ?? 'No');
+  const [otherMedication3, setOtherMedication3] = useState(editingRecord?.medicalTherapy?.other_medication_3 ?? editingRecord?.medicalTherapy?.otherMedication3 ?? null);
   const [otherMedication3Name, setOtherMedication3Name] = useState(editingRecord?.medicalTherapy?.other_medication_3_name ?? editingRecord?.medicalTherapy?.otherMedication3Name ?? '');
   const [otherMedication3Dose, setOtherMedication3Dose] = useState(editingRecord?.medicalTherapy?.other_medication_3_dose ?? editingRecord?.medicalTherapy?.otherMedication3Dose ?? '');
-  const [otherMedication4, setOtherMedication4] = useState(editingRecord?.medicalTherapy?.other_medication_4 ?? editingRecord?.medicalTherapy?.otherMedication4 ?? 'No');
+  const [otherMedication4, setOtherMedication4] = useState(editingRecord?.medicalTherapy?.other_medication_4 ?? editingRecord?.medicalTherapy?.otherMedication4 ?? null);
   const [otherMedication4Name, setOtherMedication4Name] = useState(editingRecord?.medicalTherapy?.other_medication_4_name ?? editingRecord?.medicalTherapy?.otherMedication4Name ?? '');
   const [otherMedication4Dose, setOtherMedication4Dose] = useState(editingRecord?.medicalTherapy?.other_medication_4_dose ?? editingRecord?.medicalTherapy?.otherMedication4Dose ?? '');
 
@@ -1763,54 +1770,65 @@ const hf = forwardRef(function hf(
   const [currentDeviceNone, setCurrentDeviceNone] = useState(() => {
     if (editingRecord?.deviceTherapy?.current_device_none) return editingRecord.deviceTherapy.current_device_none;
     const hasDev = editingRecord?.currentDeviceTherapy?.hasDevice ?? editingRecord?.currentDeviceTherapy?.has_device;
-    return hasDev === 'No' ? 'Yes' : 'No';
+    if (hasDev === 'No') return 'Yes';
+    if (hasDev === 'Yes') return 'No';
+    return null;
   });
 
   const [currentDeviceYes, setCurrentDeviceYes] = useState(() => {
     if (editingRecord?.deviceTherapy?.current_device_yes) return editingRecord.deviceTherapy.current_device_yes;
     const hasDev = editingRecord?.currentDeviceTherapy?.hasDevice ?? editingRecord?.currentDeviceTherapy?.has_device;
-    return hasDev === 'Yes' ? 'Yes' : 'No';
+    if (hasDev === 'Yes') return 'Yes';
+    if (hasDev === 'No') return 'No';
+    return null;
   });
 
   const [currentCrtP, setCurrentCrtP] = useState(() => {
     if (editingRecord?.deviceTherapy?.current_crt_p) return editingRecord.deviceTherapy.current_crt_p;
     const devType = editingRecord?.currentDeviceTherapy?.deviceType ?? editingRecord?.currentDeviceTherapy?.device_type;
+    if (!devType) return null;
     return devType === 'CRT-P' ? 'Yes' : 'No';
   });
 
   const [currentCrtD, setCurrentCrtD] = useState(() => {
     if (editingRecord?.deviceTherapy?.current_crt_d) return editingRecord.deviceTherapy.current_crt_d;
     const devType = editingRecord?.currentDeviceTherapy?.deviceType ?? editingRecord?.currentDeviceTherapy?.device_type;
+    if (!devType) return null;
     return devType === 'CRT-D' ? 'Yes' : 'No';
   });
 
   const [currentIcdSc, setCurrentIcdSc] = useState(() => {
     if (editingRecord?.deviceTherapy?.current_icd_sc) return editingRecord.deviceTherapy.current_icd_sc;
     const devType = editingRecord?.currentDeviceTherapy?.deviceType ?? editingRecord?.currentDeviceTherapy?.device_type;
+    if (!devType) return null;
     return devType === 'ICD-SC' ? 'Yes' : 'No';
   });
 
   const [currentIcdDc, setCurrentIcdDc] = useState(() => {
     if (editingRecord?.deviceTherapy?.current_icd_dc) return editingRecord.deviceTherapy.current_icd_dc;
     const devType = editingRecord?.currentDeviceTherapy?.deviceType ?? editingRecord?.currentDeviceTherapy?.device_type;
+    if (!devType) return null;
     return devType === 'ICD-DC' ? 'Yes' : 'No';
   });
 
   const [currentDualChamberPacemaker, setCurrentDualChamberPacemaker] = useState(() => {
     if (editingRecord?.deviceTherapy?.current_dual_chamber_pacemaker) return editingRecord.deviceTherapy.current_dual_chamber_pacemaker;
     const devType = editingRecord?.currentDeviceTherapy?.deviceType ?? editingRecord?.currentDeviceTherapy?.device_type;
+    if (!devType) return null;
     return devType === 'Dual Chamber Pacer Mode' || devType === 'Dual Chamber Pacemaker' ? 'Yes' : 'No';
   });
 
   const [currentSingleChamberPacemaker, setCurrentSingleChamberPacemaker] = useState(() => {
     if (editingRecord?.deviceTherapy?.current_single_chamber_pacemaker) return editingRecord.deviceTherapy.current_single_chamber_pacemaker;
     const devType = editingRecord?.currentDeviceTherapy?.deviceType ?? editingRecord?.currentDeviceTherapy?.device_type;
+    if (!devType) return null;
     return devType === 'Single Chamber Pacer Mode' || devType === 'Single Chamber Pacemaker' ? 'Yes' : 'No';
   });
 
   const [currentDeviceOther, setCurrentDeviceOther] = useState(() => {
     if (editingRecord?.deviceTherapy?.current_device_other) return editingRecord.deviceTherapy.current_device_other;
     const devType = editingRecord?.currentDeviceTherapy?.deviceType ?? editingRecord?.currentDeviceTherapy?.device_type;
+    if (!devType) return null;
     return devType === 'Other' ? 'Yes' : 'No';
   });
 
@@ -1828,54 +1846,65 @@ const hf = forwardRef(function hf(
   const [eligibleNo, setEligibleNo] = useState(() => {
     if (editingRecord?.deviceTherapy?.eligible_no) return editingRecord.deviceTherapy.eligible_no;
     const elig = editingRecord?.deviceEligibility?.eligible;
-    return elig === 'No' ? 'Yes' : 'No';
+    if (elig === 'No') return 'Yes';
+    if (elig === 'Yes') return 'No';
+    return null;
   });
 
   const [eligibleYes, setEligibleYes] = useState(() => {
     if (editingRecord?.deviceTherapy?.eligible_yes) return editingRecord.deviceTherapy.eligible_yes;
     const elig = editingRecord?.deviceEligibility?.eligible;
-    return elig === 'Yes' ? 'Yes' : 'No';
+    if (elig === 'Yes') return 'Yes';
+    if (elig === 'No') return 'No';
+    return null;
   });
 
   const [eligibleCrtP, setEligibleCrtP] = useState(() => {
     if (editingRecord?.deviceTherapy?.eligible_crt_p) return editingRecord.deviceTherapy.eligible_crt_p;
     const eligType = editingRecord?.deviceEligibility?.deviceType ?? editingRecord?.deviceEligibility?.device_type;
+    if (!eligType) return null;
     return eligType === 'CRT-P' ? 'Yes' : 'No';
   });
 
   const [eligibleCrtD, setEligibleCrtD] = useState(() => {
     if (editingRecord?.deviceTherapy?.eligible_crt_d) return editingRecord.deviceTherapy.eligible_crt_d;
     const eligType = editingRecord?.deviceEligibility?.deviceType ?? editingRecord?.deviceEligibility?.device_type;
+    if (!eligType) return null;
     return eligType === 'CRT-D' ? 'Yes' : 'No';
   });
 
   const [eligibleIcdSc, setEligibleIcdSc] = useState(() => {
     if (editingRecord?.deviceTherapy?.eligible_icd_sc) return editingRecord.deviceTherapy.eligible_icd_sc;
     const eligType = editingRecord?.deviceEligibility?.deviceType ?? editingRecord?.deviceEligibility?.device_type;
+    if (!eligType) return null;
     return eligType === 'ICD-SC' ? 'Yes' : 'No';
   });
 
   const [eligibleIcdDc, setEligibleIcdDc] = useState(() => {
     if (editingRecord?.deviceTherapy?.eligible_icd_dc) return editingRecord.deviceTherapy.eligible_icd_dc;
     const eligType = editingRecord?.deviceEligibility?.deviceType ?? editingRecord?.deviceEligibility?.device_type;
+    if (!eligType) return null;
     return eligType === 'ICD-DC' ? 'Yes' : 'No';
   });
 
   const [eligibleDualChamberPacemaker, setEligibleDualChamberPacemaker] = useState(() => {
     if (editingRecord?.deviceTherapy?.eligible_dual_chamber_pacemaker) return editingRecord.deviceTherapy.eligible_dual_chamber_pacemaker;
     const eligType = editingRecord?.deviceEligibility?.deviceType ?? editingRecord?.deviceEligibility?.device_type;
+    if (!eligType) return null;
     return eligType === 'Dual Chamber Pacer Mode' || eligType === 'Dual Chamber Pacemaker' ? 'Yes' : 'No';
   });
 
   const [eligibleSingleChamberPacemaker, setEligibleSingleChamberPacemaker] = useState(() => {
     if (editingRecord?.deviceTherapy?.eligible_single_chamber_pacemaker) return editingRecord.deviceTherapy.eligible_single_chamber_pacemaker;
     const eligType = editingRecord?.deviceEligibility?.deviceType ?? editingRecord?.deviceEligibility?.device_type;
+    if (!eligType) return null;
     return eligType === 'Single Chamber Pacer Mode' || eligType === 'Single Chamber Pacemaker' ? 'Yes' : 'No';
   });
 
   const [eligibleOther, setEligibleOther] = useState(() => {
     if (editingRecord?.deviceTherapy?.eligible_other) return editingRecord.deviceTherapy.eligible_other;
     const eligType = editingRecord?.deviceEligibility?.deviceType ?? editingRecord?.deviceEligibility?.device_type;
+    if (!eligType) return null;
     return eligType === 'Other' ? 'Yes' : 'No';
   });
 
@@ -1892,13 +1921,17 @@ const hf = forwardRef(function hf(
   const [patientAcceptanceYes, setPatientAcceptanceYes] = useState(() => {
     if (editingRecord?.deviceTherapy?.patient_acceptance_yes) return editingRecord.deviceTherapy.patient_acceptance_yes;
     const acc = editingRecord?.deviceEligibility?.patientAcceptance ?? editingRecord?.deviceEligibility?.patient_acceptance;
-    return acc === 'Yes' ? 'Yes' : 'No';
+    if (acc === 'Yes') return 'Yes';
+    if (acc === 'No') return 'No';
+    return null;
   });
 
   const [patientAcceptanceNo, setPatientAcceptanceNo] = useState(() => {
     if (editingRecord?.deviceTherapy?.patient_acceptance_no) return editingRecord.deviceTherapy.patient_acceptance_no;
     const acc = editingRecord?.deviceEligibility?.patientAcceptance ?? editingRecord?.deviceEligibility?.patient_acceptance;
-    return acc === 'No' ? 'Yes' : 'No';
+    if (acc === 'No') return 'Yes';
+    if (acc === 'Yes') return 'No';
+    return null;
   });
 
   const [patientAcceptanceReason, setPatientAcceptanceReason] = useState(() => {
@@ -1912,17 +1945,17 @@ const hf = forwardRef(function hf(
     }
     return '';
   });
-  const [icdShock, setIcdShock] = useState(editingRecord?.deviceTherapy?.icd_shock ?? 'No');
+  const [icdShock, setIcdShock] = useState(editingRecord?.deviceTherapy?.icd_shock ?? null);
   const [numberOfShocks, setNumberOfShocks] = useState(() => sanitizePositiveInteger(editingRecord?.deviceTherapy?.number_of_shocks ?? ''));
   const [appropriateShocks, setAppropriateShocks] = useState(() => sanitizePositiveInteger(editingRecord?.deviceTherapy?.appropriate_shocks ?? ''));
   const [inappropriateShocks, setInappropriateShocks] = useState(() => sanitizePositiveInteger(editingRecord?.deviceTherapy?.inappropriate_shocks ?? ''));
   const [causeOfShocks, setCauseOfShocks] = useState(editingRecord?.deviceTherapy?.cause_of_shocks ?? '');
-  const [atp, setAtp] = useState(editingRecord?.deviceTherapy?.atp ?? 'No');
+  const [atp, setAtp] = useState(editingRecord?.deviceTherapy?.atp ?? null);
   const [atpTimes, setAtpTimes] = useState(() => sanitizePositiveInteger(editingRecord?.deviceTherapy?.atp_times ?? ''));
-  const [atpSuccessAlways, setAtpSuccessAlways] = useState(editingRecord?.deviceTherapy?.atp_success_always ?? 'No');
-  const [atpSuccessMostTimes, setAtpSuccessMostTimes] = useState(editingRecord?.deviceTherapy?.atp_success_most_times ?? 'No');
-  const [atpSuccessSometimes, setAtpSuccessSometimes] = useState(editingRecord?.deviceTherapy?.atp_success_sometimes ?? 'No');
-  const [atpSuccessNotSuccessful, setAtpSuccessNotSuccessful] = useState(editingRecord?.deviceTherapy?.atp_success_not_successful ?? 'No');
+  const [atpSuccessAlways, setAtpSuccessAlways] = useState(editingRecord?.deviceTherapy?.atp_success_always ?? null);
+  const [atpSuccessMostTimes, setAtpSuccessMostTimes] = useState(editingRecord?.deviceTherapy?.atp_success_most_times ?? null);
+  const [atpSuccessSometimes, setAtpSuccessSometimes] = useState(editingRecord?.deviceTherapy?.atp_success_sometimes ?? null);
+  const [atpSuccessNotSuccessful, setAtpSuccessNotSuccessful] = useState(editingRecord?.deviceTherapy?.atp_success_not_successful ?? null);
 
   const [bivPacingPercent, setBivPacingPercent] = useState(() => sanitizePercentage(editingRecord?.deviceTherapy?.biv_pacing_percent ?? '', 3));
   const [afibBurden, setAfibBurden] = useState(() => sanitizePercentage(editingRecord?.deviceTherapy?.afib_burden ?? '', 3));
@@ -1934,43 +1967,53 @@ const hf = forwardRef(function hf(
   // 8. Patient Education States
   const [eduDiet, setEduDiet] = useState(() => {
     if (editingRecord?.patientEducation?.diet_2000mg_salt_restriction) return editingRecord.patientEducation.diet_2000mg_salt_restriction;
-    return editingRecord?.educationRecommended?.includes('Diet: 2000-mg salt restriction') ? 'Yes' : 'No';
+    if (editingRecord?.educationRecommended) return editingRecord.educationRecommended.includes('Diet: 2000-mg salt restriction') ? 'Yes' : 'No';
+    return null;
   });
   const [eduExercise, setEduExercise] = useState(() => {
     if (editingRecord?.patientEducation?.exercise_activity_promoted) return editingRecord.patientEducation.exercise_activity_promoted;
-    return editingRecord?.educationRecommended?.includes('Exercise/activity promoted') ? 'Yes' : 'No';
+    if (editingRecord?.educationRecommended) return editingRecord.educationRecommended.includes('Exercise/activity promoted') ? 'Yes' : 'No';
+    return null;
   });
   const [eduWeight, setEduWeight] = useState(() => {
     if (editingRecord?.patientEducation?.daily_weight_monitoring) return editingRecord.patientEducation.daily_weight_monitoring;
-    return editingRecord?.educationRecommended?.includes('Daily weight monitoring') ? 'Yes' : 'No';
+    if (editingRecord?.educationRecommended) return editingRecord.educationRecommended.includes('Daily weight monitoring') ? 'Yes' : 'No';
+    return null;
   });
   const [eduDisease, setEduDisease] = useState(() => {
     if (editingRecord?.patientEducation?.disease_process_explained) return editingRecord.patientEducation.disease_process_explained;
-    return editingRecord?.educationRecommended?.includes('Disease process') ? 'Yes' : 'No';
+    if (editingRecord?.educationRecommended) return editingRecord.educationRecommended.includes('Disease process') ? 'Yes' : 'No';
+    return null;
   });
   const [eduSmoking, setEduSmoking] = useState(() => {
     if (editingRecord?.patientEducation?.smoking_cessation) return editingRecord.patientEducation.smoking_cessation;
-    return editingRecord?.educationRecommended?.includes('Smoking cessation') ? 'Yes' : 'No';
+    if (editingRecord?.educationRecommended) return editingRecord.educationRecommended.includes('Smoking cessation') ? 'Yes' : 'No';
+    return null;
   });
   const [eduAlcohol, setEduAlcohol] = useState(() => {
     if (editingRecord?.patientEducation?.alcohol_cessation) return editingRecord.patientEducation.alcohol_cessation;
-    return editingRecord?.educationRecommended?.includes('Alcohol cessation') ? 'Yes' : 'No';
+    if (editingRecord?.educationRecommended) return editingRecord.educationRecommended.includes('Alcohol cessation') ? 'Yes' : 'No';
+    return null;
   });
   const [eduCompliance, setEduCompliance] = useState(() => {
     if (editingRecord?.patientEducation?.medication_compliance) return editingRecord.patientEducation.medication_compliance;
-    return editingRecord?.educationRecommended?.includes('Medication compliance') ? 'Yes' : 'No';
+    if (editingRecord?.educationRecommended) return editingRecord.educationRecommended.includes('Medication compliance') ? 'Yes' : 'No';
+    return null;
   });
   const [eduWorsened, setEduWorsened] = useState(() => {
     if (editingRecord?.patientEducation?.worsened_symptoms_education) return editingRecord.patientEducation.worsened_symptoms_education;
-    return editingRecord?.educationRecommended?.includes('What to do for worsened symptoms') ? 'Yes' : 'No';
+    if (editingRecord?.educationRecommended) return editingRecord.educationRecommended.includes('What to do for worsened symptoms') ? 'Yes' : 'No';
+    return null;
   });
   const [eduDevice, setEduDevice] = useState(() => {
     if (editingRecord?.patientEducation?.device_therapy_education) return editingRecord.patientEducation.device_therapy_education;
-    return editingRecord?.educationRecommended?.includes('Device therapy') ? 'Yes' : 'No';
+    if (editingRecord?.educationRecommended) return editingRecord.educationRecommended.includes('Device therapy') ? 'Yes' : 'No';
+    return null;
   });
   const [eduOther, setEduOther] = useState(() => {
     if (editingRecord?.patientEducation?.education_other) return editingRecord.patientEducation.education_other;
-    return editingRecord?.educationRecommended?.some(x => x.startsWith('Other:')) ? 'Yes' : 'No';
+    if (editingRecord?.educationRecommended) return editingRecord.educationRecommended.some(x => x.startsWith('Other:')) ? 'Yes' : 'No';
+    return null;
   });
   const [eduOtherDetails, setEduOtherDetails] = useState(() => {
     if (editingRecord?.patientEducation?.education_other_details) return editingRecord.patientEducation.education_other_details;
@@ -1987,8 +2030,9 @@ const hf = forwardRef(function hf(
   const [recFluidDiet, setRecFluidDiet] = useState(() => {
     const recs = editingRecord?.recommendations;
     if (recs?.fluid_and_diet === 'Yes' || editingRecord?.fluid_and_diet === 'Yes') return 'Yes';
+    if (recs?.fluid_and_diet === 'No' || editingRecord?.fluid_and_diet === 'No') return 'No';
     const details = recs?.fluid_and_diet_details ?? recs?.fluidAndDiet ?? editingRecord?.fluid_and_diet_details ?? editingRecord?.fluidAndDiet;
-    return (details && String(details).trim() !== '') ? 'Yes' : 'No';
+    return (details && String(details).trim() !== '') ? 'Yes' : null;
   });
 
   const [recExerciseDetails, setRecExerciseDetails] = useState(() => {
@@ -1999,8 +2043,9 @@ const hf = forwardRef(function hf(
   const [recExercise, setRecExercise] = useState(() => {
     const recs = editingRecord?.recommendations;
     if (recs?.exercise === 'Yes' || editingRecord?.exercise === 'Yes') return 'Yes';
+    if (recs?.exercise === 'No' || editingRecord?.exercise === 'No') return 'No';
     const details = recs?.exercise_details ?? recs?.exerciseDetails ?? editingRecord?.exercise_details ?? editingRecord?.exerciseDetails;
-    return (details && String(details).trim() !== '') ? 'Yes' : 'No';
+    return (details && String(details).trim() !== '') ? 'Yes' : null;
   });
 
   const [recYogaDetails, setRecYogaDetails] = useState(() => {
@@ -2011,8 +2056,9 @@ const hf = forwardRef(function hf(
   const [recYoga, setRecYoga] = useState(() => {
     const recs = editingRecord?.recommendations;
     if (recs?.yoga === 'Yes' || editingRecord?.yoga === 'Yes') return 'Yes';
+    if (recs?.yoga === 'No' || editingRecord?.yoga === 'No') return 'No';
     const details = recs?.yoga_details ?? recs?.yogaDetails ?? editingRecord?.yoga_details ?? editingRecord?.yogaDetails;
-    return (details && String(details).trim() !== '') ? 'Yes' : 'No';
+    return (details && String(details).trim() !== '') ? 'Yes' : null;
   });
 
   const [recSmokingCessationDetails, setRecSmokingCessationDetails] = useState(() => {
@@ -2023,8 +2069,9 @@ const hf = forwardRef(function hf(
   const [recSmokingCessation, setRecSmokingCessation] = useState(() => {
     const recs = editingRecord?.recommendations;
     if (recs?.smoking_cessation === 'Yes' || editingRecord?.smoking_cessation === 'Yes') return 'Yes';
+    if (recs?.smoking_cessation === 'No' || editingRecord?.smoking_cessation === 'No') return 'No';
     const details = recs?.smoking_cessation_details ?? recs?.smokingCessationDetails ?? editingRecord?.smoking_cessation_details ?? editingRecord?.smokingCessationDetails;
-    return (details && String(details).trim() !== '') ? 'Yes' : 'No';
+    return (details && String(details).trim() !== '') ? 'Yes' : null;
   });
 
   const [recStressManagementDetails, setRecStressManagementDetails] = useState(() => {
@@ -2035,8 +2082,9 @@ const hf = forwardRef(function hf(
   const [recStressManagement, setRecStressManagement] = useState(() => {
     const recs = editingRecord?.recommendations;
     if (recs?.stress_management === 'Yes' || editingRecord?.stress_management === 'Yes') return 'Yes';
+    if (recs?.stress_management === 'No' || editingRecord?.stress_management === 'No') return 'No';
     const details = recs?.stress_management_details ?? recs?.stressManagementDetails ?? editingRecord?.stress_management_details ?? editingRecord?.stressManagementDetails;
-    return (details && String(details).trim() !== '') ? 'Yes' : 'No';
+    return (details && String(details).trim() !== '') ? 'Yes' : null;
   });
 
   const [recDrugsDetails, setRecDrugsDetails] = useState(() => {
@@ -2047,8 +2095,9 @@ const hf = forwardRef(function hf(
   const [recDrugs, setRecDrugs] = useState(() => {
     const recs = editingRecord?.recommendations;
     if (recs?.drugs === 'Yes' || editingRecord?.drugs === 'Yes') return 'Yes';
+    if (recs?.drugs === 'No' || editingRecord?.drugs === 'No') return 'No';
     const details = recs?.drugs_details ?? recs?.drugsDetails ?? editingRecord?.drugs_details ?? editingRecord?.drugsDetails;
-    return (details && String(details).trim() !== '') ? 'Yes' : 'No';
+    return (details && String(details).trim() !== '') ? 'Yes' : null;
   });
 
   const [recInvestigationsDetails, setRecInvestigationsDetails] = useState(() => {
@@ -2059,8 +2108,9 @@ const hf = forwardRef(function hf(
   const [recInvestigations, setRecInvestigations] = useState(() => {
     const recs = editingRecord?.recommendations;
     if (recs?.investigations === 'Yes' || editingRecord?.investigations === 'Yes') return 'Yes';
+    if (recs?.investigations === 'No' || editingRecord?.investigations === 'No') return 'No';
     const details = recs?.investigations_details ?? recs?.investigationsDetails ?? editingRecord?.investigations_details ?? editingRecord?.investigationsDetails;
-    return (details && String(details).trim() !== '') ? 'Yes' : 'No';
+    return (details && String(details).trim() !== '') ? 'Yes' : null;
   });
 
   const [recProceduresDetails, setRecProceduresDetails] = useState(() => {
@@ -2071,8 +2121,9 @@ const hf = forwardRef(function hf(
   const [recProcedures, setRecProcedures] = useState(() => {
     const recs = editingRecord?.recommendations;
     if (recs?.procedures === 'Yes' || editingRecord?.procedures === 'Yes') return 'Yes';
+    if (recs?.procedures === 'No' || editingRecord?.procedures === 'No') return 'No';
     const details = recs?.procedures_details ?? recs?.proceduresDetails ?? editingRecord?.procedures_details ?? editingRecord?.proceduresDetails;
-    return (details && String(details).trim() !== '') ? 'Yes' : 'No';
+    return (details && String(details).trim() !== '') ? 'Yes' : null;
   });
 
   const [recOtherDetails, setRecOtherDetails] = useState(() => {
@@ -2083,8 +2134,9 @@ const hf = forwardRef(function hf(
   const [recOther, setRecOther] = useState(() => {
     const recs = editingRecord?.recommendations;
     if (recs?.other_recommendation === 'Yes' || editingRecord?.other_recommendation === 'Yes') return 'Yes';
+    if (recs?.other_recommendation === 'No' || editingRecord?.other_recommendation === 'No') return 'No';
     const details = recs?.other_recommendation_details ?? recs?.otherRecommendationDetails ?? editingRecord?.other_recommendation_details ?? editingRecord?.otherRecommendationDetails;
-    return (details && String(details).trim() !== '') ? 'Yes' : 'No';
+    return (details && String(details).trim() !== '') ? 'Yes' : null;
   });
 
   // 10. Imaging & Document Upload States
@@ -2248,47 +2300,56 @@ const hf = forwardRef(function hf(
         const fDetails = recs.fluid_and_diet_details ?? recs.fluidAndDiet ?? editingRecord.fluid_and_diet_details ?? editingRecord.fluidAndDiet;
         if (fDetails !== undefined) {
           setRecFluidDietDetails(fDetails !== null ? String(fDetails) : '');
-          setRecFluidDiet(recs.fluid_and_diet === 'Yes' || editingRecord.fluid_and_diet === 'Yes' || (fDetails && String(fDetails).trim() !== '') ? 'Yes' : 'No');
+          const val = recs.fluid_and_diet ?? editingRecord.fluid_and_diet;
+          setRecFluidDiet(val === 'Yes' || (fDetails && String(fDetails).trim() !== '') ? 'Yes' : (val === 'No' ? 'No' : ''));
         }
         const exDetails = recs.exercise_details ?? recs.exerciseDetails ?? editingRecord.exercise_details ?? editingRecord.exerciseDetails;
         if (exDetails !== undefined) {
           setRecExerciseDetails(exDetails !== null ? String(exDetails) : '');
-          setRecExercise(recs.exercise === 'Yes' || editingRecord.exercise === 'Yes' || (exDetails && String(exDetails).trim() !== '') ? 'Yes' : 'No');
+          const val = recs.exercise ?? editingRecord.exercise;
+          setRecExercise(val === 'Yes' || (exDetails && String(exDetails).trim() !== '') ? 'Yes' : (val === 'No' ? 'No' : ''));
         }
         const yDetails = recs.yoga_details ?? recs.yogaDetails ?? editingRecord.yoga_details ?? editingRecord.yogaDetails;
         if (yDetails !== undefined) {
           setRecYogaDetails(yDetails !== null ? String(yDetails) : '');
-          setRecYoga(recs.yoga === 'Yes' || editingRecord.yoga === 'Yes' || (yDetails && String(yDetails).trim() !== '') ? 'Yes' : 'No');
+          const val = recs.yoga ?? editingRecord.yoga;
+          setRecYoga(val === 'Yes' || (yDetails && String(yDetails).trim() !== '') ? 'Yes' : (val === 'No' ? 'No' : ''));
         }
         const sDetails = recs.smoking_cessation_details ?? recs.smokingCessationDetails ?? editingRecord.smoking_cessation_details ?? editingRecord.smokingCessationDetails;
         if (sDetails !== undefined) {
           setRecSmokingCessationDetails(sDetails !== null ? String(sDetails) : '');
-          setRecSmokingCessation(recs.smoking_cessation === 'Yes' || editingRecord.smoking_cessation === 'Yes' || (sDetails && String(sDetails).trim() !== '') ? 'Yes' : 'No');
+          const val = recs.smoking_cessation ?? editingRecord.smoking_cessation;
+          setRecSmokingCessation(val === 'Yes' || (sDetails && String(sDetails).trim() !== '') ? 'Yes' : (val === 'No' ? 'No' : ''));
         }
         const stDetails = recs.stress_management_details ?? recs.stressManagementDetails ?? editingRecord.stress_management_details ?? editingRecord.stressManagementDetails;
         if (stDetails !== undefined) {
           setRecStressManagementDetails(stDetails !== null ? String(stDetails) : '');
-          setRecStressManagement(recs.stress_management === 'Yes' || editingRecord.stress_management === 'Yes' || (stDetails && String(stDetails).trim() !== '') ? 'Yes' : 'No');
+          const val = recs.stress_management ?? editingRecord.stress_management;
+          setRecStressManagement(val === 'Yes' || (stDetails && String(stDetails).trim() !== '') ? 'Yes' : (val === 'No' ? 'No' : ''));
         }
         const dDetails = recs.drugs_details ?? recs.drugsDetails ?? editingRecord.drugs_details ?? editingRecord.drugsDetails;
         if (dDetails !== undefined) {
           setRecDrugsDetails(dDetails !== null ? String(dDetails) : '');
-          setRecDrugs(recs.drugs === 'Yes' || editingRecord.drugs === 'Yes' || (dDetails && String(dDetails).trim() !== '') ? 'Yes' : 'No');
+          const val = recs.drugs ?? editingRecord.drugs;
+          setRecDrugs(val === 'Yes' || (dDetails && String(dDetails).trim() !== '') ? 'Yes' : (val === 'No' ? 'No' : ''));
         }
         const iDetails = recs.investigations_details ?? recs.investigationsDetails ?? editingRecord.investigations_details ?? editingRecord.investigationsDetails;
         if (iDetails !== undefined) {
           setRecInvestigationsDetails(iDetails !== null ? String(iDetails) : '');
-          setRecInvestigations(recs.investigations === 'Yes' || editingRecord.investigations === 'Yes' || (iDetails && String(iDetails).trim() !== '') ? 'Yes' : 'No');
+          const val = recs.investigations ?? editingRecord.investigations;
+          setRecInvestigations(val === 'Yes' || (iDetails && String(iDetails).trim() !== '') ? 'Yes' : (val === 'No' ? 'No' : ''));
         }
         const pDetails = recs.procedures_details ?? recs.proceduresDetails ?? editingRecord.procedures_details ?? editingRecord.proceduresDetails;
         if (pDetails !== undefined) {
           setRecProceduresDetails(pDetails !== null ? String(pDetails) : '');
-          setRecProcedures(recs.procedures === 'Yes' || editingRecord.procedures === 'Yes' || (pDetails && String(pDetails).trim() !== '') ? 'Yes' : 'No');
+          const val = recs.procedures ?? editingRecord.procedures;
+          setRecProcedures(val === 'Yes' || (pDetails && String(pDetails).trim() !== '') ? 'Yes' : (val === 'No' ? 'No' : ''));
         }
         const oDetails = recs.other_recommendation_details ?? recs.otherRecommendationDetails ?? editingRecord.other_recommendation_details ?? editingRecord.otherRecommendationDetails;
         if (oDetails !== undefined) {
           setRecOtherDetails(oDetails !== null ? String(oDetails) : '');
-          setRecOther(recs.other_recommendation === 'Yes' || editingRecord.other_recommendation === 'Yes' || (oDetails && String(oDetails).trim() !== '') ? 'Yes' : 'No');
+          const val = recs.other_recommendation ?? editingRecord.other_recommendation;
+          setRecOther(val === 'Yes' || (oDetails && String(oDetails).trim() !== '') ? 'Yes' : (val === 'No' ? 'No' : ''));
         }
       }
 
@@ -2305,7 +2366,7 @@ const hf = forwardRef(function hf(
       }
       const cSyncope = editingRecord.complaints_syncope ?? editingRecord.complaints_syncope_presyncope ?? editingRecord.vtvfRiskAssessment?.complaintsSyncope ?? editingRecord.vtvfRiskAssessment?.syncopeComplaints;
       if (cSyncope !== undefined && cSyncope !== null) {
-        setComplaintsSyncope(cSyncope === 'Yes' || cSyncope === true ? 'Yes' : ((sFreq && String(sFreq).trim() !== '') ? 'Yes' : 'No'));
+        setComplaintsSyncope(cSyncope === 'Yes' || cSyncope === true ? 'Yes' : ((sFreq && String(sFreq).trim() !== '') ? 'Yes' : (cSyncope === 'No' ? 'No' : '')));
       }
     }
   }, [editingRecord]);
@@ -2523,69 +2584,69 @@ const hf = forwardRef(function hf(
     
     previous_diagnosis: previousDiagnosis || null,
     previousDiagnosis: previousDiagnosis || null,
-    history_cabg: historyCabg === 'Yes' ? 'Yes' : 'No',
-    history_ptca: historyPtca === 'Yes' ? 'Yes' : 'No',
-    history_stroke: historyStroke === 'Yes' ? 'Yes' : 'No',
-    history_major_bleed: historyMajorBleed === 'Yes' ? 'Yes' : 'No',
-    history_thrombolysis: historyThrombolysis === 'Yes' ? 'Yes' : 'No',
-    history_past_mi: historyPastMi === 'Yes' ? 'Yes' : 'No',
+    history_cabg: toNullableYesNo(historyCabg),
+    history_ptca: toNullableYesNo(historyPtca),
+    history_stroke: toNullableYesNo(historyStroke),
+    history_major_bleed: toNullableYesNo(historyMajorBleed),
+    history_thrombolysis: toNullableYesNo(historyThrombolysis),
+    history_past_mi: toNullableYesNo(historyPastMi),
     past_mi_years_ago: historyPastMi === 'Yes' && pastMiYearsAgo !== '' ? Number(pastMiYearsAgo) : null,
     past_mi_location: historyPastMi === 'Yes' ? pastMiLocation : null,
     history_other: historyOther || null,
-    previous_hf_hospitalization: previousHfHospitalization === 'Yes' ? 'Yes' : 'No',
+    previous_hf_hospitalization: toNullableYesNo(previousHfHospitalization),
     recent_hospitalization_dates: recentHospitalizationDates || null,
     recent_hospitalization_reasons: recentHospitalizationReasons || null,
-    documented_vt_vf: documentedVtVf === 'Yes' ? 'Yes' : 'No',
-    complaints_syncope: (complaintsSyncope === 'Yes' || (syncopeFrequency && String(syncopeFrequency).trim() !== '')) ? 'Yes' : 'No',
-    complaints_syncope_presyncope: (complaintsSyncope === 'Yes' || (syncopeFrequency && String(syncopeFrequency).trim() !== '')) ? 'Yes' : 'No',
+    documented_vt_vf: toNullableYesNo(documentedVtVf),
+    complaints_syncope: (complaintsSyncope === 'Yes' || (syncopeFrequency && String(syncopeFrequency).trim() !== '')) ? 'Yes' : (complaintsSyncope === 'No' ? 'No' : null),
+    complaints_syncope_presyncope: (complaintsSyncope === 'Yes' || (syncopeFrequency && String(syncopeFrequency).trim() !== '')) ? 'Yes' : (complaintsSyncope === 'No' ? 'No' : null),
     syncope_frequency: syncopeFrequency || null,
     syncopeFrequency: syncopeFrequency || null,
-    documented_pvcs: documentedPvcs === 'Yes' ? 'Yes' : 'No',
+    documented_pvcs: toNullableYesNo(documentedPvcs),
     pvc_count: documentedPvcs === 'Yes' && pvcCount !== '' ? Number(pvcCount) : null,
     pvc_frequency: documentedPvcs === 'Yes' ? pvcFrequency : null,
-    documented_nsvt: documentedNsvt === 'Yes' ? 'Yes' : 'No',
+    documented_nsvt: toNullableYesNo(documentedNsvt),
     nsvt_frequency: documentedNsvt === 'Yes' ? nsvtFrequency : null,
     
     weight: vUnableToWeigh === 'Yes' ? null : (vWeight ? Number(vWeight) : null),
-    unable_to_weigh: vUnableToWeigh === 'Yes' ? 'Yes' : 'No',
+    unable_to_weigh: toNullableYesNo(vUnableToWeigh),
     unable_to_weigh_reason: vUnableToWeigh === 'Yes' ? vUnableToWeighReason : null,
     height: vHeight ? Number(vHeight) : null,
     bmi: vBmi ? Number(vBmi) : null,
     heart_rate: vHr ? Number(vHr) : null,
-    heart_rate_regular: vHrRegular === 'Yes' ? 'Yes' : 'No',
-    heart_rate_irregular: vHrIrregular === 'Yes' ? 'Yes' : 'No',
+    heart_rate_regular: toNullableYesNo(vHrRegular),
+    heart_rate_irregular: toNullableYesNo(vHrIrregular),
     respiratory_rate: vRr ? Number(vRr) : null,
     oxygen_saturation: vO2 ? Number(vO2) : null,
     systolic_bp_sitting: vBpSittingSystolic ? Number(vBpSittingSystolic) : null,
     diastolic_bp_sitting: vBpSittingDiastolic ? Number(vBpSittingDiastolic) : null,
     systolic_bp_standing: vBpStandingSystolic ? Number(vBpStandingSystolic) : null,
     diastolic_bp_standing: vBpStandingDiastolic ? Number(vBpStandingDiastolic) : null,
-    mental_status_alert: vMentalAlert === 'Yes' ? 'Yes' : 'No',
-    mental_status_confused: vMentalConfused === 'Yes' ? 'Yes' : 'No',
-    mental_status_drowsy: vMentalDrowsy === 'Yes' ? 'Yes' : 'No',
+    mental_status_alert: toNullableYesNo(vMentalAlert),
+    mental_status_confused: toNullableYesNo(vMentalConfused),
+    mental_status_drowsy: toNullableYesNo(vMentalDrowsy),
     
-    dyspnea_at_rest: symptomDyspneaAtRest === 'Yes' ? 'Yes' : 'No',
-    dyspnea_with_exertion: symptomDyspneaWithExertion === 'Yes' ? 'Yes' : 'No',
-    fatigue: symptomFatigue === 'Yes' ? 'Yes' : 'No',
-    orthopnea: symptomOrthopnea === 'Yes' ? 'Yes' : 'No',
-    loss_of_appetite_bloating: symptomLossOfAppetite === 'Yes' ? 'Yes' : 'No',
-    decreased_exercise_tolerance: symptomDecreasedExercise === 'Yes' ? 'Yes' : 'No',
-    weight_gain: symptomWeightGain === 'Yes' ? 'Yes' : 'No',
-    weight_loss: symptomWeightLoss === 'Yes' ? 'Yes' : 'No',
-    syncope: symptomSyncope === 'Yes' ? 'Yes' : 'No',
-    pnd: symptomPnd === 'Yes' ? 'Yes' : 'No',
-    muscle_cramps: symptomMuscleCramps === 'Yes' ? 'Yes' : 'No',
-    wheeze: symptomWheeze === 'Yes' ? 'Yes' : 'No',
-    giddiness: symptomGiddiness === 'Yes' ? 'Yes' : 'No',
-    symptom_other: symptomOther === 'Yes' ? 'Yes' : 'No',
+    dyspnea_at_rest: toNullableYesNo(symptomDyspneaAtRest),
+    dyspnea_with_exertion: toNullableYesNo(symptomDyspneaWithExertion),
+    fatigue: toNullableYesNo(symptomFatigue),
+    orthopnea: toNullableYesNo(symptomOrthopnea),
+    loss_of_appetite_bloating: toNullableYesNo(symptomLossOfAppetite),
+    decreased_exercise_tolerance: toNullableYesNo(symptomDecreasedExercise),
+    weight_gain: toNullableYesNo(symptomWeightGain),
+    weight_loss: toNullableYesNo(symptomWeightLoss),
+    syncope: toNullableYesNo(symptomSyncope),
+    pnd: toNullableYesNo(symptomPnd),
+    muscle_cramps: toNullableYesNo(symptomMuscleCramps),
+    wheeze: toNullableYesNo(symptomWheeze),
+    giddiness: toNullableYesNo(symptomGiddiness),
+    symptom_other: toNullableYesNo(symptomOther),
     symptom_other_details: symptomOther === 'Yes' ? symptomOtherDetails : null,
     
-    peripheral_edema: signPeripheralEdema === 'Yes' ? 'Yes' : 'No',
-    rales: signRales === 'Yes' ? 'Yes' : 'No',
-    hepatomegaly: signHepatomegaly === 'Yes' ? 'Yes' : 'No',
-    ascites: signAscites === 'Yes' ? 'Yes' : 'No',
-    jugular_venous_pressure: signJvp === 'Yes' ? 'Yes' : 'No',
-    clinical_sign_other: signClinicalOther === 'Yes' ? 'Yes' : 'No',
+    peripheral_edema: toNullableYesNo(signPeripheralEdema),
+    rales: toNullableYesNo(signRales),
+    hepatomegaly: toNullableYesNo(signHepatomegaly),
+    ascites: toNullableYesNo(signAscites),
+    jugular_venous_pressure: toNullableYesNo(signJvp),
+    clinical_sign_other: toNullableYesNo(signClinicalOther),
     clinical_sign_other_details: signClinicalOther === 'Yes' ? signClinicalOtherDetails : null,
 
     typeOfHF: hfType || finalHfType,
@@ -2629,9 +2690,9 @@ const hf = forwardRef(function hf(
       clinicalNotes: finalClinicalNotes
     },
     investigations: {
-      vacPneumococcal: vacPneumococcal ? 'Yes' : 'No',
+      vacPneumococcal: (vacPneumococcal || vacPneumococcalDate) ? 'Yes' : null,
       vacPneumococcalDate: vacPneumococcalDate || null,
-      vacInfluenza: vacInfluenza ? 'Yes' : 'No',
+      vacInfluenza: (vacInfluenza || vacInfluenzaDate) ? 'Yes' : null,
       vacInfluenzaDate: vacInfluenzaDate || null,
       bloodGroup: bloodGroup || null,
       labTests: finalLabTests,
@@ -2648,9 +2709,9 @@ const hf = forwardRef(function hf(
       rbbb: ecgBlockages === 'RBBB',
       blockOther: ecgBlockages === 'Other',
       blockOtherDetails: ecgBlockages === 'Other' ? ecgBlockagesOther : null,
-      ecg_lbbb: ecgBlockages === 'LBBB' ? 'Yes' : 'No',
-      ecg_rbbb: ecgBlockages === 'RBBB' ? 'Yes' : 'No',
-      ecg_block_other: ecgBlockages === 'Other' ? 'Yes' : 'No',
+      ecg_lbbb: ecgBlockages ? (ecgBlockages === 'LBBB' ? 'Yes' : 'No') : null,
+      ecg_rbbb: ecgBlockages ? (ecgBlockages === 'RBBB' ? 'Yes' : 'No') : null,
+      ecg_block_other: ecgBlockages ? (ecgBlockages === 'Other' ? 'Yes' : 'No') : null,
       ecg_block_other_details: ecgBlockages === 'Other' ? ecgBlockagesOther : null,
       ecgExtraBeats,
       ecgQt,
@@ -2705,198 +2766,198 @@ const hf = forwardRef(function hf(
     medicalTherapy: {
       recommended_consults: recommendedConsults || null,
       drug_intolerance_contraindications: drugIntoleranceContraindications || null,
-      carvedilol: (carvedilol === 'Yes' || carvedilolDose) ? 'Yes' : 'No',
+      carvedilol: (carvedilol === 'Yes' || carvedilolDose) ? 'Yes' : (carvedilol === 'No' ? 'No' : null),
       carvedilol_dose: carvedilolDose || null,
-      bisoprolol: (bisoprolol === 'Yes' || bisoprololDose) ? 'Yes' : 'No',
+      bisoprolol: (bisoprolol === 'Yes' || bisoprololDose) ? 'Yes' : (bisoprolol === 'No' ? 'No' : null),
       bisoprolol_dose: bisoprololDose || null,
-      metoprolol_succinate: (metoprololSuccinate === 'Yes' || metoprololSuccinateDose) ? 'Yes' : 'No',
+      metoprolol_succinate: (metoprololSuccinate === 'Yes' || metoprololSuccinateDose) ? 'Yes' : (metoprololSuccinate === 'No' ? 'No' : null),
       metoprolol_succinate_dose: metoprololSuccinateDose || null,
-      nebivolol: (nebivolol === 'Yes' || nebivololDose) ? 'Yes' : 'No',
+      nebivolol: (nebivolol === 'Yes' || nebivololDose) ? 'Yes' : (nebivolol === 'No' ? 'No' : null),
       nebivolol_dose: nebivololDose || null,
-      beta_blocker_other: (betaBlockerOther === 'Yes' || betaBlockerOtherDose || betaBlockerOtherName) ? 'Yes' : 'No',
+      beta_blocker_other: (betaBlockerOther === 'Yes' || betaBlockerOtherDose || betaBlockerOtherName) ? 'Yes' : (betaBlockerOther === 'No' ? 'No' : null),
       beta_blocker_other_name: betaBlockerOtherName || null,
       beta_blocker_other_dose: betaBlockerOtherDose || null,
-      beta_not_used_bradycardia: betaNotUsedBradycardia === 'Yes' ? 'Yes' : 'No',
-      beta_not_used_heart_blocks: betaNotUsedHeartBlocks === 'Yes' ? 'Yes' : 'No',
-      beta_not_used_copd_asthma: betaNotUsedCopdAsthma === 'Yes' ? 'Yes' : 'No',
-      beta_not_used_hypotension: betaNotUsedHypotension === 'Yes' ? 'Yes' : 'No',
-      beta_not_used_other: betaNotUsedOther === 'Yes' ? 'Yes' : 'No',
+      beta_not_used_bradycardia: toNullableYesNo(betaNotUsedBradycardia),
+      beta_not_used_heart_blocks: toNullableYesNo(betaNotUsedHeartBlocks),
+      beta_not_used_copd_asthma: toNullableYesNo(betaNotUsedCopdAsthma),
+      beta_not_used_hypotension: toNullableYesNo(betaNotUsedHypotension),
+      beta_not_used_other: toNullableYesNo(betaNotUsedOther),
       beta_not_used_other_reason: betaNotUsedOther === 'Yes' ? (betaNotUsedOtherReason || null) : null,
-      enalapril: (enalapril === 'Yes' || enalaprilDose) ? 'Yes' : 'No',
+      enalapril: (enalapril === 'Yes' || enalaprilDose) ? 'Yes' : (enalapril === 'No' ? 'No' : null),
       enalapril_dose: enalaprilDose || null,
-      ramipril: (ramipril === 'Yes' || ramiprilDose) ? 'Yes' : 'No',
+      ramipril: (ramipril === 'Yes' || ramiprilDose) ? 'Yes' : (ramipril === 'No' ? 'No' : null),
       ramipril_dose: ramiprilDose || null,
-      lisinopril: (lisinopril === 'Yes' || lisinoprilDose) ? 'Yes' : 'No',
+      lisinopril: (lisinopril === 'Yes' || lisinoprilDose) ? 'Yes' : (lisinopril === 'No' ? 'No' : null),
       lisinopril_dose: lisinoprilDose || null,
-      perindopril: (perindopril === 'Yes' || perindoprilDose) ? 'Yes' : 'No',
+      perindopril: (perindopril === 'Yes' || perindoprilDose) ? 'Yes' : (perindopril === 'No' ? 'No' : null),
       perindopril_dose: perindoprilDose || null,
-      ace_other: (aceOther === 'Yes' || aceOtherDose || aceOtherName) ? 'Yes' : 'No',
+      ace_other: (aceOther === 'Yes' || aceOtherDose || aceOtherName) ? 'Yes' : (aceOther === 'No' ? 'No' : null),
       ace_other_name: aceOtherName || null,
       ace_other_dose: aceOtherDose || null,
-      ace_not_used_elevated_creatinine: aceNotUsedElevatedCreatinine === 'Yes' ? 'Yes' : 'No',
-      ace_not_used_hyperkalemia: aceNotUsedHyperkalemia === 'Yes' ? 'Yes' : 'No',
-      ace_not_used_cough: aceNotUsedCough === 'Yes' ? 'Yes' : 'No',
-      ace_not_used_hypotension: aceNotUsedHypotension === 'Yes' ? 'Yes' : 'No',
-      ace_not_used_other: aceNotUsedOther === 'Yes' ? 'Yes' : 'No',
+      ace_not_used_elevated_creatinine: toNullableYesNo(aceNotUsedElevatedCreatinine),
+      ace_not_used_hyperkalemia: toNullableYesNo(aceNotUsedHyperkalemia),
+      ace_not_used_cough: toNullableYesNo(aceNotUsedCough),
+      ace_not_used_hypotension: toNullableYesNo(aceNotUsedHypotension),
+      ace_not_used_other: toNullableYesNo(aceNotUsedOther),
       ace_not_used_other_reason: aceNotUsedOther === 'Yes' ? (aceNotUsedOtherReason || null) : null,
-      valsartan: (valsartan === 'Yes' || valsartanDose) ? 'Yes' : 'No',
+      valsartan: (valsartan === 'Yes' || valsartanDose) ? 'Yes' : (valsartan === 'No' ? 'No' : null),
       valsartan_dose: valsartanDose || null,
-      losartan: (losartan === 'Yes' || losartanDose) ? 'Yes' : 'No',
+      losartan: (losartan === 'Yes' || losartanDose) ? 'Yes' : (losartan === 'No' ? 'No' : null),
       losartan_dose: losartanDose || null,
-      telmisartan: (telmisartan === 'Yes' || telmisartanDose) ? 'Yes' : 'No',
+      telmisartan: (telmisartan === 'Yes' || telmisartanDose) ? 'Yes' : (telmisartan === 'No' ? 'No' : null),
       telmisartan_dose: telmisartanDose || null,
-      olmesartan: (olmesartan === 'Yes' || olmesartanDose) ? 'Yes' : 'No',
+      olmesartan: (olmesartan === 'Yes' || olmesartanDose) ? 'Yes' : (olmesartan === 'No' ? 'No' : null),
       olmesartan_dose: olmesartanDose || null,
-      arb_other: (arbOther === 'Yes' || arbOtherDose || arbOtherName) ? 'Yes' : 'No',
+      arb_other: (arbOther === 'Yes' || arbOtherDose || arbOtherName) ? 'Yes' : (arbOther === 'No' ? 'No' : null),
       arb_other_name: arbOtherName || null,
       arb_other_dose: arbOtherDose || null,
-      arb_not_used_elevated_creatinine: arbNotUsedElevatedCreatinine === 'Yes' ? 'Yes' : 'No',
-      arb_not_used_hyperkalemia: arbNotUsedHyperkalemia === 'Yes' ? 'Yes' : 'No',
-      arb_not_used_hypotension: arbNotUsedHypotension === 'Yes' ? 'Yes' : 'No',
-      arb_not_used_other: arbNotUsedOther === 'Yes' ? 'Yes' : 'No',
+      arb_not_used_elevated_creatinine: toNullableYesNo(arbNotUsedElevatedCreatinine),
+      arb_not_used_hyperkalemia: toNullableYesNo(arbNotUsedHyperkalemia),
+      arb_not_used_hypotension: toNullableYesNo(arbNotUsedHypotension),
+      arb_not_used_other: toNullableYesNo(arbNotUsedOther),
       arb_not_used_other_reason: arbNotUsedOther === 'Yes' ? (arbNotUsedOtherReason || null) : null,
-      spironolactone: (spironolactone === 'Yes' || spironolactoneDose) ? 'Yes' : 'No',
+      spironolactone: (spironolactone === 'Yes' || spironolactoneDose) ? 'Yes' : (spironolactone === 'No' ? 'No' : null),
       spironolactone_dose: spironolactoneDose || null,
-      eplerenone: (eplerenone === 'Yes' || eplerenoneDose) ? 'Yes' : 'No',
+      eplerenone: (eplerenone === 'Yes' || eplerenoneDose) ? 'Yes' : (eplerenone === 'No' ? 'No' : null),
       eplerenone_dose: eplerenoneDose || null,
-      aldosterone_not_used_hyperkalemia: aldosteroneNotUsedHyperkalemia === 'Yes' ? 'Yes' : 'No',
-      aldosterone_not_used_hyponatremia: aldosteroneNotUsedHyponatremia === 'Yes' ? 'Yes' : 'No',
-      aldosterone_not_used_elevated_creatinine: aldosteroneNotUsedElevatedCreatinine === 'Yes' ? 'Yes' : 'No',
-      aldosterone_not_used_other: aldosteroneNotUsedOther === 'Yes' ? 'Yes' : 'No',
+      aldosterone_not_used_hyperkalemia: toNullableYesNo(aldosteroneNotUsedHyperkalemia),
+      aldosterone_not_used_hyponatremia: toNullableYesNo(aldosteroneNotUsedHyponatremia),
+      aldosterone_not_used_elevated_creatinine: toNullableYesNo(aldosteroneNotUsedElevatedCreatinine),
+      aldosterone_not_used_other: toNullableYesNo(aldosteroneNotUsedOther),
       aldosterone_not_used_other_reason: aldosteroneNotUsedOther === 'Yes' ? (aldosteroneNotUsedOtherReason || null) : null,
-      hydralazine: (hydralazine === 'Yes' || hydralazineDose || hydralazineName) ? 'Yes' : 'No',
+      hydralazine: (hydralazine === 'Yes' || hydralazineDose || hydralazineName) ? 'Yes' : (hydralazine === 'No' ? 'No' : null),
       hydralazine_name: hydralazineName || null,
       hydralazine_dose: hydralazineDose || null,
-      nitrate_1: (nitrate1 === 'Yes' || nitrate1Dose || nitrate1Name) ? 'Yes' : 'No',
+      nitrate_1: (nitrate1 === 'Yes' || nitrate1Dose || nitrate1Name) ? 'Yes' : (nitrate1 === 'No' ? 'No' : null),
       nitrate_1_name: nitrate1Name || null,
       nitrate_1_dose: nitrate1Dose || null,
-      nitrate_2: (nitrate2 === 'Yes' || nitrate2Dose || nitrate2Name) ? 'Yes' : 'No',
+      nitrate_2: (nitrate2 === 'Yes' || nitrate2Dose || nitrate2Name) ? 'Yes' : (nitrate2 === 'No' ? 'No' : null),
       nitrate_2_name: nitrate2Name || null,
       nitrate_2_dose: nitrate2Dose || null,
-      warfarin: (warfarin === 'Yes' || warfarinInr || warfarinTargetInr) ? 'Yes' : 'No',
+      warfarin: (warfarin === 'Yes' || warfarinInr || warfarinTargetInr) ? 'Yes' : (warfarin === 'No' ? 'No' : null),
       warfarin_inr: warfarinInr || null,
       warfarin_target_inr: warfarinTargetInr || null,
-      vitamin_k_inhibitor: (vitaminKInhibitor === 'Yes' || vitaminKInhibitorDose || vitaminKInhibitorName) ? 'Yes' : 'No',
+      vitamin_k_inhibitor: (vitaminKInhibitor === 'Yes' || vitaminKInhibitorDose || vitaminKInhibitorName) ? 'Yes' : (vitaminKInhibitor === 'No' ? 'No' : null),
       vitamin_k_inhibitor_name: vitaminKInhibitorName || null,
       vitamin_k_inhibitor_dose: vitaminKInhibitorDose || null,
-      noac: (noac === 'Yes' || noacDose || noacName) ? 'Yes' : 'No',
+      noac: (noac === 'Yes' || noacDose || noacName) ? 'Yes' : (noac === 'No' ? 'No' : null),
       noac_name: noacName || null,
       noac_dose: noacDose || null,
-      acitrom: (acitrom === 'Yes' || acitromDose) ? 'Yes' : 'No',
+      acitrom: (acitrom === 'Yes' || acitromDose) ? 'Yes' : (acitrom === 'No' ? 'No' : null),
       acitrom_dose: acitromDose || null,
-      ufh: (ufh === 'Yes' || ufhDose) ? 'Yes' : 'No',
+      ufh: (ufh === 'Yes' || ufhDose) ? 'Yes' : (ufh === 'No' ? 'No' : null),
       ufh_dose: ufhDose || null,
-      lmwh: (lmwh === 'Yes' || lmwhDose) ? 'Yes' : 'No',
+      lmwh: (lmwh === 'Yes' || lmwhDose) ? 'Yes' : (lmwh === 'No' ? 'No' : null),
       lmwh_dose: lmwhDose || null,
-      aspirin: (aspirin === 'Yes' || aspirinDose) ? 'Yes' : 'No',
+      aspirin: (aspirin === 'Yes' || aspirinDose) ? 'Yes' : (aspirin === 'No' ? 'No' : null),
       aspirin_dose: aspirinDose || null,
-      clopidogrel: (clopidogrel === 'Yes' || clopidogrelDose) ? 'Yes' : 'No',
+      clopidogrel: (clopidogrel === 'Yes' || clopidogrelDose) ? 'Yes' : (clopidogrel === 'No' ? 'No' : null),
       clopidogrel_dose: clopidogrelDose || null,
-      prasugrel: (prasugrel === 'Yes' || prasugrelDose) ? 'Yes' : 'No',
+      prasugrel: (prasugrel === 'Yes' || prasugrelDose) ? 'Yes' : (prasugrel === 'No' ? 'No' : null),
       prasugrel_dose: prasugrelDose || null,
-      ticagrelor: (ticagrelor === 'Yes' || ticagrelorDose) ? 'Yes' : 'No',
+      ticagrelor: (ticagrelor === 'Yes' || ticagrelorDose) ? 'Yes' : (ticagrelor === 'No' ? 'No' : null),
       ticagrelor_dose: ticagrelorDose || null,
-      amiodarone: (amiodarone === 'Yes' || amiodaroneDose) ? 'Yes' : 'No',
+      amiodarone: (amiodarone === 'Yes' || amiodaroneDose) ? 'Yes' : (amiodarone === 'No' ? 'No' : null),
       amiodarone_dose: amiodaroneDose || null,
-      antiarrhythmic_other: (antiarrhythmicOther === 'Yes' || antiarrhythmicOtherDose || antiarrhythmicOtherName) ? 'Yes' : 'No',
+      antiarrhythmic_other: (antiarrhythmicOther === 'Yes' || antiarrhythmicOtherDose || antiarrhythmicOtherName) ? 'Yes' : (antiarrhythmicOther === 'No' ? 'No' : null),
       antiarrhythmic_other_name: antiarrhythmicOtherName || null,
       antiarrhythmic_other_dose: antiarrhythmicOtherDose || null,
-      furosemide: (furosemide === 'Yes' || furosemideDose) ? 'Yes' : 'No',
+      furosemide: (furosemide === 'Yes' || furosemideDose) ? 'Yes' : (furosemide === 'No' ? 'No' : null),
       furosemide_dose: furosemideDose || null,
-      torsemide: (torsemide === 'Yes' || torsemideDose) ? 'Yes' : 'No',
+      torsemide: (torsemide === 'Yes' || torsemideDose) ? 'Yes' : (torsemide === 'No' ? 'No' : null),
       torsemide_dose: torsemideDose || null,
-      metolazone: (metolazone === 'Yes' || metolazoneDose) ? 'Yes' : 'No',
+      metolazone: (metolazone === 'Yes' || metolazoneDose) ? 'Yes' : (metolazone === 'No' ? 'No' : null),
       metolazone_dose: metolazoneDose || null,
-      diuretic_other: (diureticOther === 'Yes' || diureticOtherDose || diureticOtherName) ? 'Yes' : 'No',
+      diuretic_other: (diureticOther === 'Yes' || diureticOtherDose || diureticOtherName) ? 'Yes' : (diureticOther === 'No' ? 'No' : null),
       diuretic_other_name: diureticOtherName || null,
       diuretic_other_dose: diureticOtherDose || null,
-      diuretic_not_used_hyponatremia: diureticNotUsedHyponatremia === 'Yes' ? 'Yes' : 'No',
-      diuretic_not_used_hypokalemia: diureticNotUsedHypokalemia === 'Yes' ? 'Yes' : 'No',
-      diuretic_not_used_worsening_renal_failure: diureticNotUsedWorseningRenalFailure === 'Yes' ? 'Yes' : 'No',
-      diuretic_not_used_hypotension: diureticNotUsedHypotension === 'Yes' ? 'Yes' : 'No',
-      diuretic_not_used_other: diureticNotUsedOther === 'Yes' ? 'Yes' : 'No',
+      diuretic_not_used_hyponatremia: toNullableYesNo(diureticNotUsedHyponatremia),
+      diuretic_not_used_hypokalemia: toNullableYesNo(diureticNotUsedHypokalemia),
+      diuretic_not_used_worsening_renal_failure: toNullableYesNo(diureticNotUsedWorseningRenalFailure),
+      diuretic_not_used_hypotension: toNullableYesNo(diureticNotUsedHypotension),
+      diuretic_not_used_other: toNullableYesNo(diureticNotUsedOther),
       diuretic_not_used_other_reason: diureticNotUsedOther === 'Yes' ? (diureticNotUsedOtherReason || null) : null,
-      digoxin: (digoxin === 'Yes' || digoxinDose || digoxinName) ? 'Yes' : 'No',
+      digoxin: (digoxin === 'Yes' || digoxinDose || digoxinName) ? 'Yes' : (digoxin === 'No' ? 'No' : null),
       digoxin_name: digoxinName || null,
       digoxin_dose: digoxinDose || null,
-      ivabradine: (ivabradine === 'Yes' || ivabradineDose) ? 'Yes' : 'No',
+      ivabradine: (ivabradine === 'Yes' || ivabradineDose) ? 'Yes' : (ivabradine === 'No' ? 'No' : null),
       ivabradine_dose: ivabradineDose || null,
-      atorvastatin: (atorvastatin === 'Yes' || atorvastatinDose) ? 'Yes' : 'No',
+      atorvastatin: (atorvastatin === 'Yes' || atorvastatinDose) ? 'Yes' : (atorvastatin === 'No' ? 'No' : null),
       atorvastatin_dose: atorvastatinDose || null,
-      simvastatin: (simvastatin === 'Yes' || simvastatinDose) ? 'Yes' : 'No',
+      simvastatin: (simvastatin === 'Yes' || simvastatinDose) ? 'Yes' : (simvastatin === 'No' ? 'No' : null),
       simvastatin_dose: simvastatinDose || null,
-      rosuvastatin: (rosuvastatin === 'Yes' || rosuvastatinDose) ? 'Yes' : 'No',
+      rosuvastatin: (rosuvastatin === 'Yes' || rosuvastatinDose) ? 'Yes' : (rosuvastatin === 'No' ? 'No' : null),
       rosuvastatin_dose: rosuvastatinDose || null,
-      sulfonylureas: (sulfonylureas === 'Yes' || sulfonylureasDose) ? 'Yes' : 'No',
+      sulfonylureas: (sulfonylureas === 'Yes' || sulfonylureasDose) ? 'Yes' : (sulfonylureas === 'No' ? 'No' : null),
       sulfonylureas_dose: sulfonylureasDose || null,
-      metformin: (metformin === 'Yes' || metforminDose) ? 'Yes' : 'No',
+      metformin: (metformin === 'Yes' || metforminDose) ? 'Yes' : (metformin === 'No' ? 'No' : null),
       metformin_dose: metforminDose || null,
-      glitazone: (glitazone === 'Yes' || glitazoneDose) ? 'Yes' : 'No',
+      glitazone: (glitazone === 'Yes' || glitazoneDose) ? 'Yes' : (glitazone === 'No' ? 'No' : null),
       glitazone_dose: glitazoneDose || null,
-      gliptin: (gliptin === 'Yes' || gliptinDose) ? 'Yes' : 'No',
+      gliptin: (gliptin === 'Yes' || gliptinDose) ? 'Yes' : (gliptin === 'No' ? 'No' : null),
       gliptin_dose: gliptinDose || null,
-      acarbose_derivative: (acarboseDerivative === 'Yes' || acarboseDerivativeDose) ? 'Yes' : 'No',
+      acarbose_derivative: (acarboseDerivative === 'Yes' || acarboseDerivativeDose) ? 'Yes' : (acarboseDerivative === 'No' ? 'No' : null),
       acarbose_derivative_dose: acarboseDerivativeDose || null,
-      human_insulin: (humanInsulin === 'Yes' || humanInsulinDose) ? 'Yes' : 'No',
+      human_insulin: (humanInsulin === 'Yes' || humanInsulinDose) ? 'Yes' : (humanInsulin === 'No' ? 'No' : null),
       human_insulin_dose: humanInsulinDose || null,
-      synthetic_insulin: (syntheticInsulin === 'Yes' || syntheticInsulinDose) ? 'Yes' : 'No',
+      synthetic_insulin: (syntheticInsulin === 'Yes' || syntheticInsulinDose) ? 'Yes' : (syntheticInsulin === 'No' ? 'No' : null),
       synthetic_insulin_dose: syntheticInsulinDose || null,
-      antihypertensive: (antihypertensive === 'Yes' || antihypertensiveDose || antihypertensiveName) ? 'Yes' : 'No',
+      antihypertensive: (antihypertensive === 'Yes' || antihypertensiveDose || antihypertensiveName) ? 'Yes' : (antihypertensive === 'No' ? 'No' : null),
       antihypertensive_name: antihypertensiveName || null,
       antihypertensive_dose: antihypertensiveDose || null,
-      thyroxine: (thyroxine === 'Yes' || thyroxineDose) ? 'Yes' : 'No',
+      thyroxine: (thyroxine === 'Yes' || thyroxineDose) ? 'Yes' : (thyroxine === 'No' ? 'No' : null),
       thyroxine_dose: thyroxineDose || null,
-      other_medication_1: (otherMedication1 === 'Yes' || otherMedication1Dose || otherMedication1Name) ? 'Yes' : 'No',
+      other_medication_1: (otherMedication1 === 'Yes' || otherMedication1Dose || otherMedication1Name) ? 'Yes' : (otherMedication1 === 'No' ? 'No' : null),
       other_medication_1_name: otherMedication1Name || null,
       other_medication_1_dose: otherMedication1Dose || null,
-      other_medication_2: (otherMedication2 === 'Yes' || otherMedication2Dose || otherMedication2Name) ? 'Yes' : 'No',
+      other_medication_2: (otherMedication2 === 'Yes' || otherMedication2Dose || otherMedication2Name) ? 'Yes' : (otherMedication2 === 'No' ? 'No' : null),
       other_medication_2_name: otherMedication2Name || null,
       other_medication_2_dose: otherMedication2Dose || null,
-      other_medication_3: (otherMedication3 === 'Yes' || otherMedication3Dose || otherMedication3Name) ? 'Yes' : 'No',
+      other_medication_3: (otherMedication3 === 'Yes' || otherMedication3Dose || otherMedication3Name) ? 'Yes' : (otherMedication3 === 'No' ? 'No' : null),
       other_medication_3_name: otherMedication3Name || null,
       other_medication_3_dose: otherMedication3Dose || null,
-      other_medication_4: (otherMedication4 === 'Yes' || otherMedication4Dose || otherMedication4Name) ? 'Yes' : 'No',
+      other_medication_4: (otherMedication4 === 'Yes' || otherMedication4Dose || otherMedication4Name) ? 'Yes' : (otherMedication4 === 'No' ? 'No' : null),
       other_medication_4_name: otherMedication4Name || null,
       other_medication_4_dose: otherMedication4Dose || null
     },
     deviceTherapy: {
-      current_device_none: currentDeviceNone === 'Yes' ? 'Yes' : 'No',
-      current_device_yes: currentDeviceYes === 'Yes' ? 'Yes' : 'No',
-      current_crt_p: currentCrtP === 'Yes' ? 'Yes' : 'No',
-      current_crt_d: currentCrtD === 'Yes' ? 'Yes' : 'No',
-      current_icd_sc: currentIcdSc === 'Yes' ? 'Yes' : 'No',
-      current_icd_dc: currentIcdDc === 'Yes' ? 'Yes' : 'No',
-      current_dual_chamber_pacemaker: currentDualChamberPacemaker === 'Yes' ? 'Yes' : 'No',
-      current_single_chamber_pacemaker: currentSingleChamberPacemaker === 'Yes' ? 'Yes' : 'No',
-      current_device_other: currentDeviceOther === 'Yes' ? 'Yes' : 'No',
+      current_device_none: toNullableYesNo(currentDeviceNone),
+      current_device_yes: toNullableYesNo(currentDeviceYes),
+      current_crt_p: toNullableYesNo(currentCrtP),
+      current_crt_d: toNullableYesNo(currentCrtD),
+      current_icd_sc: toNullableYesNo(currentIcdSc),
+      current_icd_dc: toNullableYesNo(currentIcdDc),
+      current_dual_chamber_pacemaker: toNullableYesNo(currentDualChamberPacemaker),
+      current_single_chamber_pacemaker: toNullableYesNo(currentSingleChamberPacemaker),
+      current_device_other: toNullableYesNo(currentDeviceOther),
       current_device_other_name: currentDeviceOther === 'Yes' ? (currentDeviceOtherName || null) : null,
       current_device_brand: currentDeviceBrand || null,
-      eligible_no: eligibleNo === 'Yes' ? 'Yes' : 'No',
-      eligible_yes: eligibleYes === 'Yes' ? 'Yes' : 'No',
-      eligible_crt_p: eligibleCrtP === 'Yes' ? 'Yes' : 'No',
-      eligible_crt_d: eligibleCrtD === 'Yes' ? 'Yes' : 'No',
-      eligible_icd_sc: eligibleIcdSc === 'Yes' ? 'Yes' : 'No',
-      eligible_icd_dc: eligibleIcdDc === 'Yes' ? 'Yes' : 'No',
-      eligible_dual_chamber_pacemaker: eligibleDualChamberPacemaker === 'Yes' ? 'Yes' : 'No',
-      eligible_single_chamber_pacemaker: eligibleSingleChamberPacemaker === 'Yes' ? 'Yes' : 'No',
-      eligible_other: eligibleOther === 'Yes' ? 'Yes' : 'No',
+      eligible_no: toNullableYesNo(eligibleNo),
+      eligible_yes: toNullableYesNo(eligibleYes),
+      eligible_crt_p: toNullableYesNo(eligibleCrtP),
+      eligible_crt_d: toNullableYesNo(eligibleCrtD),
+      eligible_icd_sc: toNullableYesNo(eligibleIcdSc),
+      eligible_icd_dc: toNullableYesNo(eligibleIcdDc),
+      eligible_dual_chamber_pacemaker: toNullableYesNo(eligibleDualChamberPacemaker),
+      eligible_single_chamber_pacemaker: toNullableYesNo(eligibleSingleChamberPacemaker),
+      eligible_other: toNullableYesNo(eligibleOther),
       eligible_other_name: eligibleOther === 'Yes' ? (eligibleOtherName || null) : null,
       eligible_device_brand: eligibleDeviceBrand || null,
-      patient_acceptance_yes: patientAcceptanceYes === 'Yes' ? 'Yes' : 'No',
-      patient_acceptance_no: patientAcceptanceNo === 'Yes' ? 'Yes' : 'No',
+      patient_acceptance_yes: toNullableYesNo(patientAcceptanceYes),
+      patient_acceptance_no: toNullableYesNo(patientAcceptanceNo),
       patient_acceptance_reason: patientAcceptanceNo === 'Yes' ? (patientAcceptanceReason || null) : null,
       implant_date: implantDate || null,
-      icd_shock: (icdShock === 'Yes' || numberOfShocks !== '' || appropriateShocks !== '' || inappropriateShocks !== '' || causeOfShocks !== '') ? 'Yes' : 'No',
+      icd_shock: (icdShock === 'Yes' || numberOfShocks !== '' || appropriateShocks !== '' || inappropriateShocks !== '' || causeOfShocks !== '') ? 'Yes' : (icdShock === 'No' ? 'No' : null),
       number_of_shocks: numberOfShocks !== '' ? Number(numberOfShocks) : null,
       appropriate_shocks: appropriateShocks !== '' ? Number(appropriateShocks) : null,
       inappropriate_shocks: inappropriateShocks !== '' ? Number(inappropriateShocks) : null,
       cause_of_shocks: causeOfShocks || null,
-      atp: (atp === 'Yes' || atpTimes !== '' || atpSuccessAlways === 'Yes' || atpSuccessMostTimes === 'Yes' || atpSuccessSometimes === 'Yes' || atpSuccessNotSuccessful === 'Yes') ? 'Yes' : 'No',
+      atp: (atp === 'Yes' || atpTimes !== '' || atpSuccessAlways === 'Yes' || atpSuccessMostTimes === 'Yes' || atpSuccessSometimes === 'Yes' || atpSuccessNotSuccessful === 'Yes') ? 'Yes' : (atp === 'No' ? 'No' : null),
       atp_times: atpTimes !== '' ? Number(atpTimes) : null,
-      atp_success_always: atpSuccessAlways === 'Yes' ? 'Yes' : 'No',
-      atp_success_most_times: atpSuccessMostTimes === 'Yes' ? 'Yes' : 'No',
-      atp_success_sometimes: atpSuccessSometimes === 'Yes' ? 'Yes' : 'No',
-      atp_success_not_successful: atpSuccessNotSuccessful === 'Yes' ? 'Yes' : 'No',
+      atp_success_always: toNullableYesNo(atpSuccessAlways),
+      atp_success_most_times: toNullableYesNo(atpSuccessMostTimes),
+      atp_success_sometimes: toNullableYesNo(atpSuccessSometimes),
+      atp_success_not_successful: toNullableYesNo(atpSuccessNotSuccessful),
       biv_pacing_percent: bivPacingPercent !== '' ? Number(bivPacingPercent) : null,
       afib_burden: afibBurden || null,
       nsvt_episodes: nsvtEpisodes !== '' ? Number(nsvtEpisodes) : null,
@@ -2905,37 +2966,37 @@ const hf = forwardRef(function hf(
       notes: deviceNotes || null
     },
     patientEducation: {
-      diet_2000mg_salt_restriction: eduDiet === 'Yes' ? 'Yes' : 'No',
-      exercise_activity_promoted: eduExercise === 'Yes' ? 'Yes' : 'No',
-      daily_weight_monitoring: eduWeight === 'Yes' ? 'Yes' : 'No',
-      disease_process_explained: eduDisease === 'Yes' ? 'Yes' : 'No',
-      smoking_cessation: eduSmoking === 'Yes' ? 'Yes' : 'No',
-      alcohol_cessation: eduAlcohol === 'Yes' ? 'Yes' : 'No',
-      medication_compliance: eduCompliance === 'Yes' ? 'Yes' : 'No',
-      worsened_symptoms_education: eduWorsened === 'Yes' ? 'Yes' : 'No',
-      device_therapy_education: eduDevice === 'Yes' ? 'Yes' : 'No',
-      education_other: eduOther === 'Yes' ? 'Yes' : 'No',
+      diet_2000mg_salt_restriction: toNullableYesNo(eduDiet),
+      exercise_activity_promoted: toNullableYesNo(eduExercise),
+      daily_weight_monitoring: toNullableYesNo(eduWeight),
+      disease_process_explained: toNullableYesNo(eduDisease),
+      smoking_cessation: toNullableYesNo(eduSmoking),
+      alcohol_cessation: toNullableYesNo(eduAlcohol),
+      medication_compliance: toNullableYesNo(eduCompliance),
+      worsened_symptoms_education: toNullableYesNo(eduWorsened),
+      device_therapy_education: toNullableYesNo(eduDevice),
+      education_other: toNullableYesNo(eduOther),
       education_other_details: eduOther === 'Yes' ? (eduOtherDetails || null) : null
     },
     recommendations: {
-      fluid_and_diet: (recFluidDiet === 'Yes' || (recFluidDietDetails && String(recFluidDietDetails).trim() !== '')) ? 'Yes' : 'No',
+      fluid_and_diet: (recFluidDiet === 'Yes' || (recFluidDietDetails && String(recFluidDietDetails).trim() !== '')) ? 'Yes' : (recFluidDiet === 'No' ? 'No' : null),
       fluid_and_diet_details: recFluidDietDetails || null,
       fluidAndDiet: recFluidDietDetails || null,
-      exercise: (recExercise === 'Yes' || (recExerciseDetails && String(recExerciseDetails).trim() !== '')) ? 'Yes' : 'No',
+      exercise: (recExercise === 'Yes' || (recExerciseDetails && String(recExerciseDetails).trim() !== '')) ? 'Yes' : (recExercise === 'No' ? 'No' : null),
       exercise_details: recExerciseDetails || null,
-      yoga: (recYoga === 'Yes' || (recYogaDetails && String(recYogaDetails).trim() !== '')) ? 'Yes' : 'No',
+      yoga: (recYoga === 'Yes' || (recYogaDetails && String(recYogaDetails).trim() !== '')) ? 'Yes' : (recYoga === 'No' ? 'No' : null),
       yoga_details: recYogaDetails || null,
-      smoking_cessation: (recSmokingCessation === 'Yes' || (recSmokingCessationDetails && String(recSmokingCessationDetails).trim() !== '')) ? 'Yes' : 'No',
+      smoking_cessation: (recSmokingCessation === 'Yes' || (recSmokingCessationDetails && String(recSmokingCessationDetails).trim() !== '')) ? 'Yes' : (recSmokingCessation === 'No' ? 'No' : null),
       smoking_cessation_details: recSmokingCessationDetails || null,
-      stress_management: (recStressManagement === 'Yes' || (recStressManagementDetails && String(recStressManagementDetails).trim() !== '')) ? 'Yes' : 'No',
+      stress_management: (recStressManagement === 'Yes' || (recStressManagementDetails && String(recStressManagementDetails).trim() !== '')) ? 'Yes' : (recStressManagement === 'No' ? 'No' : null),
       stress_management_details: recStressManagementDetails || null,
-      drugs: (recDrugs === 'Yes' || (recDrugsDetails && String(recDrugsDetails).trim() !== '')) ? 'Yes' : 'No',
+      drugs: (recDrugs === 'Yes' || (recDrugsDetails && String(recDrugsDetails).trim() !== '')) ? 'Yes' : (recDrugs === 'No' ? 'No' : null),
       drugs_details: recDrugsDetails || null,
-      investigations: (recInvestigations === 'Yes' || (recInvestigationsDetails && String(recInvestigationsDetails).trim() !== '')) ? 'Yes' : 'No',
+      investigations: (recInvestigations === 'Yes' || (recInvestigationsDetails && String(recInvestigationsDetails).trim() !== '')) ? 'Yes' : (recInvestigations === 'No' ? 'No' : null),
       investigations_details: recInvestigationsDetails || null,
-      procedures: (recProcedures === 'Yes' || (recProceduresDetails && String(recProceduresDetails).trim() !== '')) ? 'Yes' : 'No',
+      procedures: (recProcedures === 'Yes' || (recProceduresDetails && String(recProceduresDetails).trim() !== '')) ? 'Yes' : (recProcedures === 'No' ? 'No' : null),
       procedures_details: recProceduresDetails || null,
-      other_recommendation: (recOther === 'Yes' || (recOtherDetails && String(recOtherDetails).trim() !== '')) ? 'Yes' : 'No',
+      other_recommendation: (recOther === 'Yes' || (recOtherDetails && String(recOtherDetails).trim() !== '')) ? 'Yes' : (recOther === 'No' ? 'No' : null),
       other_recommendation_details: recOtherDetails || null
     },
     followupAssessment: followupAssessmentRef.current?.getAssessmentPayload() || followupAssessment || null

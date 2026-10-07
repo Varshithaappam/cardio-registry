@@ -189,6 +189,9 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
 
   // Sanitization helper ensuring strict MS SQL CHECK constraint compatibility
   const formatFollowupPayload = (rawState) => {
+    if (rawState.is_followup_required === null || rawState.is_followup_required === undefined) {
+      return null;
+    }
     const isRequired = rawState.is_followup_required === true || rawState.is_followup_required === 1 || rawState.isFollowupRequired === 'Yes';
     
     // Helper to sanitize text strings (empty string "" -> null)
@@ -245,7 +248,7 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
   // Data payload constructor matching SQL Schema and UI
   const getAssessmentPayload = () => {
     return formatFollowupPayload({
-      is_followup_required: isFollowupRequired === 'Yes',
+      is_followup_required: isFollowupRequired === 'Yes' ? true : (isFollowupRequired === 'No' ? false : null),
       followup_interval: followupInterval,
       scheduled_followup_date: scheduledFollowupDate,
       visit_mode: visitMode,

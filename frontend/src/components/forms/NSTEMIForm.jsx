@@ -210,8 +210,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     diastolic_bp: editingRecord?.diastolic_bp || '',
 
     // Risk Stratification- TIMI Risk score: Points
-    age_gt_75: editingRecord?.age_gt_75 || (patientAge >= 75 ? 'Yes' : (editingRecord ? 'No' : null)),
-    age_65_to_74: editingRecord?.age_65_to_74 || (patientAge >= 65 && patientAge < 75 ? 'Yes' : (editingRecord ? 'No' : null)),
+    age_gt_75: editingRecord?.age_gt_75 || null,
+    age_65_to_74: editingRecord?.age_65_to_74 || null,
     history_dm_htn_angina: editingRecord?.history_dm_htn_angina || null,
     sbp_lt_100: editingRecord?.sbp_lt_100 || null,
     heart_rate_gt_100: editingRecord?.heart_rate_gt_100 || null,
@@ -571,56 +571,56 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     }
     
     // Map statin doses
-    payload.statin_10mg = formData.statin === 'Yes' && formData.statin_dose === '10 mg' ? 'Yes' : 'No';
-    payload.statin_20mg = formData.statin === 'Yes' && formData.statin_dose === '20 mg' ? 'Yes' : 'No';
-    payload.statin_40mg = formData.statin === 'Yes' && formData.statin_dose === '40 mg' ? 'Yes' : 'No';
-    payload.statin_80mg = formData.statin === 'Yes' && formData.statin_dose === '80 mg' ? 'Yes' : 'No';
+    payload.statin_10mg = formData.statin_dose ? (formData.statin_dose === '10 mg' ? 'Yes' : 'No') : null;
+    payload.statin_20mg = formData.statin_dose ? (formData.statin_dose === '20 mg' ? 'Yes' : 'No') : null;
+    payload.statin_40mg = formData.statin_dose ? (formData.statin_dose === '40 mg' ? 'Yes' : 'No') : null;
+    payload.statin_80mg = formData.statin_dose ? (formData.statin_dose === '80 mg' ? 'Yes' : 'No') : null;
 
-    payload.discharge_statin_10mg = formData.discharge_statin === 'Yes' && formData.discharge_statin_dose === '10 mg' ? 'Yes' : 'No';
-    payload.discharge_statin_20mg = formData.discharge_statin === 'Yes' && formData.discharge_statin_dose === '20 mg' ? 'Yes' : 'No';
-    payload.discharge_statin_40mg = formData.discharge_statin === 'Yes' && formData.discharge_statin_dose === '40 mg' ? 'Yes' : 'No';
-    payload.discharge_statin_80mg = formData.discharge_statin === 'Yes' && formData.discharge_statin_dose === '80 mg' ? 'Yes' : 'No';
+    payload.discharge_statin_10mg = formData.discharge_statin_dose ? (formData.discharge_statin_dose === '10 mg' ? 'Yes' : 'No') : null;
+    payload.discharge_statin_20mg = formData.discharge_statin_dose ? (formData.discharge_statin_dose === '20 mg' ? 'Yes' : 'No') : null;
+    payload.discharge_statin_40mg = formData.discharge_statin_dose ? (formData.discharge_statin_dose === '40 mg' ? 'Yes' : 'No') : null;
+    payload.discharge_statin_80mg = formData.discharge_statin_dose ? (formData.discharge_statin_dose === '80 mg' ? 'Yes' : 'No') : null;
 
     // Map treatment strategies
-    payload.pami = formData.treatment_strategy === 'PAMI' ? 'Yes' : 'No';
-    payload.thrombolysis = formData.treatment_strategy === 'Thrombolysis' ? 'Yes' : 'No';
-    payload.conservative = formData.treatment_strategy === 'Conservative' ? 'Yes' : 'No';
+    payload.pami = formData.treatment_strategy ? (formData.treatment_strategy === 'PAMI' ? 'Yes' : 'No') : null;
+    payload.thrombolysis = formData.treatment_strategy ? (formData.treatment_strategy === 'Thrombolysis' ? 'Yes' : 'No') : null;
+    payload.conservative = formData.treatment_strategy ? (formData.treatment_strategy === 'Conservative' ? 'Yes' : 'No') : null;
 
     // Map thrombosuction
-    payload.thrombosuction_done = formData.thrombosuction_done === 'Done' ? 'Yes' : 'No';
-    payload.thrombosuction_not_done = formData.thrombosuction_done === 'Not done' ? 'Yes' : 'No';
+    payload.thrombosuction_done = formData.thrombosuction_done ? (formData.thrombosuction_done === 'Done' ? 'Yes' : 'No') : null;
+    payload.thrombosuction_not_done = formData.thrombosuction_done ? (formData.thrombosuction_done === 'Not done' ? 'Yes' : 'No') : null;
 
     // Map stent type
-    payload.stent_des = formData.stent_type === 'DES' ? 'Yes' : 'No';
-    payload.stent_bms = formData.stent_type === 'BMS' ? 'Yes' : 'No';
+    payload.stent_des = formData.stent_type ? (formData.stent_type === 'DES' ? 'Yes' : 'No') : null;
+    payload.stent_bms = formData.stent_type ? (formData.stent_type === 'BMS' ? 'Yes' : 'No') : null;
 
     // Map ECG parameters
-    payload.av_block_none = formData.av_block === 'None' ? 'Yes' : 'No';
-    payload.av_block_first_degree = formData.av_block === '1-degree' ? 'Yes' : 'No';
-    payload.av_block_second_degree = formData.av_block === '2-degree' ? 'Yes' : 'No';
-    payload.av_block_chb = formData.av_block === 'CHB' ? 'Yes' : 'No';
+    payload.av_block_none = formData.av_block ? (formData.av_block === 'None' ? 'Yes' : 'No') : null;
+    payload.av_block_first_degree = formData.av_block ? (formData.av_block === '1-degree' ? 'Yes' : 'No') : null;
+    payload.av_block_second_degree = formData.av_block ? (formData.av_block === '2-degree' ? 'Yes' : 'No') : null;
+    payload.av_block_chb = formData.av_block ? (formData.av_block === 'CHB' ? 'Yes' : 'No') : null;
 
-    payload.bbb_none = formData.bbb === 'None' ? 'Yes' : 'No';
-    payload.bbb_rbbb = formData.bbb === 'RBBB' ? 'Yes' : 'No';
-    payload.bbb_lbbb = formData.bbb === 'LBBB' ? 'Yes' : 'No';
-    payload.bbb_indeterminate = formData.bbb === 'Indeterminate' ? 'Yes' : 'No';
+    payload.bbb_none = formData.bbb ? (formData.bbb === 'None' ? 'Yes' : 'No') : null;
+    payload.bbb_rbbb = formData.bbb ? (formData.bbb === 'RBBB' ? 'Yes' : 'No') : null;
+    payload.bbb_lbbb = formData.bbb ? (formData.bbb === 'LBBB' ? 'Yes' : 'No') : null;
+    payload.bbb_indeterminate = formData.bbb ? (formData.bbb === 'Indeterminate' ? 'Yes' : 'No') : null;
 
-    payload.rhythm_nsr = formData.ecg_rhythm === 'NSR' ? 'Yes' : 'No';
-    payload.rhythm_af = formData.ecg_rhythm === 'AF' ? 'Yes' : 'No';
-    payload.rhythm_svt = formData.ecg_rhythm === 'SVT' ? 'Yes' : 'No';
-    payload.rhythm_vt = formData.ecg_rhythm === 'VT' ? 'Yes' : 'No';
-    payload.rhythm_vf = formData.ecg_rhythm === 'VF' ? 'Yes' : 'No';
+    payload.rhythm_nsr = formData.ecg_rhythm ? (formData.ecg_rhythm === 'NSR' ? 'Yes' : 'No') : null;
+    payload.rhythm_af = formData.ecg_rhythm ? (formData.ecg_rhythm === 'AF' ? 'Yes' : 'No') : null;
+    payload.rhythm_svt = formData.ecg_rhythm ? (formData.ecg_rhythm === 'SVT' ? 'Yes' : 'No') : null;
+    payload.rhythm_vt = formData.ecg_rhythm ? (formData.ecg_rhythm === 'VT' ? 'Yes' : 'No') : null;
+    payload.rhythm_vf = formData.ecg_rhythm ? (formData.ecg_rhythm === 'VF' ? 'Yes' : 'No') : null;
 
     // Map Echo parameters
-    payload.lv_function_normal = formData.lv_function === 'Normal' ? 'Yes' : 'No';
-    payload.lv_function_mild_lvd = formData.lv_function === 'Mild LVD' ? 'Yes' : 'No';
-    payload.lv_function_moderate_lvd = formData.lv_function === 'Mod. LVD' ? 'Yes' : 'No';
-    payload.lv_function_severe_lvd = formData.lv_function === 'Sev.LVD' ? 'Yes' : 'No';
+    payload.lv_function_normal = formData.lv_function ? (formData.lv_function === 'Normal' ? 'Yes' : 'No') : null;
+    payload.lv_function_mild_lvd = formData.lv_function ? (formData.lv_function === 'Mild LVD' ? 'Yes' : 'No') : null;
+    payload.lv_function_moderate_lvd = formData.lv_function ? (formData.lv_function === 'Mod. LVD' ? 'Yes' : 'No') : null;
+    payload.lv_function_severe_lvd = formData.lv_function ? (formData.lv_function === 'Sev.LVD' ? 'Yes' : 'No') : null;
 
-    payload.mr_none = formData.mr === 'None' ? 'Yes' : 'No';
-    payload.mr_mild = formData.mr === 'Mild' ? 'Yes' : 'No';
-    payload.mr_moderate = formData.mr === 'Mod' ? 'Yes' : 'No';
-    payload.mr_severe = formData.mr === 'Severe' ? 'Yes' : 'No';
+    payload.mr_none = formData.mr ? (formData.mr === 'None' ? 'Yes' : 'No') : null;
+    payload.mr_mild = formData.mr ? (formData.mr === 'Mild' ? 'Yes' : 'No') : null;
+    payload.mr_moderate = formData.mr ? (formData.mr === 'Mod' ? 'Yes' : 'No') : null;
+    payload.mr_severe = formData.mr ? (formData.mr === 'Severe' ? 'Yes' : 'No') : null;
 
     // Follow-up mapper to handle table columns with filtering of untouched intervals
     const timeframes = [
@@ -638,19 +638,19 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
         const customDate = formData[`date_${tf.key}`];
         const finalDate = customDate || calculateExpectedDate(baseFollowupDate, tf.months);
 
-        const angina = formData[`angina_${tf.key}`] || 'No';
-        const funcClass = formData[`func_${tf.key}`] || 'None';
+        const angina = formData[`angina_${tf.key}`] || null;
+        const funcClass = formData[`func_${tf.key}`] || null;
         const antiangRaw = formData[`antiang_${tf.key}`];
         const antianginals = antiangRaw !== '' && antiangRaw !== null && antiangRaw !== undefined ? parseInt(antiangRaw, 10) : null;
-        const dapt = formData[`dapt_${tf.key}`] || 'No';
-        const statin = formData[`statin_${tf.key}`] || 'No';
-        const beta = formData[`beta_${tf.key}`] || 'No';
-        const ace = formData[`ace_${tf.key}`] || 'No';
-        const aldo = formData[`aldo_${tf.key}`] || 'No';
-        const acs = formData[`acs_${tf.key}`] || 'No';
-        const ptca = formData[`ptca_${tf.key}`] || 'No';
-        const cabg = formData[`cabg_${tf.key}`] || 'No';
-        const death = formData[`death_${tf.key}`] || 'No';
+        const dapt = formData[`dapt_${tf.key}`] || null;
+        const statin = formData[`statin_${tf.key}`] || null;
+        const beta = formData[`beta_${tf.key}`] || null;
+        const ace = formData[`ace_${tf.key}`] || null;
+        const aldo = formData[`aldo_${tf.key}`] || null;
+        const acs = formData[`acs_${tf.key}`] || null;
+        const ptca = formData[`ptca_${tf.key}`] || null;
+        const cabg = formData[`cabg_${tf.key}`] || null;
+        const death = formData[`death_${tf.key}`] || null;
         const other = (formData[`other_${tf.key}`] || '').trim();
 
         return {
@@ -676,11 +676,11 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
 
     // Map heparin strategy
-    payload.heparin_ufh_iv = formData.heparin_strategy === 'UFH i.v alone' ? 'Yes' : 'No';
-    payload.heparin_ufh_sc = formData.heparin_strategy === 'UFH s.c alone' ? 'Yes' : 'No';
-    payload.heparin_lmwh = formData.heparin_strategy === 'LMWH alone' ? 'Yes' : 'No';
-    payload.heparin_ufh_iv_sc = formData.heparin_strategy === 'UFH i.v+UFHs.c' ? 'Yes' : 'No';
-    payload.heparin_ufh_iv_lmwh = formData.heparin_strategy === 'UFH i.v + LMWH' ? 'Yes' : 'No';
+    payload.heparin_ufh_iv = formData.heparin_strategy ? (formData.heparin_strategy === 'UFH i.v alone' ? 'Yes' : 'No') : null;
+    payload.heparin_ufh_sc = formData.heparin_strategy ? (formData.heparin_strategy === 'UFH s.c alone' ? 'Yes' : 'No') : null;
+    payload.heparin_lmwh = formData.heparin_strategy ? (formData.heparin_strategy === 'LMWH alone' ? 'Yes' : 'No') : null;
+    payload.heparin_ufh_iv_sc = formData.heparin_strategy ? (formData.heparin_strategy === 'UFH i.v+UFHs.c' ? 'Yes' : 'No') : null;
+    payload.heparin_ufh_iv_lmwh = formData.heparin_strategy ? (formData.heparin_strategy === 'UFH i.v + LMWH' ? 'Yes' : 'No') : null;
 
     // Map Appropriateness Assessment (prefixed to avoid naming collisions in backend):
     payload.appr_iccu_admission = formData.appr_iccu_admission;

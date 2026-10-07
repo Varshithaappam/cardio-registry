@@ -92,3 +92,9 @@ textarea {
   color: #0f172a !important; /* slate-900 */
   font-family: inherit !important;
 }
+
+/* Performance optimization for large clinical forms: defer off-screen rendering */
+.section-card-optimized {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 480px;
+}

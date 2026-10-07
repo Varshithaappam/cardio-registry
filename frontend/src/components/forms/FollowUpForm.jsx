@@ -10,8 +10,8 @@ const FollowUpForm = forwardRef(function FollowUpForm(
   // States
   const [interval, setInterval] = useState(editingRecord?.followUpInterval ?? '1-month');
   const [date, setDate] = useState(editingRecord?.dateOfVisit ?? new Date().toISOString().split('T')[0]);
-  const [angina, setAngina] = useState(editingRecord?.symptoms?.angina ?? 'No');
-  const [nyha, setNyha] = useState(editingRecord?.symptoms?.breathlessnessClass ?? 'NYHA Class I');
+  const [angina, setAngina] = useState(editingRecord?.symptoms?.angina ?? '');
+  const [nyha, setNyha] = useState(editingRecord?.symptoms?.breathlessnessClass ?? '');
 
   // Completion calculation (always 100% since defaults exist, but we can track if needed)
   const completionPercent = useMemo(() => {
@@ -28,26 +28,11 @@ const FollowUpForm = forwardRef(function FollowUpForm(
     followUpInterval: interval,
     dateOfVisit: date,
     symptoms: {
-      angina,
-      breathlessnessClass: nyha
+      angina: angina || null,
+      breathlessnessClass: nyha || null
     },
-    medicationCompliance: editingRecord?.medicationCompliance ?? {
-      dualAntiplatelets: 'Yes',
-      statins: 'Yes',
-      betaBlocker: 'Yes',
-      aceiOrArb: 'Yes',
-      aldosteroneAntagonist: 'Yes'
-    },
-    adverseEvents: editingRecord?.adverseEvents ?? {
-      acsEvent: false,
-      hospitalization: false,
-      ptca: false,
-      cabg: false,
-      stroke: false,
-      bleeding: false,
-      death: false,
-      anyOther: false
-    }
+    medicationCompliance: editingRecord?.medicationCompliance ?? null,
+    adverseEvents: editingRecord?.adverseEvents ?? null
   });
 
   useImperativeHandle(ref, () => ({
@@ -83,6 +68,7 @@ const FollowUpForm = forwardRef(function FollowUpForm(
           value={angina}
           onChange={setAngina}
           options={[
+            { value: '', label: 'Select...' },
             { value: 'No', label: 'No Angina Symptoms' },
             { value: 'Yes', label: 'Yes (Recurrent ischemia)' }
           ]}

@@ -36,21 +36,21 @@ function AutoTextarea({ value, onChange, placeholder, disabled, className = '', 
 }
 
 const DEFAULT_ACS_DRUGS = [
-  { name: 'Beta-blocker', taking: 'No', inRecentVisit: 'No' },
-  { name: 'Calcium-channel blocker', taking: 'No', inRecentVisit: 'No' },
-  { name: 'Nitrate', taking: 'No', inRecentVisit: 'No' },
-  { name: 'Nicorandil', taking: 'No', inRecentVisit: 'No' },
-  { name: 'Ivabradine', taking: 'No', inRecentVisit: 'No' },
-  { name: 'Ranozolidine', taking: 'No', inRecentVisit: 'No' },
-  { name: 'Trimetazidine', taking: 'No', inRecentVisit: 'No' },
-  { name: 'Aspirin', taking: 'Yes', inRecentVisit: 'Yes' },
-  { name: 'Clopidigrel', taking: 'Yes', inRecentVisit: 'Yes' },
-  { name: 'Prasugrel', taking: 'No', inRecentVisit: 'No' },
-  { name: 'Ticagralor', taking: 'No', inRecentVisit: 'No' },
-  { name: 'Gp2b3a', taking: 'No', inRecentVisit: 'No' },
-  { name: 'Bivaluridin', taking: 'No', inRecentVisit: 'No' },
-  { name: 'Statin', taking: 'Yes', inRecentVisit: 'Yes', dose: '' },
-  { name: 'Any other', isOther: true, otherName: '', taking: 'No', inRecentVisit: 'No' }
+  { name: 'Beta-blocker', taking: '', inRecentVisit: '' },
+  { name: 'Calcium-channel blocker', taking: '', inRecentVisit: '' },
+  { name: 'Nitrate', taking: '', inRecentVisit: '' },
+  { name: 'Nicorandil', taking: '', inRecentVisit: '' },
+  { name: 'Ivabradine', taking: '', inRecentVisit: '' },
+  { name: 'Ranozolidine', taking: '', inRecentVisit: '' },
+  { name: 'Trimetazidine', taking: '', inRecentVisit: '' },
+  { name: 'Aspirin', taking: '', inRecentVisit: '' },
+  { name: 'Clopidigrel', taking: '', inRecentVisit: '' },
+  { name: 'Prasugrel', taking: '', inRecentVisit: '' },
+  { name: 'Ticagralor', taking: '', inRecentVisit: '' },
+  { name: 'Gp2b3a', taking: '', inRecentVisit: '' },
+  { name: 'Bivaluridin', taking: '', inRecentVisit: '' },
+  { name: 'Statin', taking: '', inRecentVisit: '', dose: '' },
+  { name: 'Any other', isOther: true, otherName: '', taking: '', inRecentVisit: '' }
 ];
 
 const ACS_SYMPTOMS = [
@@ -99,20 +99,20 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
     patient_followup_date: getLocalDateString(),
     followup_conducted: 'Telephonic follow-up',
     attempt_number: 1,
-    answering_status: 'Yes',
+    answering_status: '',
     no_answer_reason: '',
-    health_status: 'Healthy',
+    health_status: '',
     health_unhealthy_details: '',
     medications_still_taking: '',
-    side_effects_observed: 'No',
+    side_effects_observed: '',
     side_effects_details: '',
-    physician_medication_changes: 'No',
+    physician_medication_changes: '',
     physician_medication_changes_details: '',
     new_health_complaints: '',
-    has_new_symptoms: 'No',
+    has_new_symptoms: '',
     selected_symptoms: [],
     symptom_other_details: '',
-    medication_adherence: 'Yes',
+    medication_adherence: '',
     medication_adherence_no_reason: '',
     drug_grid: DEFAULT_ACS_DRUGS.map(d => ({ ...d })),
     trop_i_result: '',
@@ -121,18 +121,18 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
     hemoglobin_result: '',
     sodium_result: '',
     potassium_result: '',
-    echo_done: 'No',
-    has_major_clinical_event: 'No',
+    echo_done: '',
+    has_major_clinical_event: '',
     selected_clinical_events: [],
     event_other_details: '',
     vaccinations_details: '',
-    is_deceased: 'No',
-    died_within_30days_discharge: 'No',
+    is_deceased: '',
+    died_within_30days_discharge: '',
     place_of_death: '',
     date_of_death: '',
-    cause_of_death: 'Cardiac',
+    cause_of_death: '',
     cause_of_death_other_details: '',
-    join_program_opt_in: 'Yes',
+    join_program_opt_in: '',
     patient_feedback: '',
     date_of_admission: patientData.date_of_admission || taskData.date_of_admission || patientData.admission_date || '',
     date_of_discharge: patientData.date_of_discharge || taskData.date_of_discharge || patientData.discharge_date || '',
@@ -377,6 +377,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                 onChange={(e) => setFormData({ ...formData, answering_status: e.target.value })}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-medium"
               >
+                <option value="">Select...</option>
                 <option value="Yes">Yes (Answered)</option>
                 <option value="No">No (Unreachable)</option>
               </select>
@@ -461,6 +462,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                 onChange={(e) => setFormData({ ...formData, side_effects_observed: e.target.value })}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg"
               >
+                <option value="">Select...</option>
                 <option value="No">No</option>
                 <option value="Yes">Yes</option>
               </select>
@@ -486,6 +488,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                 onChange={(e) => setFormData({ ...formData, physician_medication_changes: e.target.value })}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg"
               >
+                <option value="">Select...</option>
                 <option value="No">No</option>
                 <option value="Yes">Yes</option>
               </select>
@@ -571,6 +574,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                 onChange={(e) => setFormData({ ...formData, medication_adherence: e.target.value })}
                 className="px-2 py-1 bg-white border border-slate-300 rounded-md font-bold text-xs"
               >
+                <option value="">Select...</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
               </select>
@@ -764,6 +768,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                 onChange={(e) => setFormData({ ...formData, echo_done: e.target.value })}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg"
               >
+                <option value="">Select...</option>
                 <option value="No">No</option>
                 <option value="Yes">Yes</option>
               </select>
@@ -820,6 +825,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                 onChange={(e) => setFormData({ ...formData, is_deceased: e.target.value })}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg font-bold text-rose-700"
               >
+                <option value="">Select...</option>
                 <option value="No">No</option>
                 <option value="Yes">Yes</option>
               </select>
@@ -834,6 +840,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                     onChange={(e) => setFormData({ ...formData, died_within_30days_discharge: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg"
                   >
+                    <option value="">Select...</option>
                     <option value="No">No</option>
                     <option value="Yes">Yes</option>
                   </select>
@@ -867,6 +874,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                     onChange={(e) => setFormData({ ...formData, cause_of_death: e.target.value })}
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg"
                   >
+                    <option value="">Select...</option>
                     <option value="Cardiac">Cardiac</option>
                     <option value="Non-cardiac">Non-cardiac</option>
                     <option value="Others specify">Others specify</option>
@@ -914,6 +922,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                 onChange={(e) => setFormData({ ...formData, join_program_opt_in: e.target.value })}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg font-bold text-emerald-700"
               >
+                <option value="">Select...</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
               </select>

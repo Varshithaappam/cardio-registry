@@ -64,7 +64,7 @@ async function saveHfAssessment(data, userId = 1) {
                 { statusVal, userId, hfId: hf_id }
             );
             
-            // Delete existing child table rows before re-inserting them
+            // Delete existing child table rows in a single batch statement
             const childTables = [
                 'hf_administrative',
                 'hf_initial_assessment',
@@ -80,9 +80,8 @@ async function saveHfAssessment(data, userId = 1) {
                 'hf_advanced_investigations',
                 'hf_followup_assessments'
             ];
-            for (const table of childTables) {
-                await conn.query(`DELETE FROM [${table}] WHERE [hf_id] = @hfId;`, { hfId: hf_id });
-            }
+            const batchDeleteSql = childTables.map(table => `DELETE FROM [${table}] WHERE [hf_id] = @hfId;`).join(' ');
+            await conn.query(batchDeleteSql, { hfId: hf_id });
         } else {
             // 1. Insert hf_registry with a placeholder and then update it with the final number & status
             hf_id = await hfModel.insertHfRegistry(conn, {
@@ -690,30 +689,33 @@ async function saveHfAssessment(data, userId = 1) {
 
         await conn.commit();
 
-        try {
-            const actionType = isEdit ? 'UPDATE' : 'CREATE';
-            const activeUserId = userId || data.user_id || data.userId || 7;
-            const auditReq = data._req;
-            const auditNewData = sanitizeAuditPayload(data);
-            const auditOldData = sanitizeAuditPayload(previousAssessment);
+        // Run audit logging asynchronously in the background so it never blocks the HTTP response
+        (async () => {
+            try {
+                const actionType = isEdit ? 'UPDATE' : 'CREATE';
+                const activeUserId = userId || data.user_id || data.userId || 7;
+                const auditReq = data._req;
+                const auditNewData = sanitizeAuditPayload(data);
+                const auditOldData = sanitizeAuditPayload(previousAssessment);
 
-            await logAudit(hf_id, activeUserId, actionType, auditOldData, auditNewData);
+                await logAudit(hf_id, activeUserId, actionType, auditOldData, auditNewData);
 
-            if (auditReq) {
-                const targetPatientId = data.regPatientId || data.reg_patient_id || previousAssessment?.regPatientId || previousAssessment?.reg_patient_id;
-                logAuditTrail(
-                    auditReq,
-                    actionType,
-                    'HF',
-                    hf_registry_no || `HF #${hf_id}`,
-                    targetPatientId,
-                    auditOldData,
-                    auditNewData
-                ).catch(e => console.error('[hfService] logAuditTrail error:', e.message));
+                if (auditReq) {
+                    const targetPatientId = data.regPatientId || data.reg_patient_id || previousAssessment?.regPatientId || previousAssessment?.reg_patient_id;
+                    await logAuditTrail(
+                        auditReq,
+                        actionType,
+                        'HF',
+                        hf_registry_no || `HF #${hf_id}`,
+                        targetPatientId,
+                        auditOldData,
+                        auditNewData
+                    );
+                }
+            } catch (auditErr) {
+                console.error("Error writing audit log in saveHfAssessment:", auditErr.message);
             }
-        } catch (auditErr) {
-            console.error("Error writing audit log in saveHfAssessment:", auditErr);
-        }
+        })().catch(e => console.error("Unhandled audit log error in saveHfAssessment:", e.message));
 
         return { hf_id, hf_registry_no };
     } catch (err) {

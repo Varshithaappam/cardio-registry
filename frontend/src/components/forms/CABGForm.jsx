@@ -21,7 +21,7 @@ const CABGForm = forwardRef(function CABGForm(
   const [xclamp, setXclamp] = useState(editingRecord?.crossClampTimeMinutes ?? 60);
   const [cardioplegia, setCardioplegia] = useState(editingRecord?.cardioplegiaUsed ?? 'Blood');
 
-  const [hasBypass, setHasBypass] = useState(editingRecord?.hasCoronaryBypass ?? 'Yes');
+  const [hasBypass, setHasBypass] = useState(editingRecord?.hasCoronaryBypass ?? '');
   const [distArt, setDistArt] = useState(editingRecord?.bypassDetails?.distalAnastomosesArterial ?? 1);
   const [distVen, setDistVen] = useState(editingRecord?.bypassDetails?.distalAnastomosesVenous ?? 2);
   const [imas, setImas] = useState(editingRecord?.bypassDetails?.imasUsedGrafts ?? 'Left IMA');
@@ -36,7 +36,7 @@ const CABGForm = forwardRef(function CABGForm(
   );
 
   // IABP and blood products
-  const [hasIABP, setHasIABP] = useState(editingRecord?.iabpUsed === 'Yes');
+  const [hasIABP, setHasIABP] = useState(editingRecord?.iabpUsed ?? '');
   const [iABPTiming, setIABPTiming] = useState(
     editingRecord?.iabpDetails?.whenInserted === 'Preoperatively'
       ? 'Pre-operative'
@@ -59,7 +59,7 @@ const CABGForm = forwardRef(function CABGForm(
   const [bloodProducts, setBloodProducts] = useState(initBloodProducts());
 
   // Valve surgery
-  const [hasValve, setHasValve] = useState(editingRecord?.hasValveSurgery === 'Yes');
+  const [hasValve, setHasValve] = useState(editingRecord?.hasValveSurgery ?? '');
   const [valveType, setValveType] = useState(
     editingRecord?.valveDetails?.aorticProcedure === 'Replacement'
       ? 'Aortic'
@@ -76,7 +76,7 @@ const CABGForm = forwardRef(function CABGForm(
   const [valveSize, setValveSize] = useState(Number(editingRecord?.valveDetails?.prosthesisAortic?.size ?? 21));
 
   // VAD
-  const [hasVAD, setHasVAD] = useState(editingRecord?.hasVAD === 'Yes');
+  const [hasVAD, setHasVAD] = useState(editingRecord?.hasVAD ?? '');
   const [vadIndication, setVadIndication] = useState(editingRecord?.vadDetails?.indication ?? 'Bridge to Transplant');
   const [vadType, setVadType] = useState(editingRecord?.vadDetails?.deviceData?.implantType ?? 'LVAD');
   const [vadFlowRate, setVadFlowRate] = useState(editingRecord?.vadDetails?.flowRate ?? 4.5);
@@ -111,7 +111,7 @@ const CABGForm = forwardRef(function CABGForm(
     procedureStatus: status,
     urgentReason: status === 'Urgent' ? 'AMI or Unstable Angina' : undefined,
     emergentReason: status === 'Emergent' || status === 'Emergent Salvage' ? 'Refractory shock / Arrest' : undefined,
-    roboticAssisted: editingRecord?.roboticAssisted ?? 'No',
+    roboticAssisted: editingRecord?.roboticAssisted ?? null,
     skinIncisionStart: '08:00',
     skinIncisionStop: '12:30',
     cpbUtilization: cpb,
@@ -123,8 +123,8 @@ const CABGForm = forwardRef(function CABGForm(
     aorticOcclusion: occl,
     crossClampTimeMinutes: occl === 'Aortic Crossclamp' ? xclamp : undefined,
     cardioplegiaUsed: cardioplegia,
-    iabpUsed: hasIABP ? 'Yes' : 'No',
-    iabpDetails: hasIABP ? {
+    iabpUsed: hasIABP || null,
+    iabpDetails: hasIABP === 'Yes' ? {
       whenInserted: iABPTiming === 'Pre-operative' ? 'Preoperatively' : iABPTiming === 'Intra-operative' ? 'Intraoperatively' : 'Postoperatively',
       indication: 'Hemodynamic Instab'
     } : undefined,
@@ -135,7 +135,7 @@ const CABGForm = forwardRef(function CABGForm(
       cryoUnits: bloodProducts.includes('Cryoprecipitate') ? 1 : 0,
       plateletUnits: bloodProducts.includes('Platelets') ? 1 : 0
     },
-    hasCoronaryBypass: hasBypass,
+    hasCoronaryBypass: hasBypass || null,
     bypassDetails: hasBypass === 'Yes' ? {
       distalAnastomosesArterial: distArt,
       distalAnastomosesVenous: distVen,
@@ -147,8 +147,8 @@ const CABGForm = forwardRef(function CABGForm(
       radialArteryUsed: radial,
       radialArteryDistalAnastomosesCount: radialAnastomoses
     } : undefined,
-    hasValveSurgery: hasValve ? 'Yes' : 'No',
-    valveDetails: hasValve ? {
+    hasValveSurgery: hasValve || null,
+    valveDetails: hasValve === 'Yes' ? {
       aorticProcedure: valveType === 'Aortic' ? 'Replacement' : 'No',
       mitralProcedure: valveType === 'Mitral' ? 'Replacement' : 'No',
       tricuspidProcedure: valveType === 'Tricuspid' ? 'Replacement' : 'No',
@@ -156,8 +156,8 @@ const CABGForm = forwardRef(function CABGForm(
       aorticAnnularEnlargement: 'No',
       prosthesisAortic: { type: valveImplantType, name: valveBrand, size: String(valveSize) }
     } : undefined,
-    hasVAD: hasVAD ? 'Yes' : 'No',
-    vadDetails: hasVAD ? {
+    hasVAD: hasVAD || null,
+    vadDetails: hasVAD === 'Yes' ? {
       previousVAD: 'No',
       indication: vadIndication,
       intubatedPreVAD: 'No',
@@ -178,14 +178,14 @@ const CABGForm = forwardRef(function CABGForm(
     otherCardiacProcedures: [],
     otherNonCardiacProcedures: [],
     postoperative: {
-      bloodProductsUsed: editingRecord?.postoperative?.bloodProductsUsed ?? 'No',
+      bloodProductsUsed: editingRecord?.postoperative?.bloodProductsUsed ?? null,
       rbcUnits: editingRecord?.postoperative?.rbcUnits ?? 0,
       ffpUnits: editingRecord?.postoperative?.ffpUnits ?? 0,
       cryoUnits: editingRecord?.postoperative?.cryoUnits ?? 0,
       plateletUnits: editingRecord?.postoperative?.plateletUnits ?? 0,
-      extubatedInOR: editingRecord?.postoperative?.extubatedInOR ?? 'No',
+      extubatedInOR: editingRecord?.postoperative?.extubatedInOR ?? null,
       initialVentilationHours: editingRecord?.postoperative?.initialVentilationHours ?? 4,
-      reintubatedDuringStay: editingRecord?.postoperative?.reintubatedDuringStay ?? 'No',
+      reintubatedDuringStay: editingRecord?.postoperative?.reintubatedDuringStay ?? null,
       additionalVentilationHours: editingRecord?.postoperative?.additionalVentilationHours ?? 0,
       inHospitalComplications: reexploration ? ['Reexploration'] : []
     },
@@ -262,6 +262,7 @@ const CABGForm = forwardRef(function CABGForm(
             value={hasBypass}
             onChange={(e) => setHasBypass(e.target.value)}
           >
+            <option value="">Select...</option>
             <option value="Yes">Yes (Display Section J)</option>
             <option value="No">No</option>
           </select>
@@ -320,12 +321,11 @@ const CABGForm = forwardRef(function CABGForm(
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select
             label="Intra-Aortic Balloon Pump (IABP) Used?"
-            value={hasIABP ? 'Yes' : 'No'}
-            onChange={(e) => setHasIABP(e.target.value === 'Yes')}
+            value={hasIABP}
+            onChange={(val) => setHasIABP(val)}
             options={['No', 'Yes']}
-            required
           />
-          {hasIABP && (
+          {hasIABP === 'Yes' && (
             <Select
               label="IABP Insertion Timing"
               value={iABPTiming}
@@ -365,15 +365,16 @@ const CABGForm = forwardRef(function CABGForm(
           <span className="text-xs text-slate-500 font-medium">Was valve surgery performed?</span>
           <select
             className="p-1 text-xs border border-slate-200 rounded bg-white font-semibold"
-            value={hasValve ? 'Yes' : 'No'}
-            onChange={(e) => setHasValve(e.target.value === 'Yes')}
+            value={hasValve}
+            onChange={(e) => setHasValve(e.target.value)}
           >
+            <option value="">Select...</option>
             <option value="No">No Valve Op</option>
             <option value="Yes">Yes (Valve Op Performed)</option>
           </select>
         </div>
 
-        {hasValve && (
+        {hasValve === 'Yes' && (
           <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-xs animate-fadeIn">
             <Select
               label="Target Valve"
@@ -410,15 +411,16 @@ const CABGForm = forwardRef(function CABGForm(
           <span className="text-xs text-slate-500 font-medium">Was VAD support used?</span>
           <select
             className="p-1 text-xs border border-slate-200 rounded bg-white font-semibold"
-            value={hasVAD ? 'Yes' : 'No'}
-            onChange={(e) => setHasVAD(e.target.value === 'Yes')}
+            value={hasVAD}
+            onChange={(e) => setHasVAD(e.target.value)}
           >
+            <option value="">Select...</option>
             <option value="No">No VAD Support</option>
             <option value="Yes">Yes (VAD Implemented)</option>
           </select>
         </div>
 
-        {hasVAD && (
+        {hasVAD === 'Yes' && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs animate-fadeIn">
             <Select
               label="VAD Indication"
