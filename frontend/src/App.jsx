@@ -63,7 +63,7 @@ function MainLayout({ records, nurse, onLogout }) {
               <Heart className="w-5 h-5 animate-pulse" />
             </div>
             <div>
-              <h1 className="tracking-tight flex items-center gap-1.5 text-slate-100">
+              <h1 className="tracking-tight flex items-center gap-1.5 text-slate-100 font-bold">
                 <span>CARE CARDIOVASCULAR REGISTRY</span>
               </h1>
               <p className="text-[10px] text-slate-400 mt-0.5">Comprehensive Longitudinal Clinical Audit Platform</p>

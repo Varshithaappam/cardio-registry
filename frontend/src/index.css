@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 /* Globally increase all font sizes */
-.text-\[8px\] { font-size: 12px !important; }
-.text-\[9px\] { font-size: 13px !important; }
-.text-\[10px\] { font-size: 14px !important; }
-.text-\[11px\] { font-size: 15px !important; }
-.text-xs { font-size: 16px !important; }
-.text-sm { font-size: 18px !important; }
-.text-base { font-size: 20px !important; }
-.text-lg { font-size: 22px !important; }
-.text-xl { font-size: 24px !important; }
-.text-2xl { font-size: 28px !important; }
+.text-\[8px\] { font-size: 11px !important; }
+.text-\[9px\] { font-size: 12px !important; }
+.text-\[10px\] { font-size: 13px !important; }
+.text-\[11px\] { font-size: 14px !important; }
+.text-xs { font-size: 15px !important; }
+.text-sm { font-size: 17px !important; }
+.text-base { font-size: 19px !important; }
+.text-lg { font-size: 21px !important; }
+.text-xl { font-size: 23px !important; }
+.text-2xl { font-size: 27px !important; }
 
 /* Keep input height and spacing consistent */
 input, select, textarea {
@@ -19,7 +19,7 @@ input, select, textarea {
 
 /* Consistent typography groups across forms */
 .form-section-heading {
-  font-size: 20px;
+  font-size: 19px;
   font-style: normal;
   font-weight: 700;
   color: #1e293b; /* slate-800 */
@@ -38,7 +38,7 @@ input, select, textarea {
 #eligibleDeviceBlock span.uppercase,
 #patientEducationBlock span.uppercase,
 #recommendationsBlock span.uppercase {
-  font-size: 17px;
+  font-size: 16px;
   font-style: normal;
   font-weight: 700;
   color: #334155; /* slate-700 */
@@ -48,7 +48,7 @@ input, select, textarea {
 }
 
 .form-field-label {
-  font-size: 15px !important;
+  font-size: 14px !important;
   font-style: normal;
   font-weight: 600; /* semibold */
   color: #334155; /* slate-700 */
@@ -61,13 +61,13 @@ input, select, textarea {
 .grid > div > span.text-slate-700,
 div.flex.justify-between > span.text-slate-700,
 .grid-cols-12 > div > span.text-slate-700 {
-  font-size: 15px !important;
+  font-size: 14px !important;
   font-style: normal;
   font-weight: 400 !important;
   color: #334155; /* slate-700 */
 }
 
-/* Style all form option labels (radios, checkboxes) consistently: 15px and normal font-weight (same as inputs & selects) */
+/* Style all form option labels (radios, checkboxes) consistently: 14px and normal font-weight (same as inputs & selects) */
 .form-option-label,
 .form-option-label *,
 label.cursor-pointer:not(.form-field-label),
@@ -80,14 +80,14 @@ label:has(input[type="radio"]):not(.form-field-label),
 label:has(input[type="radio"]):not(.form-field-label) *,
 label:has(input[type="checkbox"]):not(.form-field-label),
 label:has(input[type="checkbox"]):not(.form-field-label) * {
-  font-size: 15px !important;
+  font-size: 14px !important;
   font-style: normal;
   font-weight: 400 !important;
   color: #1e293b; /* slate-800 */
 }
 
 .form-supporting-text {
-  font-size: 15px;
+  font-size: 14px;
   font-style: normal;
   font-weight: 400;
   color: #64748b; /* slate-500 */
@@ -95,7 +95,7 @@ label:has(input[type="checkbox"]):not(.form-field-label) * {
   display: block;
 }
 
-/* Style text inputs, select elements, number fields, and textareas to match labels at 15px */
+/* Style text inputs, select elements, number fields, and textareas to match labels at 14px */
 input[type="text"],
 input[type="number"],
 input[type="date"],
@@ -105,7 +105,7 @@ input[type="password"],
 input[type="tel"],
 select,
 textarea {
-  font-size: 15px !important;
+  font-size: 14px !important;
   font-style: normal;
   font-weight: 400;
   color: #0f172a; /* slate-900 */
@@ -258,7 +258,7 @@ input[type="checkbox"]:focus {
 /* Standardized button typography */
 .btn-action,
 button.btn-standard {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.025em;
 }

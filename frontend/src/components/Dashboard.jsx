@@ -125,7 +125,7 @@ export default function Dashboard({ patients, onSelectPatient }) {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="tracking-tight">Cardiovascular Registry & Clinical Portal</h1>
-            <p className="text-slate-400 text-sm md:text-base mt-2 max-w-2xl">
+            <p className="text-slate-400 text-xs md:text-base mt-2 max-w-2xl">
               Unified multi-form portal consolidating CARE CHF Assessment, STEMI, NSTEMI, and STS CABG clinical datasets into a synchronized, patient-centric longitudinal registry.
             </p>
           </div>

@@ -1329,7 +1329,7 @@ const STEMIForm = forwardRef(function STEMIForm(
 
   const renderRadio = (field, label, options = ['Yes', 'No', 'Unknown']) => (
     <div className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-lg">
-      <span className="text-[15px] font-normal text-slate-700">{label}</span>
+      <span className="text-[14px] font-normal text-slate-700">{label}</span>
       <div className="flex gap-3">
         {options.map((opt) => (
           <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
@@ -1341,7 +1341,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               onChange={() => handleChange(field, opt)}
               className="text-red-600 focus:ring-red-500 accent-red-600"
             />
-            <span className="text-[15px] font-normal text-slate-800">{opt}</span>
+            <span className="text-[14px] font-normal text-slate-800">{opt}</span>
           </label>
         ))}
       </div>
@@ -1386,7 +1386,7 @@ const STEMIForm = forwardRef(function STEMIForm(
         <div className="col-span-12 md:col-span-4 min-w-0 pr-2">
           {specifyKey ? (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0 w-full">
-              <span className="text-[15px] font-normal text-slate-700 whitespace-nowrap flex-shrink-0">{label}:</span>
+              <span className="text-[14px] font-normal text-slate-700 whitespace-nowrap flex-shrink-0">{label}:</span>
               <NoteInput
                 value={specifyVal}
                 onChange={(val) => handleChange(specifyKey, val)}
@@ -1399,7 +1399,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               />
             </div>
           ) : (
-            <span className="text-[15px] font-normal text-slate-700 leading-tight block break-words whitespace-normal min-w-0">
+            <span className="text-[14px] font-normal text-slate-700 leading-tight block break-words whitespace-normal min-w-0">
               {label}
             </span>
           )}

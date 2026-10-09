@@ -1068,7 +1068,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
   // Reusable radio option mapper
   const renderRadio = (field, label, options = ['Yes', 'No']) => (
     <div className="flex items-center justify-between p-2 bg-white border border-slate-200 rounded-lg">
-      <span className="text-[15px] font-normal text-slate-700">{label}</span>
+      <span className="text-[14px] font-normal text-slate-700">{label}</span>
       <div className="flex gap-4">
         {options.map((opt) => (
           <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
@@ -1079,7 +1079,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               onChange={() => handleChange(field, opt)}
               className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
             />
-            <span className="text-[15px] font-normal text-slate-800">{opt}</span>
+            <span className="text-[14px] font-normal text-slate-800">{opt}</span>
           </label>
         ))}
       </div>
@@ -1124,7 +1124,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
         <div className="col-span-12 md:col-span-4 min-w-0 pr-2">
           {specifyKey ? (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0 w-full">
-              <span className="text-[15px] font-normal text-slate-700 whitespace-nowrap flex-shrink-0">{label}:</span>
+              <span className="text-[14px] font-normal text-slate-700 whitespace-nowrap flex-shrink-0">{label}:</span>
               <NoteInput
                 value={specifyVal}
                 onChange={(val) => handleChange(specifyKey, val)}
@@ -1137,7 +1137,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               />
             </div>
           ) : (
-            <span className="text-[15px] font-normal text-slate-700 leading-tight block break-words whitespace-normal min-w-0">
+            <span className="text-[14px] font-normal text-slate-700 leading-tight block break-words whitespace-normal min-w-0">
               {label}
             </span>
           )}
