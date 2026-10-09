@@ -1329,19 +1329,19 @@ const STEMIForm = forwardRef(function STEMIForm(
 
   const renderRadio = (field, label, options = ['Yes', 'No', 'Unknown']) => (
     <div className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-lg">
-      <span className="text-xs font-semibold text-slate-700">{label}</span>
+      <span className="text-[15px] font-normal text-slate-700">{label}</span>
       <div className="flex gap-3">
         {options.map((opt) => (
-          <label key={opt} className="flex items-center gap-1.5 cursor-pointer text-xs">
+          <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
             <input
               type="radio"
               disabled={readOnly}
               name={`${field}-${label}`}
               checked={formData[field] === opt}
               onChange={() => handleChange(field, opt)}
-              className="text-red-600 focus:ring-red-500"
+              className="text-red-600 focus:ring-red-500 accent-red-600"
             />
-            <span className="font-bold text-slate-800">{opt}</span>
+            <span className="text-[15px] font-normal text-slate-800">{opt}</span>
           </label>
         ))}
       </div>
@@ -1386,7 +1386,7 @@ const STEMIForm = forwardRef(function STEMIForm(
         <div className="col-span-12 md:col-span-4 min-w-0 pr-2">
           {specifyKey ? (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0 w-full">
-              <span className="font-semibold text-slate-700 whitespace-nowrap flex-shrink-0">{label}:</span>
+              <span className="text-[15px] font-normal text-slate-700 whitespace-nowrap flex-shrink-0">{label}:</span>
               <NoteInput
                 value={specifyVal}
                 onChange={(val) => handleChange(specifyKey, val)}
@@ -1395,11 +1395,11 @@ const STEMIForm = forwardRef(function STEMIForm(
                 readOnly={readOnly}
                 placeholder="Specify name"
                 className="w-full min-w-0 flex-1"
-                focusRingClass="focus:ring-red-500"
+                theme="stemi" focusRingClass="focus:border-red-600 focus:ring-red-600 focus:outline-none"
               />
             </div>
           ) : (
-            <span className="font-semibold text-slate-700 leading-tight block break-words whitespace-normal min-w-0">
+            <span className="text-[15px] font-normal text-slate-700 leading-tight block break-words whitespace-normal min-w-0">
               {label}
             </span>
           )}
@@ -1409,14 +1409,14 @@ const STEMIForm = forwardRef(function STEMIForm(
         <div className="col-span-12 md:col-span-3 min-w-0 flex items-center justify-start md:justify-center">
           <div className="flex gap-4 flex-shrink-0 min-w-0">
             {['Appropriate', 'Inappropriate'].map((opt) => (
-              <label key={opt} className="flex items-center gap-1.5 cursor-pointer text-xs select-none whitespace-nowrap">
+              <label key={opt} className="flex items-center gap-1.5 cursor-pointer select-none whitespace-nowrap">
                 <input
                   type="radio"
                   disabled={readOnly}
                   name={`${field}-${label}`}
                   checked={formData[field] === opt}
                   onChange={() => handleAppropriatenessChange(field, opt, noteKey)}
-                  className="text-red-600 focus:ring-red-500 cursor-pointer flex-shrink-0"
+                  className="text-red-600 focus:ring-0 focus:outline-none cursor-pointer flex-shrink-0 accent-red-600"
                 />
                 <span className={`font-semibold ${opt === 'Appropriate' ? 'text-emerald-700' : 'text-slate-600'}`}>{opt}</span>
               </label>
@@ -1434,7 +1434,7 @@ const STEMIForm = forwardRef(function STEMIForm(
             readOnly={readOnly}
             placeholder="Add note..."
             className="w-full min-w-0"
-            focusRingClass="focus:ring-red-500"
+            theme="stemi" focusRingClass="focus:border-red-600 focus:ring-red-600 focus:outline-none"
           />
         </div>
       </div>
@@ -1442,7 +1442,7 @@ const STEMIForm = forwardRef(function STEMIForm(
   };
 
   return (
-    <div className="space-y-6 text-slate-800">
+    <div className="space-y-6 text-slate-800 theme-stemi" data-registry="stemi" id="stemiFormBlock">
       
 
       {/* Patient Profile & Administrative Details */}
@@ -1530,8 +1530,8 @@ const STEMIForm = forwardRef(function STEMIForm(
                   placeholder="E.g. 1"
                   className={`w-full p-2 border rounded-md font-medium text-slate-900 font-mono pr-8 ${
                     uniqueErrors.ip_no
-                      ? 'border-red-500 bg-red-50/50 focus:ring-red-500 focus:border-red-500'
-                      : 'border-slate-300 focus:ring-red-500 focus:border-red-500'
+                      ? 'border-red-500 bg-red-50/50 focus:border-red-600 focus:ring-red-600 focus:outline-none'
+                      : 'border-slate-300 focus:border-red-600 focus:ring-red-600 focus:outline-none'
                   }`}
                 />
                 {uniqueLoading.ip_no && (
@@ -1588,8 +1588,8 @@ const STEMIForm = forwardRef(function STEMIForm(
                   placeholder="ACS.0001"
                   className={`w-full p-2 border rounded-md font-medium text-slate-900 font-mono pr-8 ${
                     uniqueErrors.acs_no
-                      ? 'border-red-500 bg-red-50/50 focus:ring-red-500 focus:border-red-500'
-                      : 'border-slate-300 focus:ring-red-500 focus:border-red-500'
+                      ? 'border-red-500 bg-red-50/50 focus:border-red-600 focus:ring-red-600 focus:outline-none'
+                      : 'border-slate-300 focus:border-red-600 focus:ring-red-600 focus:outline-none'
                   }`}
                 />
                 {uniqueLoading.acs_no && (
@@ -1604,7 +1604,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               )}
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Date of Admission:</label>
+              <label className="form-field-label">Date of Admission:</label>
               <input
                 type="date"
                 disabled={readOnly}
@@ -1617,7 +1617,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               {renderFieldError('admission_date')}
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Date of Discharge:</label>
+              <label className="form-field-label">Date of Discharge:</label>
               <input
                 type="date"
                 disabled={readOnly}
@@ -1631,12 +1631,12 @@ const STEMIForm = forwardRef(function STEMIForm(
               {renderFieldError('discharge_date')}
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Primary Consultant:</label>
+              <label className="form-field-label">Primary Consultant:</label>
               <select
                 disabled={readOnly}
                 value={formData.primary_consultant}
                 onChange={(e) => handleChange('primary_consultant', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md bg-white font-medium text-slate-900"
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none bg-white font-medium text-slate-900"
               >
                 <option value="Dr. K. Sridhar (Cardiologist)">Dr. K. Sridhar (Cardiologist)</option>
                 <option value="Dr. Ananth Rao">Dr. Ananth Rao</option>
@@ -1685,7 +1685,7 @@ const STEMIForm = forwardRef(function STEMIForm(
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="font-bold text-slate-700 block">Any other</label>
+                <label className="form-field-label">Any other</label>
                 {!readOnly && (
                   <span className={`text-[10px] select-none ${
                     Math.max(0, 255 - (formData.other_background || '').length) <= 5
@@ -1702,7 +1702,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 value={formData.other_background}
                 maxLength={255}
                 onChange={(e) => handleChange('other_background', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                 placeholder="Specify additional clinical history..."
               />
             </div>
@@ -1723,7 +1723,7 @@ const STEMIForm = forwardRef(function STEMIForm(
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Pulse Rate (bpm):</label>
+                <label className="form-field-label">Pulse Rate (bpm):</label>
                 <input
                   type="number"
                   disabled={readOnly}
@@ -1737,7 +1737,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 <ClinicalMetricBadge metricId="pulse_rate" value={formData.pulse_rate} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">SBP (mmHg):</label>
+                <label className="form-field-label">SBP (mmHg):</label>
                 <input
                   type="number"
                   disabled={readOnly}
@@ -1751,7 +1751,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 <ClinicalMetricBadge metricId="systolic_bp" value={formData.systolic_bp} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">DBP (mmHg):</label>
+                <label className="form-field-label">DBP (mmHg):</label>
                 <input
                   type="number"
                   disabled={readOnly}
@@ -1816,14 +1816,14 @@ const STEMIForm = forwardRef(function STEMIForm(
                 { key: 'Thrombolysis', label: 'Thrombolysis' },
                 { key: 'Conservative', label: 'Conservative' }
               ].map(op => (
-                <label key={op.key} className="flex items-center gap-2 cursor-pointer font-bold">
+                <label key={op.key} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
                     disabled={readOnly}
                     name="treatment_strategy"
                     checked={formData.treatment_strategy === op.key}
                     onChange={() => handleChange('treatment_strategy', op.key)}
-                    className="text-red-600 focus:ring-red-500"
+                    className="text-red-600 focus:ring-red-500 accent-red-600"
                   />
                   <span>{op.label}</span>
                 </label>
@@ -1835,19 +1835,19 @@ const STEMIForm = forwardRef(function STEMIForm(
               <div className="font-bold text-slate-800 text-sm">PAMI details, if done:</div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Door to Balloon Time (min):</label>
+                  <label className="form-field-label">Door to Balloon Time (min):</label>
                   <input
                     type="number"
                     disabled={readOnly}
                     value={formData.door_to_balloon_time}
                     onChange={(e) => handleChange('door_to_balloon_time', e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded-md font-bold"
+                    className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none font-bold"
                   />
                   <ClinicalMetricBadge metricId="door_to_balloon_time" value={formData.door_to_balloon_time} />
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="font-bold text-slate-700 block">Segment:</label>
+                    <label className="form-field-label">Segment:</label>
                     {!readOnly && (
                       <span className={`text-[10px] select-none ${
                         Math.max(0, 100 - (formData.vessel_segment || '').length) <= 5
@@ -1865,21 +1865,21 @@ const STEMIForm = forwardRef(function STEMIForm(
                     maxLength={100}
                     onChange={(e) => handleChange('vessel_segment', e.target.value)}
                     placeholder="e.g. Proximal LAD"
-                    className="w-full p-2 border border-slate-300 rounded-md"
+                    className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Thrombosuction:</label>
+                  <label className="form-field-label">Thrombosuction:</label>
                   <div className="flex gap-4 mt-2">
                     {['Done', 'Not done'].map(opt => (
-                      <label key={opt} className="flex items-center gap-2 cursor-pointer font-bold">
+                      <label key={opt} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="radio"
                           disabled={readOnly}
                           name="thrombosuction_done"
                           checked={formData.thrombosuction_done === opt}
                           onChange={() => handleChange('thrombosuction_done', opt)}
-                          className="text-red-600 focus:ring-red-500"
+                          className="text-red-600 focus:ring-red-500 accent-red-600"
                         />
                         <span>{opt}</span>
                       </label>
@@ -1889,7 +1889,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               </div>
 
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Vessel(s):</label>
+                <label className="form-field-label">Vessel(s):</label>
                 <div className="flex flex-wrap gap-2.5">
                   {[
                     { key: 'vessel_lmca', label: 'LMCA' },
@@ -1901,13 +1901,13 @@ const STEMIForm = forwardRef(function STEMIForm(
                     { key: 'vessel_rca', label: 'RCA' },
                     { key: 'vessel_pda', label: 'PDA' }
                   ].map(({ key, label }) => (
-                    <label key={key} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer font-medium">
+                    <label key={key} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer">
                       <input
                         type="checkbox"
                         disabled={readOnly}
                         checked={formData[key] || false}
                         onChange={(e) => handleChange(key, e.target.checked)}
-                        className="rounded text-red-600 focus:ring-red-500"
+                        className="rounded text-red-600 focus:ring-red-500 accent-red-600"
                       />
                       <span>{label}</span>
                     </label>
@@ -1917,17 +1917,17 @@ const STEMIForm = forwardRef(function STEMIForm(
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Stent(s):</label>
+                  <label className="form-field-label">Stent(s):</label>
                   <div className="flex items-center gap-6 p-2 bg-white border rounded-lg">
                     {['BMS', 'DES'].map(opt => (
-                      <label key={opt} className="flex items-center gap-2 cursor-pointer font-bold">
+                      <label key={opt} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="radio"
                           disabled={readOnly}
                           name="stent_type"
                           checked={formData.stent_type === opt}
                           onChange={() => handleChange('stent_type', opt)}
-                          className="text-red-600 focus:ring-red-500"
+                          className="text-red-600 focus:ring-red-500 accent-red-600"
                         />
                         <span>{opt}</span>
                       </label>
@@ -1936,7 +1936,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Diameter (mm):</label>
+                    <label className="form-field-label">Diameter (mm):</label>
                     <input
                       type="number"
                       step="0.1"
@@ -1944,11 +1944,11 @@ const STEMIForm = forwardRef(function STEMIForm(
                       value={formData.stent_diameter}
                       onChange={(e) => handleChange('stent_diameter', e.target.value)}
                       placeholder="e.g. 3.5"
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Length (mm):</label>
+                    <label className="form-field-label">Length (mm):</label>
                     <input
                       type="number"
                       step="0.5"
@@ -1956,7 +1956,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                       value={formData.stent_length}
                       onChange={(e) => handleChange('stent_length', e.target.value)}
                       placeholder="e.g. 28"
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -1967,17 +1967,17 @@ const STEMIForm = forwardRef(function STEMIForm(
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {renderRadio('procedural_success', 'Procedural success:', ['Yes', 'No'])}
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Post-procedure TIMI flow:</label>
+                    <label className="form-field-label">Post-procedure TIMI flow:</label>
                     <div className="flex gap-4 mt-2">
                       {[0, 1, 2, 3].map(grade => (
-                        <label key={grade} className="flex items-center gap-2 cursor-pointer font-bold">
+                        <label key={grade} className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="radio"
                             disabled={readOnly}
                             name="timi_flow"
                             checked={formData.timi_flow === grade}
                             onChange={() => handleChange('timi_flow', grade)}
-                            className="text-red-600 focus:ring-red-500"
+                            className="text-red-600 focus:ring-red-500 accent-red-600"
                           />
                           <span>{grade}</span>
                         </label>
@@ -1986,7 +1986,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                   </div>
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Major Complications:</label>
+                  <label className="form-field-label">Major Complications:</label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
                       { key: 'complication_none', label: 'None' },
@@ -1998,13 +1998,13 @@ const STEMIForm = forwardRef(function STEMIForm(
                       { key: 'complication_death', label: 'Death' },
                       { key: 'complication_emergency_cabg', label: 'Emergency CABG' }
                     ].map(op => (
-                      <label key={op.key} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer text-[10px]">
+                      <label key={op.key} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer">
                         <input
                           type="checkbox"
                           disabled={readOnly}
                           checked={formData[op.key] || false}
                           onChange={(e) => handleChange(op.key, e.target.checked)}
-                          className="rounded text-red-600 focus:ring-red-500"
+                          className="rounded text-red-600 focus:ring-red-500 accent-red-600"
                         />
                         <span>{op.label}</span>
                       </label>
@@ -2019,19 +2019,19 @@ const STEMIForm = forwardRef(function STEMIForm(
               <div className="font-bold text-slate-800 text-sm">Thrombolysis details</div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Door to Needle Time (min):</label>
+                  <label className="form-field-label">Door to Needle Time (min):</label>
                   <input
                     type="number"
                     disabled={readOnly}
                     value={formData.door_to_needle_time}
                     onChange={(e) => handleChange('door_to_needle_time', e.target.value)}
                     placeholder="e.g. 30"
-                    className="w-full p-2 border border-slate-300 rounded-md font-bold"
+                    className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none font-bold"
                   />
                   <ClinicalMetricBadge metricId="door_to_needle_time" value={formData.door_to_needle_time} />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Drug:</label>
+                  <label className="form-field-label">Drug:</label>
                   <div className="flex flex-wrap gap-3 mt-2">
                     {[
                       { key: 'drug_stk', label: 'STK' },
@@ -2039,13 +2039,13 @@ const STEMIForm = forwardRef(function STEMIForm(
                       { key: 'drug_uk', label: 'UK' },
                       { key: 'drug_reteplase', label: 'Reteplase' }
                     ].map(op => (
-                      <label key={op.key} className="flex items-center gap-1.5 cursor-pointer font-bold">
+                      <label key={op.key} className="flex items-center gap-1.5 cursor-pointer">
                         <input
                           type="checkbox"
                           disabled={readOnly}
                           checked={formData[op.key] === 'Yes' || formData[op.key] === true}
                           onChange={(e) => handleChange(op.key, e.target.checked ? 'Yes' : 'No')}
-                          className="rounded text-red-600 focus:ring-red-500"
+                          className="rounded text-red-600 focus:ring-red-500 accent-red-600"
                         />
                         <span>{op.label}</span>
                       </label>
@@ -2054,7 +2054,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="font-bold text-slate-700 block">Dose:</label>
+                    <label className="form-field-label">Dose:</label>
                     {!readOnly && (
                       <span className={`text-[10px] select-none ${
                         Math.max(0, 100 - (formData.thrombolysis_dose || '').length) <= 5
@@ -2072,7 +2072,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                     maxLength={100}
                     onChange={(e) => handleChange('thrombolysis_dose', e.target.value)}
                     placeholder="e.g. 40 mg IV bolus"
-                    className="w-full p-2 border border-slate-300 rounded-md"
+                    className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -2080,7 +2080,7 @@ const STEMIForm = forwardRef(function STEMIForm(
 
             <div id="section-8" className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-slate-100">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Heparin strategy:</label>
+                <label className="form-field-label">Heparin strategy:</label>
                 <div className="space-y-1">
                   {[
                     'UFH i.v alone',
@@ -2089,14 +2089,14 @@ const STEMIForm = forwardRef(function STEMIForm(
                     'UFH i.v+UFHs.c',
                     'UFH i.v + LMWH'
                   ].map(op => (
-                    <label key={op} className="flex items-center gap-2 cursor-pointer text-xs">
+                    <label key={op} className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="radio"
                         disabled={readOnly}
                         name="heparin_strategy"
                         checked={formData.heparin_strategy === op}
                         onChange={() => handleChange('heparin_strategy', op)}
-                        className="text-red-600 focus:ring-red-500"
+                        className="text-red-600 focus:ring-red-500 accent-red-600"
                       />
                       <span>{op}</span>
                     </label>
@@ -2104,7 +2104,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Statin:</label>
+                <label className="form-field-label">Statin:</label>
                 {renderRadio('statin', 'Statin Prescribed', ['Yes', 'No'])}
                 {formData.statin === 'Yes' && (
                   <div className="flex gap-3 mt-2 pl-2">
@@ -2117,7 +2117,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                           name="statin_dose"
                           checked={formData.statin_dose === dose}
                           onChange={() => handleChange('statin_dose', dose)}
-                          className="text-red-600 focus:ring-red-500"
+                          className="text-red-600 focus:ring-red-500 accent-red-600"
                         />
                         <span>{dose}</span>
                       </label>
@@ -2127,7 +2127,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="font-bold text-slate-700 block">Any Other</label>
+                  <label className="form-field-label">Any Other</label>
                   {!readOnly && (
                     <span className={`text-[10px] select-none ${
                       Math.max(0, 255 - (formData.other_drugs || '').length) <= 5
@@ -2144,7 +2144,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                   value={formData.other_drugs}
                   maxLength={255}
                   onChange={(e) => handleChange('other_drugs', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                 />
               </div>
             </div>
@@ -2173,7 +2173,7 @@ const STEMIForm = forwardRef(function STEMIForm(
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="font-bold text-slate-700 block">Others</label>
+                <label className="form-field-label">Others</label>
                 {!readOnly && (
                   <span className={`text-[10px] select-none ${
                     Math.max(0, 255 - (formData.diagnostic_other || '').length) <= 5
@@ -2190,7 +2190,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 value={formData.diagnostic_other}
                 maxLength={255}
                 onChange={(e) => handleChange('diagnostic_other', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
               />
             </div>
 
@@ -2202,28 +2202,28 @@ const STEMIForm = forwardRef(function STEMIForm(
                 <span className="font-bold text-slate-800 text-xs block border-b pb-1">ECG:</span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">HR (bpm):</label>
+                    <label className="form-field-label">HR (bpm):</label>
                     <input
                       type="number"
                       disabled={readOnly}
                       value={formData.ecg_heart_rate}
                       onChange={(e) => handleChange('ecg_heart_rate', e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md font-bold"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none font-bold"
                     />
                     <ClinicalMetricBadge metricId="ecg_heart_rate" value={formData.ecg_heart_rate} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">AV Block:</label>
+                    <label className="form-field-label">AV Block:</label>
                     <div className="flex flex-wrap gap-3 mt-1.5">
                       {['None', '1-degree', '2-degree', 'CHB'].map(opt => (
-                        <label key={opt} className="flex items-center gap-1.5 cursor-pointer font-semibold">
+                        <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
                           <input
                             type="radio"
                             disabled={readOnly}
                             name="av_block"
                             checked={formData.av_block === opt}
                             onChange={() => handleChange('av_block', opt)}
-                            className="text-red-600 focus:ring-red-500"
+                            className="text-red-600 focus:ring-red-500 accent-red-600"
                           />
                           <span>{opt}</span>
                         </label>
@@ -2231,17 +2231,17 @@ const STEMIForm = forwardRef(function STEMIForm(
                     </div>
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">BBB:</label>
+                    <label className="form-field-label">BBB:</label>
                     <div className="flex flex-wrap gap-3 mt-1.5">
                       {['RBBB', 'LBBB', 'Indeterminate', 'None'].map(opt => (
-                        <label key={opt} className="flex items-center gap-1.5 cursor-pointer font-semibold">
+                        <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
                           <input
                             type="radio"
                             disabled={readOnly}
                             name="bbb"
                             checked={formData.bbb === opt}
                             onChange={() => handleChange('bbb', opt)}
-                            className="text-red-600 focus:ring-red-500"
+                            className="text-red-600 focus:ring-red-500 accent-red-600"
                           />
                           <span>{opt}</span>
                         </label>
@@ -2252,7 +2252,7 @@ const STEMIForm = forwardRef(function STEMIForm(
 
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Q waves:</label>
+                    <label className="form-field-label">Q waves:</label>
                     <div className="grid grid-cols-2 gap-1.5 mt-1">
                       {['None', 'Inferior', 'Antero-septal', 'Anterior', 'Anterolateral', 'Lateral'].map(loc => {
                         const key = `qwaves_${loc.toLowerCase().replace('-', '')}`;
@@ -2263,7 +2263,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                               disabled={readOnly}
                               checked={formData[key] || false}
                               onChange={(e) => handleChange(key, e.target.checked)}
-                              className="rounded text-red-600 focus:ring-red-500"
+                              className="rounded text-red-600 focus:ring-red-500 accent-red-600"
                             />
                             <span className="text-[10px] font-medium">{loc}</span>
                           </label>
@@ -2272,7 +2272,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                     </div>
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">ST dep:</label>
+                    <label className="form-field-label">ST dep:</label>
                     <div className="grid grid-cols-2 gap-1.5 mt-1">
                       {['None', 'Inferior', 'Antero-septal', 'Anterior', 'Anterolateral', 'Lateral'].map(loc => {
                         const key = `st_depression_${loc.toLowerCase().replace('-', '')}`;
@@ -2283,7 +2283,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                               disabled={readOnly}
                               checked={formData[key] || false}
                               onChange={(e) => handleChange(key, e.target.checked)}
-                              className="rounded text-red-600 focus:ring-red-500"
+                              className="rounded text-red-600 focus:ring-red-500 accent-red-600"
                             />
                             <span className="text-[10px] font-medium">{loc}</span>
                           </label>
@@ -2292,7 +2292,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                     </div>
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">T inversion:</label>
+                    <label className="form-field-label">T inversion:</label>
                     <div className="grid grid-cols-2 gap-1.5 mt-1">
                       {['None', 'Inferior', 'Antero-septal', 'Anterior', 'Anterolateral', 'Lateral'].map(loc => {
                         const key = `t_inversion_${loc.toLowerCase().replace('-', '')}`;
@@ -2303,7 +2303,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                               disabled={readOnly}
                               checked={formData[key] || false}
                               onChange={(e) => handleChange(key, e.target.checked)}
-                              className="rounded text-red-600 focus:ring-red-500"
+                              className="rounded text-red-600 focus:ring-red-500 accent-red-600"
                             />
                             <span className="text-[10px] font-medium">{loc}</span>
                           </label>
@@ -2312,17 +2312,17 @@ const STEMIForm = forwardRef(function STEMIForm(
                     </div>
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Rhythm:</label>
+                    <label className="form-field-label">Rhythm:</label>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {['NSR', 'AF', 'SVT', 'VT', 'VF'].map(r => (
-                        <label key={r} className="flex items-center gap-1 cursor-pointer font-bold">
+                        <label key={r} className="flex items-center gap-1 cursor-pointer">
                           <input
                             type="radio"
                             disabled={readOnly}
                             name="rhythm"
                             checked={formData.rhythm === r}
                             onChange={() => handleChange('rhythm', r)}
-                            className="text-red-600 focus:ring-red-500"
+                            className="text-red-600 focus:ring-red-500 accent-red-600"
                           />
                           <span>{r}</span>
                         </label>
@@ -2333,7 +2333,7 @@ const STEMIForm = forwardRef(function STEMIForm(
 
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="font-bold text-slate-700 block">Others (ECG):</label>
+                    <label className="form-field-label">Others (ECG):</label>
                     {!readOnly && (
                       <span className={`text-[10px] select-none ${
                         Math.max(0, 255 - (formData.ecg_other || '').length) <= 5
@@ -2351,7 +2351,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                     maxLength={255}
                     onChange={(e) => handleChange('ecg_other', e.target.value.slice(0, 255))}
                     placeholder="Specify other ECG findings..."
-                    className="w-full p-2 border border-slate-300 rounded-md"
+                    className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -2361,28 +2361,28 @@ const STEMIForm = forwardRef(function STEMIForm(
                 <span className="font-bold text-slate-800 text-xs block border-b pb-1">Echo:</span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">EF (%):</label>
+                    <label className="form-field-label">EF (%):</label>
                     <input
                       type="number"
                       disabled={readOnly}
                       value={formData.echo_ef}
                       onChange={(e) => handleChange('echo_ef', e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md font-bold text-slate-900"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none font-bold text-slate-900"
                     />
                     <ClinicalMetricBadge metricId="echo_ef" value={formData.echo_ef} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">LV Function:</label>
+                    <label className="form-field-label">LV Function:</label>
                     <div className="flex flex-wrap gap-3 mt-1.5">
                       {['Normal', 'Mild LVD', 'Moderate LVD', 'Severe LVD'].map(opt => (
-                        <label key={opt} className="flex items-center gap-1 cursor-pointer font-medium">
+                        <label key={opt} className="flex items-center gap-1 cursor-pointer">
                           <input
                             type="radio"
                             disabled={readOnly}
                             name="lv_function"
                             checked={formData.lv_function === opt}
                             onChange={() => handleChange('lv_function', opt)}
-                            className="text-red-600 focus:ring-red-500"
+                            className="text-red-600 focus:ring-red-500 accent-red-600"
                           />
                           <span>{opt}</span>
                         </label>
@@ -2390,18 +2390,18 @@ const STEMIForm = forwardRef(function STEMIForm(
                     </div>
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">RWMA:</label>
+                    <label className="form-field-label">RWMA:</label>
                     <div className="flex flex-wrap gap-3 mt-1.5">
                       {['LAD', 'RCA', 'LCX'].map(opt => {
                         const key = `rwma_${opt.toLowerCase()}`;
                         return (
-                          <label key={opt} className="flex items-center gap-1 cursor-pointer font-medium">
+                          <label key={opt} className="flex items-center gap-1 cursor-pointer">
                             <input
                               type="checkbox"
                               disabled={readOnly}
                               checked={formData[key] || false}
                               onChange={(e) => handleChange(key, e.target.checked)}
-                              className="rounded text-red-600 focus:ring-red-500"
+                              className="rounded text-red-600 focus:ring-red-500 accent-red-600"
                             />
                             <span>{opt} territory</span>
                           </label>
@@ -2410,17 +2410,17 @@ const STEMIForm = forwardRef(function STEMIForm(
                     </div>
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">MR:</label>
+                    <label className="form-field-label">MR:</label>
                     <div className="flex flex-wrap gap-3 mt-1.5">
                       {['None', 'Mild', 'Moderate', 'Severe'].map(opt => (
-                        <label key={opt} className="flex items-center gap-1 cursor-pointer font-medium">
+                        <label key={opt} className="flex items-center gap-1 cursor-pointer">
                           <input
                             type="radio"
                             disabled={readOnly}
                             name="mr_grade"
                             checked={formData.mr_grade === opt}
                             onChange={() => handleChange('mr_grade', opt)}
-                            className="text-red-600 focus:ring-red-500"
+                            className="text-red-600 focus:ring-red-500 accent-red-600"
                           />
                           <span>{opt}</span>
                         </label>
@@ -2431,61 +2431,61 @@ const STEMIForm = forwardRef(function STEMIForm(
 
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">E (m/s):</label>
+                    <label className="form-field-label">E (m/s):</label>
                     <input
                       type="number"
                       step="0.01"
                       disabled={readOnly}
                       value={formData.echo_e}
                       onChange={(e) => handleChange('echo_e', e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                     <ClinicalMetricBadge metricId="echo_e" value={formData.echo_e} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">A (m/s):</label>
+                    <label className="form-field-label">A (m/s):</label>
                     <input
                       type="number"
                       step="0.01"
                       disabled={readOnly}
                       value={formData.echo_a}
                       onChange={(e) => handleChange('echo_a', e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                     <ClinicalMetricBadge metricId="echo_a" value={formData.echo_a} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">DT (ms):</label>
+                    <label className="form-field-label">DT (ms):</label>
                     <input
                       type="number"
                       disabled={readOnly}
                       value={formData.echo_dt}
                       onChange={(e) => handleChange('echo_dt', e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                     <ClinicalMetricBadge metricId="echo_dt" value={formData.echo_dt} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">E' (cm/s):</label>
+                    <label className="form-field-label">E' (cm/s):</label>
                     <input
                       type="number"
                       step="0.1"
                       disabled={readOnly}
                       value={formData.echo_e_prime}
                       onChange={(e) => handleChange('echo_e_prime', e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                     <ClinicalMetricBadge metricId="echo_e_prime" value={formData.echo_e_prime} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">TAPSV (mm):</label>
+                    <label className="form-field-label">TAPSV (mm):</label>
                     <input
                       type="number"
                       step="0.1"
                       disabled={readOnly}
                       value={formData.echo_tapsv}
                       onChange={(e) => handleChange('echo_tapsv', e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                     <ClinicalMetricBadge metricId="echo_tapsv" value={formData.echo_tapsv} />
                   </div>
@@ -2493,7 +2493,7 @@ const STEMIForm = forwardRef(function STEMIForm(
 
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="font-bold text-slate-700 block">Others (Echo):</label>
+                    <label className="form-field-label">Others (Echo):</label>
                     {!readOnly && (
                       <span className={`text-[10px] select-none ${
                         Math.max(0, 255 - (formData.echo_other || '').length) <= 5
@@ -2511,7 +2511,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                     maxLength={255}
                     onChange={(e) => handleChange('echo_other', e.target.value.slice(0, 255))}
                     placeholder="e.g. Mild TR, PASP 35 mmHg"
-                    className="w-full p-2 border border-slate-300 rounded-md"
+                    className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -2521,32 +2521,32 @@ const STEMIForm = forwardRef(function STEMIForm(
                 <span className="font-bold text-slate-800 text-xs block border-b pb-1">Blood Investigations:</span>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Hemoglobin (gm%):</label>
+                    <label className="form-field-label">Hemoglobin (gm%):</label>
                     <input
                       type="number"
                       step="0.1"
                       disabled={readOnly}
                       value={formData.hemoglobin}
                       onChange={(e) => handleChange('hemoglobin', e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md font-bold"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none font-bold"
                     />
                     <ClinicalMetricBadge metricId="hemoglobin" value={formData.hemoglobin} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Creat (mg/dl):</label>
+                    <label className="form-field-label">Creat (mg/dl):</label>
                     <input
                       type="number"
                       step="0.01"
                       disabled={readOnly}
                       value={formData.creatinine}
                       onChange={(e) => handleChange('creatinine', e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md font-bold"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none font-bold"
                     />
                     <ClinicalMetricBadge metricId="creatinine" value={formData.creatinine} />
                   </div>
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <label className="font-bold text-slate-700 block">Trop-I (ng/ml):</label>
+                      <label className="form-field-label">Trop-I (ng/ml):</label>
                       {!readOnly && (
                         <span className={`text-[10px] select-none ${
                           Math.max(0, 50 - (formData.troponin_i || '').length) <= 5
@@ -2563,13 +2563,13 @@ const STEMIForm = forwardRef(function STEMIForm(
                       value={formData.troponin_i || ''}
                       maxLength={50}
                       onChange={(e) => handleChange('troponin_i', e.target.value.slice(0, 50))}
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                     <ClinicalMetricBadge metricId="troponin_i" value={formData.troponin_i} />
                   </div>
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <label className="font-bold text-slate-700 block">CPK (U/L):</label>
+                      <label className="form-field-label">CPK (U/L):</label>
                       {!readOnly && (
                         <span className={`text-[10px] select-none ${
                           Math.max(0, 50 - (formData.cpk || '').length) <= 5
@@ -2586,13 +2586,13 @@ const STEMIForm = forwardRef(function STEMIForm(
                       value={formData.cpk || ''}
                       maxLength={50}
                       onChange={(e) => handleChange('cpk', e.target.value.slice(0, 50))}
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                     <ClinicalMetricBadge metricId="cpk" value={formData.cpk} />
                   </div>
                   <div>
                     <div className="flex justify-between items-center mb-1">
-                      <label className="font-bold text-slate-700 block">CK-MB (U/L):</label>
+                      <label className="form-field-label">CK-MB (U/L):</label>
                       {!readOnly && (
                         <span className={`text-[10px] select-none ${
                           Math.max(0, 50 - (formData.ck_mb || '').length) <= 5
@@ -2609,42 +2609,42 @@ const STEMIForm = forwardRef(function STEMIForm(
                       value={formData.ck_mb || ''}
                       maxLength={50}
                       onChange={(e) => handleChange('ck_mb', e.target.value.slice(0, 50))}
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                     <ClinicalMetricBadge metricId="ck_mb" value={formData.ck_mb} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">Na (mEq/L):</label>
+                    <label className="form-field-label">Na (mEq/L):</label>
                     <input
                       type="number"
                       step="0.1"
                       disabled={readOnly}
                       value={formData.sodium}
                       onChange={(e) => handleChange('sodium', e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                     <ClinicalMetricBadge metricId="sodium" value={formData.sodium} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">K (mEq/L):</label>
+                    <label className="form-field-label">K (mEq/L):</label>
                     <input
                       type="number"
                       step="0.1"
                       disabled={readOnly}
                       value={formData.potassium}
                       onChange={(e) => handleChange('potassium', e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                     <ClinicalMetricBadge metricId="potassium" value={formData.potassium} />
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 block mb-1">RBS at admission (mg/dl):</label>
+                    <label className="form-field-label">RBS at admission (mg/dl):</label>
                     <input
                       type="number"
                       disabled={readOnly}
                       value={formData.rbs_admission}
                       onChange={(e) => handleChange('rbs_admission', e.target.value)}
-                      className="w-full p-2 border border-slate-300 rounded-md"
+                      className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                     />
                     <ClinicalMetricBadge metricId="rbs_admission" value={formData.rbs_admission} />
                   </div>
@@ -2657,14 +2657,14 @@ const STEMIForm = forwardRef(function STEMIForm(
                 <div className="flex flex-wrap items-center gap-6">
                   <div className="flex gap-4 p-2 bg-white border rounded-lg">
                     {['Done', 'Not done'].map(opt => (
-                      <label key={opt} className="flex items-center gap-2 cursor-pointer font-bold">
+                      <label key={opt} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="radio"
                           disabled={readOnly}
                           name="angiogram_done"
                           checked={formData.angiogram_done === (opt === 'Done' ? 'Yes' : 'No')}
                           onChange={() => handleChange('angiogram_done', opt === 'Done' ? 'Yes' : 'No')}
-                          className="text-red-600 focus:ring-red-500"
+                          className="text-red-600 focus:ring-red-500 accent-red-600"
                         />
                         <span>{opt}</span>
                       </label>
@@ -2675,14 +2675,14 @@ const STEMIForm = forwardRef(function STEMIForm(
                     <div className="flex flex-wrap items-center gap-3 animate-fadeIn">
                       <span className="font-bold text-slate-500">If done:</span>
                       {['Normal', '1VD', '2VD', '3VD', 'LMCA'].map(opt => (
-                        <label key={opt} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer font-medium">
+                        <label key={opt} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer">
                           <input
                             type="radio"
                             disabled={readOnly}
                             name="angiogram_finding"
                             checked={formData.angiogram_finding === opt}
                             onChange={() => handleChange('angiogram_finding', opt)}
-                            className="text-red-600 focus:ring-red-500"
+                            className="text-red-600 focus:ring-red-500 accent-red-600"
                           />
                           <span>{opt}</span>
                         </label>
@@ -2703,7 +2703,7 @@ const STEMIForm = forwardRef(function STEMIForm(
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="font-bold text-slate-700 block">Other</label>
+                <label className="form-field-label">Other</label>
                 {!readOnly && (
                   <span className={`text-[10px] select-none ${
                     Math.max(0, 255 - (formData.other_procedure || '').length) <= 5
@@ -2720,7 +2720,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 value={formData.other_procedure}
                 maxLength={255}
                 onChange={(e) => handleChange('other_procedure', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
               />
             </div>
           </div>
@@ -2743,7 +2743,7 @@ const STEMIForm = forwardRef(function STEMIForm(
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="font-bold text-slate-700 block">Any other</label>
+                <label className="form-field-label">Any other</label>
                 {!readOnly && (
                   <span className={`text-[10px] select-none ${
                     Math.max(0, 255 - (formData.outcome_other || '').length) <= 5
@@ -2760,7 +2760,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 value={formData.outcome_other}
                 maxLength={255}
                 onChange={(e) => handleChange('outcome_other', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
               />
             </div>
 
@@ -2781,7 +2781,7 @@ const STEMIForm = forwardRef(function STEMIForm(
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-2">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Statin:</label>
+                <label className="form-field-label">Statin:</label>
                 {renderRadio('discharge_statin', 'Statin Prescribed', ['Yes', 'No'])}
                 {formData.discharge_statin === 'Yes' && (
                   <div className="flex gap-3 mt-2 pl-2">
@@ -2794,7 +2794,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                           name="discharge_statin_dose"
                           checked={formData.discharge_statin_dose === dose}
                           onChange={() => handleChange('discharge_statin_dose', dose)}
-                          className="text-red-600 focus:ring-red-500"
+                          className="text-red-600 focus:ring-red-500 accent-red-600"
                         />
                         <span>{dose}</span>
                       </label>
@@ -2804,7 +2804,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="font-bold text-slate-700 block">Any Other</label>
+                  <label className="form-field-label">Any Other</label>
                   {!readOnly && (
                     <span className={`text-[10px] select-none ${
                       Math.max(0, 255 - (formData.discharge_other_medication || '').length) <= 5
@@ -2821,7 +2821,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                   value={formData.discharge_other_medication}
                   maxLength={255}
                   onChange={(e) => handleChange('discharge_other_medication', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none"
                 />
               </div>
             </div>
@@ -2864,7 +2864,7 @@ const STEMIForm = forwardRef(function STEMIForm(
             <div className="font-bold text-slate-800">Length of Stay:</div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">ICCU</label>
+                <label className="form-field-label">ICCU</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -2879,13 +2879,13 @@ const STEMIForm = forwardRef(function STEMIForm(
                       if (parseFloat(val) > 720) val = '720';
                       handleChange('iccu_hours', val);
                     }}
-                    className="w-full p-2 border border-slate-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <span className="font-semibold text-slate-500">hours</span>
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Step-down ICU</label>
+                <label className="form-field-label">Step-down ICU</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -2900,13 +2900,13 @@ const STEMIForm = forwardRef(function STEMIForm(
                       if (parseFloat(val) > 720) val = '720';
                       handleChange('stepdown_icu_hours', val);
                     }}
-                    className="w-full p-2 border border-slate-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <span className="font-semibold text-slate-500">hours</span>
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Floors</label>
+                <label className="form-field-label">Floors</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
@@ -2921,13 +2921,13 @@ const STEMIForm = forwardRef(function STEMIForm(
                       if (parseFloat(val) > 180) val = '180';
                       handleChange('floor_days', val);
                     }}
-                    className="w-full p-2 border border-slate-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <span className="font-semibold text-slate-500">days</span>
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Total Hospital stay</label>
+                <label className="form-field-label">Total Hospital stay</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -2954,7 +2954,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                 { label: 'Miscellaneous', key: 'miscellaneous_cost' }
               ].map((c) => (
                 <div key={c.key}>
-                  <label className="font-bold text-slate-700 block mb-1">{c.label}</label>
+                  <label className="form-field-label">{c.label}</label>
                   <input
                     type="number"
                     min="0"
@@ -2968,7 +2968,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                       if (parseFloat(val) > 999999999) val = '999999999';
                       handleChange(c.key, val);
                     }}
-                    className="w-full p-2 border border-slate-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-medium text-slate-900 bg-white"
+                    className="w-full p-2 border border-slate-300 rounded-md focus:border-red-600 focus:ring-red-600 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-medium text-slate-900 bg-white"
                   />
                 </div>
               ))}
@@ -3065,7 +3065,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                                       [`custom_date_${key}`]: true
                                     }));
                                   }}
-                                  className="w-full max-w-[130px] p-1 text-[11px] font-mono border border-red-300 rounded bg-white text-slate-800 text-center focus:ring-1 focus:ring-red-500 focus:border-red-500"
+                                  className="w-full max-w-[130px] p-1 text-[11px] font-mono border border-red-300 rounded bg-white text-slate-800 text-center focus:ring-1 focus:border-red-600 focus:ring-red-600 focus:outline-none"
                                 />
                                 {currentDateVal && (
                                   <span className="text-[10px] font-mono text-red-700 bg-red-100/70 border border-red-200 rounded px-1.5 py-0.5 whitespace-nowrap shadow-2xs">
@@ -3263,13 +3263,13 @@ const STEMIForm = forwardRef(function STEMIForm(
 
             {/* Follow-up Parameters & Instructions (Visit Mode & Special Instructions) */}
             <div className="mt-6 pt-4 border-t border-slate-200 space-y-4">
-              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <h4 className="uppercase tracking-wider">
                 Follow-Up Parameters & Instructions
               </h4>
 
               {/* Visit Mode Radio Buttons */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                <label className="form-field-label mb-2">
                   Visit Mode
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -3301,7 +3301,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               {/* Special Clinical Instructions Textarea with Live Counter */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  <label className="form-field-label">
                     Special Clinical Instructions For Patient/Caregiver
                   </label>
                   <span className="text-[11px] font-mono text-slate-400">
@@ -3316,7 +3316,7 @@ const STEMIForm = forwardRef(function STEMIForm(
                     value={formData.special_instructions || ''}
                     onChange={(e) => handleChange('special_instructions', e.target.value)}
                     placeholder="Specify follow-up instructions..."
-                    className="w-full p-3 border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all placeholder:text-slate-400 resize-y"
+                    className="w-full p-3 border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-2 focus:border-red-600 focus:ring-red-600 focus:outline-none transition-all placeholder:text-slate-400 resize-y"
                   />
                 </div>
               </div>

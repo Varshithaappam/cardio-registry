@@ -899,7 +899,7 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
         {/* Controls Row: Start Date, End Date, Action Type, User Name, Download Button */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end pt-1">
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+            <label className="form-field-label flex items-center gap-1 uppercase tracking-wider mb-1">
               <Calendar className="w-3 h-3 text-purple-600" />
               <span>Start Date</span>
             </label>
@@ -912,7 +912,7 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+            <label className="form-field-label flex items-center gap-1 uppercase tracking-wider mb-1">
               <Calendar className="w-3 h-3 text-purple-600" />
               <span>End Date</span>
             </label>
@@ -925,7 +925,7 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+            <label className="form-field-label flex items-center gap-1 uppercase tracking-wider mb-1">
               <Filter className="w-3 h-3 text-purple-600" />
               <span>Action Type</span>
             </label>
@@ -943,7 +943,7 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+            <label className="form-field-label flex items-center gap-1 uppercase tracking-wider mb-1">
               <UserCheck className="w-3 h-3 text-purple-600" />
               <span>User Name</span>
             </label>
@@ -962,7 +962,7 @@ export default function AuditTimeline({ logs = [], patientMr = 'MR6243', patient
           <div>
             <button
               onClick={handleDownloadExcel}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs py-2.5 px-3 rounded-xl shadow-xs hover:shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white py-2.5 px-3 rounded-xl shadow-xs hover:shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Download className="w-4 h-4 shrink-0" />
               <span>Download Excel Report</span>

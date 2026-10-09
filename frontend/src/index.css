@@ -1,31 +1,31 @@
 @import "tailwindcss";
 
-/* Globally increase all font sizes by 2px */
-.text-\[8px\] { font-size: 10px !important; }
-.text-\[9px\] { font-size: 11px !important; }
-.text-\[10px\] { font-size: 12px !important; }
-.text-\[11px\] { font-size: 13px !important; }
-.text-xs { font-size: 14px !important; }
-.text-sm { font-size: 16px !important; }
-.text-base { font-size: 18px !important; }
-.text-lg { font-size: 20px !important; }
-.text-xl { font-size: 22px !important; }
-.text-2xl { font-size: 26px !important; }
+/* Globally increase all font sizes */
+.text-\[8px\] { font-size: 12px !important; }
+.text-\[9px\] { font-size: 13px !important; }
+.text-\[10px\] { font-size: 14px !important; }
+.text-\[11px\] { font-size: 15px !important; }
+.text-xs { font-size: 16px !important; }
+.text-sm { font-size: 18px !important; }
+.text-base { font-size: 20px !important; }
+.text-lg { font-size: 22px !important; }
+.text-xl { font-size: 24px !important; }
+.text-2xl { font-size: 28px !important; }
 
-/* Keep input height and spacing consistent with larger font size */
+/* Keep input height and spacing consistent */
 input, select, textarea {
-  font-size: inherit !important;
+  font-size: inherit;
 }
 
-/* Consistent typography groups across the form */
+/* Consistent typography groups across forms */
 .form-section-heading {
-  font-size: 16px !important;
-  font-style: normal !important;
-  font-weight: 700 !important;
-  color: #1e293b !important; /* slate-800 */
-  text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-  display: block !important;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 700;
+  color: #1e293b; /* slate-800 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
 }
 
 .form-subsection-heading,
@@ -38,59 +38,229 @@ input, select, textarea {
 #eligibleDeviceBlock span.uppercase,
 #patientEducationBlock span.uppercase,
 #recommendationsBlock span.uppercase {
-  font-size: 13px !important;
-  font-style: normal !important;
-  font-weight: 700 !important;
-  color: #334155 !important; /* slate-700 */
-  text-transform: uppercase !important;
-  letter-spacing: 0.05em !important;
-  display: block !important;
+  font-size: 17px;
+  font-style: normal;
+  font-weight: 700;
+  color: #334155; /* slate-700 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
 }
 
 .form-field-label {
-  font-size: 12px !important;
-  font-style: normal !important;
-  font-weight: 600 !important;
-  color: #334155 !important; /* slate-700 */
-  display: block !important;
-  margin-bottom: 4px !important;
+  font-size: 15px !important;
+  font-style: normal;
+  font-weight: 600; /* semibold */
+  color: #334155; /* slate-700 */
+  display: block;
+  margin-bottom: 4px;
 }
 
-/* Style all form option labels consistently */
+/* In-row Question / Item Labels (e.g. Beta-blocker, Calcium-channel blocker, Indication for ICCU admission) */
+.form-row-label,
+.grid > div > span.text-slate-700,
+div.flex.justify-between > span.text-slate-700,
+.grid-cols-12 > div > span.text-slate-700 {
+  font-size: 15px !important;
+  font-style: normal;
+  font-weight: 400 !important;
+  color: #334155; /* slate-700 */
+}
+
+/* Style all form option labels (radios, checkboxes) consistently: 15px and normal font-weight (same as inputs & selects) */
 .form-option-label,
-.form-option-label span,
-label.cursor-pointer,
-label.cursor-pointer span,
-label.flex.items-center,
-label.flex.items-center span,
-.flex-wrap label,
-.flex-wrap label span {
-  font-size: 12px !important;
-  font-style: normal !important;
-  font-weight: 500 !important;
-  color: #1e293b !important; /* slate-800 */
+.form-option-label *,
+label.cursor-pointer:not(.form-field-label),
+label.cursor-pointer:not(.form-field-label) *,
+label.flex.items-center:not(.form-field-label),
+label.flex.items-center:not(.form-field-label) *,
+.flex-wrap label:not(.form-field-label),
+.flex-wrap label:not(.form-field-label) *,
+label:has(input[type="radio"]):not(.form-field-label),
+label:has(input[type="radio"]):not(.form-field-label) *,
+label:has(input[type="checkbox"]):not(.form-field-label),
+label:has(input[type="checkbox"]):not(.form-field-label) * {
+  font-size: 15px !important;
+  font-style: normal;
+  font-weight: 400 !important;
+  color: #1e293b; /* slate-800 */
 }
 
 .form-supporting-text {
-  font-size: 11px !important;
-  font-style: normal !important;
-  font-weight: 400 !important;
-  color: #64748b !important; /* slate-500 */
-  line-height: 1.25 !important;
-  display: block !important;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 400;
+  color: #64748b; /* slate-500 */
+  line-height: 1.25;
+  display: block;
 }
 
-/* Style all text inputs, select elements, number fields, and textareas consistently */
+/* Style text inputs, select elements, number fields, and textareas to match labels at 15px */
 input[type="text"],
 input[type="number"],
 input[type="date"],
+input[type="time"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
 select,
 textarea {
-  font-size: 13px !important;
-  font-style: normal !important;
-  font-weight: 400 !important;
-  color: #0f172a !important; /* slate-900 */
-  font-family: inherit !important;
+  font-size: 15px !important;
+  font-style: normal;
+  font-weight: 400;
+  color: #0f172a; /* slate-900 */
+  font-family: inherit;
+  border-color: #cbd5e1; /* border-slate-300 default */
+}
+
+/* Registry-specific focus rings & borders */
+.theme-hf input:focus,
+.theme-hf select:focus,
+.theme-hf textarea:focus,
+[data-registry="hf"] input:focus,
+[data-registry="hf"] select:focus,
+[data-registry="hf"] textarea:focus,
+#hfFormBlock input:focus,
+#hfFormBlock select:focus,
+#hfFormBlock textarea:focus {
+  border-color: #0d9488 !important; /* teal-600 */
+  box-shadow: 0 0 0 2px #0d9488 !important;
+  outline: none !important;
+}
+
+.theme-stemi input:focus,
+.theme-stemi select:focus,
+.theme-stemi textarea:focus,
+[data-registry="stemi"] input:focus,
+[data-registry="stemi"] select:focus,
+[data-registry="stemi"] textarea:focus,
+#stemiFormBlock input:focus,
+#stemiFormBlock select:focus,
+#stemiFormBlock textarea:focus {
+  border-color: #dc2626 !important; /* red-600 */
+  box-shadow: 0 0 0 2px #dc2626 !important;
+  outline: none !important;
+}
+
+.theme-nstemi input:focus,
+.theme-nstemi select:focus,
+.theme-nstemi textarea:focus,
+[data-registry="nstemi"] input:focus,
+[data-registry="nstemi"] select:focus,
+[data-registry="nstemi"] textarea:focus,
+#nstemiFormBlock input:focus,
+#nstemiFormBlock select:focus,
+#nstemiFormBlock textarea:focus {
+  border-color: #f97316 !important; /* orange-500 */
+  box-shadow: 0 0 0 2px #f97316 !important;
+  outline: none !important;
+}
+
+/* Ensure errored inputs always show red focus ring */
+.theme-hf input[class*="border-red"]:focus,
+.theme-hf select[class*="border-red"]:focus,
+.theme-hf textarea[class*="border-red"]:focus,
+.theme-stemi input[class*="border-red"]:focus,
+.theme-stemi select[class*="border-red"]:focus,
+.theme-stemi textarea[class*="border-red"]:focus,
+.theme-nstemi input[class*="border-red"]:focus,
+.theme-nstemi select[class*="border-red"]:focus,
+.theme-nstemi textarea[class*="border-red"]:focus,
+input[class*="border-red"]:focus,
+select[class*="border-red"]:focus,
+textarea[class*="border-red"]:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 2px #dc2626 !important;
+}
+
+/* Registry-specific Checkbox and Radio styling (ticks and dots) */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #0d9488; /* default fallback: teal-600 */
+}
+
+/* HF Registry: Teal Green (#0d9488) */
+.theme-hf input[type="checkbox"],
+.theme-hf input[type="radio"],
+[data-registry="hf"] input[type="checkbox"],
+[data-registry="hf"] input[type="radio"],
+#hfFormBlock input[type="checkbox"],
+#hfFormBlock input[type="radio"] {
+  accent-color: #0d9488 !important;
+}
+
+/* STEMI Registry: Red (#dc2626) */
+.theme-stemi input[type="checkbox"],
+.theme-stemi input[type="radio"],
+[data-registry="stemi"] input[type="checkbox"],
+[data-registry="stemi"] input[type="radio"],
+#stemiFormBlock input[type="checkbox"],
+#stemiFormBlock input[type="radio"] {
+  accent-color: #dc2626 !important;
+}
+
+/* NSTEMI Registry: Orange (#f97316) */
+.theme-nstemi input[type="checkbox"],
+.theme-nstemi input[type="radio"],
+[data-registry="nstemi"] input[type="checkbox"],
+[data-registry="nstemi"] input[type="radio"],
+#nstemiFormBlock input[type="checkbox"],
+#nstemiFormBlock input[type="radio"] {
+  accent-color: #f97316 !important;
+}
+
+/* Standardized neutral option cards (CheckboxGroup & RadioGroup) */
+label.option-card-active,
+.theme-hf label.option-card-active,
+[data-registry="hf"] label.option-card-active,
+.theme-stemi label.option-card-active,
+[data-registry="stemi"] label.option-card-active,
+.theme-nstemi label.option-card-active,
+[data-registry="nstemi"] label.option-card-active,
+label.border-teal-600,
+label.border-red-600,
+label.border-orange-500 {
+  border-color: #e2e8f0 !important; /* border-slate-200 */
+  --tw-ring-color: transparent !important;
+  --tw-ring-shadow: none !important;
+  box-shadow: none !important;
+  color: #0f172a !important; /* text-slate-900 */
+}
+
+/* Globally remove focus rings from radio buttons and checkboxes */
+input[type="radio"]:focus,
+input[type="checkbox"]:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: none !important;
+}
+
+/* Print Stylesheet: Preserve clean neutral UI on paper / PDF export */
+@media print {
+  label, div, span, button {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  
+  label.option-card-active,
+  .border-slate-200,
+  .border-slate-300 {
+    border-color: #cbd5e1 !important; /* slate-300 clean border */
+  }
+
+  * {
+    --tw-ring-color: transparent !important;
+    --tw-ring-shadow: none !important;
+  }
+}
+
+
+/* Standardized button typography */
+.btn-action,
+button.btn-standard {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
 }
 
 /* Performance optimization for large clinical forms: defer off-screen rendering */

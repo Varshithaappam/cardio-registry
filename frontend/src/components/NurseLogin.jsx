@@ -70,7 +70,7 @@ export default function NurseLogin({ onLogin, onLoginSuccess }) {
           </div>
           <span className="text-xs font-black tracking-widest text-slate-500 uppercase">CARE HEALTH SYSTEM</span>
         </div>
-        <h2 className="text-sm font-semibold text-slate-600">Cardiovascular Registry & Clinical Audit Network</h2>
+        <h2 className="text-slate-600">Cardiovascular Registry & Clinical Audit Network</h2>
       </div>
 
       {/* Main card */}
@@ -81,7 +81,7 @@ export default function NurseLogin({ onLogin, onLoginSuccess }) {
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span>
             SECURE LINK
           </div>
-          <h3 className="text-lg font-extrabold tracking-tight">Clinician Access Portal</h3>
+          <h3 className="tracking-tight">Clinician Access Portal</h3>
           <p className="text-[11px] text-slate-400 mt-1">Authorized nurse and investigator login for patient audit tracking</p>
         </div>
 
@@ -96,7 +96,7 @@ export default function NurseLogin({ onLogin, onLoginSuccess }) {
           {/* Form fields */}
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">Username / Email</label>
+              <label className="form-field-label">Username / Email</label>
               <div className="relative">
                 <User className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                 <input
@@ -110,7 +110,7 @@ export default function NurseLogin({ onLogin, onLoginSuccess }) {
               </div>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1">Password</label>
+              <label className="form-field-label">Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                 <input
@@ -142,7 +142,7 @@ export default function NurseLogin({ onLogin, onLoginSuccess }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>

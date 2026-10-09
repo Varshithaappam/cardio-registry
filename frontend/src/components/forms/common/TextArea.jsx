@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { THEME_FOCUS_STYLES } from './formStyles';
 
 /**
  * TextArea Component
@@ -23,6 +24,7 @@ export default function TextArea({
   warningThreshold = 10,
   error = null,
   showCounter = true,
+  theme = 'hf',
   ...restProps
 }) {
   const textareaRef = useRef(null);
@@ -56,7 +58,7 @@ export default function TextArea({
   return (
     <div className={`w-full ${className}`}>
       {label && (
-        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+        <label className="form-field-label uppercase tracking-wider mb-1">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -75,8 +77,8 @@ export default function TextArea({
           onInput={(e) => adjustHeight(e.target)}
           disabled={isDisabled}
           readOnly={readOnly}
-          className={`w-full px-3 py-2 text-xs border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:bg-slate-100 disabled:text-slate-500 text-slate-800 placeholder:text-slate-400 resize-none overflow-hidden block transition-[height] duration-75 ${
-            error ? 'border-red-500 focus:ring-red-500' : ''
+          className={`w-full px-3 py-2 text-xs border border-slate-300 rounded-lg shadow-sm ${THEME_FOCUS_STYLES[theme] || THEME_FOCUS_STYLES.hf} disabled:bg-slate-100 disabled:text-slate-500 text-slate-800 placeholder:text-slate-400 resize-none overflow-hidden block transition-[height] duration-75 ${
+            error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : ''
           } ${inputClassName}`}
           style={{ height: 'auto' }}
           {...restProps}

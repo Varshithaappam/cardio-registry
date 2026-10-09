@@ -461,7 +461,7 @@ export default function AuditLogViewer({ hfId, regPatientId, isOpen = true, onCl
           <button
             onClick={fetchAuditLogs}
             disabled={loading}
-            className="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 cursor-pointer"
+            className="text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
           >
             <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -482,7 +482,7 @@ export default function AuditLogViewer({ hfId, regPatientId, isOpen = true, onCl
               <Shield className="w-5 h-5 text-blue-400" />
             </div>
             <div>
-              <h3 className="font-bold text-base tracking-tight">Immutable Audit Log</h3>
+              <h3 className="tracking-tight">Immutable Audit Log</h3>
               <p className="text-xs text-slate-400">HF Registry ID: #{hfId} Revision Timeline</p>
             </div>
           </div>
@@ -513,7 +513,7 @@ export default function AuditLogViewer({ hfId, regPatientId, isOpen = true, onCl
         <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 text-right">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition-all"
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition-all"
           >
             Close Audit Log
           </button>

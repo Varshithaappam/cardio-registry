@@ -217,7 +217,7 @@ export default function STEMIHistoryList({ regPatientId, patientName, onEditEven
                   <>
                     <button
                       disabled
-                      className="px-2.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1 cursor-not-allowed opacity-60"
+                      className="px-2.5 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg flex items-center gap-1 cursor-not-allowed opacity-60"
                       title="Cannot edit a deleted record. Restore it first."
                     >
                       <span>Edit Form</span>

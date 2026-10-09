@@ -238,7 +238,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
           <button
             id="btn-register-patient"
             onClick={() => setIsRegistering(!isRegistering)}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer">
+            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer">
             
             <Plus className="w-4 h-4" />
             <span>Register New Patient</span>
@@ -407,15 +407,15 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                             <Edit className="w-3.5 h-3.5 text-blue-600" />
                           </button>
                           {/* Event Shortcuts */}
-                          <div className="flex items-center gap-1 bg-slate-100/50 p-1 rounded-xl border border-slate-200/40">
+                          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
                             <button
                               id={`tbl-add-hf-${record.patient.id}`}
                               disabled={isInactiveOrDeceased}
                               onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'HF')}
-                              className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-colors ${
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                                 isInactiveOrDeceased
-                                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
-                                  : 'bg-teal-50 hover:bg-teal-100 text-teal-700 cursor-pointer'
+                                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed pointer-events-none'
+                                  : 'bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 shadow-xs cursor-pointer'
                               }`}
                               title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add HF Assessment'}
                             >
@@ -425,10 +425,10 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                               id={`tbl-add-stemi-${record.patient.id}`}
                               disabled={isInactiveOrDeceased}
                               onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'STEMI')}
-                              className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-colors ${
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                                 isInactiveOrDeceased
-                                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
-                                  : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer shadow-xs'
+                                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed pointer-events-none'
+                                  : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 shadow-xs cursor-pointer'
                               }`}
                               title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add STEMI Registry Entry'}
                             >
@@ -438,10 +438,10 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                               id={`tbl-add-nstemi-${record.patient.id}`}
                               disabled={isInactiveOrDeceased}
                               onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'NSTEMI')}
-                              className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-colors ${
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                                 isInactiveOrDeceased
-                                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
-                                  : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 cursor-pointer shadow-xs'
+                                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed pointer-events-none'
+                                  : 'bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 shadow-xs cursor-pointer'
                               }`}
                               title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add NSTEMI Registry Entry'}
                             >
@@ -450,7 +450,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                             <button
                               disabled={true}
                               id={`tbl-add-cabg-${record.patient.id}`}
-                              className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-lg text-[10px] font-black cursor-not-allowed opacity-50 pointer-events-none transition-colors"
+                              className="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold cursor-not-allowed pointer-events-none transition-all"
                               title="CABG registry under development"
                             >
                               + CABG
@@ -460,7 +460,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                           <button
                           id={`tbl-view-timeline-${record.patient.id}`}
                           onClick={() => onSelectPatient(record.patient.id)}
-                          className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black flex items-center gap-1 cursor-pointer transition-all shadow-sm">
+                          className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer transition-all shadow-sm">
                           
                             <Eye className="w-3.5 h-3.5" />
                             <span>Timeline</span>
@@ -593,23 +593,23 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       id={`btn-add-hf-${record.patient.id}`}
                       disabled={isInactiveOrDeceased}
                       onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'HF')}
-                      className={`px-2 py-1.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition-all ${
                         isInactiveOrDeceased
-                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
-                          : 'bg-teal-50 hover:bg-teal-100 text-teal-700 cursor-pointer'
+                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed pointer-events-none'
+                          : 'bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 shadow-xs cursor-pointer'
                       }`}
                       title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add HF Assessment'}
                     >
-                      + HF Assess
+                      + HF
                     </button>
                     <button
                       id={`btn-add-stemi-${record.patient.id}`}
                       disabled={isInactiveOrDeceased}
                       onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'STEMI')}
-                      className={`px-2 py-1.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition-all ${
                         isInactiveOrDeceased
-                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
-                          : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 cursor-pointer shadow-xs'
+                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed pointer-events-none'
+                          : 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 shadow-xs cursor-pointer'
                       }`}
                       title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add STEMI Registry Entry'}
                     >
@@ -619,10 +619,10 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       id={`btn-add-nstemi-${record.patient.id}`}
                       disabled={isInactiveOrDeceased}
                       onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'NSTEMI')}
-                      className={`px-2 py-1.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold shrink-0 transition-all ${
                         isInactiveOrDeceased
-                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
-                          : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 cursor-pointer shadow-xs'
+                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed pointer-events-none'
+                          : 'bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 shadow-xs cursor-pointer'
                       }`}
                       title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add NSTEMI Registry Entry'}
                     >
@@ -631,7 +631,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                     <button
                       disabled={true}
                       id={`btn-add-cabg-${record.patient.id}`}
-                      className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[10px] font-bold shrink-0 cursor-not-allowed opacity-50 pointer-events-none transition-colors"
+                      className="px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold shrink-0 cursor-not-allowed pointer-events-none transition-all"
                       title="CABG registry under development"
                     >
                       + CABG
@@ -641,7 +641,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                   <button
                   id={`btn-view-timeline-${record.patient.id}`}
                   onClick={() => onSelectPatient(record.patient.id)}
-                  className="w-full sm:w-auto px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1 transition-colors mt-2 sm:mt-0 cursor-pointer">
+                  className="w-full sm:w-auto px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg flex items-center justify-center gap-1 transition-colors mt-2 sm:mt-0 cursor-pointer">
                   
                     <span>Clinical Timeline</span>
                     <ChevronRight className="w-3.5 h-3.5" />

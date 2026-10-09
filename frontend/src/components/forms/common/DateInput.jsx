@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { Calendar } from 'lucide-react';
 import FormField from './FormField';
 import { formatDateForDisplay, formatDateForDatabase } from '../../../utils/dateUtils';
-import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
+import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES, getInputBaseStyles } from './formStyles';
 
 export default function DateInput({
   label,
@@ -14,7 +14,8 @@ export default function DateInput({
   readOnly = false,
   disabled = false,
   error = null,
-  placeholder = 'dd-mm-yyyy'
+  placeholder = 'dd-mm-yyyy',
+  theme = 'hf'
 }) {
   const hiddenDateRef = useRef(null);
   const isDisabled = disabled || readOnly;
@@ -78,7 +79,7 @@ export default function DateInput({
           placeholder={placeholder}
           value={displayVal}
           onChange={handleTextChange}
-          className={`${error ? INPUT_ERROR_STYLES : isDisabled ? INPUT_DISABLED_STYLES : INPUT_NORMAL_STYLES} pr-8`}
+          className={`${error ? INPUT_ERROR_STYLES : isDisabled ? INPUT_DISABLED_STYLES : getInputBaseStyles(theme)} pr-8`}
         />
         <button
           type="button"

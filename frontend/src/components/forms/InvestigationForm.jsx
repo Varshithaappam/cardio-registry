@@ -76,7 +76,7 @@ const InvestigationForm = forwardRef(function InvestigationForm(
       {/* Conditional ECG Sub-Panel */}
       {type === 'ECG' && (
         <div className="p-4 bg-slate-50 border rounded-xl space-y-4 animate-fadeIn">
-          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">ECG Parameters</h4>
+          <h4 className="uppercase tracking-wider">ECG Parameters</h4>
           <div className="grid grid-cols-2 gap-4">
             <NumberInput
               id="ecg-hr"
@@ -98,7 +98,7 @@ const InvestigationForm = forwardRef(function InvestigationForm(
       {/* Conditional ECHO Sub-Panel */}
       {type === 'ECHO' && (
         <div className="p-4 bg-slate-50 border rounded-xl space-y-4 animate-fadeIn">
-          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Echocardiography Parameters</h4>
+          <h4 className="uppercase tracking-wider">Echocardiography Parameters</h4>
           <div className="grid grid-cols-2 gap-4">
             <NumberInput
               id="echo-ef"

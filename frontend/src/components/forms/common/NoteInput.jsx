@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { THEME_FOCUS_STYLES } from './formStyles';
 
 /**
  * NoteInput Component
@@ -14,7 +15,8 @@ export default function NoteInput({
   readOnly = false,
   placeholder = 'Add note...',
   className = '',
-  focusRingClass = 'focus:ring-red-500'
+  focusRingClass = '',
+  theme = 'stemi'
 }) {
   const strVal = value !== undefined && value !== null ? String(value) : '';
   const currentLength = strVal.length;
@@ -58,7 +60,8 @@ export default function NoteInput({
     );
   }
 
-  return (
+    const effectiveFocus = focusRingClass || THEME_FOCUS_STYLES[theme] || THEME_FOCUS_STYLES.stemi;
+    return (
     <div className={`relative w-full min-w-0 ${className}`}>
       <textarea
         ref={textareaRef}
@@ -68,7 +71,7 @@ export default function NoteInput({
         onChange={handleChange}
         onInput={(e) => adjustHeight(e.target)}
         placeholder={placeholder}
-        className={`w-full min-w-0 px-2.5 py-1.5 pr-14 text-xs border border-slate-300 rounded focus:ring-1 ${focusRingClass} resize-none overflow-hidden transition-all bg-white font-normal text-slate-800 leading-normal block min-h-[32px] break-words whitespace-normal`}
+        className={`w-full min-w-0 px-2.5 py-1.5 pr-14 text-xs border border-slate-300 rounded ${effectiveFocus} resize-none overflow-hidden transition-all bg-white font-normal text-slate-800 leading-normal block min-h-[32px] break-words whitespace-normal`}
       />
       <small className="absolute right-1.5 bottom-1.5 text-[9px] font-mono text-gray-400 select-none pointer-events-none bg-white/90 px-0.5 rounded">
         {currentLength}/{maxLength}

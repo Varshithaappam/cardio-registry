@@ -184,7 +184,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-lg tracking-tight">
+                <h3 className="tracking-tight">
                   {titleType} Detailed Follow-Up Record
                 </h3>
                 <span className="px-2.5 py-0.5 bg-white/20 text-white font-bold text-[11px] rounded-full uppercase tracking-wider border border-white/20">
@@ -199,7 +199,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-3.5 py-2 bg-white/15 hover:bg-white/25 text-white font-semibold text-xs rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer border border-white/20"
+              className="px-3.5 py-2 bg-white/15 hover:bg-white/25 text-white rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer border border-white/20"
               title="Print Record"
             >
               <Printer className="w-4 h-4" />
@@ -218,7 +218,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
         <div id="acs-pdf-printable-area" className="p-6 overflow-y-auto space-y-6 text-slate-800 text-sm">
           {/* Section 1: Encounter Metadata */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3 bg-slate-50/50">
-            <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
+            <h4 className="border-b border-slate-100 pb-2 uppercase tracking-wider text-slate-600">
               1. Encounter Metadata
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
@@ -283,7 +283,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
 
           {/* Section 2: General Health Overview & Medication Changes */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-            <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
+            <h4 className="border-b border-slate-100 pb-2 uppercase tracking-wider text-slate-600">
               2. General Health Overview & Medication Changes
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
@@ -327,7 +327,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
 
           {/* Section 3: New Symptoms Checklist */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-            <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
+            <h4 className="border-b border-slate-100 pb-2 uppercase tracking-wider text-slate-600">
               3. New Symptoms Checklist
             </h4>
             {selectedSymptoms.length > 0 ? (
@@ -352,7 +352,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
           {/* Section 4: Medication Adherence & ACS Drug Grid */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider text-slate-600">
+              <h4 className="uppercase tracking-wider text-slate-600">
                 4. Medication Adherence & ACS Drug Grid
               </h4>
               <span className="text-xs font-semibold text-slate-700">
@@ -401,7 +401,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
 
           {/* Section 5: Lab Tests & Investigations */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-            <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
+            <h4 className="border-b border-slate-100 pb-2 uppercase tracking-wider text-slate-600">
               5. Lab Tests & Investigations
             </h4>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
@@ -438,7 +438,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
 
           {/* Section 6: Major Clinical Events & Mortality Tracking */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-            <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
+            <h4 className="border-b border-slate-100 pb-2 uppercase tracking-wider text-slate-600">
               6. Major Clinical Events & Mortality Tracking
             </h4>
             <div className="text-xs">
@@ -493,7 +493,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
 
           {/* Section 7: Vaccinations, Program Opt-In & Feedback */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3">
-            <h4 className="font-bold text-slate-900 border-b border-slate-100 pb-2 text-xs uppercase tracking-wider text-slate-600">
+            <h4 className="border-b border-slate-100 pb-2 uppercase tracking-wider text-slate-600">
               7. Vaccinations, Program Opt-In & Feedback
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -521,7 +521,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
         <div className="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
+            className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl shadow-sm transition-all cursor-pointer"
           >
             Close Viewer
           </button>

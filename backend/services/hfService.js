@@ -12,15 +12,15 @@ function formatRegistryNumber(id) {
 }
 
 const toSqlDate = (dateVal) => {
-  if (!dateVal) return null;
-  try {
-    const d = new Date(dateVal);
-    if (isNaN(d.getTime())) return null;
-    return d.toISOString().split('T')[0];
-  } catch (err) {
-    console.error("Error parsing date:", dateVal, err);
-    return null;
-  }
+    if (!dateVal) return null;
+    try {
+        const d = new Date(dateVal);
+        if (isNaN(d.getTime())) return null;
+        return d.toISOString().split('T')[0];
+    } catch (err) {
+        console.error("Error parsing date:", dateVal, err);
+        return null;
+    }
 };
 
 async function saveHfAssessment(data, userId = 1) {
@@ -48,7 +48,7 @@ async function saveHfAssessment(data, userId = 1) {
         // If data.id is a valid database record ID (number or non-hfa string number)
         if (data.id && !String(data.id).startsWith("hfa-") && !isNaN(Number(data.id))) {
             hf_id = Number(data.id);
-            
+
             // Retrieve the existing hf_registry_no from the database
             const { recordset: regRows } = await conn.query(
                 'SELECT [hf_registry_no] FROM [hf_registry] WHERE [hf_id] = @hfId;',
@@ -63,7 +63,7 @@ async function saveHfAssessment(data, userId = 1) {
                 'UPDATE [hf_registry] SET [status] = @statusVal, [updated_at] = SYSDATETIME(), [updated_by] = @userId WHERE [hf_id] = @hfId;',
                 { statusVal, userId, hfId: hf_id }
             );
-            
+
             // Delete existing child table rows in a single batch statement
             const childTables = [
                 'hf_administrative',
@@ -109,9 +109,9 @@ async function saveHfAssessment(data, userId = 1) {
         const withHfId = (obj) => ({ ...obj, hf_id });
 
         // Resolve care_mr_no from payload or fetch from patients table
-        let care_mr_no = data.care_mr_no || data.careMrNo || data.mr_no || data.mrNo || 
-                         data.patient?.mr_no || data.patient?.mrNo || 
-                         data.patientRecord?.patient?.mr_no || data.patientRecord?.patient?.mrNo;
+        let care_mr_no = data.care_mr_no || data.careMrNo || data.mr_no || data.mrNo ||
+            data.patient?.mr_no || data.patient?.mrNo ||
+            data.patientRecord?.patient?.mr_no || data.patientRecord?.patient?.mrNo;
 
         if ((!care_mr_no || care_mr_no === 'Unknown') && (data.regPatientId || data.reg_patient_id)) {
             const pid = data.regPatientId || data.reg_patient_id;
@@ -145,12 +145,16 @@ async function saveHfAssessment(data, userId = 1) {
         }
 
         // Automated or manual visit_id logic
-        const vt = data.visitType || 'Outpatient';
+        const vt = data.visitType || '';
         let prefix = 'OP';
         if (vt.toLowerCase().includes('inpatient')) {
             prefix = 'IP';
         } else if (vt.toLowerCase().includes('home')) {
             prefix = 'HM';
+        } else if (vt.toLowerCase().includes('outpatient')) {
+            prefix = 'OP';
+        } else {
+            prefix = 'HF';
         }
 
         let finalVisitId = data.visitId || data.visit_id || data.inpatientDetails?.visitId || data.encounterId || data.inpatientDetails?.encounterId;
@@ -200,8 +204,8 @@ async function saveHfAssessment(data, userId = 1) {
             visit_type: vt,
             address: data.patient?.address,
             education_level: data.patient?.highestEducation,
-            monthly_income: (data.patient?.monthlyIncome !== undefined && data.patient?.monthlyIncome !== null && data.patient?.monthlyIncome !== '') 
-                ? (isNaN(Number(String(data.patient.monthlyIncome).replace(/,/g, ''))) ? null : Number(String(data.patient.monthlyIncome).replace(/,/g, ''))) 
+            monthly_income: (data.patient?.monthlyIncome !== undefined && data.patient?.monthlyIncome !== null && data.patient?.monthlyIncome !== '')
+                ? (isNaN(Number(String(data.patient.monthlyIncome).replace(/,/g, ''))) ? null : Number(String(data.patient.monthlyIncome).replace(/,/g, '')))
                 : null,
             occupation: data.patient?.occupation,
             caregiver_name: data.patient?.caregiverName,
@@ -519,8 +523,8 @@ async function saveHfAssessment(data, userId = 1) {
                         data.investigations?.blockOther === 'Yes' ||
                         data.investigations?.ecgBlockages === 'Other'
                     )
-                    ? (data.investigations?.ecg_block_other_details || data.investigations?.blockOtherDetails || data.investigations?.ecgBlockagesOther || null)
-                    : null
+                        ? (data.investigations?.ecg_block_other_details || data.investigations?.blockOtherDetails || data.investigations?.ecgBlockagesOther || null)
+                        : null
                 ),
                 ecg_apc: (data.investigations?.ecgExtraBeats === 'APC' || data.investigations?.ecgExtraBeats === 'APCs') ? 'Yes' : 'No',
                 ecg_vpc: (data.investigations?.ecgExtraBeats === 'VPC' || data.investigations?.ecgExtraBeats === 'VPCs') ? 'Yes' : 'No',
@@ -610,7 +614,7 @@ async function saveHfAssessment(data, userId = 1) {
 
         // Section 11: Follow-up Assessment
         const fa = data.followupAssessment || data.hf_followup_assessments || (
-          (data.is_followup_required !== undefined || data.isFollowupRequired !== undefined || data.scheduled_followup_date || data.scheduledFollowupDate) ? data : null
+            (data.is_followup_required !== undefined || data.isFollowupRequired !== undefined || data.scheduled_followup_date || data.scheduledFollowupDate) ? data : null
         );
 
         if (fa) {
@@ -1021,7 +1025,7 @@ async function getHfAssessment(hf_id) {
             pvc_frequency: initial.pvc_frequency,
             documented_nsvt: initial.documented_nsvt,
             nsvt_frequency: initial.nsvt_frequency,
-            
+
             weight: initial.weight,
             unable_to_weigh: initial.unable_to_weigh,
             unable_to_weigh_reason: initial.unable_to_weigh_reason,
@@ -1039,7 +1043,7 @@ async function getHfAssessment(hf_id) {
             mental_status_alert: initial.mental_status_alert_oriented,
             mental_status_confused: initial.mental_status_confused,
             mental_status_drowsy: initial.mental_status_drowsy,
-            
+
             dyspnea_at_rest: initial.dyspnea_at_rest,
             dyspnea_with_exertion: initial.dyspnea_with_exertion,
             fatigue: initial.fatigue,
@@ -1055,7 +1059,7 @@ async function getHfAssessment(hf_id) {
             giddiness: initial.giddiness,
             symptom_other: initial.symptom_other,
             symptom_other_details: initial.symptom_other_details,
-            
+
             peripheral_edema: initial.peripheral_edema,
             rales: initial.rales,
             hepatomegaly: initial.hepatomegaly,
@@ -1064,7 +1068,7 @@ async function getHfAssessment(hf_id) {
             clinical_sign_other: initial.clinical_sign_other,
             clinical_sign_other_details: initial.clinical_sign_other_details,
 
-            typeOfHF: final.hfref === 'Yes' ? 'HFrEF (HF with reduced EF)' : (final.hfpef === 'Yes' ? 'HFpEF (HF with preserved EF)' : 'HFrEF (HF with reduced EF)'),
+            typeOfHF: final.hfref === 'Yes' ? 'HFrEF (HF with reduced EF)' : (final.hfpef === 'Yes' ? 'HFpEF (HF with preserved EF)' : null),
             hfEtiology: {
                 cardiovascular: cvEtiology,
                 nonCardiac: ncEtiology,
@@ -1076,7 +1080,7 @@ async function getHfAssessment(hf_id) {
             finalAssessment: {
                 finalNyhaClass: final.nyha_class_1 === 'Yes' ? 'NYHA Class I' : (final.nyha_class_2 === 'Yes' ? 'NYHA Class II' : (final.nyha_class_3 === 'Yes' ? 'NYHA Class III' : (final.nyha_class_4 === 'Yes' ? 'NYHA Class IV' : ''))),
                 finalStage: final.stage_a === 'Yes' ? 'Stage A' : (final.stage_b === 'Yes' ? 'Stage B' : (final.stage_c === 'Yes' ? 'Stage C' : (final.stage_d === 'Yes' ? 'Stage D' : ''))),
-                finalTypeOfHF: final.hfref === 'Yes' ? 'HFrEF (HF with reduced EF)' : (final.hfpef === 'Yes' ? 'HFpEF (HF with preserved EF)' : 'HFrEF (HF with reduced EF)'),
+                finalTypeOfHF: final.hfref === 'Yes' ? 'HFrEF (HF with reduced EF)' : (final.hfpef === 'Yes' ? 'HFpEF (HF with preserved EF)' : null),
                 comorbidities,
                 otherComorbidity: final.comorbidity_other_details,
                 riskFactors,

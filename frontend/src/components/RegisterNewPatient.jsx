@@ -731,7 +731,7 @@ export default function RegisterNewPatient({
       {/* Fixed Header */}
       <div className="flex items-center justify-between p-3.5 border-b border-slate-100 shrink-0 bg-white">
         <div className="flex items-center gap-3">
-          <h3 className="text-base font-bold text-slate-800">
+          <h3>
             {isEditMode ? 'Edit Patient Master Record' : 'Master Registry: Patient Registration'}
           </h3>
         </div>
@@ -754,14 +754,14 @@ export default function RegisterNewPatient({
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-1.5">
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-blue-600" />
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Demographics & Profile</h4>
+              <h4 className="uppercase tracking-wider">Demographics & Profile</h4>
             </div>
             <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">Primary Info</span>
           </div>
 
           {/* 1. Full Name */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+            <label className="form-field-label">
               Full Name <span className="text-red-500 font-bold ml-0.5">*</span>
             </label>
             <input
@@ -790,7 +790,7 @@ export default function RegisterNewPatient({
           {/* 2. Gender, Date of Birth & Age (Inline 3-column row) */}
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+              <label className="form-field-label">
                 Gender <span className="text-red-500 font-bold ml-0.5">*</span>
               </label>
               <select
@@ -808,7 +808,7 @@ export default function RegisterNewPatient({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+              <label className="form-field-label">
                 Date of Birth <span className="text-red-500 font-bold ml-0.5">*</span>
               </label>
               <input
@@ -822,7 +822,7 @@ export default function RegisterNewPatient({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-0.5">Age</label>
+              <label className="form-field-label">Age</label>
               <input
                 id="reg-age"
                 type="text"
@@ -837,7 +837,7 @@ export default function RegisterNewPatient({
           {/* 3. Blood Group & Patient Status (Inline 2-column row) */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+              <label className="form-field-label">
                 Blood Group <span className="text-red-500 font-bold ml-0.5">*</span>
               </label>
               <select
@@ -862,7 +862,7 @@ export default function RegisterNewPatient({
 
             <div>
               <div className="flex items-center justify-between mb-0.5">
-                <label htmlFor="reg-patient-status" className="block text-xs font-semibold text-slate-700">
+                <label htmlFor="reg-patient-status" className="form-field-label">
                   Patient Status <span className="text-red-500 font-bold">*</span>
                 </label>
                 <span className={`px-1.5 py-0.2 text-[9px] font-extrabold rounded uppercase tracking-wider ${
@@ -892,7 +892,7 @@ export default function RegisterNewPatient({
           {patientStatus === 'DECEASED' && (
             <div className="bg-rose-50/90 p-2 rounded-lg border border-rose-200 space-y-1 animate-fadeIn">
               <div className="flex items-center justify-between">
-                <label htmlFor="reg-date-of-death" className="block text-[11px] font-bold text-rose-900">
+                <label htmlFor="reg-date-of-death" className="form-field-label text-rose-900">
                   Date of Death <span className="text-red-600 font-bold">*</span>
                 </label>
                 <span className="text-[9px] font-bold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-200 uppercase">
@@ -920,7 +920,7 @@ export default function RegisterNewPatient({
           {/* 4. Contact Phone & Email Address */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+              <label className="form-field-label">
                 Contact Phone <span className="text-red-500 font-bold ml-0.5">*</span>
               </label>
               <input
@@ -947,7 +947,7 @@ export default function RegisterNewPatient({
               )}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-0.5">Email Address</label>
+              <label className="form-field-label">Email Address</label>
               <input
                 id="reg-email"
                 type="email"
@@ -962,7 +962,7 @@ export default function RegisterNewPatient({
           {/* 5. Occupation & Higher Education */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-0.5">Occupation</label>
+              <label className="form-field-label">Occupation</label>
               <input
                 id="reg-occupation"
                 type="text"
@@ -974,7 +974,7 @@ export default function RegisterNewPatient({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-0.5">Higher Education</label>
+              <label className="form-field-label">Higher Education</label>
               <select
                 id="reg-education"
                 className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
@@ -998,14 +998,14 @@ export default function RegisterNewPatient({
             <div className="flex items-center justify-between border-b border-slate-200/80 pb-1">
               <div className="flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-blue-600" />
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Hospital & National ID</h4>
+                <h4 className="uppercase tracking-wider">Hospital & National ID</h4>
               </div>
             </div>
 
             {/* MR No & UHID */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+                <label className="form-field-label">
                   MR No. <span className="text-red-500 font-bold ml-0.5">*</span>
                 </label>
                 <div className="relative">
@@ -1058,7 +1058,7 @@ export default function RegisterNewPatient({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-0.5">
+                <label className="form-field-label">
                   UHID (Triotree) <span className="text-red-500 font-bold ml-0.5">*</span>
                 </label>
                 <div className="relative">
@@ -1118,7 +1118,7 @@ export default function RegisterNewPatient({
                   National ID
                 </span>
                 <div className="flex items-center gap-3 bg-slate-50 px-2 py-0.5 border border-slate-200 rounded-md">
-                  <label className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 cursor-pointer">
+                  <label className="inline-flex items-center gap-1 cursor-pointer">
                     <input
                       type="radio"
                       name="nationalIdType"
@@ -1129,7 +1129,7 @@ export default function RegisterNewPatient({
                     />
                     <span>ABHA</span>
                   </label>
-                  <label className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 cursor-pointer">
+                  <label className="inline-flex items-center gap-1 cursor-pointer">
                     <input
                       type="radio"
                       name="nationalIdType"
@@ -1147,7 +1147,7 @@ export default function RegisterNewPatient({
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <div className="flex items-center justify-between mb-0.5">
-                      <label className="block text-[10px] font-bold text-slate-700">
+                      <label className="form-field-label">
                         ABHA Number
                       </label>
                       <span className={`text-[9px] font-mono px-1 py-0.2 rounded font-semibold ${
@@ -1205,7 +1205,7 @@ export default function RegisterNewPatient({
                     )}
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-700 mb-0.5">
+                    <label className="form-field-label">
                       ABHA Address
                     </label>
                     <input
@@ -1223,7 +1223,7 @@ export default function RegisterNewPatient({
               ) : (
                 <div>
                   <div className="flex items-center justify-between mb-0.5">
-                    <label className="block text-[10px] font-bold text-slate-700">
+                    <label className="form-field-label">
                       Aadhaar Number
                     </label>
                     <span className={`text-[9px] font-mono px-1 py-0.2 rounded font-semibold ${
@@ -1255,13 +1255,13 @@ export default function RegisterNewPatient({
           <div className="space-y-2 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
             <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1">
               <MapPin className="w-4 h-4 text-blue-600" />
-              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Residential Address</h4>
+              <h4 className="uppercase tracking-wider">Residential Address</h4>
             </div>
 
             {/* Row 1: House/Flat No + Street/Locality */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-0.5">House / Flat No</label>
+                <label className="form-field-label">House / Flat No</label>
                 <input
                   id="reg-house-flat-no"
                   type="text"
@@ -1273,7 +1273,7 @@ export default function RegisterNewPatient({
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-0.5">Street / Locality</label>
+                <label className="form-field-label">Street / Locality</label>
                 <input
                   id="reg-street-locality"
                   type="text"
@@ -1289,7 +1289,7 @@ export default function RegisterNewPatient({
             {/* Row 2: Village/Town/City + Mandal */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-0.5">City / Town</label>
+                <label className="form-field-label">City / Town</label>
                 <input
                   id="reg-village-town"
                   type="text"
@@ -1301,7 +1301,7 @@ export default function RegisterNewPatient({
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-0.5">Mandal</label>
+                <label className="form-field-label">Mandal</label>
                 <input
                   id="reg-mandal"
                   type="text"
@@ -1317,7 +1317,7 @@ export default function RegisterNewPatient({
             {/* Row 3: District + State + PIN Code */}
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-0.5">District</label>
+                <label className="form-field-label">District</label>
                 <input
                   id="reg-district"
                   type="text"
@@ -1329,7 +1329,7 @@ export default function RegisterNewPatient({
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-0.5">State</label>
+                <label className="form-field-label">State</label>
                 <input
                   id="reg-state"
                   type="text"
@@ -1341,7 +1341,7 @@ export default function RegisterNewPatient({
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-0.5">PIN Code</label>
+                <label className="form-field-label">PIN Code</label>
                 <input
                   id="reg-pincode"
                   type="text"
@@ -1360,12 +1360,12 @@ export default function RegisterNewPatient({
         <div className="space-y-2 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
           <div className="flex items-center gap-2 border-b border-slate-200/80 pb-1.5">
             <Shield className="w-4 h-4 text-blue-600" />
-            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Baseline Comorbidities</h4>
+            <h4 className="uppercase tracking-wider">Baseline Comorbidities</h4>
           </div>
 
           {/* Hypertension */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Hypertension</label>
+            <label className="form-field-label">Hypertension</label>
             <div className="flex gap-1">
               {['Yes', 'No', 'Unknown'].map((opt) => (
                 <button
@@ -1386,7 +1386,7 @@ export default function RegisterNewPatient({
 
           {/* Smoking */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Smoking</label>
+            <label className="form-field-label">Smoking</label>
             <div className="flex gap-1">
               {['Yes', 'No', 'Unknown'].map((opt) => (
                 <button
@@ -1407,7 +1407,7 @@ export default function RegisterNewPatient({
 
           {/* Diabetes Mellitus */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Diabetes Mellitus</label>
+            <label className="form-field-label">Diabetes Mellitus</label>
             <div className="flex gap-1 mb-1.5">
               {['Yes', 'No', 'Unknown'].map((opt) => (
                 <button
@@ -1427,7 +1427,7 @@ export default function RegisterNewPatient({
 
             {diabetes === 'Yes' && (
               <div className="bg-white p-2 rounded-lg border border-slate-200 space-y-1">
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Diabetes Control Mode</label>
+                <label className="form-field-label">Diabetes Control Mode</label>
                 <select
                   className="w-full p-1 text-xs bg-slate-50 border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   value={diabetesControl}
@@ -1445,7 +1445,7 @@ export default function RegisterNewPatient({
 
           {/* Renal Failure */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-1">Renal Failure</label>
+            <label className="form-field-label">Renal Failure</label>
             <div className="flex gap-1 mb-1.5">
               {['Yes', 'No', 'Unknown'].map((opt) => (
                 <button
@@ -1465,9 +1465,9 @@ export default function RegisterNewPatient({
 
             {renalFailure === 'Yes' && (
               <div className="bg-white p-2 rounded-lg border border-slate-200 space-y-1">
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Active Dialysis Status</label>
+                <label className="form-field-label">Active Dialysis Status</label>
                 <div className="flex gap-2">
-                  <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="radio"
                       name="dialysisRadio"
@@ -1477,7 +1477,7 @@ export default function RegisterNewPatient({
                     />
                     <span>Under Dialysis</span>
                   </label>
-                  <label className="flex items-center gap-1.5 text-xs text-slate-700 cursor-pointer">
+                  <label className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="radio"
                       name="dialysisRadio"
@@ -1500,7 +1500,7 @@ export default function RegisterNewPatient({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
+            className="px-4 py-2 border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg transition-colors"
           >
             Cancel
           </button>
@@ -1509,11 +1509,11 @@ export default function RegisterNewPatient({
           type="submit"
           disabled={loading || isUniqueChecking || hasUniquenessErrors}
           title={hasUniquenessErrors ? 'Cannot submit with duplicate identifiers' : ''}
-          className={`px-6 py-2 rounded-lg text-xs font-bold transition-all shadow-md flex items-center gap-2 ${
-            loading || isUniqueChecking || hasUniquenessErrors
-              ? 'bg-slate-400 text-white cursor-not-allowed opacity-60'
-              : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer active:scale-95'
-          }`}
+          className={`px-6 py-2 rounded-lg transition-all shadow-md flex items-center gap-2 ${
+ loading || isUniqueChecking || hasUniquenessErrors
+ ? 'bg-slate-400 text-white cursor-not-allowed opacity-60'
+ : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer active:scale-95'
+ }`}
         >
           {isUniqueChecking ? (
             <>

@@ -89,7 +89,7 @@ export default function PatientVerificationModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold">
+                <h3>
                   {isHighConfidence ? 'Duplicate Patient Record Detected' : 'Potential Existing Patient Match Found'}
                 </h3>
                 <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${
@@ -384,7 +384,7 @@ export default function PatientVerificationModal({
                 onChange={(e) => setSafetyConfirmed(e.target.checked)}
                 className="mt-0.5 h-4 w-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
               />
-              <label htmlFor="safetyCheck" className="font-medium cursor-pointer leading-relaxed">
+              <label htmlFor="safetyCheck" className="cursor-pointer leading-relaxed">
                 <strong>Clinical Safety Override:</strong> I have physically verified government identity documents (Aadhaar / Passport / Voter ID) and confirm that this individual is a distinct person from the existing record.
               </label>
             </div>
@@ -397,7 +397,7 @@ export default function PatientVerificationModal({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors"
+            className="px-4 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition-colors"
           >
             Cancel & Edit Form
           </button>
@@ -408,7 +408,7 @@ export default function PatientVerificationModal({
               type="button"
               onClick={handleUseExisting}
               disabled={loading || !activeCandidate}
-              className="px-4.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 transition-all hover:shadow-lg disabled:opacity-50"
+              className="px-4.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md flex items-center gap-2 transition-all hover:shadow-lg disabled:opacity-50"
             >
               <UserCheck className="w-4 h-4" />
               Use Existing Patient File ({activeCandidate?.mr_no || 'Candidate'})
@@ -420,7 +420,7 @@ export default function PatientVerificationModal({
                 type="button"
                 onClick={handleForceRegister}
                 disabled={loading || !safetyConfirmed}
-                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
                 title={!safetyConfirmed ? 'Please check the safety acknowledgment first' : 'Force register as new record'}
               >
                 <UserPlus className="w-4 h-4" />
@@ -431,7 +431,7 @@ export default function PatientVerificationModal({
                 type="button"
                 onClick={handleForceRegister}
                 disabled={loading || !safetyConfirmed}
-                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
                 title={!safetyConfirmed ? 'Please check the safety acknowledgment first' : 'Confirm different patient and register'}
               >
                 <UserPlus className="w-4 h-4" />

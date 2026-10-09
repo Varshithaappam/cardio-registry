@@ -63,7 +63,7 @@ function MainLayout({ records, nurse, onLogout }) {
               <Heart className="w-5 h-5 animate-pulse" />
             </div>
             <div>
-              <h1 className="text-sm sm:text-base font-black tracking-tight flex items-center gap-1.5 text-slate-100">
+              <h1 className="tracking-tight flex items-center gap-1.5 text-slate-100">
                 <span>CARE CARDIOVASCULAR REGISTRY</span>
               </h1>
               <p className="text-[10px] text-slate-400 mt-0.5">Comprehensive Longitudinal Clinical Audit Platform</p>
@@ -83,7 +83,7 @@ function MainLayout({ records, nurse, onLogout }) {
             <button
               id="btn-logout"
               onClick={onLogout}
-              className="px-3 py-2 bg-slate-800 hover:bg-red-950/30 text-slate-300 hover:text-red-400 border border-slate-700/60 hover:border-red-500/30 rounded-xl transition-all flex items-center gap-1.5 text-xs font-bold cursor-pointer"
+              className="px-3 py-2 bg-slate-800 hover:bg-red-950/30 text-slate-300 hover:text-red-400 border border-slate-700/60 hover:border-red-500/30 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
               title="Secure Log Out"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -232,7 +232,7 @@ function PatientTimelinePage({ records, loadPatients }) {
   if (!record) {
     return (
       <div className="p-8 text-center bg-white rounded-xl border border-slate-200">
-        <h3 className="text-lg font-bold text-slate-800">Patient Portfolio Not Found</h3>
+        <h3>Patient Portfolio Not Found</h3>
         <p className="text-slate-500 text-sm mt-2 mb-4">Patient record ID #{regPatientId} could not be located.</p>
         <button onClick={() => navigate('/patients')} className="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs">
           Return to Master Patient Registry
@@ -370,7 +370,7 @@ function EditFormPage({ records, loadPatients }) {
   if (!activePatientRecord) {
     return (
       <div className="p-8 text-center bg-white rounded-xl border border-slate-200">
-        <h3 className="text-lg font-bold text-slate-800">Patient Record Not Found</h3>
+        <h3>Patient Record Not Found</h3>
         <button onClick={() => navigate('/patients')} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold">
           Return to Patients
         </button>

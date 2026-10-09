@@ -275,10 +275,10 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
             <FileText className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold">
+            <h3 className="!text-white text-lg font-bold tracking-tight">
               {editingRecord ? 'Modify Existing Entry' : 'Record New Entry'}: {currentStyle.title}
             </h3>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-100 mt-1">
               Patient Reference: {patientRecord.patient.name || patientRecord.patient.patient_name} ({patientRecord.patient.mrNo || patientRecord.patient.mr_no}) • {currentStyle.subtitle}
             </p>
           </div>
@@ -290,11 +290,10 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
                 type="button"
                 onClick={() => setViewMode('detailed')}
                 aria-pressed={viewMode === 'detailed'}
-                className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
-                  viewMode === 'detailed'
-                    ? 'bg-teal-500 text-white shadow-sm'
-                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                }`}
+                className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${viewMode === 'detailed'
+                  ? 'bg-teal-500 text-white shadow-sm'
+                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                  }`}
               >
                 Detailed Form
               </button>
@@ -302,11 +301,10 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
                 type="button"
                 onClick={() => setViewMode('tabular')}
                 aria-pressed={viewMode === 'tabular'}
-                className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${
-                  viewMode === 'tabular'
-                    ? 'bg-teal-500 text-white shadow-sm'
-                    : 'text-slate-300 hover:bg-white/10 hover:text-white'
-                }`}
+                className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${viewMode === 'tabular'
+                  ? 'bg-teal-500 text-white shadow-sm'
+                  : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                  }`}
               >
                 Tabular View
               </button>
@@ -316,7 +314,11 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
       </div>
 
       {/* Primary Interactive Fields */}
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
+      <form
+        onSubmit={handleSubmit}
+        data-registry={isHfForm ? 'hf' : isStemiForm ? 'stemi' : isNstemiForm ? 'nstemi' : undefined}
+        className={`p-6 space-y-6 ${isHfForm ? 'theme-hf' : isStemiForm ? 'theme-stemi' : isNstemiForm ? 'theme-nstemi' : ''}`}
+      >
         {renderActiveForm()}
 
         {/* Draft/Complete controls & save/cancel buttons */}
@@ -329,9 +331,8 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
               type="button"
               disabled={isSubmitting}
               onClick={handleSaveDraft}
-              className={`w-full sm:w-auto px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs ${
-                isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-              }`}
+              className={`w-full sm:w-auto px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg flex items-center justify-center gap-1.5 shadow-xs ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                }`}
             >
               <Bookmark className="w-3.5 h-3.5 text-amber-600" />
               <span>Save as Draft</span>
@@ -341,9 +342,8 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
               type="button"
               disabled={isSubmitting}
               onClick={onCancel}
-              className={`w-full sm:w-auto px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-bold ${
-                isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-              }`}
+              className={`w-full sm:w-auto px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                }`}
             >
               Cancel
             </button>
@@ -351,9 +351,8 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
               id="btn-submit-form"
               type="submit"
               disabled={isSubmitting}
-              className={`w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm flex items-center justify-center gap-2 ${
-                isSubmitting ? 'opacity-75 cursor-wait' : 'cursor-pointer'
-              }`}
+              className={`w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm flex items-center justify-center gap-2 ${isSubmitting ? 'opacity-75 cursor-wait' : 'cursor-pointer'
+                }`}
             >
               {isSubmitting ? (
                 <>

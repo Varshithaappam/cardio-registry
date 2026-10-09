@@ -200,7 +200,7 @@ export function AlertProvider({ children }) {
             {renderIcon()}
 
             {/* Middle Bold Title */}
-            <h3 className="text-lg font-bold text-slate-800 tracking-tight leading-tight px-4">
+            <h3 className="tracking-tight leading-tight px-4">
               {modalConfig.title || 'Notification'}
             </h3>
 
@@ -217,13 +217,13 @@ export function AlertProvider({ children }) {
                 <div className="grid grid-cols-2 gap-3 w-full">
                   <button
                     onClick={modalConfig.onCancel}
-                    className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 transition-all cursor-pointer"
+                    className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 transition-all cursor-pointer"
                   >
                     {modalConfig.cancelText || 'Cancel'}
                   </button>
                   <button
                     onClick={modalConfig.onConfirm}
-                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer ${getConfirmBtnClass()}`}
+                    className={`w-full py-2.5 px-4 rounded-xl shadow-xs transition-all cursor-pointer ${getConfirmBtnClass()}`}
                   >
                     {modalConfig.confirmText || 'Confirm'}
                   </button>
@@ -231,7 +231,7 @@ export function AlertProvider({ children }) {
               ) : (
                 <button
                   onClick={modalConfig.onConfirm}
-                  className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer uppercase tracking-wider ${getConfirmBtnClass()}`}
+                  className={`w-full py-2.5 px-4 rounded-xl shadow-xs transition-all cursor-pointer uppercase tracking-wider ${getConfirmBtnClass()}`}
                 >
                   {modalConfig.confirmText || 'CONTINUE'}
                 </button>

@@ -256,7 +256,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
   };
 
   return (
-    <div className="bg-white w-full rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-fadeIn">
+    <div className={`bg-white w-full rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-fadeIn ${isStemi ? "theme-stemi" : "theme-nstemi"}`} data-registry={isStemi ? "stemi" : "nstemi"}>
       {/* Form Header */}
       <div className={`px-6 py-4 flex items-center justify-between text-white ${isStemi ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700' : 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700'}`}>
         <div className="flex items-center gap-3">
@@ -264,7 +264,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             <FileText className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="font-extrabold text-lg tracking-tight">
+            <h2 className="tracking-tight">
               {isStemi ? 'STEMI Detailed Follow-Up Form' : 'NSTEMI Detailed Follow-Up Form'}
             </h2>
             <p className="text-xs text-white/80 font-medium">
@@ -279,7 +279,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             <select
               value={formData.overall_registry_status || 'Completed'}
               onChange={(e) => setFormData({ ...formData, overall_registry_status: e.target.value })}
-              className="bg-white text-slate-900 font-bold text-xs px-2.5 py-1 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer shadow-xs"
+              className={`bg-white text-slate-900 font-bold text-xs px-2.5 py-1 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 ${isStemi ? 'focus:ring-red-600 focus:border-red-600' : 'focus:ring-orange-500 focus:border-orange-500'} cursor-pointer shadow-xs`}
             >
               <option value="Completed" className="bg-white text-slate-900 font-medium py-1">Completed</option>
               <option value="Pending" className="bg-white text-slate-900 font-medium py-1">Pending</option>
@@ -304,13 +304,13 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
         
         {/* Section 1: Outreach Metadata & Dates */}
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-200 pb-2">
+          <h3 className="uppercase tracking-wider border-b border-slate-200 pb-2">
             1. Patient & Outreach Details
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">IP No. (Hospital Episode)</label>
+              <label className="form-field-label">IP No. (Hospital Episode)</label>
               <input
                 type="text"
                 placeholder="e.g. IP-2026-8891"
@@ -321,7 +321,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">ACS No. / Episode ID</label>
+              <label className="form-field-label">ACS No. / Episode ID</label>
               <input
                 type="text"
                 placeholder="e.g. ACS.0001"
@@ -335,7 +335,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Follow-Up Date</label>
+              <label className="form-field-label">Follow-Up Date</label>
               <input
                 type="date"
                 value={formData.patient_followup_date}
@@ -345,7 +345,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Follow-Up Conducted</label>
+              <label className="form-field-label">Follow-Up Conducted</label>
               <select
                 value={formData.followup_conducted}
                 onChange={(e) => setFormData({ ...formData, followup_conducted: e.target.value })}
@@ -358,7 +358,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Follow-Up Attempt in Month</label>
+              <label className="form-field-label">Follow-Up Attempt in Month</label>
               <select
                 value={formData.attempt_number}
                 onChange={(e) => setFormData({ ...formData, attempt_number: parseInt(e.target.value, 10) })}
@@ -371,7 +371,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Answering Status</label>
+              <label className="form-field-label">Answering Status</label>
               <select
                 value={formData.answering_status}
                 onChange={(e) => setFormData({ ...formData, answering_status: e.target.value })}
@@ -385,7 +385,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
             {formData.answering_status === 'No' && (
               <div className="col-span-full">
-                <label className="block text-slate-600 font-semibold mb-1">Reason for No Answer</label>
+                <label className="form-field-label">Reason for No Answer</label>
                 <input
                   type="text"
                   placeholder="e.g. Switched off, Wrong number, No answer after 3 rings"
@@ -400,15 +400,15 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
         {/* Section 2: General Health & Medication Overview */}
         <div className="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
+          <h3 className="uppercase tracking-wider border-b border-slate-100 pb-2">
             2. General Health Overview
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Since your last visit, are you:</label>
+              <label className="form-field-label">Since your last visit, are you:</label>
               <div className="flex items-center gap-4 mt-1">
-                <label className="flex items-center gap-1.5 cursor-pointer font-medium">
+                <label className="flex items-center gap-1.5 cursor-pointer">
                   <input
                     type="radio"
                     name="health_status"
@@ -419,7 +419,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                   />
                   Healthy
                 </label>
-                <label className="flex items-center gap-1.5 cursor-pointer font-medium text-rose-600">
+                <label className="flex items-center gap-1.5 cursor-pointer text-rose-600">
                   <input
                     type="radio"
                     name="health_status"
@@ -435,7 +435,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
             {formData.health_status === 'Unhealthy' && (
               <div className="col-span-full">
-                <label className="block text-slate-600 font-semibold mb-1">If Unhealthy, please specify details:</label>
+                <label className="form-field-label">If Unhealthy, please specify details:</label>
                 <AutoTextarea
                   value={formData.health_unhealthy_details}
                   onChange={(e) => setFormData({ ...formData, health_unhealthy_details: e.target.value })}
@@ -446,7 +446,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             )}
 
             <div className="col-span-full">
-              <label className="block text-slate-600 font-semibold mb-1">What Medications are you still taking? (please specify)</label>
+              <label className="form-field-label">What Medications are you still taking? (please specify)</label>
               <AutoTextarea
                 value={formData.medications_still_taking}
                 onChange={(e) => setFormData({ ...formData, medications_still_taking: e.target.value })}
@@ -456,7 +456,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Any side effects observed?</label>
+              <label className="form-field-label">Any side effects observed?</label>
               <select
                 value={formData.side_effects_observed}
                 onChange={(e) => setFormData({ ...formData, side_effects_observed: e.target.value })}
@@ -470,7 +470,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
             {formData.side_effects_observed === 'Yes' && (
               <div>
-                <label className="block text-slate-600 font-semibold mb-1">If Yes, please describe side effects:</label>
+                <label className="form-field-label">If Yes, please describe side effects:</label>
                 <input
                   type="text"
                   value={formData.side_effects_details}
@@ -482,7 +482,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             )}
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Any changes in Medications by Physician?</label>
+              <label className="form-field-label">Any changes in Medications by Physician?</label>
               <select
                 value={formData.physician_medication_changes}
                 onChange={(e) => setFormData({ ...formData, physician_medication_changes: e.target.value })}
@@ -496,7 +496,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
             {formData.physician_medication_changes === 'Yes' && (
               <div>
-                <label className="block text-slate-600 font-semibold mb-1">If Yes, specify changes:</label>
+                <label className="form-field-label">If Yes, specify changes:</label>
                 <input
                   type="text"
                   value={formData.physician_medication_changes_details}
@@ -508,7 +508,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             )}
 
             <div className="col-span-full">
-              <label className="block text-slate-600 font-semibold mb-1">Any new health complaints? (please describe)</label>
+              <label className="form-field-label">Any new health complaints? (please describe)</label>
               <AutoTextarea
                 value={formData.new_health_complaints}
                 onChange={(e) => setFormData({ ...formData, new_health_complaints: e.target.value })}
@@ -521,7 +521,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
         {/* Section 3: New Symptoms Checklist */}
         <div className="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
+          <h3 className="uppercase tracking-wider border-b border-slate-100 pb-2">
             3. New Symptoms Checklist
           </h3>
 
@@ -531,17 +531,13 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
               return (
                 <label
                   key={idx}
-                  className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
-                    isSelected 
-                      ? 'bg-amber-50 border-amber-300 text-amber-900 font-bold shadow-xs' 
-                      : 'bg-slate-50/50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                  }`}
+                  className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 print:border-slate-200 bg-white text-slate-800 transition-all cursor-pointer hover:border-slate-300"
                 >
                   <input
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => handleSymptomToggle(symptom)}
-                    className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
+                    className={`w-4 h-4 rounded cursor-pointer focus:ring-0 focus:outline-none ${isStemi ? 'text-red-600 accent-red-600' : 'text-orange-500 accent-orange-500'}`}
                   />
                   <span>{symptom}</span>
                 </label>
@@ -550,7 +546,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
           </div>
 
           <div>
-            <label className="block text-slate-600 font-semibold mb-1">Other Symptoms (specify):</label>
+            <label className="form-field-label">Other Symptoms (specify):</label>
             <input
               type="text"
               value={formData.symptom_other_details}
@@ -564,7 +560,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
         {/* Section 4: Medication Adherence & Drug Grid Table */}
         <div className="border border-slate-200 rounded-xl p-4 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider">
+            <h3 className="uppercase tracking-wider">
               4. Medication Adherence & Drug Grid
             </h3>
             <div className="flex items-center gap-3">
@@ -583,7 +579,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
           {formData.medication_adherence === 'No' && (
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">If No, please specify reason:</label>
+              <label className="form-field-label">If No, please specify reason:</label>
               <input
                 type="text"
                 value={formData.medication_adherence_no_reason}
@@ -690,13 +686,13 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
         {/* Section 5: Lab Tests & Investigations */}
         <div className="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
+          <h3 className="uppercase tracking-wider border-b border-slate-100 pb-2">
             5. Lab Tests & Investigations
           </h3>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Trop-I Result</label>
+              <label className="form-field-label">Trop-I Result</label>
               <input
                 type="text"
                 value={formData.trop_i_result}
@@ -707,7 +703,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Creatinine</label>
+              <label className="form-field-label">Creatinine</label>
               <input
                 type="text"
                 value={formData.creatinine_result}
@@ -718,7 +714,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">BNP / NT-proBNP</label>
+              <label className="form-field-label">BNP / NT-proBNP</label>
               <input
                 type="text"
                 value={formData.bnp_nt_probnp_result}
@@ -729,7 +725,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Haemoglobin</label>
+              <label className="form-field-label">Haemoglobin</label>
               <input
                 type="text"
                 value={formData.hemoglobin_result}
@@ -740,7 +736,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Sodium</label>
+              <label className="form-field-label">Sodium</label>
               <input
                 type="text"
                 value={formData.sodium_result}
@@ -751,7 +747,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Potassium</label>
+              <label className="form-field-label">Potassium</label>
               <input
                 type="text"
                 value={formData.potassium_result}
@@ -762,7 +758,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div className="col-span-2">
-              <label className="block text-slate-600 font-semibold mb-1">2D ECHO Done?</label>
+              <label className="form-field-label">2D ECHO Done?</label>
               <select
                 value={formData.echo_done}
                 onChange={(e) => setFormData({ ...formData, echo_done: e.target.value })}
@@ -778,7 +774,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
         {/* Section 6: Major Clinical Events & Mortality */}
         <div className="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
+          <h3 className="uppercase tracking-wider border-b border-slate-100 pb-2">
             6. Major Clinical Events & Mortality Tracking
           </h3>
 
@@ -788,17 +784,13 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
               return (
                 <label
                   key={idx}
-                  className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
-                    isSelected 
-                      ? 'bg-red-50 border-red-300 text-red-900 font-bold shadow-xs' 
-                      : 'bg-slate-50/50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                  }`}
+                  className="flex items-center gap-2 p-2 rounded-lg border border-slate-200 print:border-slate-200 bg-white text-slate-800 transition-all cursor-pointer hover:border-slate-300"
                 >
                   <input
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => handleEventToggle(evt)}
-                    className="w-4 h-4 text-red-600 rounded focus:ring-red-500"
+                    className="w-4 h-4 text-red-600 accent-red-600 rounded focus:ring-0 focus:outline-none"
                   />
                   <span>{evt}</span>
                 </label>
@@ -807,7 +799,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
           </div>
 
           <div>
-            <label className="block text-slate-600 font-semibold mb-1">Other Clinical Event Details:</label>
+            <label className="form-field-label">Other Clinical Event Details:</label>
             <input
               type="text"
               value={formData.event_other_details}
@@ -819,7 +811,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
           <div className="border-t border-slate-100 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Death Occurred?</label>
+              <label className="form-field-label">Death Occurred?</label>
               <select
                 value={formData.is_deceased}
                 onChange={(e) => setFormData({ ...formData, is_deceased: e.target.value })}
@@ -834,7 +826,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             {formData.is_deceased === 'Yes' && (
               <>
                 <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Died within 30 days of discharge?</label>
+                  <label className="form-field-label">Died within 30 days of discharge?</label>
                   <select
                     value={formData.died_within_30days_discharge}
                     onChange={(e) => setFormData({ ...formData, died_within_30days_discharge: e.target.value })}
@@ -847,7 +839,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                 </div>
 
                 <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Date of Death</label>
+                  <label className="form-field-label">Date of Death</label>
                   <input
                     type="date"
                     value={formData.date_of_death}
@@ -857,7 +849,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                 </div>
 
                 <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Place of Death</label>
+                  <label className="form-field-label">Place of Death</label>
                   <input
                     type="text"
                     value={formData.place_of_death}
@@ -868,7 +860,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
                 </div>
 
                 <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Cause of Death</label>
+                  <label className="form-field-label">Cause of Death</label>
                   <select
                     value={formData.cause_of_death}
                     onChange={(e) => setFormData({ ...formData, cause_of_death: e.target.value })}
@@ -883,7 +875,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
                 {formData.cause_of_death === 'Others specify' && (
                   <div>
-                    <label className="block text-slate-600 font-semibold mb-1">Specify Other Cause of Death:</label>
+                    <label className="form-field-label">Specify Other Cause of Death:</label>
                     <input
                       type="text"
                       value={formData.cause_of_death_other_details}
@@ -899,13 +891,13 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
 
         {/* Section 7: Vaccinations & Program Opt-In */}
         <div className="border border-slate-200 rounded-xl p-4 space-y-4">
-          <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
+          <h3 className="uppercase tracking-wider border-b border-slate-100 pb-2">
             7. Vaccinations, Program Opt-in & Feedback
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Any Vaccinations (please specify)</label>
+              <label className="form-field-label">Any Vaccinations (please specify)</label>
               <input
                 type="text"
                 value={formData.vaccinations_details}
@@ -916,7 +908,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div>
-              <label className="block text-slate-600 font-semibold mb-1">Do you want to join in follow-up program?</label>
+              <label className="form-field-label">Do you want to join in follow-up program?</label>
               <select
                 value={formData.join_program_opt_in}
                 onChange={(e) => setFormData({ ...formData, join_program_opt_in: e.target.value })}
@@ -929,7 +921,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             </div>
 
             <div className="col-span-full">
-              <label className="block text-slate-600 font-semibold mb-1">Patient Feedback</label>
+              <label className="form-field-label">Patient Feedback</label>
               <AutoTextarea
                 value={formData.patient_feedback}
                 onChange={(e) => setFormData({ ...formData, patient_feedback: e.target.value })}
@@ -946,14 +938,14 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             <button
               type="button"
               onClick={onCancel}
-              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all cursor-pointer"
+              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className={`px-6 py-2.5 text-white font-extrabold rounded-xl shadow-lg transition-all cursor-pointer disabled:opacity-50 ${isStemi ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'}`}
+              className={`px-6 py-2.5 text-white rounded-xl shadow-lg transition-all cursor-pointer disabled:opacity-50 ${isStemi ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'}`}
             >
               {submitting ? 'Saving...' : `Save ${isStemi ? 'STEMI' : 'NSTEMI'} Detailed Follow-Up`}
             </button>
@@ -963,7 +955,7 @@ export default function StemiFollowUpForm({ patientData = {}, taskData = {}, onS
             <button
               type="button"
               onClick={onCancel}
-              className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-all cursor-pointer shadow-md"
+              className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl transition-all cursor-pointer shadow-md"
             >
               Close Form
             </button>

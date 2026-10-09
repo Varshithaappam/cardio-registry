@@ -428,7 +428,7 @@ export default function HFFollowUpForm({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden font-sans text-sm w-full max-w-[1380px] mx-auto my-2 animate-fadeIn">
+    <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden font-sans text-sm w-full max-w-[1380px] mx-auto my-2 animate-fadeIn theme-hf" data-registry="hf">
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-teal-800 via-teal-700 to-slate-900 text-white px-5 py-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -437,7 +437,7 @@ export default function HFFollowUpForm({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold text-white tracking-tight">
+              <h2 className="text-white tracking-tight">
                 Heart Failure Telephonic Follow-Up Assessment
               </h2>
               <span className="px-2.5 py-0.5 rounded-full bg-teal-500/30 text-teal-200 text-[10px] font-bold uppercase border border-teal-400/30">
@@ -544,7 +544,7 @@ export default function HFFollowUpForm({
           {/* 1. Encounter Metadata Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5 bg-slate-50/70 p-3 rounded-xl border border-slate-200/90 text-xs">
             <div className="min-w-0">
-              <label className="block text-xs font-bold text-rose-600 leading-tight mb-1">
+              <label className="form-field-label text-rose-600">
                 UHID <span className="text-rose-500">*</span>
               </label>
               <input
@@ -559,7 +559,7 @@ export default function HFFollowUpForm({
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-bold text-slate-700 leading-tight mb-1">Date Of Admission</label>
+              <label className="form-field-label">Date Of Admission</label>
               <input
                 type="date"
                 disabled={readOnly}
@@ -570,7 +570,7 @@ export default function HFFollowUpForm({
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-bold text-slate-700 leading-tight mb-1">Date of Discharge</label>
+              <label className="form-field-label">Date of Discharge</label>
               <input
                 type="date"
                 disabled={readOnly}
@@ -581,7 +581,7 @@ export default function HFFollowUpForm({
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-bold text-slate-700 leading-tight mb-1">Patient Follow-up date</label>
+              <label className="form-field-label">Patient Follow-up date</label>
               <input
                 type="date"
                 disabled={readOnly}
@@ -592,7 +592,7 @@ export default function HFFollowUpForm({
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-bold text-slate-700 leading-tight mb-1">Follow-up conducted</label>
+              <label className="form-field-label">Follow-up conducted</label>
               <input
                 type="text"
                 disabled
@@ -602,7 +602,7 @@ export default function HFFollowUpForm({
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-bold text-rose-600 leading-tight mb-1">
+              <label className="form-field-label text-rose-600">
                 Follow-up attempts <span className="text-rose-500">*</span>
               </label>
               <select
@@ -618,7 +618,7 @@ export default function HFFollowUpForm({
             </div>
 
             <div className="min-w-0">
-              <label className="block text-xs font-bold text-rose-600 leading-tight mb-1">
+              <label className="form-field-label text-rose-600">
                 Answering Status <span className="text-rose-500">*</span>
               </label>
               <select
@@ -634,7 +634,7 @@ export default function HFFollowUpForm({
 
             {answeringStatus === 'No' && (
               <div className="col-span-full">
-                <label className="block text-xs font-bold text-rose-700 leading-tight mb-0.5">
+                <label className="form-field-label text-rose-700">
                   Reason (If,No): <span className="text-rose-500">*</span>
                 </label>
                 <AutoTextarea
@@ -656,7 +656,7 @@ export default function HFFollowUpForm({
               </label>
               <div className="flex items-center gap-4 bg-white px-2.5 py-1.5 rounded-md border border-slate-300 h-8">
                 {['Healthy', 'Unhealthy'].map((opt) => (
-                  <label key={opt} className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-xs">
+                  <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="radio"
                       disabled={readOnly}
@@ -671,7 +671,7 @@ export default function HFFollowUpForm({
               </div>
               {healthStatus === 'Unhealthy' && (
                 <div className="mt-1.5">
-                  <label className="block text-[11px] font-bold text-amber-700 leading-tight mb-0.5">
+                  <label className="form-field-label text-amber-700">
                     If unhealthy,Please specify <span className="text-amber-600">*</span>
                   </label>
                   <AutoTextarea
@@ -679,19 +679,19 @@ export default function HFFollowUpForm({
                     value={healthUnhealthyDetails}
                     onChange={(e) => setHealthUnhealthyDetails(e.target.value)}
                     placeholder="If unhealthy,Please specify..."
-                    className="px-2.5 py-1.5 bg-white border border-amber-300 rounded-md text-xs min-h-[32px] focus:ring-amber-500/20 focus:border-amber-500"
+                    className="px-2.5 py-1.5 bg-white border border-slate-300 rounded-md text-xs min-h-[32px] focus:ring-teal-600 focus:border-teal-600 focus:outline-none"
                   />
                 </div>
               )}
             </div>
 
             <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-200/80">
-              <label className="block text-xs font-bold text-slate-800 leading-tight mb-1">
+              <label className="form-field-label">
                 Any sideeffects observed
               </label>
               <div className="flex items-center gap-4 bg-white px-2.5 py-1.5 rounded-md border border-slate-300 h-8">
                 {['Yes', 'No'].map((opt) => (
-                  <label key={opt} className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-xs">
+                  <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="radio"
                       disabled={readOnly}
@@ -718,12 +718,12 @@ export default function HFFollowUpForm({
             </div>
 
             <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-200/80">
-              <label className="block text-xs font-bold text-slate-800 leading-tight mb-1">
+              <label className="form-field-label">
                 Any changes in Medications by Physician
               </label>
               <div className="flex items-center gap-4 bg-white px-2.5 py-1.5 rounded-md border border-slate-300 h-8">
                 {['Yes', 'No'].map((opt) => (
-                  <label key={opt} className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-xs">
+                  <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="radio"
                       disabled={readOnly}
@@ -750,7 +750,7 @@ export default function HFFollowUpForm({
             </div>
 
             <div className="col-span-full">
-              <label className="block text-xs font-bold text-slate-800 leading-tight mb-1">
+              <label className="form-field-label">
                 What Medications are you still taking?(please specify)
               </label>
               <AutoTextarea
@@ -766,7 +766,7 @@ export default function HFFollowUpForm({
 
           {/* 3. Symptom Checklist */}
           <div className="space-y-2 pt-2 border-t border-slate-200">
-            <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+            <label className="form-field-label">
               Any new symptoms,please tick all that apply
             </label>
 
@@ -779,10 +779,8 @@ export default function HFFollowUpForm({
                     key={sym}
                     disabled={readOnly}
                     onClick={() => toggleSymptom(sym)}
-                    className={`px-2.5 py-1.5 rounded-lg border text-left flex items-center justify-between transition-all cursor-pointer ${
-                      isChecked
-                        ? 'bg-teal-50 border-teal-500 text-teal-900 font-bold shadow-2xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 font-medium'
+                    className={`px-2.5 py-1.5 rounded-lg border border-slate-200 print:border-slate-200 bg-white text-slate-800 text-left flex items-center justify-between transition-all ${
+                      readOnly ? 'cursor-default' : 'cursor-pointer hover:border-slate-300'
                     }`}
                   >
                     <span className="text-[11px] leading-tight truncate">{sym}</span>
@@ -811,12 +809,12 @@ export default function HFFollowUpForm({
           {/* 4. Medication Adherence & Category Drug Table */}
           <div className="space-y-2.5 pt-2 border-t border-slate-200">
             <div className="bg-slate-50/50 px-3 py-2 rounded-lg border border-slate-200/90 flex flex-wrap items-center justify-between gap-2">
-              <label className="text-xs font-bold text-slate-800">
+              <label className="form-field-label">
                 Medication Adherence- Are you following medication as prescribed
               </label>
               <div className="flex items-center gap-4">
                 {['Yes', 'No'].map((opt) => (
-                  <label key={opt} className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-xs">
+                  <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="radio"
                       disabled={readOnly}
@@ -881,7 +879,7 @@ export default function HFFollowUpForm({
                         <td className="py-1.5 px-2 text-center">
                           <div className="flex items-center justify-center gap-3">
                             {['Yes', 'No'].map((opt) => (
-                              <label key={opt} className="flex items-center gap-1 cursor-pointer font-bold text-slate-700 text-xs">
+                              <label key={opt} className="flex items-center gap-1 cursor-pointer">
                                 <input
                                   type="radio"
                                   disabled={readOnly}
@@ -898,7 +896,7 @@ export default function HFFollowUpForm({
                         <td className="py-1.5 px-2 text-center">
                           <div className="flex items-center justify-center gap-3">
                             {['Yes', 'No'].map((opt) => (
-                              <label key={opt} className="flex items-center gap-1 cursor-pointer font-bold text-slate-700 text-xs">
+                              <label key={opt} className="flex items-center gap-1 cursor-pointer">
                                 <input
                                   type="radio"
                                   disabled={readOnly}
@@ -922,13 +920,13 @@ export default function HFFollowUpForm({
 
           {/* 5. Lab Tests & Investigations */}
           <div className="space-y-2 pt-2 border-t border-slate-200">
-            <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+            <label className="form-field-label">
               Lab Tests & Investigations
             </label>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
               <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-200">
-                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">BNP/NT-proBNP</label>
+                <label className="form-field-label">BNP/NT-proBNP</label>
                 <input
                   type="text"
                   disabled={readOnly}
@@ -940,7 +938,7 @@ export default function HFFollowUpForm({
               </div>
 
               <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-200">
-                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Creatinine</label>
+                <label className="form-field-label">Creatinine</label>
                 <input
                   type="text"
                   disabled={readOnly}
@@ -952,7 +950,7 @@ export default function HFFollowUpForm({
               </div>
 
               <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-200">
-                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Sodium</label>
+                <label className="form-field-label">Sodium</label>
                 <input
                   type="text"
                   disabled={readOnly}
@@ -964,7 +962,7 @@ export default function HFFollowUpForm({
               </div>
 
               <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-200">
-                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">Haemoglobin</label>
+                <label className="form-field-label">Haemoglobin</label>
                 <input
                   type="text"
                   disabled={readOnly}
@@ -976,10 +974,10 @@ export default function HFFollowUpForm({
               </div>
 
               <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-200">
-                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">2D ECHO</label>
+                <label className="form-field-label">2D ECHO</label>
                 <div className="flex items-center justify-around bg-white px-2 py-1.5 border border-slate-300 rounded-md h-8">
                   {['Yes', 'No'].map((opt) => (
-                    <label key={opt} className="flex items-center gap-1.5 cursor-pointer text-slate-800 font-bold text-xs">
+                    <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
                       <input
                         type="radio"
                         disabled={readOnly}
@@ -999,13 +997,13 @@ export default function HFFollowUpForm({
           {/* 6. Major Clinical Events */}
           <div className="space-y-2 pt-2 border-t border-slate-200">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <label className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              <label className="form-field-label">
                 Has the patient experienced any major clinical event since the last follow-up?
               </label>
 
               <div className="flex items-center gap-3 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
                 {['Yes', 'No'].map((opt) => (
-                  <label key={opt} className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-xs">
+                  <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
                     <input
                       type="radio"
                       disabled={readOnly}
@@ -1031,10 +1029,8 @@ export default function HFFollowUpForm({
                         key={evt}
                         disabled={readOnly}
                         onClick={() => toggleClinicalEvent(evt)}
-                        className={`px-2.5 py-1.5 rounded-lg border text-left flex items-center justify-between transition-all cursor-pointer ${
-                          isChecked
-                            ? 'bg-rose-50 border-rose-500 text-rose-900 font-bold shadow-2xs'
-                            : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300 font-medium'
+                        className={`px-2.5 py-1.5 rounded-lg border border-slate-200 print:border-slate-200 bg-white text-slate-800 text-left flex items-center justify-between transition-all ${
+                          readOnly ? 'cursor-default' : 'cursor-pointer hover:border-slate-300'
                         }`}
                       >
                         <span className="text-[11px] leading-tight truncate">{evt}</span>
@@ -1066,7 +1062,7 @@ export default function HFFollowUpForm({
           <div className="space-y-3 pt-2 border-t border-slate-200">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-200/80">
-                <label className="block text-xs font-bold text-slate-800 leading-tight mb-1">Any Vaccinations (please specify)</label>
+                <label className="form-field-label">Any Vaccinations (please specify)</label>
                 <AutoTextarea
                   disabled={readOnly || isDeceased === 'Yes'}
                   value={isDeceased === 'Yes' ? 'N/A (Deceased)' : (vaccinationsDetails ?? '')}
@@ -1079,12 +1075,12 @@ export default function HFFollowUpForm({
               </div>
 
               <div className="bg-slate-50/50 p-2.5 rounded-xl border border-slate-200/80">
-                <label className="block text-xs font-bold text-slate-800 leading-tight mb-1">Do you want to join in follow-up program</label>
+                <label className="form-field-label">Do you want to join in follow-up program</label>
                 <div className={`flex items-center gap-4 px-2.5 py-1.5 rounded-md border h-8 ${
                   isDeceased === 'Yes' ? 'bg-slate-100 border-slate-300 opacity-60 cursor-not-allowed' : 'bg-white border-slate-300'
                 }`}>
                   {['Yes', 'No'].map((opt) => (
-                    <label key={opt} className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-xs">
+                    <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
                       <input
                         type="radio"
                         disabled={readOnly || isDeceased === 'Yes'}
@@ -1103,10 +1099,10 @@ export default function HFFollowUpForm({
             {/* Death Sub-Block */}
             <div className="bg-slate-50/60 p-2.5 rounded-xl border border-slate-200 space-y-2">
               <div className="flex items-center justify-between">
-                <label className="font-bold text-slate-800 text-xs uppercase tracking-wider">Death</label>
+                <label className="form-field-label">Death</label>
                 <div className="flex items-center gap-4 bg-white px-2.5 py-1 rounded-lg border border-slate-300">
                   {['Yes', 'No'].map((opt) => (
-                    <label key={opt} className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-xs">
+                    <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
                       <input
                         type="radio"
                         disabled={readOnly}
@@ -1124,10 +1120,10 @@ export default function HFFollowUpForm({
               {isDeceased === 'Yes' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-2 border-t border-slate-200 bg-rose-50/60 p-2.5 rounded-lg border border-rose-200">
                   <div>
-                    <label className="block font-bold text-rose-900 text-[11px] leading-tight mb-1">If death,died within 30days of discharge</label>
+                    <label className="form-field-label text-rose-900">If death,died within 30days of discharge</label>
                     <div className="flex items-center gap-3 bg-white px-2 py-1 rounded border border-rose-300 h-8">
                       {['Yes', 'No'].map((opt) => (
-                        <label key={opt} className="flex items-center gap-1 cursor-pointer text-xs font-bold text-rose-900">
+                        <label key={opt} className="flex items-center gap-1 cursor-pointer text-rose-900">
                           <input
                             type="radio"
                             disabled={readOnly}
@@ -1143,7 +1139,7 @@ export default function HFFollowUpForm({
                   </div>
 
                   <div>
-                    <label className="block font-bold text-rose-900 text-[11px] leading-tight mb-1">Place of death</label>
+                    <label className="form-field-label text-rose-900">Place of death</label>
                     <AutoTextarea
                       disabled={readOnly}
                       value={placeOfDeath ?? ''}
@@ -1154,7 +1150,7 @@ export default function HFFollowUpForm({
                   </div>
 
                   <div>
-                    <label className="block font-bold text-rose-900 text-[11px] leading-tight mb-1">Date of Death</label>
+                    <label className="form-field-label text-rose-900">Date of Death</label>
                     <input
                       type="date"
                       disabled={readOnly}
@@ -1165,11 +1161,11 @@ export default function HFFollowUpForm({
                   </div>
 
                   <div>
-                    <label className="block font-bold text-rose-900 text-[11px] leading-tight mb-1">Cause of Death</label>
+                    <label className="form-field-label text-rose-900">Cause of Death</label>
                     <div className="bg-white p-2 rounded-md border border-rose-300 space-y-1.5 min-h-[32px]">
                       <div className="flex items-center gap-2.5 flex-wrap">
                         {['Cardiac', 'Non-cardiac', 'Others'].map((opt) => (
-                          <label key={opt} className="flex items-center gap-1 cursor-pointer text-xs font-bold text-rose-900">
+                          <label key={opt} className="flex items-center gap-1 cursor-pointer text-rose-900">
                             <input
                               type="radio"
                               disabled={readOnly}
@@ -1201,7 +1197,7 @@ export default function HFFollowUpForm({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-800 leading-tight mb-1">Patient Feedback</label>
+              <label className="form-field-label">Patient Feedback</label>
               <AutoTextarea
                 minRows={1}
                 disabled={readOnly || isDeceased === 'Yes'}
@@ -1224,14 +1220,14 @@ export default function HFFollowUpForm({
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 font-bold text-xs transition-all cursor-pointer"
+                className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
               >
                 Cancel
               </button>
             )}
             <button
               type="submit"
-              className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white shadow-md transition-all cursor-pointer flex items-center gap-2"
             >
               <Check className="w-4 h-4 stroke-[3]" />
               Save Detailed HF Follow-up Log

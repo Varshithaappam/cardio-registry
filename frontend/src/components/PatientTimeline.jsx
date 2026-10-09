@@ -111,11 +111,11 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
     return (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
         <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-        <h3 className="text-lg font-bold text-slate-800">Patient Record Not Found</h3>
+        <h3>Patient Record Not Found</h3>
         <p className="text-xs text-slate-500 mt-1 mb-4">The requested patient record could not be loaded or was deleted.</p>
         <button
           onClick={onBack}
-          className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           Return to Master Patient List
         </button>
@@ -496,7 +496,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md border uppercase ${MODULE_BADGES[evt.type]}`}>
-                          {evt.type}
+                           {evt.type}
                         </span>
                         <h4 className="text-sm font-bold text-slate-800">{evt.title}</h4>
                         {evt.status === 'draft' && (

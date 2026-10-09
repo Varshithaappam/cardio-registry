@@ -1,6 +1,6 @@
 import React from 'react';
 import FormField from './FormField';
-import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
+import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES, getInputBaseStyles } from './formStyles';
 
 export default function NumberInput({
   label,
@@ -19,7 +19,8 @@ export default function NumberInput({
   className = '',
   readOnly = false,
   error = null,
-  warning = null
+  warning = null,
+  theme = 'hf'
 }) {
   const isDisabled = disabled || readOnly;
   const isPercentage = Boolean(
@@ -82,13 +83,12 @@ export default function NumberInput({
     }
   };
 
+  const baseStyles = getInputBaseStyles(theme);
   const inputStyleClass = error
     ? INPUT_ERROR_STYLES
-    : warning
-    ? `${INPUT_NORMAL_STYLES} border-amber-400 focus:ring-amber-500 focus:border-amber-500 bg-amber-50/20`
     : isDisabled
     ? INPUT_DISABLED_STYLES
-    : INPUT_NORMAL_STYLES;
+    : baseStyles;
 
   return (
     <FormField label={label} required={required} error={error} warning={warning} className={className}>

@@ -318,7 +318,7 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
         {/* Branch 1: If "Yes" is Selected */}
         {isFollowupRequired === 'Yes' && (
           <div className="border border-slate-200 bg-slate-50/50 rounded-lg p-4 space-y-4">
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-200 pb-2">
+            <h4 className="uppercase tracking-wider border-b border-slate-200 pb-2">
               Follow-up Scheduling & Parameters
             </h4>
 
@@ -386,7 +386,7 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
         {/* Branch 2: If "No" is Selected */}
         {isFollowupRequired === 'No' && (
           <div className="border border-slate-200 bg-slate-50/50 rounded-lg p-4 space-y-4">
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-200 pb-2">
+            <h4 className="uppercase tracking-wider border-b border-slate-200 pb-2">
               Justification for No Follow-up
             </h4>
 
@@ -442,7 +442,7 @@ const FollowupAssessmentForm = forwardRef(function FollowupAssessmentForm(
               type="button"
               onClick={handleSubmit}
               disabled={!isBranchValid() || readOnly}
-              className="px-5 py-2 rounded-lg text-xs font-bold text-white transition-all cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
+              className="px-5 py-2 rounded-lg text-white transition-all cursor-pointer shadow-xs disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 active:bg-blue-800"
             >
               Submit / Verify Assessment
             </button>

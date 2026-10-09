@@ -922,7 +922,7 @@ const hf = forwardRef(function hf(
             type="checkbox"
             checked={drug.isOther ? drug.val === 'Yes' : true}
             onChange={(e) => drug.isOther && drug.set(e.target.checked ? 'Yes' : 'No')}
-            className={`rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 ${drug.isOther ? 'cursor-pointer' : 'invisible'}`}
+            className={`rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 accent-teal-600 ${drug.isOther ? 'cursor-pointer' : 'invisible'}`}
           />
           <span className="font-semibold text-slate-700 text-xs">{drug.label}</span>
         </label>
@@ -933,7 +933,7 @@ const hf = forwardRef(function hf(
                 type="text"
                 value={drug.name ?? ''}
                 onChange={(e) => drug.setName(e.target.value)}
-                className="border border-slate-300 rounded p-1 text-xs flex-1 min-w-[90px] focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                className="border border-slate-300 rounded p-1 text-xs flex-1 min-w-[90px] focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                 placeholder="Details"
               />
             ) : null}
@@ -942,12 +942,10 @@ const hf = forwardRef(function hf(
                 type="text"
                 value={drug.dose ?? ''}
                 onChange={(e) => handleDoseChange(e.target.value, drug.setDose, errorKey || drug.label)}
-                className={`border rounded p-1 text-xs w-24 focus:ring-0 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400 ${
-                  displayErr ? 'border-red-500 bg-red-50 text-red-800 font-bold' :
-                  cls.status === 'normal' ? 'border-emerald-300 bg-emerald-50 text-emerald-800' :
-                  cls.status === 'borderline' ? 'border-amber-300 bg-amber-50 text-amber-800 font-semibold' :
-                  cls.status === 'abnormal' ? 'border-rose-300 bg-rose-50 text-rose-800 font-semibold' :
-                  'border-slate-300'
+                className={`border rounded p-1 text-xs w-24 focus:ring-teal-600 focus:border-teal-600 focus:outline-none text-right bg-white disabled:bg-slate-100 disabled:text-slate-400 ${
+                  displayErr
+                    ? 'border-red-500 bg-red-50 text-red-800 font-bold'
+                    : 'border-slate-300 text-slate-900'
                 }`}
                 placeholder="Dose"
               />
@@ -975,7 +973,7 @@ const hf = forwardRef(function hf(
     const displayErr = formErrors[errorKey];
     return (
       <div className="flex flex-col">
-        <label className="text-xs font-semibold text-slate-700 block mb-1">
+        <label className="form-field-label">
           {label}
         </label>
         <div className="flex items-center gap-1.5 w-full">
@@ -1002,12 +1000,10 @@ const hf = forwardRef(function hf(
               }
               setValue(val);
             }}
-            className={`border px-2 py-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none rounded text-right font-mono ${
-              formErrors[errorKey] || cls.status === 'invalid' ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
-              cls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-              cls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
-              cls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
-              'border-slate-300'
+            className={`border px-2 py-1 text-xs w-full focus:ring-teal-600 focus:border-teal-600 focus:outline-none rounded text-right font-mono bg-white ${
+              formErrors[errorKey] || cls.status === 'invalid'
+                ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold'
+                : 'border-slate-300 text-slate-900'
             }`}
           />
           {unit && <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap">{unit}</span>}
@@ -1090,7 +1086,14 @@ const hf = forwardRef(function hf(
   );
   const [dischargeDate, setDischargeDate] = useState(editingRecord?.inpatientDetails?.dischargeDate ?? '');
   const [encounterId, setEncounterId] = useState(editingRecord?.inpatientDetails?.encounterId ?? editingRecord?.encounterId ?? '');
-  const [visitId, setVisitId] = useState(editingRecord?.visitId ?? editingRecord?.visit_id ?? '');
+  const [visitId, setVisitId] = useState(() => {
+    const rawVal = editingRecord?.visitId ?? editingRecord?.visit_id ?? '';
+    const activeMr = patient.mrNo || patient.mr_no || editingRecord?.care_mr_no || '';
+    if (rawVal && activeMr && String(rawVal).trim().toLowerCase() === String(activeMr).trim().toLowerCase()) {
+      return '';
+    }
+    return rawVal;
+  });
 
   const currentHfId = editingRecord?.hf_id || editingRecord?.id || null;
   const { showAlert } = useAlert();
@@ -2236,6 +2239,7 @@ const hf = forwardRef(function hf(
       else if (rawType && (rawType.includes('HFrEF') || rawType.includes('reduced'))) setHfType('HFrEF (HF with reduced EF)');
       else if (editingRecord.finalClinicalAssessment?.hfpef === 'Yes') setHfType('HFpEF (HF with preserved EF)');
       else if (editingRecord.finalClinicalAssessment?.hfref === 'Yes') setHfType('HFrEF (HF with reduced EF)');
+      else setHfType(null);
 
       const rawStage = editingRecord.stageOfHF || editingRecord.finalAssessment?.finalStage;
       if (rawStage) setHfStage(rawStage);
@@ -2546,7 +2550,7 @@ const hf = forwardRef(function hf(
     regPatientId: patient.id || patient.reg_patient_id,
     visitId: visitId || undefined,
     visit_id: visitId || undefined,
-    encounterId: encounterId || editingRecord?.encounterId || activeMrNo,
+    encounterId: encounterId || undefined,
     care_mr_no: activeMrNo,
     mr_no: activeMrNo,
     assessed_by: activeUserId,
@@ -3563,7 +3567,7 @@ const hf = forwardRef(function hf(
   ) && editingRecord?.status !== 'final' && editingRecord?.status !== 'COMPLETED';
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 theme-hf" data-registry="hf" id="hfFormBlock">
       {isDraftRecord && (
         <div className="p-3 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl shadow-xs flex items-center justify-between animate-fadeIn">
           <div className="flex items-center gap-2">
@@ -3581,7 +3585,7 @@ const hf = forwardRef(function hf(
         <div className="p-4 bg-red-100 border-2 border-red-500 text-red-900 rounded-xl shadow-md flex items-start gap-3 animate-fadeIn">
           <AlertCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-extrabold text-sm uppercase tracking-wide text-red-900">
+            <h4 className="uppercase tracking-wide text-red-900">
               ⚠️ THIS HF REGISTRY RECORD HAS BEEN DELETED
             </h4>
             <p className="text-xs font-semibold mt-1">
@@ -3631,7 +3635,7 @@ const hf = forwardRef(function hf(
 
           {/* Visit Type */}
           <div className="sm:col-span-2 md:col-span-2">
-            <RadioGroup readOnly={readOnly}
+            <RadioGroup theme="hf" readOnly={readOnly}
               id="visitType"
               label="Visit Type"
               name="hf-visit-type"
@@ -3681,11 +3685,11 @@ const hf = forwardRef(function hf(
                     });
                   }
                 }}
-                placeholder="E.g. IP00001 or OP00001"
+                placeholder="E.g. 1"
                 className={`w-full p-2 border rounded-md text-xs font-medium text-slate-900 font-mono pr-8 ${
                   uniqueErrors.visit_id
                     ? 'border-red-500 bg-red-50/50 focus:ring-red-500 focus:border-red-500'
-                    : 'border-slate-300 focus:ring-teal-500 focus:border-teal-500'
+                    : 'border-slate-300 focus:border-teal-600 focus:ring-teal-600 focus:outline-none'
                 }`}
               />
               {uniqueLoading.visit_id && (
@@ -3836,7 +3840,7 @@ const hf = forwardRef(function hf(
         </div>
 
         <div className="grid grid-cols-1 gap-4 mb-4">
-          <RadioGroup readOnly={readOnly}
+          <RadioGroup theme="hf" readOnly={readOnly}
             id="insuranceMode"
             label="Insurance / Payment Mode"
             name="hf-insurance"
@@ -3929,7 +3933,7 @@ const hf = forwardRef(function hf(
         disabled={visitType !== 'Inpatient'}
       >
         <fieldset disabled={readOnly || visitType !== 'Inpatient'} className="space-y-4">
-          <CheckboxGroup readOnly={readOnly || visitType !== 'Inpatient'}
+          <CheckboxGroup theme="hf" readOnly={readOnly || visitType !== 'Inpatient'}
             label="If admission for heart failure, please select precipitating factors for admission:"
             options={PRECIPITATING_FACTORS_OPTIONS}
             values={precipitatingFactors}
@@ -4025,7 +4029,7 @@ const hf = forwardRef(function hf(
 
             <div className="p-3 bg-white rounded-lg border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="flex items-center h-full">
-                <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input disabled={readOnly} type="checkbox" checked={historyPastMi === 'Yes'} onChange={(e) => setHistoryPastMi(e.target.checked ? 'Yes' : 'No')} />
                   <span>Past MI</span>
                 </label>
@@ -4041,7 +4045,7 @@ const hf = forwardRef(function hf(
           {/* Subsection: Recent Hospitalization logs */}
           <div className="bg-white p-4 border border-slate-200 rounded-xl space-y-3">
             <span className="form-subsection-heading">Recent Hospitalization(s)</span>
-            <RadioGroup readOnly={readOnly}
+            <RadioGroup theme="hf" readOnly={readOnly}
               id="previousHfHospitalization"
               label="History of hospitalization for heart failure:"
               name="hf-history-hosp"
@@ -4063,7 +4067,7 @@ const hf = forwardRef(function hf(
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
               <div className="space-y-3 bg-white p-3 rounded-lg border border-slate-200">
-                <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input disabled={readOnly} type="checkbox" checked={documentedVtVf === 'Yes'} onChange={(e) => setDocumentedVtVf(e.target.checked ? 'Yes' : 'No')} />
                   <span>Documented episode of VT/VF</span>
                 </label>
@@ -4071,7 +4075,7 @@ const hf = forwardRef(function hf(
                 <hr className="border-slate-100" />
                 
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input disabled={readOnly} type="checkbox" checked={complaintsSyncope === 'Yes'} onChange={(e) => setComplaintsSyncope(e.target.checked ? 'Yes' : 'No')} />
                     <span>Complaints of Syncope / Pre-syncope</span>
                   </label>
@@ -4083,7 +4087,7 @@ const hf = forwardRef(function hf(
 
               <div className="space-y-3 bg-white p-3 rounded-lg border border-slate-200">
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input disabled={readOnly} type="checkbox" checked={documentedPvcs === 'Yes'} onChange={(e) => setDocumentedPvcs(e.target.checked ? 'Yes' : 'No')} />
                     <span>Documented PVCs</span>
                   </label>
@@ -4098,7 +4102,7 @@ const hf = forwardRef(function hf(
                 <hr className="border-slate-100" />
 
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input disabled={readOnly} type="checkbox" checked={documentedNsvt === 'Yes'} onChange={(e) => setDocumentedNsvt(e.target.checked ? 'Yes' : 'No')} />
                     <span>Documented NSVT</span>
                   </label>
@@ -4118,7 +4122,7 @@ const hf = forwardRef(function hf(
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <NumberInput readOnly={readOnly} id="vWeight" label="Weight (kg)" disabled={vUnableToWeigh === 'Yes'} value={vWeight} onChange={(val) => handleFieldChange('weight', val, setVWeight, setVWeightError)} error={formErrors.vWeight || vWeightError} warning={getVitalsWarning('weight', vWeight)} />
-                <label className="flex items-center gap-1.5 mt-1.5 text-xs text-slate-500 cursor-pointer">
+                <label className="flex items-center gap-1.5 mt-1.5 cursor-pointer">
                   <input disabled={readOnly} type="checkbox" checked={vUnableToWeigh === 'Yes'} onChange={(e) => setVUnableToWeigh(e.target.checked ? 'Yes' : 'No')} />
                   <span>Unable to weigh (Measure at earliest opportunity)</span>
                 </label>
@@ -4142,14 +4146,14 @@ const hf = forwardRef(function hf(
               <div className="md:col-span-2">
                 <label className="form-field-label mb-2">Regularity</label>
                 <div className="grid grid-cols-2 gap-4">
-                  <label className={`flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer p-2 bg-white rounded-lg border ${formErrors.vHrRegular ? 'border-red-500' : 'border-slate-200'}`}>
+                  <label className={`flex items-center gap-2 cursor-pointer p-2 bg-white rounded-lg border ${formErrors.vHrRegular ? 'border-red-500' : 'border-slate-200'}`}>
                     <input disabled={readOnly} type="checkbox" checked={vHrRegular === 'Yes'} onChange={(e) => {
                       setVHrRegular(e.target.checked ? 'Yes' : 'No');
                       if(e.target.checked) setVHrIrregular('No');
                     }} />
                     <span>Regular</span>
                   </label>
-                  <label className={`flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer p-2 bg-white rounded-lg border ${formErrors.vHrRegular ? 'border-red-500' : 'border-slate-200'}`}>
+                  <label className={`flex items-center gap-2 cursor-pointer p-2 bg-white rounded-lg border ${formErrors.vHrRegular ? 'border-red-500' : 'border-slate-200'}`}>
                     <input disabled={readOnly} type="checkbox" checked={vHrIrregular === 'Yes'} onChange={(e) => {
                       setVHrIrregular(e.target.checked ? 'Yes' : 'No');
                       if(e.target.checked) setVHrRegular('No');
@@ -4228,66 +4232,66 @@ const hf = forwardRef(function hf(
               
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Dyspnea at rest:</span>
-                <RadioGroup readOnly={readOnly} name="s-dar" value={symptomDyspneaAtRest} onChange={setSymptomDyspneaAtRest} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-dar" value={symptomDyspneaAtRest} onChange={setSymptomDyspneaAtRest} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Weight Loss:</span>
-                <RadioGroup readOnly={readOnly} name="s-wl" value={symptomWeightLoss} onChange={setSymptomWeightLoss} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-wl" value={symptomWeightLoss} onChange={setSymptomWeightLoss} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Dyspnea with exertion:</span>
-                <RadioGroup readOnly={readOnly} name="s-dwe" value={symptomDyspneaWithExertion} onChange={setSymptomDyspneaWithExertion} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-dwe" value={symptomDyspneaWithExertion} onChange={setSymptomDyspneaWithExertion} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Syncopy:</span>
-                <RadioGroup readOnly={readOnly} name="s-sync" value={symptomSyncope} onChange={setSymptomSyncope} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-sync" value={symptomSyncope} onChange={setSymptomSyncope} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Fatigue:</span>
-                <RadioGroup readOnly={readOnly} name="s-fat" value={symptomFatigue} onChange={setSymptomFatigue} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-fat" value={symptomFatigue} onChange={setSymptomFatigue} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">PND:</span>
-                <RadioGroup readOnly={readOnly} name="s-pnd" value={symptomPnd} onChange={setSymptomPnd} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-pnd" value={symptomPnd} onChange={setSymptomPnd} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Orthopnea:</span>
-                <RadioGroup readOnly={readOnly} name="s-orth" value={symptomOrthopnea} onChange={setSymptomOrthopnea} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-orth" value={symptomOrthopnea} onChange={setSymptomOrthopnea} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Muscle Cramps:</span>
-                <RadioGroup readOnly={readOnly} name="s-mc" value={symptomMuscleCramps} onChange={setSymptomMuscleCramps} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-mc" value={symptomMuscleCramps} onChange={setSymptomMuscleCramps} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Loss of appetite/Bloating:</span>
-                <RadioGroup readOnly={readOnly} name="s-loa" value={symptomLossOfAppetite} onChange={setSymptomLossOfAppetite} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-loa" value={symptomLossOfAppetite} onChange={setSymptomLossOfAppetite} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Wheeze:</span>
-                <RadioGroup readOnly={readOnly} name="s-whz" value={symptomWheeze} onChange={setSymptomWheeze} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-whz" value={symptomWheeze} onChange={setSymptomWheeze} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Decreased exercise tolerance:</span>
-                <RadioGroup readOnly={readOnly} name="s-det" value={symptomDecreasedExercise} onChange={setSymptomDecreasedExercise} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-det" value={symptomDecreasedExercise} onChange={setSymptomDecreasedExercise} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Giddiness:</span>
-                <RadioGroup readOnly={readOnly} name="s-gid" value={symptomGiddiness} onChange={setSymptomGiddiness} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-gid" value={symptomGiddiness} onChange={setSymptomGiddiness} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1">
                 <span className="form-field-label">Weight Gain:</span>
-                <RadioGroup readOnly={readOnly} name="s-wg" value={symptomWeightGain} onChange={setSymptomWeightGain} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="s-wg" value={symptomWeightGain} onChange={setSymptomWeightGain} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex flex-col justify-center py-1">
                 <div className="flex items-center justify-between">
                   <span className="form-field-label">Other:</span>
-                  <RadioGroup readOnly={readOnly} name="s-oth" value={symptomOther} onChange={setSymptomOther} options={['Yes', 'No']} columns={2} hideLabel />
+                  <RadioGroup theme="hf" readOnly={readOnly} name="s-oth" value={symptomOther} onChange={setSymptomOther} options={['Yes', 'No']} columns={2} hideLabel />
                 </div>
                 <div className={`mt-1 ${symptomOther === 'Yes' ? '' : 'opacity-60'}`}>
                   <TextInput readOnly={readOnly} disabled={symptomOther !== 'Yes'} id="hf-sym-oth-det" value={symptomOtherDetails} onChange={setSymptomOtherDetails} placeholder="Specify other symptom details" />
@@ -4307,30 +4311,30 @@ const hf = forwardRef(function hf(
               
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Peripheral edema:</span>
-                <RadioGroup readOnly={readOnly} name="sg-pe" value={signPeripheralEdema} onChange={setSignPeripheralEdema} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="sg-pe" value={signPeripheralEdema} onChange={setSignPeripheralEdema} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Ascites:</span>
-                <RadioGroup readOnly={readOnly} name="sg-asc" value={signAscites} onChange={setSignAscites} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="sg-asc" value={signAscites} onChange={setSignAscites} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Rales:</span>
-                <RadioGroup readOnly={readOnly} name="sg-ral" value={signRales} onChange={setSignRales} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="sg-ral" value={signRales} onChange={setSignRales} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span className="form-field-label">Jugular venous pressure:</span>
-                <RadioGroup readOnly={readOnly} name="sg-jvp" value={signJvp} onChange={setSignJvp} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="sg-jvp" value={signJvp} onChange={setSignJvp} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
 
               <div className="flex items-center justify-between py-1">
                 <span className="form-field-label">Hepatomegaly:</span>
-                <RadioGroup readOnly={readOnly} name="sg-hep" value={signHepatomegaly} onChange={setSignHepatomegaly} options={['Yes', 'No']} columns={2} hideLabel />
+                <RadioGroup theme="hf" readOnly={readOnly} name="sg-hep" value={signHepatomegaly} onChange={setSignHepatomegaly} options={['Yes', 'No']} columns={2} hideLabel />
               </div>
               <div className="flex flex-col justify-center py-1">
                 <div className="flex items-center justify-between">
                   <span className="form-field-label">Other:</span>
-                  <RadioGroup readOnly={readOnly} name="sg-oth" value={signClinicalOther} onChange={setSignClinicalOther} options={['Yes', 'No']} columns={2} hideLabel />
+                  <RadioGroup theme="hf" readOnly={readOnly} name="sg-oth" value={signClinicalOther} onChange={setSignClinicalOther} options={['Yes', 'No']} columns={2} hideLabel />
                 </div>
                 <div className={`mt-1 ${signClinicalOther === 'Yes' ? '' : 'opacity-60'}`}>
                   <TextInput readOnly={readOnly} disabled={signClinicalOther !== 'Yes'} id="hf-sign-oth-det" value={signClinicalOtherDetails} onChange={setSignClinicalOtherDetails} placeholder="Specify other signs" error={formErrors.signClinicalOther} />
@@ -4348,7 +4352,7 @@ const hf = forwardRef(function hf(
           
           {/* Type of Heart Failure Row */}
           <div className="p-3 bg-slate-50 border-b border-slate-200">
-            <RadioGroup readOnly={readOnly} 
+            <RadioGroup theme="hf" readOnly={readOnly} 
               id="hfType"
               label="Type of Heart Failure" 
               name="hf-type" 
@@ -4370,7 +4374,7 @@ const hf = forwardRef(function hf(
             </div>
             <div className="p-3 space-y-3">
               <div>
-                <CheckboxGroup readOnly={readOnly} id="hfEtiologyCv" label="Cardiovascular" options={HF_ETIOLOGY_CV} values={hfEtiologyCv} onChange={setHfEtiologyCv} columns={3} />
+                <CheckboxGroup theme="hf" readOnly={readOnly} id="hfEtiologyCv" label="Cardiovascular" options={HF_ETIOLOGY_CV} values={hfEtiologyCv} onChange={setHfEtiologyCv} columns={3} />
               </div>
               <div className="space-y-3 pt-3">
                 {/* Non-cardiac Row */}
@@ -4380,7 +4384,7 @@ const hf = forwardRef(function hf(
                   </div>
                   <div className="lg:col-span-9 flex flex-wrap gap-x-6 gap-y-2">
                     {HF_ETIOLOGY_NON_CV.map((opt) => (
-                      <label key={opt} className="flex items-center gap-1.5 text-xs text-slate-800 font-medium cursor-pointer">
+                      <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
                         <input
                           disabled={readOnly}
                           type="checkbox"
@@ -4391,7 +4395,7 @@ const hf = forwardRef(function hf(
                               : [...hfEtiologyNonCv, opt];
                             setHfEtiologyNonCv(updated);
                           }}
-                          className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer"
+                          className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer accent-teal-600"
                         />
                         <span>{opt}</span>
                       </label>
@@ -4408,7 +4412,7 @@ const hf = forwardRef(function hf(
                   </div>
                   <div className="lg:col-span-9 flex flex-wrap gap-x-6 gap-y-2">
                     {HF_ETIOLOGY_PULM.map((opt) => (
-                      <label key={opt} className="flex items-center gap-1.5 text-xs text-slate-800 font-medium cursor-pointer">
+                      <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
                         <input
                           disabled={readOnly}
                           type="checkbox"
@@ -4419,7 +4423,7 @@ const hf = forwardRef(function hf(
                               : [...hfEtiologyPulm, opt];
                             setHfEtiologyPulm(updated);
                           }}
-                          className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer"
+                          className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer accent-teal-600"
                         />
                         <span>{opt}</span>
                       </label>
@@ -4434,7 +4438,7 @@ const hf = forwardRef(function hf(
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start py-2.5">
                   <div className="lg:col-span-3 font-bold text-slate-700 uppercase tracking-wider text-[11px]">Others</div>
                   <div className="lg:col-span-9 space-y-1.5">
-                    <label className="flex items-center gap-1.5 cursor-pointer text-xs font-semibold text-slate-700">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
                       <input 
                         disabled={readOnly}
                         type="checkbox"
@@ -4444,7 +4448,7 @@ const hf = forwardRef(function hf(
                           setEtiologyOther(checked ? 'Yes' : 'No');
                           if (!checked) setEtiologyOtherDetails('');
                         }}
-                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
+                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer accent-teal-600"
                       />
                       <span>Others</span>
                     </label>
@@ -4455,7 +4459,7 @@ const hf = forwardRef(function hf(
                           type="text"
                           value={etiologyOtherDetails ?? ''}
                           onChange={(e) => setEtiologyOtherDetails(e.target.value)}
-                          className={`w-full border rounded p-1.5 text-xs bg-white text-slate-800 font-medium focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none max-w-md block ${
+                          className={`w-full border rounded p-1.5 text-xs bg-white text-slate-800 font-medium focus:border-teal-600 focus:ring-teal-600 focus:outline-none max-w-md block ${
                             formErrors.etiologyOther ? 'border-red-500 bg-red-50' : 'border-slate-300'
                           }`}
                           placeholder="Specify other etiology..."
@@ -4506,7 +4510,7 @@ const hf = forwardRef(function hf(
                             setHasOtherComorbidity(checked);
                             if (!checked) setOtherComorbidity('');
                           }}
-                          className="shrink-0 w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer"
+                          className="shrink-0 w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer accent-teal-600"
                         />
                         <span className="text-xs text-slate-800 font-medium">Others</span>
                       </label>
@@ -4517,7 +4521,7 @@ const hf = forwardRef(function hf(
                           placeholder="Specify other comorbidity..."
                           value={otherComorbidity ?? ''}
                           onChange={(e) => setOtherComorbidity(e.target.value)}
-                          className="w-full border border-slate-300 rounded p-1.5 text-xs bg-white text-slate-800 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                          className="w-full border border-slate-300 rounded p-1.5 text-xs bg-white text-slate-800 focus:border-teal-600 focus:ring-teal-600 focus:outline-none"
                         />
                       )}
                     </div>
@@ -4554,7 +4558,7 @@ const hf = forwardRef(function hf(
                             setHasOtherRiskFactor(checked);
                             if (!checked) setOtherRiskFactor('');
                           }}
-                          className="shrink-0 w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer"
+                          className="shrink-0 w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer accent-teal-600"
                         />
                         <span className="text-xs text-slate-800 font-medium">Others</span>
                       </label>
@@ -4565,7 +4569,7 @@ const hf = forwardRef(function hf(
                           placeholder="Specify other risk factor..."
                           value={otherRiskFactor ?? ''}
                           onChange={(e) => setOtherRiskFactor(e.target.value)}
-                          className="w-full border border-slate-300 rounded p-1.5 text-xs bg-white text-slate-800 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                          className="w-full border border-slate-300 rounded p-1.5 text-xs bg-white text-slate-800 focus:border-teal-600 focus:ring-teal-600 focus:outline-none"
                         />
                       )}
                     </div>
@@ -4577,11 +4581,11 @@ const hf = forwardRef(function hf(
 
           {/* Stage, Functional Status, and AF Rows */}
           <div className="p-3 border-b border-slate-200 grid grid-cols-1 gap-3">
-            <RadioGroup readOnly={readOnly} id="hfStage" label="Stage of HF" name="hf-stage" value={hfStage} onChange={setHfStage} columns={4} options={['Stage A', 'Stage B', 'Stage C', 'Stage D']} error={formErrors.hfStage} />
+            <RadioGroup theme="hf" readOnly={readOnly} id="hfStage" label="Stage of HF" name="hf-stage" value={hfStage} onChange={setHfStage} columns={4} options={['Stage A', 'Stage B', 'Stage C', 'Stage D']} error={formErrors.hfStage} />
             <hr className="border-slate-100" />
-            <RadioGroup readOnly={readOnly} id="hfNyha" label="Functional Status" name="hf-nyha" value={hfNyha} onChange={setHfNyha} columns={4} options={['NYHA Class I', 'NYHA Class II', 'NYHA Class III', 'NYHA Class IV']} />
+            <RadioGroup theme="hf" readOnly={readOnly} id="hfNyha" label="Functional Status" name="hf-nyha" value={hfNyha} onChange={setHfNyha} columns={4} options={['NYHA Class I', 'NYHA Class II', 'NYHA Class III', 'NYHA Class IV']} />
             <hr className="border-slate-100" />
-            <RadioGroup readOnly={readOnly} label="AF Status" name="hf-af" value={hfAf} onChange={setHfAf} columns={4} options={['Permanent', 'Paroxysmal', 'Persistent', 'NSR']} />
+            <RadioGroup theme="hf" readOnly={readOnly} label="AF Status" name="hf-af" value={hfAf} onChange={setHfAf} columns={4} options={['Permanent', 'Paroxysmal', 'Persistent', 'NSR']} />
           </div>
 
           {/* Major Adverse Cardiac Events (MACE) Full Width Layout */}
@@ -4604,7 +4608,7 @@ const hf = forwardRef(function hf(
                       setMaceHospitalization(val);
                       if (val === 'No') setHospNote('');
                       if (val === 'Yes') setMaceNone('No');
-                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer" />
+                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer accent-teal-600" />
                     <span className="text-xs font-semibold text-slate-700">Hospitalization</span>
                   </label>
                   <input disabled={readOnly || maceHospitalization !== 'Yes'} type="text" value={hospNote ?? ''} onChange={(e) => setHospNote(e.target.value)} placeholder="Hospitalization note..." className="w-full border border-slate-300 rounded p-1 text-[11px] disabled:bg-slate-100 disabled:text-slate-400" />
@@ -4617,7 +4621,7 @@ const hf = forwardRef(function hf(
                       setMaceStroke(val);
                       if (val === 'No') setStrokeNote('');
                       if (val === 'Yes') setMaceNone('No');
-                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer" />
+                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer accent-teal-600" />
                     <span className="text-xs font-semibold text-slate-700">Stroke</span>
                   </label>
                   <input disabled={readOnly || maceStroke !== 'Yes'} type="text" value={strokeNote ?? ''} onChange={(e) => setStrokeNote(e.target.value)} placeholder="Stroke note..." className="w-full border border-slate-300 rounded p-1 text-[11px] disabled:bg-slate-100 disabled:text-slate-400" />
@@ -4630,7 +4634,7 @@ const hf = forwardRef(function hf(
                       setMaceMajorBleed(val);
                       if (val === 'No') setBleedNote('');
                       if (val === 'Yes') setMaceNone('No');
-                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer" />
+                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer accent-teal-600" />
                     <span className="text-xs font-semibold text-slate-700">Major Bleed</span>
                   </label>
                   <input disabled={readOnly || maceMajorBleed !== 'Yes'} type="text" value={bleedNote ?? ''} onChange={(e) => setBleedNote(e.target.value)} placeholder="Bleed note..." className="w-full border border-slate-300 rounded p-1 text-[11px] disabled:bg-slate-100 disabled:text-slate-400" />
@@ -4643,7 +4647,7 @@ const hf = forwardRef(function hf(
                       setMaceSevereArrhythmia(val);
                       if (val === 'No') setArrhythmiaNote('');
                       if (val === 'Yes') setMaceNone('No');
-                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer" />
+                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer accent-teal-600" />
                     <span className="text-xs font-semibold text-slate-700">Severe Arrhythmia</span>
                   </label>
                   <input disabled={readOnly || maceSevereArrhythmia !== 'Yes'} type="text" value={arrhythmiaNote ?? ''} onChange={(e) => setArrhythmiaNote(e.target.value)} placeholder="Arrhythmia note..." className="w-full border border-slate-300 rounded p-1 text-[11px] disabled:bg-slate-100 disabled:text-slate-400" />
@@ -4659,20 +4663,20 @@ const hf = forwardRef(function hf(
                       setMaceProcedures(val);
                       if (val === 'No') setProcedureNote('');
                       if (val === 'Yes') setMaceNone('No');
-                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer" />
+                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer accent-teal-600" />
                     <span className="text-xs font-semibold text-slate-700">Major Procedures</span>
                   </label>
                   <input disabled={readOnly || maceProcedures !== 'Yes'} type="text" value={procedureNote ?? ''} onChange={(e) => setProcedureNote(e.target.value)} placeholder="Procedure note..." className="w-full border border-slate-300 rounded p-1 text-[11px] disabled:bg-slate-100 disabled:text-slate-400" />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 cursor-pointer font-bold text-teal-600">
+                  <label className="flex items-center gap-1.5 cursor-pointer text-teal-600">
                     <input disabled={readOnly} type="checkbox" checked={maceOther === 'Yes'} onChange={(e) => {
                       const val = e.target.checked ? 'Yes' : 'No';
                       setMaceOther(val);
                       if (val === 'No') { setOtherNote(''); setMaceOtherDetails(''); }
                       if (val === 'Yes') setMaceNone('No');
-                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer" />
+                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer accent-teal-600" />
                     <span className="text-xs font-bold">Other</span>
                   </label>
                   <div>
@@ -4686,7 +4690,7 @@ const hf = forwardRef(function hf(
                 </div>
 
                 <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                  <label className="flex items-center gap-1.5 cursor-pointer font-bold text-teal-700">
+                  <label className="flex items-center gap-1.5 cursor-pointer text-teal-700">
                     <input disabled={readOnly} type="checkbox" checked={maceNone === 'Yes'} onChange={(e) => {
                       const val = e.target.checked ? 'Yes' : 'No';
                       setMaceNone(val);
@@ -4710,7 +4714,7 @@ const hf = forwardRef(function hf(
                         setMaceDeathReason('');
                         setDeathNote('');
                       }
-                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer" />
+                    }} className="w-4 h-4 text-teal-600 bg-white border-slate-300 focus:ring-2 focus:ring-teal-600 cursor-pointer accent-teal-600" />
                     <span className="text-xs font-bold uppercase text-teal-700">No MACE Events</span>
                   </label>
                 </div>
@@ -4718,7 +4722,7 @@ const hf = forwardRef(function hf(
 
               {/* Col 3: Death Context */}
               <div className="space-y-2 bg-white p-2.5 rounded-lg border border-slate-200">
-                <label className="flex items-center gap-1.5 cursor-pointer font-bold text-red-700">
+                <label className="flex items-center gap-1.5 cursor-pointer text-red-700">
                   <input disabled={readOnly} type="checkbox" checked={maceDeath === 'Yes'} onChange={(e) => {
                     const val = e.target.checked ? 'Yes' : 'No';
                     setMaceDeath(val);
@@ -4735,8 +4739,8 @@ const hf = forwardRef(function hf(
                     <div>
                       <span className="text-[10px] text-slate-500 block">Location:</span>
                       <div className="flex gap-2">
-                        <label className="flex items-center gap-1 text-xs cursor-pointer"><input disabled={readOnly} type="radio" name="d-loc" checked={maceDeathLocation === 'Home'} onChange={() => setMaceDeathLocation('Home')} /> Home</label>
-                        <label className="flex items-center gap-1 text-xs cursor-pointer"><input disabled={readOnly} type="radio" name="d-loc" checked={maceDeathLocation === 'Hospital'} onChange={() => setMaceDeathLocation('Hospital')} /> Hospital</label>
+                        <label className="flex items-center gap-1 cursor-pointer"><input disabled={readOnly} type="radio" name="d-loc" checked={maceDeathLocation === 'Home'} onChange={() => setMaceDeathLocation('Home')} /> Home</label>
+                        <label className="flex items-center gap-1 cursor-pointer"><input disabled={readOnly} type="radio" name="d-loc" checked={maceDeathLocation === 'Hospital'} onChange={() => setMaceDeathLocation('Hospital')} /> Hospital</label>
                       </div>
                     </div>
                     <div>
@@ -4784,13 +4788,7 @@ const hf = forwardRef(function hf(
                           type="text" 
                           value={ecgQrsDuration ?? ''} 
                           onChange={(e) => handleNumericChange(setEcgQrsDuration, e.target.value)} 
-                          className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-24 ${
-                            formErrors.ecgQrsDuration ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
-                            qrsCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                            qrsCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
-                            qrsCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
-                            'border-slate-300'
-                          }`} 
+                          className={`border rounded-md px-3 py-1.5 text-xs focus:ring-teal-600 focus:border-teal-600 focus:outline-none bg-white text-slate-800 placeholder:text-slate-400 w-24 ${formErrors.ecgQrsDuration ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' : 'border-slate-300'}`} 
                         />
                         <span className="text-slate-500 text-xs ml-1 font-medium">ms</span>
                         {qrsCls.status && (
@@ -4838,7 +4836,7 @@ const hf = forwardRef(function hf(
                       value={ecgRhythmOther ?? ''} 
                       onChange={(e) => setEcgRhythmOther(e.target.value)} 
                       placeholder="Specify other rhythm..." 
-                      className={`border rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none mt-1 ${formErrors.ecgRhythmOther ? 'border-red-500 text-red-700 bg-red-50' : 'border-slate-300'}`} 
+                      className={`border rounded p-1 text-xs w-full focus:border-teal-600 focus:ring-teal-600 focus:outline-none mt-1 ${formErrors.ecgRhythmOther ? 'border-red-500 text-red-700 bg-red-50' : 'border-slate-300'}`} 
                     />
                   )}
                   {formErrors.ecgRhythm && (
@@ -4893,7 +4891,7 @@ const hf = forwardRef(function hf(
                       value={ecgBlockagesOther ?? ''} 
                       onChange={(e) => setEcgBlockagesOther(e.target.value)} 
                       placeholder="Specify other blockage..." 
-                      className={`border rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none mt-1 ${formErrors.ecgBlockagesOther ? 'border-red-500 text-red-700 bg-red-50' : 'border-slate-300'}`} 
+                      className={`border rounded p-1 text-xs w-full focus:border-teal-600 focus:ring-teal-600 focus:outline-none mt-1 ${formErrors.ecgBlockagesOther ? 'border-red-500 text-red-700 bg-red-50' : 'border-slate-300'}`} 
                     />
                   )}
                   {formErrors.ecgBlockages && (
@@ -4922,13 +4920,7 @@ const hf = forwardRef(function hf(
                             type="text" 
                             value={ecgQt ?? ''} 
                             onChange={(e) => handleNumericChange(setEcgQt, e.target.value)} 
-                            className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${
-                              formErrors.ecgQt ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
-                              qtCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                              qtCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
-                              qtCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
-                              'border-slate-300'
-                            }`} 
+                            className={`border rounded-md px-3 py-1.5 text-xs focus:ring-teal-600 focus:border-teal-600 focus:outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.ecgQt ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' : 'border-slate-300'}`} 
                           />
                           <span className="text-slate-500 text-xs ml-1 font-medium">ms</span>
                           {qtCls.status && (
@@ -4951,13 +4943,7 @@ const hf = forwardRef(function hf(
                             type="text" 
                             value={ecgQtc ?? ''} 
                             onChange={(e) => handleNumericChange(setEcgQtc, e.target.value)} 
-                            className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${
-                              formErrors.ecgQtc ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
-                              qtcCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                              qtcCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
-                              qtcCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
-                              'border-slate-300'
-                            }`} 
+                            className={`border rounded-md px-3 py-1.5 text-xs focus:ring-teal-600 focus:border-teal-600 focus:outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.ecgQtc ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' : 'border-slate-300'}`} 
                           />
                           <span className="text-slate-500 text-xs ml-1 font-medium">ms</span>
                           {qtcCls.status && (
@@ -5000,13 +4986,7 @@ const hf = forwardRef(function hf(
                           type="text" 
                           value={cxrCtRatio ?? ''} 
                           onChange={(e) => handleNumericChange(setCxrCtRatio, e.target.value)} 
-                          className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${
-                            formErrors.cxrCtRatio ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
-                            ctRatioCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                            ctRatioCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
-                            ctRatioCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
-                            'border-slate-300'
-                          }`} 
+                          className={`border rounded-md px-3 py-1.5 text-xs focus:ring-teal-600 focus:border-teal-600 focus:outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.cxrCtRatio ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' : 'border-slate-300'}`} 
                         />
                         {ctRatioCls.status && (
                           <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
@@ -5035,7 +5015,7 @@ const hf = forwardRef(function hf(
                         setHasCxrOthers(checked);
                         if (!checked) setCxrOthers('');
                       }}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer accent-teal-600"
                     /> 
                     <span>Others</span>
                   </label>
@@ -5046,7 +5026,7 @@ const hf = forwardRef(function hf(
                       placeholder="Specify other details..." 
                       value={cxrOthers ?? ''} 
                       onChange={(e) => setCxrOthers(e.target.value)} 
-                      className="w-full border border-slate-300 rounded p-1 text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none max-w-xs block" 
+                      className="w-full border border-slate-300 rounded p-1 text-xs focus:border-teal-600 focus:ring-teal-600 focus:outline-none max-w-xs block" 
                     />
                   )}
                 </div>
@@ -5083,13 +5063,7 @@ const hf = forwardRef(function hf(
                             value={echoEfPercent ?? ''}
                             onChange={(e) => handleFieldChange('echoEfPercent', e.target.value, setEchoEfPercent, setEchoEfPercentError)}
                             placeholder=""
-                            className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
-                              formErrors.echoEfPercent || echoEfPercentError ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
-                              efCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                              efCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
-                              efCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
-                              'border-slate-300'
-                            }`}
+                            className={`border rounded-md px-3 py-1.5 text-xs focus:ring-teal-600 focus:border-teal-600 focus:outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${(formErrors.echoEfPercent || echoEfPercentError) ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' : 'border-slate-300'}`}
                           />
                           {efCls.status && (
                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
@@ -5117,13 +5091,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={echoEaRatio ?? ''}
                             onChange={(e) => handleNumericChange(setEchoEaRatio, e.target.value)}
-                            className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
-                              formErrors.echoEaRatio ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
-                              eaCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                              eaCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
-                              eaCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
-                              'border-slate-300'
-                            }`}
+                            className={`border rounded-md px-3 py-1.5 text-xs focus:ring-teal-600 focus:border-teal-600 focus:outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${formErrors.echoEaRatio ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' : 'border-slate-300'}`}
                           />
                           {eaCls.status && (
                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
@@ -5151,13 +5119,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={echoRvTapsv ?? ''}
                             onChange={(e) => handleNumericChange(setEchoRvTapsv, e.target.value)}
-                            className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
-                              formErrors.echoRvTapsv ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
-                              tapseCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                              tapseCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
-                              tapseCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
-                              'border-slate-300'
-                            }`}
+                            className={`border rounded-md px-3 py-1.5 text-xs focus:ring-teal-600 focus:border-teal-600 focus:outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${formErrors.echoRvTapsv ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' : 'border-slate-300'}`}
                           />
                           {tapseCls.status && (
                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold whitespace-nowrap ${
@@ -5187,13 +5149,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={echoEePrimeRatio ?? ''}
                             onChange={(e) => handleNumericChange(setEchoEePrimeRatio, e.target.value)}
-                            className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
-                              formErrors.echoEePrimeRatio ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
-                              eePrimeCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                              eePrimeCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
-                              eePrimeCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
-                              'border-slate-300'
-                            }`}
+                            className={`border rounded-md px-3 py-1.5 text-xs focus:ring-teal-600 focus:border-teal-600 focus:outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${formErrors.echoEePrimeRatio ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' : 'border-slate-300'}`}
                           />
                           <span className="text-slate-500 text-xs ml-1 font-medium">ratio</span>
                           {eePrimeCls.status && (
@@ -5222,13 +5178,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={echoEDecelTime ?? ''}
                             onChange={(e) => handleNumericChange(setEchoEDecelTime, e.target.value)}
-                            className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
-                              formErrors.echoEDecelTime ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
-                              eDecelCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                              eDecelCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
-                              eDecelCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
-                              'border-slate-300'
-                            }`}
+                            className={`border rounded-md px-3 py-1.5 text-xs focus:ring-teal-600 focus:border-teal-600 focus:outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${formErrors.echoEDecelTime ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' : 'border-slate-300'}`}
                           />
                           <span className="text-slate-500 text-xs ml-1 font-medium">ms</span>
                           {eDecelCls.status && (
@@ -5259,7 +5209,7 @@ const hf = forwardRef(function hf(
                     <span className="block font-semibold text-slate-600 mb-0.5">MR mitral regurgitation:</span>
                     <div className="grid grid-cols-3 gap-1">
                       {['None', '1plus', '2plus', '3plus', '4plus'].map(lvl => (
-                        <label key={lvl} className="flex items-center gap-1 text-[11px]"><input disabled={readOnly} type="radio" name="echo_mr" checked={echoMrMitralRegurg === lvl} onChange={() => setEchoMrMitralRegurg(lvl)} /> {lvl}</label>
+                        <label key={lvl} className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="echo_mr" checked={echoMrMitralRegurg === lvl} onChange={() => setEchoMrMitralRegurg(lvl)} /> {lvl}</label>
                       ))}
                     </div>
                   </div>
@@ -5278,13 +5228,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={echoRvSystolicPressure ?? ''}
                             onChange={(e) => handleNumericChange(setEchoRvSystolicPressure, e.target.value)}
-                            className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${
-                              formErrors.echoRvSystolicPressure ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' :
-                              rvspCls.status === 'normal' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' :
-                              rvspCls.status === 'borderline' ? 'bg-amber-50 text-amber-800 border-amber-300 font-semibold' :
-                              rvspCls.status === 'abnormal' ? 'bg-rose-50 text-rose-800 border-rose-300 font-semibold' :
-                              'border-slate-300'
-                            }`}
+                            className={`border rounded-md px-3 py-1.5 text-xs focus:ring-teal-600 focus:border-teal-600 focus:outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full disabled:bg-slate-100 disabled:text-slate-400 ${formErrors.echoRvSystolicPressure ? 'bg-red-50 text-red-900 border-red-500 focus:ring-red-500 font-bold' : 'border-slate-300'}`}
                           />
                           <span className="text-slate-500 text-xs ml-1 font-medium">mmHg</span>
                           {rvspCls.status && (
@@ -5312,7 +5256,7 @@ const hf = forwardRef(function hf(
                     <span className="block font-semibold text-slate-600 mb-0.5">RWMI:</span>
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                       {['None', 'Global', 'Inferior', 'Anterior', 'Lateral'].map(r => (
-                        <label key={r} className="flex items-center gap-1 text-[11px]"><input disabled={readOnly} type="radio" name="echo_rwmi" checked={echoRwmi === r} onChange={() => setEchoRwmi(r)} /> {r}</label>
+                        <label key={r} className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="echo_rwmi" checked={echoRwmi === r} onChange={() => setEchoRwmi(r)} /> {r}</label>
                       ))}
                     </div>
                   </div>
@@ -5336,7 +5280,7 @@ const hf = forwardRef(function hf(
                   <div className={`pl-5 flex flex-wrap gap-4 items-center mt-1 bg-white p-1.5 rounded border ${formErrors.holterVentricularArrhythmia ? 'border-red-500 bg-red-50/20' : 'border-slate-200'}`} id="holterVentricularArrhythmiaBlock">
                     <span className="font-medium text-slate-600">Ventricular Arrhythmia:</span>
                     {['No', 'Yes', 'Complex VPC', 'NSVT', 'VT'].map(opt => (
-                      <label key={opt} className="flex items-center gap-1 text-[11px]"><input disabled={readOnly} type="radio" name="holter_va" checked={holterVentricularArrhythmia === opt} onChange={() => setHolterVentricularArrhythmia(opt)} /> {opt}</label>
+                      <label key={opt} className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="holter_va" checked={holterVentricularArrhythmia === opt} onChange={() => setHolterVentricularArrhythmia(opt)} /> {opt}</label>
                     ))}
                   </div>
                 </div>
@@ -5365,7 +5309,7 @@ const hf = forwardRef(function hf(
               <div className="space-y-1.5">
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
                       <input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Done'} onChange={() => setStressStatus('Done')} /> Done
                     </label>
                     {stressStatus === 'Done' && (
@@ -5392,7 +5336,7 @@ const hf = forwardRef(function hf(
                     </div>
                   )}
                 </div>
-                <label className="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer">
+                <label className="flex items-center gap-1.5 cursor-pointer">
                   <input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Not Done'} onChange={() => { setStressStatus('Not Done'); setStressDate(''); }} /> Not Done
                 </label>
               </div>
@@ -5446,7 +5390,7 @@ const hf = forwardRef(function hf(
               <div className={`space-y-2 p-2 rounded ${formErrors.sixMwtStatus ? 'border border-red-500 bg-red-50/30' : ''}`}>
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
                       <input disabled={readOnly} type="radio" name="six_mwt" checked={sixMwtStatus === 'Done'} onChange={() => setSixMwtStatus('Done')} /> Done:
                     </label>
                     {sixMwtStatus === 'Done' && (
@@ -5470,7 +5414,7 @@ const hf = forwardRef(function hf(
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1.5 font-bold text-slate-700 whitespace-nowrap cursor-pointer">
+                  <label className="flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
                     <input disabled={readOnly} type="radio" name="six_mwt" checked={sixMwtStatus === 'Not Done'} onChange={() => { setSixMwtStatus('Not Done'); setSixMwtDate(''); }} /> Not Done, Reasons:
                   </label>
                   {sixMwtStatus === 'Not Done' && (
@@ -5504,7 +5448,7 @@ const hf = forwardRef(function hf(
               <div className={`space-y-1.5 p-2 rounded ${formErrors.angioStatus ? 'border border-red-500 bg-red-50/30' : ''}`}>
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer">
+                    <label className="flex items-center gap-1.5 cursor-pointer">
                       <input disabled={readOnly} type="radio" name="angio_st" checked={angioStatus === 'Done'} onChange={() => setAngioStatus('Done')} /> Done:
                     </label>
                     {angioStatus === 'Done' && (
@@ -5525,7 +5469,7 @@ const hf = forwardRef(function hf(
                     </div>
                   )}
                 </div>
-                <label className="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer">
+                <label className="flex items-center gap-1.5 cursor-pointer">
                   <input disabled={readOnly} type="radio" name="angio_st" checked={angioStatus === 'Not Done'} onChange={() => { setAngioStatus('Not Done'); setAngioDate(''); }} /> Not Done
                 </label>
                 {formErrors.angioStatus && (
@@ -5654,12 +5598,10 @@ const hf = forwardRef(function hf(
                             }));
                             handleLabChange(item.key, 'result', val);
                           }}
-                          className={`${
-                            formErrors[item.key] || labErrors[item.key] ? INPUT_ERROR_STYLES + ' w-24 sm:w-28 text-center py-1.5' :
-                            cls.status === 'normal' ? 'w-24 sm:w-28 border border-emerald-300 rounded-md px-2 py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-900 text-center shadow-2xs focus:ring-2 focus:ring-emerald-500' :
-                            cls.status === 'borderline' ? 'w-24 sm:w-28 border border-amber-300 rounded-md px-2 py-1.5 text-xs font-semibold bg-amber-50 text-amber-900 text-center shadow-2xs focus:ring-2 focus:ring-amber-500' :
-                            cls.status === 'abnormal' ? 'w-24 sm:w-28 border border-rose-300 rounded-md px-2 py-1.5 text-xs font-semibold bg-rose-50 text-rose-900 text-center shadow-2xs focus:ring-2 focus:ring-rose-500' :
-                            INPUT_NORMAL_STYLES + ' w-24 sm:w-28 text-center py-1.5'
+                          className={`w-24 sm:w-28 text-center py-1.5 border rounded-md px-2 text-xs bg-white text-slate-900 focus:ring-teal-600 focus:border-teal-600 focus:outline-none ${
+                            formErrors[item.key] || labErrors[item.key]
+                              ? 'border-red-500 bg-red-50 text-red-900 font-bold'
+                              : 'border-slate-300'
                           }`}
                         />
                         {item.unit ? (
@@ -5725,12 +5667,10 @@ const hf = forwardRef(function hf(
                             }));
                             handleLabChange(item.key, 'result', val);
                           }}
-                          className={`${
-                            formErrors[item.key] || labErrors[item.key] ? INPUT_ERROR_STYLES + ' w-24 sm:w-28 text-center py-1.5' :
-                            cls.status === 'normal' ? 'w-24 sm:w-28 border border-emerald-300 rounded-md px-2 py-1.5 text-xs font-semibold bg-emerald-50 text-emerald-900 text-center shadow-2xs focus:ring-2 focus:ring-emerald-500' :
-                            cls.status === 'borderline' ? 'w-24 sm:w-28 border border-amber-300 rounded-md px-2 py-1.5 text-xs font-semibold bg-amber-50 text-amber-900 text-center shadow-2xs focus:ring-2 focus:ring-amber-500' :
-                            cls.status === 'abnormal' ? 'w-24 sm:w-28 border border-rose-300 rounded-md px-2 py-1.5 text-xs font-semibold bg-rose-50 text-rose-900 text-center shadow-2xs focus:ring-2 focus:ring-rose-500' :
-                            INPUT_NORMAL_STYLES + ' w-24 sm:w-28 text-center py-1.5'
+                          className={`w-24 sm:w-28 text-center py-1.5 border rounded-md px-2 text-xs bg-white text-slate-900 focus:ring-teal-600 focus:border-teal-600 focus:outline-none ${
+                            formErrors[item.key] || labErrors[item.key]
+                              ? 'border-red-500 bg-red-50 text-red-900 font-bold'
+                              : 'border-slate-300'
                           }`}
                         />
                         {item.unit ? (
@@ -5843,7 +5783,7 @@ const hf = forwardRef(function hf(
                             { val: betaNotUsedHypotension, set: setBetaNotUsedHypotension, label: 'Hypotension' },
                             { val: betaNotUsedOther, set: setBetaNotUsedOther, label: 'Other' }
                           ].map((item) => (
-                            <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700 text-xs">
+                            <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
                               <input disabled={readOnly}
                                 type="checkbox"
                                 checked={item.val === 'Yes'}
@@ -5909,7 +5849,7 @@ const hf = forwardRef(function hf(
                             { val: aceNotUsedHypotension, set: setAceNotUsedHypotension, label: 'Hypotension' },
                             { val: aceNotUsedOther, set: setAceNotUsedOther, label: 'Other' }
                           ].map((item) => (
-                            <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700 text-xs">
+                            <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
                               <input disabled={readOnly}
                                 type="checkbox"
                                 checked={item.val === 'Yes'}
@@ -5974,7 +5914,7 @@ const hf = forwardRef(function hf(
                             { val: arbNotUsedHypotension, set: setArbNotUsedHypotension, label: 'Hypotension' },
                             { val: arbNotUsedOther, set: setArbNotUsedOther, label: 'Others' }
                           ].map((item) => (
-                            <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700 text-xs">
+                            <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
                               <input disabled={readOnly}
                                 type="checkbox"
                                 checked={item.val === 'Yes'}
@@ -6046,7 +5986,7 @@ const hf = forwardRef(function hf(
                     type="text"
                     value={aldosteroneNotUsedOtherReason ?? ''}
                     onChange={(e) => setAldosteroneNotUsedOtherReason(e.target.value)}
-                    className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                    className="border border-slate-300 rounded p-1 text-xs w-full focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                     placeholder="Specify other reason..."
                   />
                 </div>
@@ -6068,7 +6008,7 @@ const hf = forwardRef(function hf(
                   type="text"
                   value={hydralazineName ?? ''}
                   onChange={(e) => setHydralazineName(e.target.value)}
-                  className="border border-slate-300 rounded p-1 text-xs flex-1 min-w-[120px] focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                  className="border border-slate-300 rounded p-1 text-xs flex-1 min-w-[120px] focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                   placeholder="Details"
                 />
                 <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -6116,7 +6056,7 @@ const hf = forwardRef(function hf(
                           nitrate.setDose('');
                         }
                       }}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer accent-teal-600"
                     />
                     <span className="font-semibold text-slate-700">{nitrate.label}</span>
                   </label>
@@ -6126,7 +6066,7 @@ const hf = forwardRef(function hf(
                       type="text"
                       value={nitrate.name ?? ''}
                       onChange={(e) => nitrate.setName(e.target.value)}
-                      className="border border-slate-300 rounded p-1 text-xs w-full sm:flex-1 sm:max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      className="border border-slate-300 rounded p-1 text-xs w-full sm:flex-1 sm:max-w-md focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                       placeholder={`${nitrate.label} Details`}
                     />
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -6134,7 +6074,7 @@ const hf = forwardRef(function hf(
                         type="text"
                         value={nitrate.dose ?? ''}
                         onChange={(e) => handleDoseChange(e.target.value, nitrate.setDose, `${nitrate.label.replace(' ', '')}Dose`)}
-                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
+                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:border-teal-600 focus:ring-teal-600 focus:outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
                         placeholder="Dose"
                       />
                       <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 w-12 text-left">/per day</span>
@@ -6167,7 +6107,7 @@ const hf = forwardRef(function hf(
                         type="text"
                         value={warfarinInr ?? ''}
                         onChange={(e) => handleFieldChange('inr', e.target.value, setWarfarinInr, (err) => {})}
-                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
+                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:border-teal-600 focus:ring-teal-600 focus:outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
                         placeholder="INR"
                       />
                     </div>
@@ -6177,7 +6117,7 @@ const hf = forwardRef(function hf(
                         type="text"
                         value={warfarinTargetInr ?? ''}
                         onChange={(e) => setWarfarinTargetInr(e.target.value)}
-                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
+                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:border-teal-600 focus:ring-teal-600 focus:outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
                         placeholder="Target INR"
                       />
                       <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 w-12 text-left"></span>
@@ -6197,7 +6137,7 @@ const hf = forwardRef(function hf(
                       type="text"
                       value={vitaminKInhibitorName ?? ''}
                       onChange={(e) => setVitaminKInhibitorName(e.target.value)}
-                      className="border border-slate-300 rounded p-1 text-xs flex-1 min-w-[120px] focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      className="border border-slate-300 rounded p-1 text-xs flex-1 min-w-[120px] focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                       placeholder="Name"
                     />
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -6205,7 +6145,7 @@ const hf = forwardRef(function hf(
                         type="text"
                         value={vitaminKInhibitorDose ?? ''}
                         onChange={(e) => setVitaminKInhibitorDose(e.target.value)}
-                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
+                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:border-teal-600 focus:ring-teal-600 focus:outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
                         placeholder="Dose"
                       />
                       <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 w-12 text-left">/per day</span>
@@ -6225,7 +6165,7 @@ const hf = forwardRef(function hf(
                       type="text"
                       value={noacName ?? ''}
                       onChange={(e) => setNoacName(e.target.value)}
-                      className="border border-slate-300 rounded p-1 text-xs flex-1 min-w-[120px] focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      className="border border-slate-300 rounded p-1 text-xs flex-1 min-w-[120px] focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                       placeholder="Name"
                     />
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -6233,7 +6173,7 @@ const hf = forwardRef(function hf(
                         type="text"
                         value={noacDose ?? ''}
                         onChange={(e) => setNoacDose(e.target.value)}
-                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
+                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:border-teal-600 focus:ring-teal-600 focus:outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
                         placeholder="Dose"
                       />
                       <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 w-12 text-left">/per day</span>
@@ -6342,7 +6282,7 @@ const hf = forwardRef(function hf(
                     type="text"
                     value={diureticNotUsedOtherReason ?? ''}
                     onChange={(e) => setDiureticNotUsedOtherReason(e.target.value)}
-                    className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                    className="border border-slate-300 rounded p-1 text-xs w-full focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                     placeholder="Specify other reason..."
                   />
                 </div>
@@ -6470,7 +6410,7 @@ const hf = forwardRef(function hf(
                           drug.setDose('');
                         }
                       }}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer accent-teal-600"
                     />
                     <span className="font-semibold text-slate-700">{drug.label}</span>
                   </label>
@@ -6479,7 +6419,7 @@ const hf = forwardRef(function hf(
                       type="text"
                       value={drug.name ?? ''}
                       onChange={(e) => drug.setName(e.target.value)}
-                      className="border border-slate-300 rounded p-1 text-xs w-full sm:flex-1 sm:max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      className="border border-slate-300 rounded p-1 text-xs w-full sm:flex-1 sm:max-w-md focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                       placeholder={`Other Medication ${idx + 1} Name`}
                     />
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -6487,7 +6427,7 @@ const hf = forwardRef(function hf(
                         type="text"
                         value={drug.dose ?? ''}
                         onChange={(e) => handleDoseChange(e.target.value, drug.setDose, drug.label)}
-                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
+                        className="border border-slate-300 rounded p-1 text-xs w-24 focus:border-teal-600 focus:ring-teal-600 focus:outline-none text-right disabled:bg-slate-100 disabled:text-slate-400"
                         placeholder="Dose"
                       />
                       <span className="text-[10px] text-slate-400 whitespace-nowrap flex-shrink-0 w-12 text-left">/per day</span>
@@ -6587,7 +6527,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={currentDeviceOtherName ?? ''}
                             onChange={(e) => setCurrentDeviceOtherName(e.target.value)}
-                            className="border border-slate-300 rounded p-1 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                            className="border border-slate-300 rounded p-1 text-xs flex-1 max-w-md focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                             placeholder="Specify device..."
                           />
                         )}
@@ -6595,12 +6535,12 @@ const hf = forwardRef(function hf(
                     ))}
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">Device Brand / Model</label>
+                    <label className="form-field-label">Device Brand / Model</label>
                     <input type="text"
                       disabled={readOnly || currentDeviceYes !== 'Yes'}
                       value={currentDeviceBrand ?? ''}
                       onChange={(e) => setCurrentDeviceBrand(e.target.value)}
-                      className="border border-slate-300 rounded p-1.5 text-xs w-full max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                      className="border border-slate-300 rounded p-1.5 text-xs w-full max-w-md focus:border-teal-600 focus:ring-teal-600 focus:outline-none"
                       placeholder="E.g. Medtronic, Boston Scientific"
                     />
                   </div>
@@ -6694,7 +6634,7 @@ const hf = forwardRef(function hf(
                             type="text"
                             value={eligibleOtherName ?? ''}
                             onChange={(e) => setEligibleOtherName(e.target.value)}
-                            className="border border-slate-300 rounded p-1 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                            className="border border-slate-300 rounded p-1 text-xs flex-1 max-w-md focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                             placeholder="Specify device..."
                           />
                         )}
@@ -6704,17 +6644,17 @@ const hf = forwardRef(function hf(
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-semibold text-slate-700 block mb-1">Recommended Brand / Model</label>
+                      <label className="form-field-label">Recommended Brand / Model</label>
                       <input type="text"
                         disabled={readOnly || eligibleYes !== 'Yes'}
                         value={eligibleDeviceBrand ?? ''}
                         onChange={(e) => setEligibleDeviceBrand(e.target.value)}
-                        className={`border rounded p-1.5 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none ${formErrors.eligibleDeviceBrand ? 'border-red-500 bg-red-50 text-red-700' : 'border-slate-300'}`}
+                        className={`border rounded p-1.5 text-xs w-full focus:border-teal-600 focus:ring-teal-600 focus:outline-none ${formErrors.eligibleDeviceBrand ? 'border-red-500 bg-red-50 text-red-700' : 'border-slate-300'}`}
                         placeholder="E.g. Medtronic, Boston Scientific"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-700 block mb-1">Patient Acceptance</label>
+                      <label className="form-field-label">Patient Acceptance</label>
                       <div className={`flex items-center gap-4 mt-2 p-1 rounded ${formErrors.patientAcceptance ? 'border border-red-500 bg-red-50/20' : ''}`}>
                         <label className="flex items-center gap-1.5 cursor-pointer">
                           <input disabled={readOnly}
@@ -6755,11 +6695,11 @@ const hf = forwardRef(function hf(
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">If No, reasons:</label>
+                    <label className="form-field-label">If No, reasons:</label>
                     <textarea disabled={readOnly || patientAcceptanceNo !== 'Yes'}
                       value={patientAcceptanceReason ?? ''}
                       onChange={(e) => setPatientAcceptanceReason(e.target.value)}
-                      className="border border-slate-300 rounded p-1.5 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      className="border border-slate-300 rounded p-1.5 text-xs w-full focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                       placeholder="Describe patient refusal or clinical reasons..."
                       rows={2}
                     />
@@ -6778,7 +6718,7 @@ const hf = forwardRef(function hf(
                 type="date"
                 value={implantDate ?? ''}
                 onChange={(e) => setImplantDate(e.target.value)}
-                className="border border-slate-300 rounded p-1.5 text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none w-full max-w-xs"
+                className="border border-slate-300 rounded p-1.5 text-xs focus:border-teal-600 focus:ring-teal-600 focus:outline-none w-full max-w-xs"
               />
             </div>
           </div>
@@ -6808,12 +6748,12 @@ const hf = forwardRef(function hf(
                   {renderDeviceMetric('# of appropriate shocks', appropriateShocks, setAppropriateShocks, 'appropriateShocks', 'Count', 'appropriateShocks', true, icdShock !== 'Yes', 'number')}
                   {renderDeviceMetric('# of inappropriate shocks', inappropriateShocks, setInappropriateShocks, 'inappropriateShocks', 'Count', 'inappropriateShocks', true, icdShock !== 'Yes', 'number')}
                   <div className="md:col-span-3">
-                    <label className="text-xs font-semibold text-slate-700 block mb-1">Cause of Shocks</label>
+                    <label className="form-field-label">Cause of Shocks</label>
                     <input disabled={readOnly || icdShock !== 'Yes'}
                       type="text"
                       value={causeOfShocks ?? ''}
                       onChange={(e) => setCauseOfShocks(e.target.value)}
-                      className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                      className="border border-slate-300 rounded p-1 text-xs w-full focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                       placeholder="E.g. VT, VF, noise, SVT"
                     />
                   </div>
@@ -6834,16 +6774,16 @@ const hf = forwardRef(function hf(
                 {atp === 'Yes' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-5 animate-fadeIn">
                     <div>
-                      <label className="text-xs font-semibold text-slate-700 block mb-1"># of times</label>
+                      <label className="form-field-label"># of times</label>
                       <input disabled={readOnly}
                         type="number"
                         value={atpTimes ?? ''}
                         onChange={(e) => handleNumericChange(setAtpTimes, e.target.value)}
-                        className={`border rounded p-1 text-xs w-28 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none text-right ${formErrors.atpTimes ? 'border-red-500 bg-red-50 text-red-700' : 'border-slate-300'}`}
+                        className={`border rounded p-1 text-xs w-28 focus:border-teal-600 focus:ring-teal-600 focus:outline-none text-right ${formErrors.atpTimes ? 'border-red-500 bg-red-50 text-red-700' : 'border-slate-300'}`}
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-slate-700 block mb-1">ATP successful?</label>
+                      <label className="form-field-label">ATP successful?</label>
                       <div className="flex flex-wrap items-center gap-3 mt-1.5">
                         {[
                           { val: atpSuccessAlways, set: setAtpSuccessAlways, label: 'Always' },
@@ -6892,12 +6832,12 @@ const hf = forwardRef(function hf(
               {renderDeviceMetric('NSVT episodes (#)', nsvtEpisodes, setNsvtEpisodes, 'nsvtEpisodes', 'Count', 'nsvtEpisodes', true, false, 'number')}
               {renderDeviceMetric('SVT episodes (#)', svtEpisodes, setSvtEpisodes, 'svtEpisodes', 'Count', 'svtEpisodes', false, false, 'number')}
               <div className="col-span-2">
-                <label className="text-xs font-semibold text-slate-700 block mb-1">Device Volume alert</label>
+                <label className="form-field-label">Device Volume alert</label>
                 <input disabled={readOnly}
                   type="text"
                   value={deviceVolumeAlert ?? ''}
                   onChange={(e) => setDeviceVolumeAlert(e.target.value)}
-                  className="border border-slate-300 rounded p-1 text-xs w-full focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                  className="border border-slate-300 rounded p-1 text-xs w-full focus:border-teal-600 focus:ring-teal-600 focus:outline-none"
                   placeholder="Details of any volume/fluid alerts"
                 />
               </div>
@@ -6913,7 +6853,7 @@ const hf = forwardRef(function hf(
               <textarea disabled={readOnly}
                 value={deviceNotes ?? ''}
                 onChange={(e) => setDeviceNotes(e.target.value)}
-                className="w-full border border-slate-300 rounded p-1.5 text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none"
+                className="w-full border border-slate-300 rounded p-1.5 text-xs focus:border-teal-600 focus:ring-teal-600 focus:outline-none"
                 placeholder="Additional device notes..."
                 rows={3}
               />
@@ -6968,7 +6908,7 @@ const hf = forwardRef(function hf(
                         type="text"
                         value={eduOtherDetails ?? ''}
                         onChange={(e) => setEduOtherDetails(e.target.value)}
-                        className="border border-slate-300 rounded p-1.5 text-xs flex-1 max-w-md focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
+                        className="border border-slate-300 rounded p-1.5 text-xs flex-1 max-w-md focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400"
                         placeholder="Specify other counseling topic..."
                       />
                     )}
@@ -7011,7 +6951,7 @@ const hf = forwardRef(function hf(
                 <textarea disabled={readOnly}
                   value={rec.details ?? ''}
                   onChange={(e) => rec.setDetails(e.target.value)}
-                  className={`w-full border rounded p-1.5 text-xs focus:ring-1 focus:ring-teal-500 focus:border-teal-500 outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed ${formErrors.recommendations ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-slate-300'}`}
+                  className={`w-full border rounded p-1.5 text-xs focus:border-teal-600 focus:ring-teal-600 focus:outline-none disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed ${formErrors.recommendations ? 'border-red-500 bg-red-50 text-red-700 font-bold' : 'border-slate-300'}`}
                   placeholder={`Details for ${rec.label}...`}
                   rows={2}
                 />
@@ -7084,7 +7024,7 @@ const hf = forwardRef(function hf(
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div className="md:col-span-1">
-                          <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Document Type</label>
+                          <label className="form-field-label">Document Type</label>
                           <select 
                             value={fileMetadata[file.name]?.type || 'Other'} 
                             onChange={(e) => handleMetadataChange(file.name, 'type', e.target.value)}
@@ -7098,7 +7038,7 @@ const hf = forwardRef(function hf(
                           </select>
                         </div>
                         <div className="md:col-span-2">
-                          <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Notes</label>
+                          <label className="form-field-label">Notes</label>
                           <input 
                             type="text" 
                             placeholder="E.g. Admission ECG, post-procedure echo"
@@ -7115,7 +7055,7 @@ const hf = forwardRef(function hf(
                     type="button" 
                     disabled={uploading}
                     onClick={handleUploadDocuments}
-                    className="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold shadow-sm disabled:opacity-50 transition-colors"
+                    className="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm disabled:opacity-50 transition-colors"
                   >
                     {uploading ? "Uploading..." : `Upload ${selectedFiles.length} Document(s)`}
                   </button>

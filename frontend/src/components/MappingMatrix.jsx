@@ -32,7 +32,7 @@ export default function MappingMatrix() {
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight">Source Form to Digital Module Mapping Matrix</h2>
+            <h2 className="tracking-tight">Source Form to Digital Module Mapping Matrix</h2>
             <p className="text-sm text-slate-400 mt-1">
               Fully trace 100% of clinical data fields from CARE Heart Failure, STEMI, NSTEMI, and STS CABG forms into our unified patient-centric schema.
             </p>

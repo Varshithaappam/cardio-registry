@@ -1068,7 +1068,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
   // Reusable radio option mapper
   const renderRadio = (field, label, options = ['Yes', 'No']) => (
     <div className="flex items-center justify-between p-2 bg-white border border-slate-200 rounded-lg">
-      <span className="font-semibold text-slate-700">{label}</span>
+      <span className="text-[15px] font-normal text-slate-700">{label}</span>
       <div className="flex gap-4">
         {options.map((opt) => (
           <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
@@ -1077,9 +1077,9 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               name={`${field}-${label}`}
               checked={formData[field] === opt}
               onChange={() => handleChange(field, opt)}
-              className="text-orange-600 focus:ring-orange-500"
+              className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
             />
-            <span className="text-[11px] font-bold text-slate-800">{opt}</span>
+            <span className="text-[15px] font-normal text-slate-800">{opt}</span>
           </label>
         ))}
       </div>
@@ -1124,7 +1124,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
         <div className="col-span-12 md:col-span-4 min-w-0 pr-2">
           {specifyKey ? (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0 w-full">
-              <span className="font-semibold text-slate-700 whitespace-nowrap flex-shrink-0">{label}:</span>
+              <span className="text-[15px] font-normal text-slate-700 whitespace-nowrap flex-shrink-0">{label}:</span>
               <NoteInput
                 value={specifyVal}
                 onChange={(val) => handleChange(specifyKey, val)}
@@ -1133,11 +1133,11 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 readOnly={readOnly}
                 placeholder="Specify name"
                 className="w-full min-w-0 flex-1"
-                focusRingClass="focus:ring-orange-500"
+                theme="nstemi" focusRingClass="focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
               />
             </div>
           ) : (
-            <span className="font-semibold text-slate-700 leading-tight block break-words whitespace-normal min-w-0">
+            <span className="text-[15px] font-normal text-slate-700 leading-tight block break-words whitespace-normal min-w-0">
               {label}
             </span>
           )}
@@ -1147,14 +1147,14 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
         <div className="col-span-12 md:col-span-3 min-w-0 flex items-center justify-start md:justify-center">
           <div className="flex gap-4 flex-shrink-0 min-w-0">
             {['Appropriate', 'Inappropriate'].map((opt) => (
-              <label key={opt} className="flex items-center gap-1.5 cursor-pointer text-xs select-none whitespace-nowrap">
+              <label key={opt} className="flex items-center gap-1.5 cursor-pointer select-none whitespace-nowrap">
                 <input
                   type="radio"
                   disabled={readOnly}
                   name={`${field}-${label}`}
                   checked={formData[field] === opt}
                   onChange={() => handleAppropriatenessChange(field, opt, noteKey)}
-                  className="text-orange-600 focus:ring-orange-500 cursor-pointer flex-shrink-0"
+                  className="text-orange-600 focus:ring-0 focus:outline-none cursor-pointer flex-shrink-0 accent-orange-500"
                 />
                 <span className={`font-semibold ${opt === 'Appropriate' ? 'text-emerald-700' : 'text-slate-600'}`}>{opt}</span>
               </label>
@@ -1172,7 +1172,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             readOnly={readOnly}
             placeholder="Add note..."
             className="w-full min-w-0"
-            focusRingClass="focus:ring-orange-500"
+            theme="nstemi" focusRingClass="focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
           />
         </div>
       </div>
@@ -1180,7 +1180,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
   };
 
   return (
-    <div className="space-y-6 text-slate-800">
+    <div className="space-y-6 text-slate-800 theme-nstemi" data-registry="nstemi" id="nstemiFormBlock">
 
       {/* Patient Profile & Administrative Details */}
       <SectionCard title="Patient Profile & Administrative Details">
@@ -1266,8 +1266,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   placeholder="E.g. 1"
                   className={`w-full p-2 border rounded-md font-medium text-slate-900 font-mono pr-8 ${
                     uniqueErrors.ip_no
-                      ? 'border-red-500 bg-red-50/50 focus:ring-orange-500 focus:border-orange-500'
-                      : 'border-slate-300 focus:ring-orange-500 focus:border-orange-500'
+                      ? 'border-red-500 bg-red-50/50 focus:border-orange-500 focus:ring-orange-500 focus:outline-none'
+                      : 'border-slate-300 focus:border-orange-500 focus:ring-orange-500 focus:outline-none'
                   }`}
                 />
                 {uniqueLoading.ip_no && (
@@ -1324,8 +1324,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 placeholder="ACS.0001"
                 className={`w-full p-2 border rounded-md font-medium text-slate-900 font-mono pr-8 ${
                   uniqueErrors.acs_no
-                    ? 'border-red-500 bg-red-50/50 focus:ring-orange-500 focus:border-orange-500'
-                    : 'border-slate-300 focus:ring-orange-500 focus:border-orange-500'
+                    ? 'border-red-500 bg-red-50/50 focus:border-orange-500 focus:ring-orange-500 focus:outline-none'
+                    : 'border-slate-300 focus:border-orange-500 focus:ring-orange-500 focus:outline-none'
                 }`}
               />
               {uniqueLoading.acs_no && (
@@ -1340,30 +1340,30 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             )}
           </div>
           <div>
-            <label className="font-bold text-slate-700 block mb-1">Date of Admission:</label>
+            <label className="form-field-label">Date of Admission:</label>
             <input
               type="date"
               value={formData.admission_date || ''}
               onChange={(e) => handleChange('admission_date', e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900"
+              className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none font-medium text-slate-900"
             />
           </div>
           <div>
-            <label className="font-bold text-slate-700 block mb-1">Date of Discharge:</label>
+            <label className="form-field-label">Date of Discharge:</label>
             <input
               type="date"
               value={formData.discharge_date || ''}
               min={formData.admission_date || undefined}
               onChange={(e) => handleChange('discharge_date', e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-md font-medium text-slate-900"
+              className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none font-medium text-slate-900"
             />
           </div>
           <div>
-            <label className="font-bold text-slate-700 block mb-1">Primary Consultant:</label>
+            <label className="form-field-label">Primary Consultant:</label>
             <select
               value={formData.primary_consultant}
               onChange={(e) => handleChange('primary_consultant', e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-md bg-white font-medium text-slate-900"
+              className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none bg-white font-medium text-slate-900"
             >
               <option value="Dr. K. Sridhar (Cardiologist)">Dr. K. Sridhar (Cardiologist)</option>
               <option value="Dr. Ananth Rao">Dr. Ananth Rao</option>
@@ -1410,7 +1410,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
           </div>
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="font-bold text-slate-700 block">Any other</label>
+              <label className="form-field-label">Any other</label>
               {!readOnly && (
                 <span className={`text-[10px] select-none ${
                   Math.max(0, 255 - (formData.other_background || '').length) <= 5
@@ -1427,7 +1427,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               value={formData.other_background || ''}
               maxLength={255}
               onChange={(e) => handleChange('other_background', e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-md"
+              className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
               placeholder="Specify additional clinical history..."
             />
           </div>
@@ -1446,32 +1446,32 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Pulse rate (bpm):</label>
+              <label className="form-field-label">Pulse rate (bpm):</label>
               <input
                 type="number"
                 value={formData.pulse_rate}
                 onChange={(e) => handleChange('pulse_rate', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
               />
               <ClinicalMetricBadge metricId="pulse_rate" value={formData.pulse_rate} />
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">SBP (mmHg):</label>
+              <label className="form-field-label">SBP (mmHg):</label>
               <input
                 type="number"
                 value={formData.systolic_bp}
                 onChange={(e) => handleChange('systolic_bp', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
               />
               <ClinicalMetricBadge metricId="systolic_bp" value={formData.systolic_bp} />
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">DBP (mmHg):</label>
+              <label className="form-field-label">DBP (mmHg):</label>
               <input
                 type="number"
                 value={formData.diastolic_bp}
                 onChange={(e) => handleChange('diastolic_bp', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
               />
               <ClinicalMetricBadge metricId="diastolic_bp" value={formData.diastolic_bp} />
             </div>
@@ -1528,7 +1528,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               { key: 'Thrombolysis', label: 'Thrombolysis' },
               { key: 'Conservative', label: 'Conservative' }
             ].map(op => (
-              <label key={op.key} className="flex items-center gap-2 cursor-pointer font-bold">
+              <label key={op.key} className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="treatment_strategy"
@@ -1544,18 +1544,18 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <div className="font-bold text-slate-800 text-sm">PAMI details, if done:</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Door to Balloon Time (min):</label>
+                <label className="form-field-label">Door to Balloon Time (min):</label>
                 <input
                   type="number"
                   value={formData.door_to_balloon_time}
                   onChange={(e) => handleChange('door_to_balloon_time', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="door_to_balloon_time" value={formData.door_to_balloon_time} />
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="font-bold text-slate-700 block">Segment:</label>
+                  <label className="form-field-label">Segment:</label>
                   {!readOnly && (
                     <span className={`text-[10px] select-none ${
                       Math.max(0, 100 - (formData.vessel_segment || '').length) <= 5
@@ -1572,11 +1572,11 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   value={formData.vessel_segment || ''}
                   maxLength={100}
                   onChange={(e) => handleChange('vessel_segment', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Thrombosuction:</label>
+                <label className="form-field-label">Thrombosuction:</label>
                 <div className="flex gap-4 mt-2">
                   {['Done', 'Not done'].map(opt => (
                     <label key={opt} className="flex items-center gap-2 cursor-pointer">
@@ -1594,7 +1594,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Vessel(s):</label>
+              <label className="form-field-label">Vessel(s):</label>
               <div className="flex flex-wrap gap-2.5">
                 {['LMCA', 'LAD', 'Diagonal', 'LCX', 'Ramus', 'OM', 'RCA', 'PDA'].map(vessel => {
                   const key = `vessel_${vessel.toLowerCase()}`;
@@ -1604,7 +1604,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                         type="checkbox"
                         checked={formData[key]}
                         onChange={(e) => handleChange(key, e.target.checked)}
-                        className="rounded text-orange-600 focus:ring-orange-500"
+                        className="rounded text-orange-600 focus:ring-orange-500 accent-orange-500"
                       />
                       <span>{vessel}</span>
                     </label>
@@ -1615,10 +1615,10 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Stent(s):</label>
+                <label className="form-field-label">Stent(s):</label>
                 <div className="flex items-center gap-6 p-2 bg-white border rounded-lg">
                   {['BMS', 'DES'].map(opt => (
-                    <label key={opt} className="flex items-center gap-2 cursor-pointer font-bold">
+                    <label key={opt} className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="radio"
                         name="stent_type"
@@ -1632,22 +1632,22 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Diameter (mm):</label>
+                  <label className="form-field-label">Diameter (mm):</label>
                   <input
                     type="number"
                     step="0.01"
                     value={formData.stent_diameter}
                     onChange={(e) => handleChange('stent_diameter', e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded-md"
+                    className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Length (mm):</label>
+                  <label className="form-field-label">Length (mm):</label>
                   <input
                     type="number"
                     value={formData.stent_length}
                     onChange={(e) => handleChange('stent_length', e.target.value)}
-                    className="w-full p-2 border border-slate-300 rounded-md"
+                    className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -1658,10 +1658,10 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {renderRadio('procedural_success', 'Procedural success:', ['Yes', 'No'])}
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Post-procedure TIMI flow:</label>
+                  <label className="form-field-label">Post-procedure TIMI flow:</label>
                   <div className="flex gap-4 mt-2">
                     {[0, 1, 2, 3].map(grade => (
-                      <label key={grade} className="flex items-center gap-2 cursor-pointer font-bold">
+                      <label key={grade} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="radio"
                           name="timi_flow"
@@ -1675,7 +1675,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Major Complications:</label>
+                <label className="form-field-label">Major Complications:</label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { key: 'complication_none', label: 'None' },
@@ -1687,7 +1687,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                     { key: 'complication_death', label: 'Death' },
                     { key: 'complication_emergency_cabg', label: 'Emergency CABG' }
                   ].map(op => (
-                    <label key={op.key} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer text-[10px]">
+                    <label key={op.key} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData[op.key]}
@@ -1706,17 +1706,17 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <div className="font-bold text-slate-800 text-sm">Thrombolysis details</div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Door to Needle Time (min):</label>
+                <label className="form-field-label">Door to Needle Time (min):</label>
                 <input
                   type="number"
                   value={formData.door_to_needle_time}
                   onChange={(e) => handleChange('door_to_needle_time', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="door_to_needle_time" value={formData.door_to_needle_time} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Drug:</label>
+                <label className="form-field-label">Drug:</label>
                 <div className="flex flex-wrap gap-3 mt-2">
                   {[
                     { key: 'drug_stk', label: 'STK' },
@@ -1724,12 +1724,12 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                     { key: 'drug_uk', label: 'UK' },
                     { key: 'drug_reteplase', label: 'Reteplase' }
                   ].map(op => (
-                    <label key={op.key} className="flex items-center gap-1.5 cursor-pointer font-bold">
+                    <label key={op.key} className="flex items-center gap-1.5 cursor-pointer">
                       <input
                         type="checkbox"
                         checked={formData[op.key] === 'Yes' || formData[op.key] === true}
                         onChange={(e) => handleChange(op.key, e.target.checked ? 'Yes' : 'No')}
-                        className="rounded text-orange-600 focus:ring-orange-500"
+                        className="rounded text-orange-600 focus:ring-orange-500 accent-orange-500"
                       />
                       <span>{op.label}</span>
                     </label>
@@ -1738,7 +1738,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="font-bold text-slate-700 block">Dose:</label>
+                  <label className="form-field-label">Dose:</label>
                   {!readOnly && (
                     <span className={`text-[10px] select-none ${
                       Math.max(0, 100 - (formData.thrombolysis_dose || '').length) <= 5
@@ -1755,7 +1755,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   value={formData.thrombolysis_dose || ''}
                   maxLength={100}
                   onChange={(e) => handleChange('thrombolysis_dose', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -1763,7 +1763,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Heparin strategy:</label>
+              <label className="form-field-label">Heparin strategy:</label>
               <div className="space-y-1">
                 {[
                   'UFH i.v alone',
@@ -1772,7 +1772,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   'UFH i.v+UFHs.c',
                   'UFH i.v + LMWH'
                 ].map(op => (
-                  <label key={op} className="flex items-center gap-2 cursor-pointer text-xs">
+                  <label key={op} className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       name="heparin_strategy"
@@ -1785,7 +1785,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </div>
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Statin:</label>
+              <label className="form-field-label">Statin:</label>
               {renderRadio('statin', 'Statin Prescribed')}
               {formData.statin === 'Yes' && (
                 <div className="flex gap-3 mt-2 pl-2">
@@ -1806,7 +1806,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="font-bold text-slate-700 block">Any Other</label>
+                <label className="form-field-label">Any Other</label>
                 {!readOnly && (
                   <span className={`text-[10px] select-none ${
                     Math.max(0, 255 - (formData.other_drugs || '').length) <= 5
@@ -1823,7 +1823,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 value={formData.other_drugs || ''}
                 maxLength={255}
                 onChange={(e) => handleChange('other_drugs', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
               />
             </div>
           </div>
@@ -1850,7 +1850,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
           </div>
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="font-bold text-slate-700 block">Others</label>
+              <label className="form-field-label">Others</label>
               {!readOnly && (
                 <span className={`text-[10px] select-none ${
                   Math.max(0, 255 - (formData.diagnostic_other || '').length) <= 5
@@ -1867,7 +1867,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               value={formData.diagnostic_other || ''}
               maxLength={255}
               onChange={(e) => handleChange('diagnostic_other', e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-md"
+              className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
             />
           </div>
 
@@ -1876,17 +1876,17 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">ECG:</span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">HR (bpm):</label>
+                <label className="form-field-label">HR (bpm):</label>
                 <input
                   type="number"
                   value={formData.ecg_heart_rate}
                   onChange={(e) => handleChange('ecg_heart_rate', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="ecg_heart_rate" value={formData.ecg_heart_rate} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">AV Block:</label>
+                <label className="form-field-label">AV Block:</label>
                 <div className="flex flex-wrap gap-3 mt-1.5">
                   {['None', '1-degree', '2-degree', 'CHB'].map(opt => (
                     <label key={opt} className="flex items-center gap-1.5">
@@ -1902,7 +1902,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">BBB:</label>
+                <label className="form-field-label">BBB:</label>
                 <div className="flex flex-wrap gap-3 mt-1.5">
                   {['RBBB', 'LBBB', 'Indeterminate', 'None'].map(opt => (
                     <label key={opt} className="flex items-center gap-1.5">
@@ -1921,7 +1921,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Q waves:</label>
+                <label className="form-field-label">Q waves:</label>
                 <div className="grid grid-cols-2 gap-1.5 mt-1">
                   {['None', 'Inferior', 'Antero-septal', 'Anterior', 'Anterolateral', 'Lateral'].map(loc => {
                     const key = `qwaves_${loc.toLowerCase().replace('-', '')}`;
@@ -1940,7 +1940,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">ST dep:</label>
+                <label className="form-field-label">ST dep:</label>
                 <div className="grid grid-cols-2 gap-1.5 mt-1">
                   {['None', 'Inferior', 'Antero-septal', 'Anterior', 'Anterolateral', 'Lateral'].map(loc => {
                     const key = `st_depression_${loc.toLowerCase().replace('-', '')}`;
@@ -1959,7 +1959,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">T inv:</label>
+                <label className="form-field-label">T inv:</label>
                 <div className="grid grid-cols-2 gap-1.5 mt-1">
                   {['None', 'Inferior', 'Antero-septal', 'Anterior', 'Anterolateral', 'Lateral'].map(loc => {
                     const key = `t_inversion_${loc.toLowerCase().replace('-', '')}`;
@@ -1978,7 +1978,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Rhythm:</label>
+                <label className="form-field-label">Rhythm:</label>
                 <div className="flex flex-wrap gap-2.5 mt-1.5">
                   {['NSR', 'AF', 'SVT', 'VT', 'VF'].map(r => (
                     <label key={r} className="flex items-center gap-1">
@@ -1996,7 +1996,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="font-bold text-slate-700 block">Any other</label>
+                <label className="form-field-label">Any other</label>
                 {!readOnly && (
                   <span className={`text-[10px] select-none ${
                     Math.max(0, 255 - (formData.ecg_other || '').length) <= 5
@@ -2013,7 +2013,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 value={formData.ecg_other || ''}
                 maxLength={255}
                 onChange={(e) => handleChange('ecg_other', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
               />
             </div>
           </div>
@@ -2022,17 +2022,17 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">Echo:</span>
             <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">EF (%):</label>
+                <label className="form-field-label">EF (%):</label>
                 <input
                   type="number"
                   value={formData.echo_ef}
                   onChange={(e) => handleChange('echo_ef', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md font-bold text-slate-900"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none font-bold text-slate-900"
                 />
                 <ClinicalMetricBadge metricId="echo_ef" value={formData.echo_ef} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">LV Function:</label>
+                <label className="form-field-label">LV Function:</label>
                 <div className="flex flex-wrap gap-3 mt-1.5">
                   {['Normal', 'Mild LVD', 'Mod. LVD', 'Sev.LVD'].map(opt => (
                     <label key={opt} className="flex items-center gap-1">
@@ -2048,7 +2048,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">RWMA:</label>
+                <label className="form-field-label">RWMA:</label>
                 <div className="flex flex-wrap gap-3 mt-1.5">
                   {['LAD', 'RCA', 'LCX'].map(opt => {
                     const key = `rwma_${opt.toLowerCase()}`;
@@ -2067,7 +2067,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 </div>
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">MR:</label>
+                <label className="form-field-label">MR:</label>
                 <div className="flex flex-wrap gap-3 mt-1.5">
                   {['None', 'Mild', 'Mod', 'Severe'].map(opt => (
                     <label key={opt} className="flex items-center gap-1">
@@ -2085,63 +2085,63 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">E (m/s):</label>
+                <label className="form-field-label">E (m/s):</label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.echo_e}
                   onChange={(e) => handleChange('echo_e', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="echo_e" value={formData.echo_e} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">A (m/s):</label>
+                <label className="form-field-label">A (m/s):</label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.echo_a}
                   onChange={(e) => handleChange('echo_a', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="echo_a" value={formData.echo_a} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">DT (ms):</label>
+                <label className="form-field-label">DT (ms):</label>
                 <input
                   type="number"
                   value={formData.echo_dt}
                   onChange={(e) => handleChange('echo_dt', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="echo_dt" value={formData.echo_dt} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">E' (cm/s):</label>
+                <label className="form-field-label">E' (cm/s):</label>
                 <input
                   type="number"
                   step="0.1"
                   value={formData.echo_e_prime}
                   onChange={(e) => handleChange('echo_e_prime', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="echo_e_prime" value={formData.echo_e_prime} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">TAPSV (mm):</label>
+                <label className="form-field-label">TAPSV (mm):</label>
                 <input
                   type="number"
                   step="0.1"
                   value={formData.echo_tapsv}
                   onChange={(e) => handleChange('echo_tapsv', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="echo_tapsv" value={formData.echo_tapsv} />
               </div>
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="font-bold text-slate-700 block">Others:</label>
+                <label className="form-field-label">Others:</label>
                 {!readOnly && (
                   <span className={`text-[10px] select-none ${
                     Math.max(0, 255 - (formData.echo_other || '').length) <= 5
@@ -2158,7 +2158,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 value={formData.echo_other || ''}
                 maxLength={255}
                 onChange={(e) => handleChange('echo_other', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
               />
             </div>
           </div>
@@ -2167,30 +2167,30 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">Blood Investigations:</span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Hemoglobin (gm%):</label>
+                <label className="form-field-label">Hemoglobin (gm%):</label>
                 <input
                   type="number"
                   step="0.1"
                   value={formData.hemoglobin}
                   onChange={(e) => handleChange('hemoglobin', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="hemoglobin" value={formData.hemoglobin} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Creat (mg/dl):</label>
+                <label className="form-field-label">Creat (mg/dl):</label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.creatinine}
                   onChange={(e) => handleChange('creatinine', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md font-bold"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none font-bold"
                 />
                 <ClinicalMetricBadge metricId="creatinine" value={formData.creatinine} />
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="font-bold text-slate-700 block">Trop-I (ng/ml):</label>
+                  <label className="form-field-label">Trop-I (ng/ml):</label>
                   {!readOnly && (
                     <span className={`text-[10px] select-none ${
                       Math.max(0, 50 - (formData.troponin_i || '').length) <= 5
@@ -2207,13 +2207,13 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   value={formData.troponin_i || ''}
                   maxLength={50}
                   onChange={(e) => handleChange('troponin_i', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="troponin_i" value={formData.troponin_i} />
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="font-bold text-slate-700 block">CPK (U/L):</label>
+                  <label className="form-field-label">CPK (U/L):</label>
                   {!readOnly && (
                     <span className={`text-[10px] select-none ${
                       Math.max(0, 50 - (formData.cpk || '').length) <= 5
@@ -2230,13 +2230,13 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   value={formData.cpk || ''}
                   maxLength={50}
                   onChange={(e) => handleChange('cpk', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="cpk" value={formData.cpk} />
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
-                  <label className="font-bold text-slate-700 block">CK-MB (U/L):</label>
+                  <label className="form-field-label">CK-MB (U/L):</label>
                   {!readOnly && (
                     <span className={`text-[10px] select-none ${
                       Math.max(0, 50 - (formData.ck_mb || '').length) <= 5
@@ -2253,39 +2253,39 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   value={formData.ck_mb || ''}
                   maxLength={50}
                   onChange={(e) => handleChange('ck_mb', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="ck_mb" value={formData.ck_mb} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">Na (mEq/L):</label>
+                <label className="form-field-label">Na (mEq/L):</label>
                 <input
                   type="number"
                   step="0.1"
                   value={formData.sodium}
                   onChange={(e) => handleChange('sodium', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="sodium" value={formData.sodium} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">K (mEq/L):</label>
+                <label className="form-field-label">K (mEq/L):</label>
                 <input
                   type="number"
                   step="0.1"
                   value={formData.potassium}
                   onChange={(e) => handleChange('potassium', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="potassium" value={formData.potassium} />
               </div>
               <div>
-                <label className="font-bold text-slate-700 block mb-1">RBS at admission (mg/dl):</label>
+                <label className="form-field-label">RBS at admission (mg/dl):</label>
                 <input
                   type="number"
                   value={formData.rbs_admission}
                   onChange={(e) => handleChange('rbs_admission', e.target.value)}
-                  className="w-full p-2 border border-slate-300 rounded-md"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                 />
                 <ClinicalMetricBadge metricId="rbs_admission" value={formData.rbs_admission} />
               </div>
@@ -2297,7 +2297,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             <div className="flex flex-wrap items-center gap-6">
               <div className="flex gap-4 p-2 bg-white border rounded-lg">
                 {['Done', 'Not done'].map(opt => (
-                  <label key={opt} className="flex items-center gap-2 cursor-pointer font-bold">
+                  <label key={opt} className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="radio"
                       name="angiogram_perf"
@@ -2315,7 +2315,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   {['Normal', '1-VD', '2-VD', '3-VD', 'LMCA'].map(opt => {
                     const key = `angiogram_${opt.toLowerCase().replace('-', '')}`;
                     return (
-                      <label key={opt} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer font-medium">
+                      <label key={opt} className="flex items-center gap-1.5 p-2 bg-white border rounded-lg cursor-pointer">
                         <input
                           type="checkbox"
                           checked={formData[key]}
@@ -2341,7 +2341,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
           </div>
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="font-bold text-slate-700 block">Other</label>
+              <label className="form-field-label">Other</label>
               {!readOnly && (
                 <span className={`text-[10px] select-none ${
                   Math.max(0, 255 - (formData.other_procedure || '').length) <= 5
@@ -2358,7 +2358,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               value={formData.other_procedure || ''}
               maxLength={255}
               onChange={(e) => handleChange('other_procedure', e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-md"
+              className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
             />
           </div>
         </div>
@@ -2379,7 +2379,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
           </div>
           <div>
             <div className="flex justify-between items-center mb-1">
-              <label className="font-bold text-slate-700 block">Any other</label>
+              <label className="form-field-label">Any other</label>
               {!readOnly && (
                 <span className={`text-[10px] select-none ${
                   Math.max(0, 255 - (formData.outcome_other || '').length) <= 5
@@ -2396,7 +2396,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               value={formData.outcome_other || ''}
               maxLength={255}
               onChange={(e) => handleChange('outcome_other', e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-md"
+              className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
             />
           </div>
 
@@ -2417,7 +2417,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t pt-2">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Statin:</label>
+              <label className="form-field-label">Statin:</label>
               {renderRadio('discharge_statin', 'Statin Prescribed')}
               {formData.discharge_statin === 'Yes' && (
                 <div className="flex gap-3 mt-2 pl-2">
@@ -2438,7 +2438,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="font-bold text-slate-700 block">Any Other</label>
+                <label className="form-field-label">Any Other</label>
                 {!readOnly && (
                   <span className={`text-[10px] select-none ${
                     Math.max(0, 255 - (formData.discharge_other_medication || '').length) <= 5
@@ -2455,7 +2455,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                 value={formData.discharge_other_medication || ''}
                 maxLength={255}
                 onChange={(e) => handleChange('discharge_other_medication', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md"
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
               />
             </div>
           </div>
@@ -2494,7 +2494,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
           <div className="font-bold text-slate-800">Length of Stay:</div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">ICCU</label>
+              <label className="form-field-label">ICCU</label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -2508,13 +2508,13 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                     if (parseFloat(val) > 720) val = '720';
                     handleChange('iccu_hours', val);
                   }}
-                  className="w-full p-2 border border-slate-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <span className="font-semibold text-slate-500">hours</span>
               </div>
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Step-down ICU</label>
+              <label className="form-field-label">Step-down ICU</label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -2528,13 +2528,13 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                     if (parseFloat(val) > 720) val = '720';
                     handleChange('stepdown_icu_hours', val);
                   }}
-                  className="w-full p-2 border border-slate-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <span className="font-semibold text-slate-500">hours</span>
               </div>
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Floors</label>
+              <label className="form-field-label">Floors</label>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -2548,13 +2548,13 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                     if (parseFloat(val) > 180) val = '180';
                     handleChange('floor_days', val);
                   }}
-                  className="w-full p-2 border border-slate-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <span className="font-semibold text-slate-500">days</span>
               </div>
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">Total Hospital stay</label>
+              <label className="form-field-label">Total Hospital stay</label>
               <div className="flex items-center gap-2">
                 <input
                   type="text"
@@ -2581,7 +2581,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               { label: 'Miscellaneous', key: 'miscellaneous_cost' }
             ].map((c) => (
               <div key={c.key}>
-                <label className="font-bold text-slate-700 block mb-1">{c.label}</label>
+                <label className="form-field-label">{c.label}</label>
                 <input
                   type="number"
                   min="0"
@@ -2594,7 +2594,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                     if (parseFloat(val) > 999999999) val = '999999999';
                     handleChange(c.key, val);
                   }}
-                  className="w-full p-2 border border-slate-300 rounded-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-medium text-slate-900 bg-white"
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none font-medium text-slate-900 bg-white"
                 />
               </div>
             ))}
@@ -2686,7 +2686,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                                   [`custom_date_${key}`]: true
                                 }));
                               }}
-                              className="w-full max-w-[130px] p-1 text-[11px] font-mono border border-orange-300 rounded bg-white text-slate-800 text-center focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+                              className="w-full max-w-[130px] p-1 text-[11px] font-mono border border-orange-300 rounded bg-white text-slate-800 text-center focus:ring-1 focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
                             />
                             {currentDateVal && (
                               <span className="text-[10px] font-mono text-orange-700 bg-orange-100/70 border border-orange-200 rounded px-1.5 py-0.5 whitespace-nowrap shadow-2xs">
@@ -2881,13 +2881,13 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
           {/* Follow-up Parameters & Instructions (Visit Mode & Special Instructions) */}
           <div className="mt-6 pt-4 border-t border-slate-200 space-y-4">
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+            <h4 className="uppercase tracking-wider">
               Follow-Up Parameters & Instructions
             </h4>
 
             {/* Visit Mode Radio Buttons */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+              <label className="form-field-label mb-2">
                 Visit Mode
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2919,7 +2919,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             {/* Special Clinical Instructions Textarea with Live Counter */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <label className="form-field-label">
                   Special Clinical Instructions For Patient/Caregiver
                 </label>
                 {!readOnly && (
@@ -2940,7 +2940,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   value={formData.special_instructions || ''}
                   onChange={(e) => handleChange('special_instructions', e.target.value)}
                   placeholder="Specify instructions..."
-                  className="w-full p-3 border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all placeholder:text-slate-400 resize-y"
+                  className="w-full p-3 border border-slate-200 rounded-lg text-xs text-slate-800 focus:ring-2 focus:border-orange-500 focus:ring-orange-500 focus:outline-none transition-all placeholder:text-slate-400 resize-y"
                 />
               </div>
             </div>

@@ -27,7 +27,7 @@ export default function DrugTable({ value = [], onChange, label }) {
 
   return (
     <div className="space-y-3 text-black">
-      {label && <label className="block text-xs font-bold text-black">{label}</label>}
+      {label && <label className="form-field-label">{label}</label>}
       <div className="space-y-3">
         {list.map((drug, index) => (
           <MedicationRow
@@ -42,7 +42,7 @@ export default function DrugTable({ value = [], onChange, label }) {
       <button
         type="button"
         onClick={addRow}
-        className="px-3 py-2 bg-black hover:bg-gray-900 text-white rounded-lg text-xs font-bold border border-white/20 transition-colors"
+        className="px-3 py-2 bg-black hover:bg-gray-900 text-white rounded-lg border border-white/20 transition-colors"
       >
         + Add Medication Row
       </button>

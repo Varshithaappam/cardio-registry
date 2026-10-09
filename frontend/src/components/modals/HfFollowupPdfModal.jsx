@@ -252,7 +252,7 @@ export default function HfFollowupPdfModal({ isOpen, onClose, logData = {}, pati
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-black tracking-tight text-slate-100 flex items-center gap-2">
+              <h2 className="tracking-tight text-slate-100 flex items-center gap-2">
                 <span>Heart Failure Follow-up Clinical Report</span>
                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30">
                   Live Response View
@@ -268,7 +268,7 @@ export default function HfFollowupPdfModal({ isOpen, onClose, logData = {}, pati
             <button
               type="button"
               onClick={handlePrint}
-              className="px-4 py-2 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 text-white font-extrabold text-xs rounded-xl transition-all flex items-center gap-2 shadow-sm border border-teal-400/40 cursor-pointer"
+              className="px-4 py-2 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-500 hover:to-teal-600 text-white rounded-xl transition-all flex items-center gap-2 shadow-sm border border-teal-400/40 cursor-pointer"
               title="Print or Save this clinical response as PDF"
             >
               <Printer className="w-4 h-4" />
@@ -292,7 +292,7 @@ export default function HfFollowupPdfModal({ isOpen, onClose, logData = {}, pati
           {/* CARE HEALTH SYSTEM Header Banner */}
           <div className="bg-gradient-to-r from-teal-800 via-teal-700 to-slate-900 text-white rounded-xl p-4 shadow-xs flex justify-between items-center flex-wrap gap-2 border border-teal-900/40 pdf-section-card">
             <div>
-              <h1 className="text-lg font-black tracking-tight text-white uppercase">
+              <h1 className="tracking-tight text-white uppercase">
                 CARE HEALTH SYSTEM
               </h1>
               <p className="text-[11px] text-teal-200 font-medium mt-0.5">Heart Failure Registry • Post-Discharge Patient Outreach Record</p>

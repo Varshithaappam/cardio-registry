@@ -5,7 +5,9 @@ import {
   OPTION_CARD_SELECTED_STYLES,
   OPTION_CARD_NORMAL_STYLES,
   OPTION_CARD_ERROR_STYLES,
-  OPTION_CARD_DISABLED_STYLES
+  OPTION_CARD_DISABLED_STYLES,
+  getOptionCardActiveStyles,
+  getCheckRadioStyles
 } from './formStyles';
 
 const columnClass = {
@@ -45,8 +47,12 @@ export default function RadioGroup({
   columns = 2,
   className = '',
   readOnly = false,
-  error = null
+  error = null,
+  theme = 'hf'
 }) {
+  const activeCardStyle = getOptionCardActiveStyles(theme);
+  const checkRadioStyle = getCheckRadioStyles(theme);
+
   return (
     <FormField label={label} required={required} error={error} className={className}>
       <div className={`grid ${columnClass[columns] || columnClass[2]} gap-2`}>
@@ -58,15 +64,9 @@ export default function RadioGroup({
           return (
             <label
               key={optionValue}
-              className={
-                isChecked
-                  ? FORM_STYLES.optionCardActive
-                  : readOnly
-                  ? OPTION_CARD_DISABLED_STYLES
-                  : error
-                  ? OPTION_CARD_ERROR_STYLES
-                  : FORM_STYLES.optionCardBase
-              }
+              className={`flex items-center gap-2 p-2.5 border border-slate-200 print:border-slate-200 bg-white text-slate-800 rounded-md text-xs font-normal select-none transition-colors ${
+                error ? 'border-red-500' : ''
+              } ${readOnly ? 'cursor-default' : 'cursor-pointer hover:border-slate-300'}`}
             >
               <input
                 type="radio"
@@ -74,7 +74,7 @@ export default function RadioGroup({
                 value={optionValue}
                 checked={isChecked}
                 onChange={() => onChange(optionValue)}
-                className={`${FORM_STYLES.checkRadioBase} rounded-full shrink-0 accent-teal-600 disabled:opacity-100 disabled:accent-teal-700`}
+                className={`${checkRadioStyle} rounded-full shrink-0`}
                 disabled={readOnly}
               />
               <span className="truncate">{optionLabel}</span>

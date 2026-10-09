@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import FormField from './FormField';
-import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
+import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES, getInputBaseStyles } from './formStyles';
 import { validateTextWithChar } from '../../../utils/formSanitizers';
 
 /**
@@ -30,6 +30,7 @@ export default function ValidatedTextField({
   type = 'text',
   validateAlphabetical = true,
   isPhone = false,
+  theme = 'hf',
   ...restProps
 }) {
   const isPhoneField = Boolean(
@@ -104,11 +105,12 @@ export default function ValidatedTextField({
     }
   };
 
+  const baseStyles = getInputBaseStyles(theme);
   const fieldStyles = effectiveError
     ? INPUT_ERROR_STYLES
     : isDisabled
     ? INPUT_DISABLED_STYLES
-    : INPUT_NORMAL_STYLES;
+    : baseStyles;
 
   return (
     <FormField label={label} required={required} error={effectiveError} className={className}>

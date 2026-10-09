@@ -95,7 +95,7 @@ export default function HFFormView() {
           <p className="text-white/80 text-sm mb-6">{error}</p>
           <button
             onClick={handleGoBack}
-            className="px-4 py-2 bg-black hover:bg-gray-900 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-2 cursor-pointer border border-white/20"
+            className="px-4 py-2 bg-black hover:bg-gray-900 rounded-xl transition-all inline-flex items-center gap-2 cursor-pointer border border-white/20"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Return to Patient Portfolio
           </button>
@@ -140,6 +140,12 @@ export default function HFFormView() {
         .text-slate-400 {
           color: #000000 !important;
         }
+        label, .option-card-active {
+          border-color: #e2e8f0 !important;
+          box-shadow: none !important;
+          --tw-ring-color: transparent !important;
+          --tw-ring-shadow: none !important;
+        }
         
         @media print {
           header, footer, aside, .no-print, button {
@@ -167,6 +173,14 @@ export default function HFFormView() {
             padding: 0 !important;
             margin: 0 !important;
           }
+          label, .border-slate-200, .border-slate-300 {
+            border-color: #cbd5e1 !important;
+            box-shadow: none !important;
+          }
+          * {
+            --tw-ring-color: transparent !important;
+            --tw-ring-shadow: none !important;
+          }
           @page {
             size: A4;
             margin: 1.5cm;
@@ -189,7 +203,7 @@ export default function HFFormView() {
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-1.5">
+              <h1 className="text-white tracking-tight flex items-center gap-1.5">
                 <span>View Existing Entry: {formType === 'STEMI' ? 'STEMI Emergency Event Form' : (formType === 'NSTEMI' ? 'NSTEMI Clinical Event Form' : 'Heart Failure (HF) Clinical Form')}</span>
               </h1>
               <p className="text-[10px] text-slate-300 mt-0.5">
@@ -200,7 +214,7 @@ export default function HFFormView() {
 
           <button
             onClick={handlePrint}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white border border-blue-500 rounded-xl transition-all flex items-center gap-2 text-xs font-bold cursor-pointer shadow-sm animate-fadeIn"
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white border border-blue-500 rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-sm animate-fadeIn"
           >
             <Printer className="w-4 h-4" /> Print / Export to PDF
           </button>

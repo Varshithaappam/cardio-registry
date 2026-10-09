@@ -1,6 +1,6 @@
 import React from 'react';
 import FormField from './FormField';
-import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES } from './formStyles';
+import { INPUT_NORMAL_STYLES, INPUT_ERROR_STYLES, INPUT_DISABLED_STYLES, getInputBaseStyles } from './formStyles';
 
 export default function Select({
   label,
@@ -13,9 +13,11 @@ export default function Select({
   className = '',
   readOnly = false,
   disabled = false,
-  error = null
+  error = null,
+  theme = 'hf'
 }) {
   const isDisabled = disabled || readOnly;
+  const baseStyles = getInputBaseStyles(theme);
   return (
     <FormField label={label} required={required} error={error} className={className}>
       <select
@@ -24,7 +26,7 @@ export default function Select({
         value={value ?? ''}
         onChange={(e) => onChange(e.target.value)}
         disabled={isDisabled}
-        className={error ? INPUT_ERROR_STYLES : isDisabled ? INPUT_DISABLED_STYLES : INPUT_NORMAL_STYLES}
+        className={error ? INPUT_ERROR_STYLES : isDisabled ? INPUT_DISABLED_STYLES : baseStyles}
       >
         <option value="" disabled>{placeholder}</option>
         {options.map((option) => {

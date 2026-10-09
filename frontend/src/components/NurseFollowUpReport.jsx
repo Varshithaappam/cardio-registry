@@ -886,7 +886,7 @@ export default function NurseFollowUpReport() {
             <PhoneCall className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-xl md:text-2xl font-black tracking-tight flex items-center gap-2 text-white">
+            <h2 className="tracking-tight flex items-center gap-2 text-white">
               <span>Patient Follow Up Report</span>
             </h2>
             <p className="text-xs text-slate-400 mt-1">
@@ -898,7 +898,7 @@ export default function NurseFollowUpReport() {
         <div className="flex items-center gap-2">
           <button
             onClick={fetchTasks}
-            className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl transition-all text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+            className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
             title="Refresh Data from SQL Database"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -906,7 +906,7 @@ export default function NurseFollowUpReport() {
           <button
             onClick={handleExportCSV}
             disabled={tasks.length === 0}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-sm transition-all flex items-center gap-2 cursor-pointer border border-emerald-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-sm transition-all flex items-center gap-2 cursor-pointer border border-emerald-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Download Excel Sheet</span>
@@ -984,7 +984,7 @@ export default function NurseFollowUpReport() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
           {/* Search Patient Name or MRN */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wide">
+            <label className="form-field-label uppercase tracking-wide">
               SEARCH PATIENT NAME OR MRN
             </label>
             <div className="relative">
@@ -1001,7 +1001,7 @@ export default function NurseFollowUpReport() {
 
           {/* Registry Pathway Filter */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wide">
+            <label className="form-field-label uppercase tracking-wide">
               REGISTRY PATHWAY
             </label>
             <div className="relative">
@@ -1021,7 +1021,7 @@ export default function NurseFollowUpReport() {
 
           {/* Overall Registry Status Filter */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wide">
+            <label className="form-field-label uppercase tracking-wide">
               OVERALL REGISTRY STATUS
             </label>
             <div className="relative">
@@ -1042,7 +1042,7 @@ export default function NurseFollowUpReport() {
 
           {/* Follow-up From Date */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wide">
+            <label className="form-field-label uppercase tracking-wide">
               FOLLOW-UP FROM DATE
             </label>
             <div className="relative flex items-center">
@@ -1069,7 +1069,7 @@ export default function NurseFollowUpReport() {
 
           {/* Follow-up To Date */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-black text-slate-700 uppercase tracking-wide">
+            <label className="form-field-label uppercase tracking-wide">
               FOLLOW-UP TO DATE
             </label>
             <div className="relative flex items-center">
@@ -1362,7 +1362,7 @@ export default function NurseFollowUpReport() {
                               <div className="flex items-center justify-between border-b border-slate-200 pb-3 flex-wrap gap-2">
                                 <div className="flex items-center gap-2">
                                   <ClipboardList className="w-5 h-5 text-blue-600" />
-                                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                                  <h3 className="uppercase tracking-wider">
                                      PATIENT FOLLOW-UP & CONSOLIDATED HISTORY AUDIT
                                   </h3>
                                 </div>
@@ -1782,7 +1782,7 @@ export default function NurseFollowUpReport() {
                   <PhoneCall className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">Nurse Outreach Call Log</h3>
+                  <h3 className="text-white">Nurse Outreach Call Log</h3>
                   <p className="text-xs text-slate-300 font-semibold">
                     {selectedTask.patient_name} • MRN: {selectedTask.mr_no}
                   </p>
@@ -1801,7 +1801,7 @@ export default function NurseFollowUpReport() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Contact Mode */}
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-black text-slate-700">
+                  <label className="form-field-label">
                     Offline Contact Mode <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -1819,7 +1819,7 @@ export default function NurseFollowUpReport() {
 
                 {/* Outreach Outcome */}
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-black text-slate-700">
+                  <label className="form-field-label">
                     Outreach Outcome <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -1840,7 +1840,7 @@ export default function NurseFollowUpReport() {
 
                 {/* Overall Registry Status */}
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-black text-slate-700">
+                  <label className="form-field-label">
                     Overall Registry Status <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -1861,7 +1861,7 @@ export default function NurseFollowUpReport() {
 
                 {/* Target Follow-Up Visit Date */}
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-black text-slate-700">
+                  <label className="form-field-label">
                     Target Follow-Up Visit Date
                   </label>
                   <input
@@ -1874,7 +1874,7 @@ export default function NurseFollowUpReport() {
 
                 {/* Symptom Status */}
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-black text-slate-700">
+                  <label className="form-field-label">
                     Symptom Status / Red Flags Check
                   </label>
                   <select
@@ -1890,7 +1890,7 @@ export default function NurseFollowUpReport() {
 
                 {/* Medication Adherence */}
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-black text-slate-700">
+                  <label className="form-field-label">
                     Medication Adherence
                   </label>
                   <select
@@ -1908,7 +1908,7 @@ export default function NurseFollowUpReport() {
               {/* Assigned Nurse Name */}
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <label className="block text-[11px] font-black text-slate-700">
+                  <label className="form-field-label">
                     Assigned Nurse Name <span className="text-red-500">*</span>
                   </label>
                   <span className={`text-[10px] select-none ${
@@ -1933,7 +1933,7 @@ export default function NurseFollowUpReport() {
               {/* Offline Outreach Log Notes */}
               <div className="space-y-1.5">
                 <div className="flex justify-between items-center">
-                  <label className="block text-[11px] font-black text-slate-700">
+                  <label className="form-field-label">
                     Offline Outreach Log Notes / Detailed Feedback <span className="text-red-500">*</span>
                   </label>
                   <span className={`text-[10px] select-none ${
@@ -1967,7 +1967,7 @@ export default function NurseFollowUpReport() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
                 >
                   {submitting ? (
                     <>

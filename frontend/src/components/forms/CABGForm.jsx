@@ -255,7 +255,7 @@ const CABGForm = forwardRef(function CABGForm(
       {/* Section J: Coronary Bypass conduit details - Conditional */}
       <div>
         <div className="flex justify-between items-center mb-2">
-          <label className="block text-xs font-bold text-slate-700">Do Coronary Artery Bypass? (Section J)</label>
+          <label className="form-field-label">Do Coronary Artery Bypass? (Section J)</label>
           <select
             id="cabg-hasbypass"
             className="p-1 text-xs border border-slate-200 rounded bg-white"
@@ -337,7 +337,7 @@ const CABGForm = forwardRef(function CABGForm(
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-600 mb-1">Intraoperative Blood Products Transfused *</label>
+          <label className="form-field-label">Intraoperative Blood Products Transfused *</label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
             {['RBC', 'FFP', 'Platelets', 'Cryoprecipitate'].map((prod) => (
               <label key={prod} className="flex items-center gap-2 p-2 bg-white rounded border cursor-pointer">

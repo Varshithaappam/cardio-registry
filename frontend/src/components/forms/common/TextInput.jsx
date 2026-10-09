@@ -18,6 +18,7 @@ export default function TextInput({
   showCounter = true,
   type = 'text',
   isPhone = false,
+  theme = 'hf',
   ...rest
 }) {
   return (
@@ -38,6 +39,7 @@ export default function TextInput({
       showCounter={showCounter}
       type={type}
       isPhone={isPhone}
+      theme={theme}
       multiline={false}
       {...rest}
     />

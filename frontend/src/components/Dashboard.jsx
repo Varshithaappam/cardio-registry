@@ -124,7 +124,7 @@ export default function Dashboard({ patients, onSelectPatient }) {
         <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-blue-600/10 rounded-full blur-2xl"></div>
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Cardiovascular Registry & Clinical Portal</h1>
+            <h1 className="tracking-tight">Cardiovascular Registry & Clinical Portal</h1>
             <p className="text-slate-400 text-sm md:text-base mt-2 max-w-2xl">
               Unified multi-form portal consolidating CARE CHF Assessment, STEMI, NSTEMI, and STS CABG clinical datasets into a synchronized, patient-centric longitudinal registry.
             </p>
@@ -200,7 +200,7 @@ export default function Dashboard({ patients, onSelectPatient }) {
         <div className="lg:col-span-2 space-y-6">
           {/* Admissions & Cost Trend */}
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h3 className="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <h3 className="mb-4 flex items-center gap-2">
               <Activity className="w-5 h-5 text-blue-600" /> Admissions and Cumulative Expenditure Trend
             </h3>
             <div className="h-64">
@@ -248,7 +248,7 @@ export default function Dashboard({ patients, onSelectPatient }) {
           {/* Cohorts Distribution */}
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-[320px]">
             <div>
-              <h3 className="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <h3 className="mb-1 flex items-center gap-2">
                 <Heart className="w-5 h-5 text-teal-600" /> Registry Disease Cohorts
               </h3>
               <p className="text-xs text-slate-400">Relative representation in longitudinal cohorts</p>
@@ -291,7 +291,7 @@ export default function Dashboard({ patients, onSelectPatient }) {
 
           {/* Audit / Data Quality Alerts Panel */}
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-[320px] flex flex-col">
-            <h3 className="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
+            <h3 className="mb-1 flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-amber-500" /> Automated Clinical Consistency Alerts
             </h3>
             <p className="text-xs text-slate-400 mb-3">Real-time alerts identifying discrepancies across sub-forms</p>
@@ -323,7 +323,7 @@ export default function Dashboard({ patients, onSelectPatient }) {
 
       {/* Quick Select Patient Quick Link Banner */}
       <div className="bg-slate-50 border border-slate-200 p-5 rounded-xl">
-        <h3 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider">Quick Select Patient Portfolio</h3>
+        <h3 className="mb-3 uppercase tracking-wider">Quick Select Patient Portfolio</h3>
         <div className="flex flex-wrap gap-2">
           {patients.map((p) =>
           <button
