@@ -50,7 +50,7 @@ export default function CheckboxGroup({
           return (
             <label
               key={optionValue}
-              className={`flex items-center gap-2 p-2.5 border border-slate-200 print:border-slate-200 bg-white text-slate-800 rounded-md text-xs font-normal select-none transition-colors ${
+              className={`flex items-center gap-2 px-3 py-1.5 border border-slate-200 print:border-slate-200 bg-white text-slate-800 rounded-md text-xs font-normal select-none transition-colors ${
                 error ? 'border-red-500' : ''
               } ${readOnly ? 'cursor-default' : 'cursor-pointer hover:border-slate-300'}`}
             >

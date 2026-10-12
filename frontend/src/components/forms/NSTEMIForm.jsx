@@ -564,6 +564,11 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     });
   };
 
+  const handleToggleRadio = (field, opt) => {
+    if (readOnly) return;
+    handleChange(field, formData[field] === opt ? '' : opt);
+  };
+
   const getFlattenedData = () => {
     const payload = { ...formData };
     if (!payload.acs_no || String(payload.acs_no).trim() === 'ACS.' || String(payload.acs_no).trim().length <= 4) {
@@ -1069,19 +1074,31 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
   const renderRadio = (field, label, options = ['Yes', 'No']) => (
     <div className="flex items-center justify-between p-2 bg-white border border-slate-200 rounded-lg">
       <span className="text-[14px] font-normal text-slate-700">{label}</span>
-      <div className="flex gap-4">
-        {options.map((opt) => (
-          <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
-            <input
-              type="radio"
-              name={`${field}-${label}`}
-              checked={formData[field] === opt}
-              onChange={() => handleChange(field, opt)}
-              className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
-            />
-            <span className="text-[14px] font-normal text-slate-800">{opt}</span>
-          </label>
-        ))}
+      <div className="flex gap-2.5">
+        {options.map((opt) => {
+          const isSelected = formData[field] === opt;
+          return (
+            <label
+              key={opt}
+              onClick={(e) => {
+                if (readOnly) return;
+                e.preventDefault();
+                handleChange(field, isSelected ? '' : opt);
+              }}
+              className="flex items-center gap-1.5 cursor-pointer select-none"
+            >
+              <input
+                type="radio"
+                disabled={readOnly}
+                name={`${field}-${label}`}
+                checked={isSelected}
+                readOnly
+                className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+              />
+              <span className="text-[14px] font-normal text-slate-800">{opt}</span>
+            </label>
+          );
+        })}
       </div>
     </div>
   );
@@ -1119,7 +1136,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     const noteVal = formData[noteKey] || '';
 
     return (
-      <div key={field} className="grid grid-cols-12 gap-3 items-center w-full min-w-0 p-3 bg-white border border-slate-200 rounded-lg text-xs min-h-[52px]">
+      <div key={field} className="grid grid-cols-12 gap-2.5 items-center w-full min-w-0 p-2.5 bg-white border border-slate-200 rounded-lg text-xs min-h-[46px]">
         {/* Column 1: Label / Specify Area (4 Cols) */}
         <div className="col-span-12 md:col-span-4 min-w-0 pr-2">
           {specifyKey ? (
@@ -1145,20 +1162,31 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
         {/* Column 2: Radio Buttons (3 Cols) */}
         <div className="col-span-12 md:col-span-3 min-w-0 flex items-center justify-start md:justify-center">
-          <div className="flex gap-4 flex-shrink-0 min-w-0">
-            {['Appropriate', 'Inappropriate'].map((opt) => (
-              <label key={opt} className="flex items-center gap-1.5 cursor-pointer select-none whitespace-nowrap">
-                <input
-                  type="radio"
-                  disabled={readOnly}
-                  name={`${field}-${label}`}
-                  checked={formData[field] === opt}
-                  onChange={() => handleAppropriatenessChange(field, opt, noteKey)}
-                  className="text-orange-600 focus:ring-0 focus:outline-none cursor-pointer flex-shrink-0 accent-orange-500"
-                />
-                <span className={`font-semibold ${opt === 'Appropriate' ? 'text-emerald-700' : 'text-slate-600'}`}>{opt}</span>
-              </label>
-            ))}
+          <div className="flex gap-3 flex-shrink-0 min-w-0">
+            {['Appropriate', 'Inappropriate'].map((opt) => {
+              const isSelected = formData[field] === opt;
+              return (
+                <label
+                  key={opt}
+                  onClick={(e) => {
+                    if (readOnly) return;
+                    e.preventDefault();
+                    handleAppropriatenessChange(field, isSelected ? '' : opt, noteKey);
+                  }}
+                  className="flex items-center gap-1.5 cursor-pointer select-none whitespace-nowrap"
+                >
+                  <input
+                    type="radio"
+                    disabled={readOnly}
+                    name={`${field}-${label}`}
+                    checked={isSelected}
+                    readOnly
+                    className="text-orange-600 focus:ring-0 focus:outline-none cursor-pointer flex-shrink-0 accent-orange-500"
+                  />
+                  <span className={`font-semibold ${opt === 'Appropriate' ? 'text-emerald-700' : 'text-slate-600'}`}>{opt}</span>
+                </label>
+              );
+            })}
           </div>
         </div>
 
@@ -1180,7 +1208,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
   };
 
   return (
-    <div className="space-y-6 text-slate-800 theme-nstemi" data-registry="nstemi" id="nstemiFormBlock">
+    <div className="space-y-4 text-slate-800 theme-nstemi" data-registry="nstemi" id="nstemiFormBlock">
 
       {/* Patient Profile & Administrative Details */}
       <SectionCard title="Patient Profile & Administrative Details">
@@ -1520,29 +1548,42 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
       {/* Treatment Strategy Section */}
       <SectionCard title="Treatment Strategy">
-        <div className="space-y-4 text-xs">
+        <div className="space-y-3.5 text-xs">
           <div className="flex gap-6 p-2 bg-white border border-slate-200 rounded-lg">
             <span className="font-bold text-slate-700 pt-1">Strategy:</span>
             {[
               { key: 'PAMI', label: 'PAMI' },
               { key: 'Thrombolysis', label: 'Thrombolysis' },
               { key: 'Conservative', label: 'Conservative' }
-            ].map(op => (
-              <label key={op.key} className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="treatment_strategy"
-                  checked={formData.treatment_strategy === op.key}
-                  onChange={() => handleChange('treatment_strategy', op.key)}
-                />
-                <span>{op.label}</span>
-              </label>
-            ))}
+            ].map(op => {
+              const isSelected = formData.treatment_strategy === op.key;
+              return (
+                <label
+                  key={op.key}
+                  onClick={(e) => {
+                    if (readOnly) return;
+                    e.preventDefault();
+                    handleToggleRadio('treatment_strategy', op.key);
+                  }}
+                  className="flex items-center gap-2 cursor-pointer select-none"
+                >
+                  <input
+                    type="radio"
+                    disabled={readOnly}
+                    name="treatment_strategy"
+                    checked={isSelected}
+                    readOnly
+                    className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                  />
+                  <span>{op.label}</span>
+                </label>
+              );
+            })}
           </div>
 
-          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+          <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-3">
             <div className="font-bold text-slate-800 text-sm">PAMI details, if done:</div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="form-field-label">Door to Balloon Time (min):</label>
                 <input
@@ -1578,17 +1619,30 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               <div>
                 <label className="form-field-label">Thrombosuction:</label>
                 <div className="flex gap-4 mt-2">
-                  {['Done', 'Not done'].map(opt => (
-                    <label key={opt} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="thrombosuction"
-                        checked={formData.thrombosuction_done === opt}
-                        onChange={() => handleChange('thrombosuction_done', opt)}
-                      />
-                      <span>{opt}</span>
-                    </label>
-                  ))}
+                  {['Done', 'Not done'].map(opt => {
+                    const isSelected = formData.thrombosuction_done === opt;
+                    return (
+                      <label
+                        key={opt}
+                        onClick={(e) => {
+                          if (readOnly) return;
+                          e.preventDefault();
+                          handleToggleRadio('thrombosuction_done', opt);
+                        }}
+                        className="flex items-center gap-2 cursor-pointer select-none"
+                      >
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="thrombosuction"
+                          checked={isSelected}
+                          readOnly
+                          className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1613,21 +1667,34 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="form-field-label">Stent(s):</label>
                 <div className="flex items-center gap-6 p-2 bg-white border rounded-lg">
-                  {['BMS', 'DES'].map(opt => (
-                    <label key={opt} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="stent_type"
-                        checked={formData.stent_type === opt}
-                        onChange={() => handleChange('stent_type', opt)}
-                      />
-                      <span>{opt}</span>
-                    </label>
-                  ))}
+                  {['BMS', 'DES'].map(opt => {
+                    const isSelected = formData.stent_type === opt;
+                    return (
+                      <label
+                        key={opt}
+                        onClick={(e) => {
+                          if (readOnly) return;
+                          e.preventDefault();
+                          handleToggleRadio('stent_type', opt);
+                        }}
+                        className="flex items-center gap-2 cursor-pointer select-none"
+                      >
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="stent_type"
+                          checked={isSelected}
+                          readOnly
+                          className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -1655,22 +1722,35 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
             <div className="space-y-3 pt-2 border-t">
               <span className="font-bold text-slate-800 block text-xs">Result:</span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {renderRadio('procedural_success', 'Procedural success:', ['Yes', 'No'])}
                 <div>
                   <label className="form-field-label">Post-procedure TIMI flow:</label>
                   <div className="flex gap-4 mt-2">
-                    {[0, 1, 2, 3].map(grade => (
-                      <label key={grade} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="timi_flow"
-                          checked={formData.timi_flow === grade}
-                          onChange={() => handleChange('timi_flow', grade)}
-                        />
-                        <span>{grade}</span>
-                      </label>
-                    ))}
+                    {[0, 1, 2, 3].map(grade => {
+                      const isSelected = formData.timi_flow === grade;
+                      return (
+                        <label
+                          key={grade}
+                          onClick={(e) => {
+                            if (readOnly) return;
+                            e.preventDefault();
+                            handleToggleRadio('timi_flow', grade);
+                          }}
+                          className="flex items-center gap-2 cursor-pointer select-none"
+                        >
+                          <input
+                            type="radio"
+                            disabled={readOnly}
+                            name="timi_flow"
+                            checked={isSelected}
+                            readOnly
+                            className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                          />
+                          <span>{grade}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -1761,7 +1841,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t">
             <div>
               <label className="form-field-label">Heparin strategy:</label>
               <div className="space-y-1">
@@ -1771,17 +1851,30 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   'LMWH alone',
                   'UFH i.v+UFHs.c',
                   'UFH i.v + LMWH'
-                ].map(op => (
-                  <label key={op} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="heparin_strategy"
-                      checked={formData.heparin_strategy === op}
-                      onChange={() => handleChange('heparin_strategy', op)}
-                    />
-                    <span>{op}</span>
-                  </label>
-                ))}
+                ].map(op => {
+                  const isSelected = formData.heparin_strategy === op;
+                  return (
+                    <label
+                      key={op}
+                      onClick={(e) => {
+                        if (readOnly) return;
+                        e.preventDefault();
+                        handleToggleRadio('heparin_strategy', op);
+                      }}
+                      className="flex items-center gap-2 cursor-pointer select-none"
+                    >
+                      <input
+                        type="radio"
+                        disabled={readOnly}
+                        name="heparin_strategy"
+                        checked={isSelected}
+                        readOnly
+                        className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                      />
+                      <span>{op}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
             <div>
@@ -1790,17 +1883,30 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               {formData.statin === 'Yes' && (
                 <div className="flex gap-3 mt-2 pl-2">
                   <span className="font-bold text-slate-500">Dose:</span>
-                  {['10 mg', '20 mg', '40 mg', '80 mg'].map(dose => (
-                    <label key={dose} className="flex items-center gap-1">
-                      <input
-                        type="radio"
-                        name="statin_dose"
-                        checked={formData.statin_dose === dose}
-                        onChange={() => handleChange('statin_dose', dose)}
-                      />
-                      <span>{dose}</span>
-                    </label>
-                  ))}
+                  {['10 mg', '20 mg', '40 mg', '80 mg'].map(dose => {
+                    const isSelected = formData.statin_dose === dose;
+                    return (
+                      <label
+                        key={dose}
+                        onClick={(e) => {
+                          if (readOnly) return;
+                          e.preventDefault();
+                          handleToggleRadio('statin_dose', dose);
+                        }}
+                        className="flex items-center gap-1 cursor-pointer select-none"
+                      >
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="statin_dose"
+                          checked={isSelected}
+                          readOnly
+                          className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                        />
+                        <span>{dose}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1872,9 +1978,9 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
           </div>
 
           <div className="font-bold text-slate-800 border-t border-slate-200 pt-3 text-sm">Reports:</div>
-          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+          <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-3">
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">ECG:</span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="form-field-label">HR (bpm):</label>
                 <input
@@ -1887,39 +1993,65 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </div>
               <div>
                 <label className="form-field-label">AV Block:</label>
-                <div className="flex flex-wrap gap-3 mt-1.5">
-                  {['None', '1-degree', '2-degree', 'CHB'].map(opt => (
-                    <label key={opt} className="flex items-center gap-1.5">
-                      <input
-                        type="radio"
-                        name="av_block"
-                        checked={formData.av_block === opt}
-                        onChange={() => handleChange('av_block', opt)}
-                      />
-                      <span>{opt}</span>
-                    </label>
-                  ))}
+                <div className="flex flex-wrap gap-2.5 mt-1.5">
+                  {['None', '1-degree', '2-degree', 'CHB'].map(opt => {
+                    const isSelected = formData.av_block === opt;
+                    return (
+                      <label
+                        key={opt}
+                        onClick={(e) => {
+                          if (readOnly) return;
+                          e.preventDefault();
+                          handleToggleRadio('av_block', opt);
+                        }}
+                        className="flex items-center gap-1.5 cursor-pointer select-none"
+                      >
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="av_block"
+                          checked={isSelected}
+                          readOnly
+                          className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
               <div>
                 <label className="form-field-label">BBB:</label>
-                <div className="flex flex-wrap gap-3 mt-1.5">
-                  {['RBBB', 'LBBB', 'Indeterminate', 'None'].map(opt => (
-                    <label key={opt} className="flex items-center gap-1.5">
-                      <input
-                        type="radio"
-                        name="bbb"
-                        checked={formData.bbb === (opt === 'Indeterminate' ? 'Indeterminate' : opt)}
-                        onChange={() => handleChange('bbb', opt)}
-                      />
-                      <span>{opt}</span>
-                    </label>
-                  ))}
+                <div className="flex flex-wrap gap-2.5 mt-1.5">
+                  {['RBBB', 'LBBB', 'Indeterminate', 'None'].map(opt => {
+                    const isSelected = formData.bbb === opt;
+                    return (
+                      <label
+                        key={opt}
+                        onClick={(e) => {
+                          if (readOnly) return;
+                          e.preventDefault();
+                          handleToggleRadio('bbb', opt);
+                        }}
+                        className="flex items-center gap-1.5 cursor-pointer select-none"
+                      >
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="bbb"
+                          checked={isSelected}
+                          readOnly
+                          className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <div>
                 <label className="form-field-label">Q waves:</label>
                 <div className="grid grid-cols-2 gap-1.5 mt-1">
@@ -1979,18 +2111,31 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </div>
               <div>
                 <label className="form-field-label">Rhythm:</label>
-                <div className="flex flex-wrap gap-2.5 mt-1.5">
-                  {['NSR', 'AF', 'SVT', 'VT', 'VF'].map(r => (
-                    <label key={r} className="flex items-center gap-1">
-                      <input
-                        type="radio"
-                        name="ecg_rhythm"
-                        checked={formData.ecg_rhythm === r}
-                        onChange={() => handleChange('ecg_rhythm', r)}
-                      />
-                      <span>{r}</span>
-                    </label>
-                  ))}
+                <div className="flex flex-wrap gap-2 mt-1.5">
+                  {['NSR', 'AF', 'SVT', 'VT', 'VF'].map(r => {
+                    const isSelected = formData.ecg_rhythm === r;
+                    return (
+                      <label
+                        key={r}
+                        onClick={(e) => {
+                          if (readOnly) return;
+                          e.preventDefault();
+                          handleToggleRadio('ecg_rhythm', r);
+                        }}
+                        className="flex items-center gap-1 cursor-pointer select-none"
+                      >
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="ecg_rhythm"
+                          checked={isSelected}
+                          readOnly
+                          className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                        />
+                        <span>{r}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -2018,9 +2163,9 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
           </div>
 
-          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+          <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-3">
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">Echo:</span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               <div>
                 <label className="form-field-label">EF (%):</label>
                 <input
@@ -2033,23 +2178,36 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </div>
               <div>
                 <label className="form-field-label">LV Function:</label>
-                <div className="flex flex-wrap gap-3 mt-1.5">
-                  {['Normal', 'Mild LVD', 'Mod. LVD', 'Sev.LVD'].map(opt => (
-                    <label key={opt} className="flex items-center gap-1">
-                      <input
-                        type="radio"
-                        name="lv_function"
-                        checked={formData.lv_function === opt}
-                        onChange={() => handleChange('lv_function', opt)}
-                      />
-                      <span>{opt}</span>
-                    </label>
-                  ))}
+                <div className="flex flex-wrap gap-2.5 mt-1.5">
+                  {['Normal', 'Mild LVD', 'Mod. LVD', 'Sev.LVD'].map(opt => {
+                    const isSelected = formData.lv_function === opt;
+                    return (
+                      <label
+                        key={opt}
+                        onClick={(e) => {
+                          if (readOnly) return;
+                          e.preventDefault();
+                          handleToggleRadio('lv_function', opt);
+                        }}
+                        className="flex items-center gap-1 cursor-pointer select-none"
+                      >
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="lv_function"
+                          checked={isSelected}
+                          readOnly
+                          className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
               <div>
                 <label className="form-field-label">RWMA:</label>
-                <div className="flex flex-wrap gap-3 mt-1.5">
+                <div className="flex flex-wrap gap-2.5 mt-1.5">
                   {['LAD', 'RCA', 'LCX'].map(opt => {
                     const key = `rwma_${opt.toLowerCase()}`;
                     return (
@@ -2068,18 +2226,31 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </div>
               <div>
                 <label className="form-field-label">MR:</label>
-                <div className="flex flex-wrap gap-3 mt-1.5">
-                  {['None', 'Mild', 'Mod', 'Severe'].map(opt => (
-                    <label key={opt} className="flex items-center gap-1">
-                      <input
-                        type="radio"
-                        name="mr_grade"
-                        checked={formData.mr === opt}
-                        onChange={() => handleChange('mr', opt)}
-                      />
-                      <span>{opt}</span>
-                    </label>
-                  ))}
+                <div className="flex flex-wrap gap-2.5 mt-1.5">
+                  {['None', 'Mild', 'Mod', 'Severe'].map(opt => {
+                    const isSelected = formData.mr === opt;
+                    return (
+                      <label
+                        key={opt}
+                        onClick={(e) => {
+                          if (readOnly) return;
+                          e.preventDefault();
+                          handleToggleRadio('mr', opt);
+                        }}
+                        className="flex items-center gap-1 cursor-pointer select-none"
+                      >
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="mr_grade"
+                          checked={isSelected}
+                          readOnly
+                          className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -2292,21 +2463,35 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             </div>
           </div>
 
-          <div className="p-4 bg-white border border-slate-200 rounded-xl space-y-4">
+          <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-3">
             <span className="font-bold text-slate-800 text-xs block border-b pb-1">Coronary Angiogram:</span>
             <div className="flex flex-wrap items-center gap-6">
               <div className="flex gap-4 p-2 bg-white border rounded-lg">
-                {['Done', 'Not done'].map(opt => (
-                  <label key={opt} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="angiogram_perf"
-                      checked={formData.angiogram_done === (opt === 'Done' ? 'Yes' : 'No')}
-                      onChange={() => handleChange('angiogram_done', opt === 'Done' ? 'Yes' : 'No')}
-                    />
-                    <span>{opt}</span>
-                  </label>
-                ))}
+                {['Done', 'Not done'].map(opt => {
+                  const val = opt === 'Done' ? 'Yes' : 'No';
+                  const isSelected = formData.angiogram_done === val;
+                  return (
+                    <label
+                      key={opt}
+                      onClick={(e) => {
+                        if (readOnly) return;
+                        e.preventDefault();
+                        handleToggleRadio('angiogram_done', val);
+                      }}
+                      className="flex items-center gap-2 cursor-pointer select-none"
+                    >
+                      <input
+                        type="radio"
+                        disabled={readOnly}
+                        name="angiogram_perf"
+                        checked={isSelected}
+                        readOnly
+                        className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                      />
+                      <span>{opt}</span>
+                    </label>
+                  );
+                })}
               </div>
 
               {formData.angiogram_done === 'Yes' && (
@@ -2422,17 +2607,30 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               {formData.discharge_statin === 'Yes' && (
                 <div className="flex gap-3 mt-2 pl-2">
                   <span className="font-bold text-slate-500">Dose:</span>
-                  {['10 mg', '20 mg', '40 mg', '80 mg'].map(dose => (
-                    <label key={dose} className="flex items-center gap-1">
-                      <input
-                        type="radio"
-                        name="discharge_statin_dose"
-                        checked={formData.discharge_statin_dose === dose}
-                        onChange={() => handleChange('discharge_statin_dose', dose)}
-                      />
-                      <span>{dose}</span>
-                    </label>
-                  ))}
+                  {['10 mg', '20 mg', '40 mg', '80 mg'].map(dose => {
+                    const isSelected = formData.discharge_statin_dose === dose;
+                    return (
+                      <label
+                        key={dose}
+                        onClick={(e) => {
+                          if (readOnly) return;
+                          e.preventDefault();
+                          handleToggleRadio('discharge_statin_dose', dose);
+                        }}
+                        className="flex items-center gap-1 cursor-pointer select-none"
+                      >
+                        <input
+                          type="radio"
+                          disabled={readOnly}
+                          name="discharge_statin_dose"
+                          checked={isSelected}
+                          readOnly
+                          className="text-orange-600 focus:ring-0 focus:outline-none accent-orange-500"
+                        />
+                        <span>{dose}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -2464,24 +2662,24 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
       {/* Appropriateness Assessment */}
       <SectionCard title="Appropriateness Assessment">
-        <div className="space-y-6 text-xs">
+        <div className="space-y-3.5 text-xs">
           <div>
-            <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various procedures</div>
-            <div className="grid grid-cols-1 gap-3 text-xs w-full">
+            <div className="font-bold text-slate-800 text-xs mb-1.5 uppercase tracking-wide">Appropriateness for various procedures</div>
+            <div className="grid grid-cols-1 gap-2 text-xs w-full">
               {proceduresList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-200">
-            <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various investigations</div>
-            <div className="grid grid-cols-1 gap-3 text-xs w-full">
+          <div className="pt-2.5 border-t border-slate-200">
+            <div className="font-bold text-slate-800 text-xs mb-1.5 uppercase tracking-wide">Appropriateness for various investigations</div>
+            <div className="grid grid-cols-1 gap-2 text-xs w-full">
               {investigationsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
             </div>
           </div>
 
-          <div className="pt-4 border-t border-slate-200">
-            <div className="font-bold text-slate-800 text-xs mb-3 uppercase tracking-wide">Appropriateness for various drugs</div>
-            <div className="grid grid-cols-1 gap-3 text-xs w-full">
+          <div className="pt-2.5 border-t border-slate-200">
+            <div className="font-bold text-slate-800 text-xs mb-1.5 uppercase tracking-wide">Appropriateness for various drugs</div>
+            <div className="grid grid-cols-1 gap-2 text-xs w-full">
               {drugsList.map(item => renderAppropriatenessRadio(item.key, item.label, item.specifyKey))}
             </div>
           </div>
@@ -2892,27 +3090,31 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {['In-Person', 'Phone Check-in'].map((mode) => (
-                  <label
-                    key={mode}
-                    onClick={() => !readOnly && handleChange('visit_mode', mode)}
-                    className={`flex items-center gap-2.5 p-3 rounded-lg border text-xs font-medium cursor-pointer transition-all ${
-                      formData.visit_mode === mode
-                        ? 'bg-orange-50 border-orange-500 text-orange-950 font-semibold shadow-xs'
-                        : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      disabled={readOnly}
-                      name={`nstemi_visit_mode_${formData.record_id || 'new'}`}
-                      value={mode}
-                      checked={formData.visit_mode === mode}
-                      onChange={(e) => handleChange('visit_mode', e.target.value)}
-                      className="text-orange-600 focus:ring-orange-500 w-4 h-4"
-                    />
-                    <span>{mode}</span>
-                  </label>
-                ))}
+                    <label
+                      key={mode}
+                      onClick={(e) => {
+                        if (readOnly) return;
+                        e.preventDefault();
+                        handleToggleRadio('visit_mode', mode);
+                      }}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium cursor-pointer transition-all ${
+                        formData.visit_mode === mode
+                          ? 'bg-orange-50 border-orange-500 text-orange-950 font-semibold shadow-xs'
+                          : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'
+                      } ${readOnly ? 'cursor-not-allowed opacity-75' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        readOnly
+                        disabled={readOnly}
+                        name={`nstemi_visit_mode_${formData.record_id || 'new'}`}
+                        value={mode}
+                        checked={formData.visit_mode === mode}
+                        className="text-orange-600 focus:ring-orange-500 w-3.5 h-3.5 pointer-events-none"
+                      />
+                      <span>{mode}</span>
+                    </label>
+                  ))}
               </div>
             </div>
 

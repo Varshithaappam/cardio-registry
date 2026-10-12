@@ -4739,8 +4739,27 @@ const hf = forwardRef(function hf(
                     <div>
                       <span className="text-[10px] text-slate-500 block">Location:</span>
                       <div className="flex gap-2">
-                        <label className="flex items-center gap-1 cursor-pointer"><input disabled={readOnly} type="radio" name="d-loc" checked={maceDeathLocation === 'Home'} onChange={() => setMaceDeathLocation('Home')} /> Home</label>
-                        <label className="flex items-center gap-1 cursor-pointer"><input disabled={readOnly} type="radio" name="d-loc" checked={maceDeathLocation === 'Hospital'} onChange={() => setMaceDeathLocation('Hospital')} /> Hospital</label>
+                        {['Home', 'Hospital'].map(loc => (
+                          <label
+                            key={loc}
+                            onClick={(e) => {
+                              if (readOnly) return;
+                              e.preventDefault();
+                              setMaceDeathLocation(maceDeathLocation === loc ? '' : loc);
+                            }}
+                            className="flex items-center gap-1 cursor-pointer"
+                          >
+                            <input
+                              disabled={readOnly}
+                              readOnly
+                              type="radio"
+                              name="d-loc"
+                              checked={maceDeathLocation === loc}
+                              className="pointer-events-none"
+                            />
+                            {loc}
+                          </label>
+                        ))}
                       </div>
                     </div>
                     <div>
@@ -4811,22 +4830,52 @@ const hf = forwardRef(function hf(
                 <div className={`border rounded p-2 bg-white ${formErrors.ecgRhythm ? 'border-red-500' : 'border-slate-200'}`} id="ecgRhythm">
                   <span className="block font-bold mb-1 text-slate-700">Rhythm</span>
                   {['Sinus', 'AF'].map(r => (
-                    <label key={r} className="flex items-center gap-1.5 mt-0.5">
+                    <label
+                      key={r}
+                      onClick={(e) => {
+                        if (readOnly) return;
+                        e.preventDefault();
+                        if (ecgRhythm === r) {
+                          setEcgRhythm('');
+                        } else {
+                          setEcgRhythm(r);
+                          setEcgRhythmOther('');
+                        }
+                      }}
+                      className="flex items-center gap-1.5 mt-0.5 cursor-pointer"
+                    >
                       <input 
-                        disabled={readOnly} 
+                        disabled={readOnly}
+                        readOnly
                         type="radio" 
                         name="ecg_rhy" 
                         checked={ecgRhythm === r} 
-                        onChange={() => {
-                          setEcgRhythm(r);
-                          setEcgRhythmOther('');
-                        }} 
+                        className="pointer-events-none"
                       /> 
                       {r}
                     </label>
                   ))}
-                  <label className="mt-1 flex items-center gap-1.5 cursor-pointer">
-                    <input disabled={readOnly} type="radio" name="ecg_rhy" checked={ecgRhythm === 'Other'} onChange={() => { setEcgRhythm('Other'); }} className="rounded-full border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer" />
+                  <label
+                    onClick={(e) => {
+                      if (readOnly) return;
+                      e.preventDefault();
+                      if (ecgRhythm === 'Other') {
+                        setEcgRhythm('');
+                        setEcgRhythmOther('');
+                      } else {
+                        setEcgRhythm('Other');
+                      }
+                    }}
+                    className="mt-1 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <input
+                      disabled={readOnly}
+                      readOnly
+                      type="radio"
+                      name="ecg_rhy"
+                      checked={ecgRhythm === 'Other'}
+                      className="rounded-full border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer pointer-events-none"
+                    />
                     <span className="text-slate-700">Other</span>
                   </label>
                   {ecgRhythm === 'Other' && (
@@ -4847,41 +4896,123 @@ const hf = forwardRef(function hf(
                 <div className="border border-slate-200 rounded p-2 bg-white">
                   <span className="block font-bold mb-1 text-slate-700">AV Conduction</span>
                   {['Normal', '1st degree AV block', '2nd degree AV block', '3rd degree AV block'].map(av => (
-                    <label key={av} className="flex items-center gap-1.5 mt-0.5"><input disabled={readOnly} type="radio" name="ecg_av" checked={ecgAvConduction === av} onChange={() => setEcgAvConduction(av)} /> {av}</label>
+                    <label
+                      key={av}
+                      onClick={(e) => {
+                        if (readOnly) return;
+                        e.preventDefault();
+                        setEcgAvConduction(ecgAvConduction === av ? '' : av);
+                      }}
+                      className="flex items-center gap-1.5 mt-0.5 cursor-pointer"
+                    >
+                      <input
+                        disabled={readOnly}
+                        readOnly
+                        type="radio"
+                        name="ecg_av"
+                        checked={ecgAvConduction === av}
+                        className="pointer-events-none"
+                      />
+                      {av}
+                    </label>
                   ))}
                 </div>
 
                 <div className="border border-slate-200 rounded p-2 bg-white">
                   <span className="block font-bold mb-1 text-slate-700">Q Waves</span>
-                  <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="ecg_qw" checked={ecgQWaves === 'Yes'} onChange={() => setEcgQWaves('Yes')} /> Yes</label>
+                  <label
+                    onClick={(e) => {
+                      if (readOnly) return;
+                      e.preventDefault();
+                      setEcgQWaves(ecgQWaves === 'Yes' ? '' : 'Yes');
+                    }}
+                    className="flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <input
+                      disabled={readOnly}
+                      readOnly
+                      type="radio"
+                      name="ecg_qw"
+                      checked={ecgQWaves === 'Yes'}
+                      className="pointer-events-none"
+                    />
+                    Yes
+                  </label>
                   {ecgQWaves === 'Yes' && (
                     <div className="pl-4 flex items-center gap-1 mt-0.5">
                       <span className="text-[10px] text-slate-500">• Leads:</span>
                       <input disabled={readOnly} type="text" value={ecgQWavesLeads ?? ''} onChange={(e) => setEcgQWavesLeads(e.target.value)} className="border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full" />
                     </div>
                   )}
-                  <label className="flex items-center gap-1.5 mt-0.5"><input disabled={readOnly} type="radio" name="ecg_qw" checked={ecgQWaves === 'None'} onChange={() => setEcgQWaves('None')} /> None</label>
+                  <label
+                    onClick={(e) => {
+                      if (readOnly) return;
+                      e.preventDefault();
+                      setEcgQWaves(ecgQWaves === 'None' ? '' : 'None');
+                    }}
+                    className="flex items-center gap-1.5 mt-0.5 cursor-pointer"
+                  >
+                    <input
+                      disabled={readOnly}
+                      readOnly
+                      type="radio"
+                      name="ecg_qw"
+                      checked={ecgQWaves === 'None'}
+                      className="pointer-events-none"
+                    />
+                    None
+                  </label>
                 </div>
 
                 <div className={`border rounded p-2 bg-white ${formErrors.ecgBlockages ? 'border-red-500' : 'border-slate-200'}`} id="ecgBlockages">
                   <span className="block font-bold mb-1 text-slate-700">Blockages</span>
                   {['LBBB', 'RBBB'].map(bl => (
-                    <label key={bl} className="flex items-center gap-1.5 mt-0.5">
+                    <label
+                      key={bl}
+                      onClick={(e) => {
+                        if (readOnly) return;
+                        e.preventDefault();
+                        if (ecgBlockages === bl) {
+                          setEcgBlockages('');
+                        } else {
+                          setEcgBlockages(bl);
+                          setEcgBlockagesOther('');
+                        }
+                      }}
+                      className="flex items-center gap-1.5 mt-0.5 cursor-pointer"
+                    >
                       <input 
                         disabled={readOnly} 
+                        readOnly
                         type="radio" 
                         name="ecg_bl" 
                         checked={ecgBlockages === bl} 
-                        onChange={() => {
-                          setEcgBlockages(bl);
-                          setEcgBlockagesOther('');
-                        }} 
+                        className="pointer-events-none"
                       /> 
                       {bl}
                     </label>
                   ))}
-                  <label className="mt-1 flex items-center gap-1.5 cursor-pointer">
-                    <input disabled={readOnly} type="radio" name="ecg_bl" checked={ecgBlockages === 'Other'} onChange={() => { setEcgBlockages('Other'); }} className="rounded-full border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer" />
+                  <label
+                    onClick={(e) => {
+                      if (readOnly) return;
+                      e.preventDefault();
+                      if (ecgBlockages === 'Other') {
+                        setEcgBlockages('');
+                        setEcgBlockagesOther('');
+                      } else {
+                        setEcgBlockages('Other');
+                      }
+                    }}
+                    className="mt-1 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <input
+                      disabled={readOnly}
+                      readOnly
+                      type="radio"
+                      name="ecg_bl"
+                      checked={ecgBlockages === 'Other'}
+                      className="rounded-full border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer pointer-events-none"
+                    />
                     <span className="text-slate-700">Other</span>
                   </label>
                   {ecgBlockages === 'Other' && (
@@ -4902,7 +5033,25 @@ const hf = forwardRef(function hf(
                 <div className="border border-slate-200 rounded p-2 bg-white">
                   <span className="block font-bold mb-1 text-slate-700">Extra Beats</span>
                   {['APC', 'VPC', 'None'].map(eb => (
-                    <label key={eb} className="flex items-center gap-1.5 mt-0.5"><input disabled={readOnly} type="radio" name="ecg_ex" checked={ecgExtraBeats === eb} onChange={() => setEcgExtraBeats(eb)} /> {eb}</label>
+                    <label
+                      key={eb}
+                      onClick={(e) => {
+                        if (readOnly) return;
+                        e.preventDefault();
+                        setEcgExtraBeats(ecgExtraBeats === eb ? '' : eb);
+                      }}
+                      className="flex items-center gap-1.5 mt-0.5 cursor-pointer"
+                    >
+                      <input
+                        disabled={readOnly}
+                        readOnly
+                        type="radio"
+                        name="ecg_ex"
+                        checked={ecgExtraBeats === eb}
+                        className="pointer-events-none"
+                      />
+                      {eb}
+                    </label>
                   ))}
                 </div>
 
@@ -5209,7 +5358,25 @@ const hf = forwardRef(function hf(
                     <span className="block font-semibold text-slate-600 mb-0.5">MR mitral regurgitation:</span>
                     <div className="grid grid-cols-3 gap-1">
                       {['None', '1plus', '2plus', '3plus', '4plus'].map(lvl => (
-                        <label key={lvl} className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="echo_mr" checked={echoMrMitralRegurg === lvl} onChange={() => setEchoMrMitralRegurg(lvl)} /> {lvl}</label>
+                        <label
+                          key={lvl}
+                          onClick={(e) => {
+                            if (readOnly) return;
+                            e.preventDefault();
+                            setEchoMrMitralRegurg(echoMrMitralRegurg === lvl ? '' : lvl);
+                          }}
+                          className="flex items-center gap-1 cursor-pointer"
+                        >
+                          <input
+                            disabled={readOnly}
+                            readOnly
+                            type="radio"
+                            name="echo_mr"
+                            checked={echoMrMitralRegurg === lvl}
+                            className="pointer-events-none"
+                          />
+                          {lvl}
+                        </label>
                       ))}
                     </div>
                   </div>
@@ -5248,15 +5415,52 @@ const hf = forwardRef(function hf(
                   
                   <div className={`flex items-center gap-4 py-0.5 ${formErrors.echoRvFunction ? 'border border-red-500 bg-red-50/20 p-1 rounded' : ''}`} id="echoRvFunctionBlock">
                     <span className="font-semibold text-slate-600">RV Function:</span>
-                    <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="echo_rvf" checked={echoRvFunction === 'Normal'} onChange={() => setEchoRvFunction('Normal')} /> Normal</label>
-                    <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="echo_rvf" checked={echoRvFunction === 'Impaired'} onChange={() => setEchoRvFunction('Impaired')} /> Impaired</label>
+                    {['Normal', 'Impaired'].map(rv => (
+                      <label
+                        key={rv}
+                        onClick={(e) => {
+                          if (readOnly) return;
+                          e.preventDefault();
+                          setEchoRvFunction(echoRvFunction === rv ? '' : rv);
+                        }}
+                        className="flex items-center gap-1 cursor-pointer"
+                      >
+                        <input
+                          disabled={readOnly}
+                          readOnly
+                          type="radio"
+                          name="echo_rvf"
+                          checked={echoRvFunction === rv}
+                          className="pointer-events-none"
+                        />
+                        {rv}
+                      </label>
+                    ))}
                   </div>
 
                   <div className={`border-t border-slate-200 pt-1 ${formErrors.echoRwmi ? 'border border-red-500 bg-red-50/20 p-1 rounded' : ''}`} id="echoRwmiBlock">
                     <span className="block font-semibold text-slate-600 mb-0.5">RWMI:</span>
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                       {['None', 'Global', 'Inferior', 'Anterior', 'Lateral'].map(r => (
-                        <label key={r} className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="echo_rwmi" checked={echoRwmi === r} onChange={() => setEchoRwmi(r)} /> {r}</label>
+                        <label
+                          key={r}
+                          onClick={(e) => {
+                            if (readOnly) return;
+                            e.preventDefault();
+                            setEchoRwmi(echoRwmi === r ? '' : r);
+                          }}
+                          className="flex items-center gap-1 cursor-pointer"
+                        >
+                          <input
+                            disabled={readOnly}
+                            readOnly
+                            type="radio"
+                            name="echo_rwmi"
+                            checked={echoRwmi === r}
+                            className="pointer-events-none"
+                          />
+                          {r}
+                        </label>
                       ))}
                     </div>
                   </div>
@@ -5280,7 +5484,25 @@ const hf = forwardRef(function hf(
                   <div className={`pl-5 flex flex-wrap gap-4 items-center mt-1 bg-white p-1.5 rounded border ${formErrors.holterVentricularArrhythmia ? 'border-red-500 bg-red-50/20' : 'border-slate-200'}`} id="holterVentricularArrhythmiaBlock">
                     <span className="font-medium text-slate-600">Ventricular Arrhythmia:</span>
                     {['No', 'Yes', 'Complex VPC', 'NSVT', 'VT'].map(opt => (
-                      <label key={opt} className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="holter_va" checked={holterVentricularArrhythmia === opt} onChange={() => setHolterVentricularArrhythmia(opt)} /> {opt}</label>
+                      <label
+                        key={opt}
+                        onClick={(e) => {
+                          if (readOnly) return;
+                          e.preventDefault();
+                          setHolterVentricularArrhythmia(holterVentricularArrhythmia === opt ? '' : opt);
+                        }}
+                        className="flex items-center gap-1 cursor-pointer"
+                      >
+                        <input
+                          disabled={readOnly}
+                          readOnly
+                          type="radio"
+                          name="holter_va"
+                          checked={holterVentricularArrhythmia === opt}
+                          className="pointer-events-none"
+                        />
+                        {opt}
+                      </label>
                     ))}
                   </div>
                 </div>
@@ -5288,7 +5510,25 @@ const hf = forwardRef(function hf(
                 <div className={`flex flex-wrap gap-4 items-center pt-1 p-1 rounded ${formErrors.holterAtrialArrhythmias ? 'border border-red-500 bg-red-50/20' : ''}`} id="holterAtrialArrhythmiasBlock">
                   <span className="font-semibold text-slate-700">Atrial Arrhythmias:</span>
                   {['None', 'APCs', 'AF'].map(opt => (
-                    <label key={opt} className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="holter_aa" checked={holterAtrialArrhythmias === opt} onChange={() => setHolterAtrialArrhythmias(opt)} /> {opt}</label>
+                    <label
+                      key={opt}
+                      onClick={(e) => {
+                        if (readOnly) return;
+                        e.preventDefault();
+                        setHolterAtrialArrhythmias(holterAtrialArrhythmias === opt ? '' : opt);
+                      }}
+                      className="flex items-center gap-1 cursor-pointer"
+                    >
+                      <input
+                        disabled={readOnly}
+                        readOnly
+                        type="radio"
+                        name="holter_aa"
+                        checked={holterAtrialArrhythmias === opt}
+                        className="pointer-events-none"
+                      />
+                      {opt}
+                    </label>
                   ))}
                 </div>
 
@@ -5309,8 +5549,23 @@ const hf = forwardRef(function hf(
               <div className="space-y-1.5">
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex items-center gap-1.5 cursor-pointer">
-                      <input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Done'} onChange={() => setStressStatus('Done')} /> Done
+                    <label
+                      onClick={(e) => {
+                        if (readOnly) return;
+                        e.preventDefault();
+                        setStressStatus(stressStatus === 'Done' ? '' : 'Done');
+                      }}
+                      className="flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <input
+                        disabled={readOnly}
+                        readOnly
+                        type="radio"
+                        name="stress_status"
+                        checked={stressStatus === 'Done'}
+                        className="pointer-events-none"
+                      />
+                      Done
                     </label>
                     {stressStatus === 'Done' && (
                       <div className="flex items-center gap-1">
@@ -5324,20 +5579,78 @@ const hf = forwardRef(function hf(
                       <div className="flex items-center gap-1"><span>▪ METS achieved:</span><input disabled={readOnly} type="text" value={stressMets ?? ''} onChange={(e) => setStressMets(e.target.value)} className="border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full" /></div>
                       <div className="flex items-center gap-3">
                         <span>▪ Ischemic changes:</span>
-                        <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="stress_isc" checked={stressIschemicChanges === 'Yes'} onChange={() => setStressIschemicChanges('Yes')} /> Yes</label>
-                        <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="stress_isc" checked={stressIschemicChanges === 'No'} onChange={() => setStressIschemicChanges('No')} /> No</label>
+                        {['Yes', 'No'].map(val => (
+                          <label
+                            key={val}
+                            onClick={(e) => {
+                              if (readOnly) return;
+                              e.preventDefault();
+                              setStressIschemicChanges(stressIschemicChanges === val ? '' : val);
+                            }}
+                            className="flex items-center gap-1 cursor-pointer"
+                          >
+                            <input
+                              disabled={readOnly}
+                              readOnly
+                              type="radio"
+                              name="stress_isc"
+                              checked={stressIschemicChanges === val}
+                              className="pointer-events-none"
+                            />
+                            {val}
+                          </label>
+                        ))}
                       </div>
                       <div className="flex items-center gap-1"><span>▪ Target heart rate achieved:</span><input disabled={readOnly} type="text" value={stressTargetHr ?? ''} onChange={(e) => setStressTargetHr(e.target.value)} className="border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full" /></div>
                       <div className="flex items-center gap-3">
                         <span>▪ Arrhythmias:</span>
-                        <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="stress_arr" checked={stressArrhythmias === 'Yes'} onChange={() => setStressArrhythmias('Yes')} /> Yes</label>
-                        <label className="flex items-center gap-1"><input disabled={readOnly} type="radio" name="stress_arr" checked={stressArrhythmias === 'No'} onChange={() => setStressArrhythmias('No')} /> No</label>
+                        {['Yes', 'No'].map(val => (
+                          <label
+                            key={val}
+                            onClick={(e) => {
+                              if (readOnly) return;
+                              e.preventDefault();
+                              setStressArrhythmias(stressArrhythmias === val ? '' : val);
+                            }}
+                            className="flex items-center gap-1 cursor-pointer"
+                          >
+                            <input
+                              disabled={readOnly}
+                              readOnly
+                              type="radio"
+                              name="stress_arr"
+                              checked={stressArrhythmias === val}
+                              className="pointer-events-none"
+                            />
+                            {val}
+                          </label>
+                        ))}
                       </div>
                     </div>
                   )}
                 </div>
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input disabled={readOnly} type="radio" name="stress_status" checked={stressStatus === 'Not Done'} onChange={() => { setStressStatus('Not Done'); setStressDate(''); }} /> Not Done
+                <label
+                  onClick={(e) => {
+                    if (readOnly) return;
+                    e.preventDefault();
+                    if (stressStatus === 'Not Done') {
+                      setStressStatus('');
+                    } else {
+                      setStressStatus('Not Done');
+                      setStressDate('');
+                    }
+                  }}
+                  className="flex items-center gap-1.5 cursor-pointer"
+                >
+                  <input
+                    disabled={readOnly}
+                    readOnly
+                    type="radio"
+                    name="stress_status"
+                    checked={stressStatus === 'Not Done'}
+                    className="pointer-events-none"
+                  />
+                  Not Done
                 </label>
               </div>
             </div>
@@ -5360,8 +5673,27 @@ const hf = forwardRef(function hf(
                 />
               </div>
               <div className="flex items-center gap-4">
-                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="mri_scar" checked={mriScar === 'Present'} onChange={() => setMriScar('Present')} /> Scar Present</label>
-                <label className="flex items-center gap-1.5"><input disabled={readOnly} type="radio" name="mri_scar" checked={mriScar === 'Absent'} onChange={() => setMriScar('Absent')} /> Scar Absent</label>
+                {['Present', 'Absent'].map(st => (
+                  <label
+                    key={st}
+                    onClick={(e) => {
+                      if (readOnly) return;
+                      e.preventDefault();
+                      setMriScar(mriScar === st ? '' : st);
+                    }}
+                    className="flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <input
+                      disabled={readOnly}
+                      readOnly
+                      type="radio"
+                      name="mri_scar"
+                      checked={mriScar === st}
+                      className="pointer-events-none"
+                    />
+                    Scar {st}
+                  </label>
+                ))}
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-slate-500 font-medium">Date of test:</span>
@@ -5390,8 +5722,23 @@ const hf = forwardRef(function hf(
               <div className={`space-y-2 p-2 rounded ${formErrors.sixMwtStatus ? 'border border-red-500 bg-red-50/30' : ''}`}>
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex items-center gap-1.5 cursor-pointer">
-                      <input disabled={readOnly} type="radio" name="six_mwt" checked={sixMwtStatus === 'Done'} onChange={() => setSixMwtStatus('Done')} /> Done:
+                    <label
+                      onClick={(e) => {
+                        if (readOnly) return;
+                        e.preventDefault();
+                        setSixMwtStatus(sixMwtStatus === 'Done' ? '' : 'Done');
+                      }}
+                      className="flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <input
+                        disabled={readOnly}
+                        readOnly
+                        type="radio"
+                        name="six_mwt"
+                        checked={sixMwtStatus === 'Done'}
+                        className="pointer-events-none"
+                      />
+                      Done:
                     </label>
                     {sixMwtStatus === 'Done' && (
                       <div className="flex items-center gap-1">
@@ -5414,8 +5761,28 @@ const hf = forwardRef(function hf(
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
-                    <input disabled={readOnly} type="radio" name="six_mwt" checked={sixMwtStatus === 'Not Done'} onChange={() => { setSixMwtStatus('Not Done'); setSixMwtDate(''); }} /> Not Done, Reasons:
+                  <label
+                    onClick={(e) => {
+                      if (readOnly) return;
+                      e.preventDefault();
+                      if (sixMwtStatus === 'Not Done') {
+                        setSixMwtStatus('');
+                      } else {
+                        setSixMwtStatus('Not Done');
+                        setSixMwtDate('');
+                      }
+                    }}
+                    className="flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                  >
+                    <input
+                      disabled={readOnly}
+                      readOnly
+                      type="radio"
+                      name="six_mwt"
+                      checked={sixMwtStatus === 'Not Done'}
+                      className="pointer-events-none"
+                    />
+                    Not Done, Reasons:
                   </label>
                   {sixMwtStatus === 'Not Done' && (
                     <input disabled={readOnly} type="text" value={sixMwtNotDoneReason ?? ''} onChange={(e) => setSixMwtNotDoneReason(e.target.value)} className={`border border-slate-300 rounded-md px-3 py-1.5 text-xs focus:ring-2 focus:ring-teal-600 focus:border-teal-600' outline-none bg-white text-slate-800 placeholder:text-slate-400 w-full ${formErrors.sixMwtNotDoneReason ? 'border-red-500 text-red-700' : 'border-slate-300'}`} placeholder="Specify clinical barriers..." />
@@ -5448,8 +5815,23 @@ const hf = forwardRef(function hf(
               <div className={`space-y-1.5 p-2 rounded ${formErrors.angioStatus ? 'border border-red-500 bg-red-50/30' : ''}`}>
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex items-center gap-1.5 cursor-pointer">
-                      <input disabled={readOnly} type="radio" name="angio_st" checked={angioStatus === 'Done'} onChange={() => setAngioStatus('Done')} /> Done:
+                    <label
+                      onClick={(e) => {
+                        if (readOnly) return;
+                        e.preventDefault();
+                        setAngioStatus(angioStatus === 'Done' ? '' : 'Done');
+                      }}
+                      className="flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <input
+                        disabled={readOnly}
+                        readOnly
+                        type="radio"
+                        name="angio_st"
+                        checked={angioStatus === 'Done'}
+                        className="pointer-events-none"
+                      />
+                      Done:
                     </label>
                     {angioStatus === 'Done' && (
                       <div className="flex items-center gap-1">
@@ -5461,7 +5843,25 @@ const hf = forwardRef(function hf(
                   {angioStatus === 'Done' && (
                     <div className={`mt-1 flex flex-wrap gap-4 pl-5 bg-white p-2 rounded border ${formErrors.angioFinding ? 'border-red-500' : 'border-slate-200'}`}>
                       {['Normal', '1 vessel disease', '2 vessel disease', '3 vessel disease', 'LMCA'].map(f => (
-                        <label key={f} className="flex items-center gap-1 cursor-pointer"><input disabled={readOnly} type="radio" name="angio_find" checked={angioFinding === f} onChange={() => setAngioFinding(f)} /> {f}</label>
+                        <label
+                          key={f}
+                          onClick={(e) => {
+                            if (readOnly) return;
+                            e.preventDefault();
+                            setAngioFinding(angioFinding === f ? '' : f);
+                          }}
+                          className="flex items-center gap-1 cursor-pointer"
+                        >
+                          <input
+                            disabled={readOnly}
+                            readOnly
+                            type="radio"
+                            name="angio_find"
+                            checked={angioFinding === f}
+                            className="pointer-events-none"
+                          />
+                          {f}
+                        </label>
                       ))}
                       {formErrors.angioFinding && (
                         <span className="text-red-500 text-[10px] font-bold block w-full mt-1">{formErrors.angioFinding}</span>
@@ -5469,8 +5869,28 @@ const hf = forwardRef(function hf(
                     </div>
                   )}
                 </div>
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input disabled={readOnly} type="radio" name="angio_st" checked={angioStatus === 'Not Done'} onChange={() => { setAngioStatus('Not Done'); setAngioDate(''); }} /> Not Done
+                <label
+                  onClick={(e) => {
+                    if (readOnly) return;
+                    e.preventDefault();
+                    if (angioStatus === 'Not Done') {
+                      setAngioStatus('');
+                    } else {
+                      setAngioStatus('Not Done');
+                      setAngioDate('');
+                    }
+                  }}
+                  className="flex items-center gap-1.5 cursor-pointer"
+                >
+                  <input
+                    disabled={readOnly}
+                    readOnly
+                    type="radio"
+                    name="angio_st"
+                    checked={angioStatus === 'Not Done'}
+                    className="pointer-events-none"
+                  />
+                  Not Done
                 </label>
                 {formErrors.angioStatus && (
                   <span className="text-red-500 text-[10px] font-bold block mt-1">{formErrors.angioStatus}</span>
@@ -5486,8 +5906,32 @@ const hf = forwardRef(function hf(
             </div>
             <div className="p-3 flex flex-wrap items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <label className="flex items-center gap-1.5 cursor-pointer"><input disabled={readOnly} type="radio" name="biopsy_st" checked={biopsyStatus === 'Done'} onChange={() => setBiopsyStatus('Done')} /> Done</label>
-                <label className="flex items-center gap-1.5 cursor-pointer"><input disabled={readOnly} type="radio" name="biopsy_st" checked={biopsyStatus === 'Not Done'} onChange={() => { setBiopsyStatus('Not Done'); setBiopsyDate(''); }} /> Not Done</label>
+                {['Done', 'Not Done'].map(st => (
+                  <label
+                    key={st}
+                    onClick={(e) => {
+                      if (readOnly) return;
+                      e.preventDefault();
+                      if (biopsyStatus === st) {
+                        setBiopsyStatus('');
+                      } else {
+                        setBiopsyStatus(st);
+                        if (st === 'Not Done') setBiopsyDate('');
+                      }
+                    }}
+                    className="flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <input
+                      disabled={readOnly}
+                      readOnly
+                      type="radio"
+                      name="biopsy_st"
+                      checked={biopsyStatus === st}
+                      className="pointer-events-none"
+                    />
+                    {st}
+                  </label>
+                ))}
               </div>
               {biopsyStatus === 'Done' && (
                 <div className="flex items-center gap-1">

@@ -13,8 +13,8 @@ import {
 const columnClass = {
   1: 'grid-cols-1',
   2: 'grid-cols-1 sm:grid-cols-2',
-  3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
-  4: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+  3: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3',
+  4: 'grid-cols-2 sm:grid-cols-2 md:grid-cols-4'
 };
 
 /**
@@ -61,10 +61,21 @@ export default function RadioGroup({
           const optionLabel = typeof option === 'string' ? option : option.label;
           const isChecked = isRadioChecked(value, optionValue);
 
+          const handleClick = (e) => {
+            if (readOnly) return;
+            e.preventDefault();
+            if (isChecked) {
+              onChange('');
+            } else {
+              onChange(optionValue);
+            }
+          };
+
           return (
             <label
               key={optionValue}
-              className={`flex items-center gap-2 p-2.5 border border-slate-200 print:border-slate-200 bg-white text-slate-800 rounded-md text-xs font-normal select-none transition-colors ${
+              onClick={handleClick}
+              className={`flex items-center gap-2 px-3 py-1.5 border border-slate-200 print:border-slate-200 bg-white text-slate-800 rounded-md text-xs font-normal select-none transition-colors ${
                 error ? 'border-red-500' : ''
               } ${readOnly ? 'cursor-default' : 'cursor-pointer hover:border-slate-300'}`}
             >
@@ -73,7 +84,7 @@ export default function RadioGroup({
                 name={name}
                 value={optionValue}
                 checked={isChecked}
-                onChange={() => onChange(optionValue)}
+                readOnly
                 className={`${checkRadioStyle} rounded-full shrink-0`}
                 disabled={readOnly}
               />

@@ -478,34 +478,34 @@ const HFForm = forwardRef(function HFForm(
   }));
 
   return (
-    <div className="space-y-6 theme-hf" data-registry="hf" id="hfFormBlock">
+    <div className="space-y-4 theme-hf" data-registry="hf" id="hfFormBlock">
       {/* 1. Patient Profile */}
       <SectionCard title="1. Patient Profile">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-          <div className="p-3 bg-white border border-slate-100 rounded-lg">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 text-xs">
+          <div className="p-2.5 bg-white border border-slate-100 rounded-lg">
             <span className="text-slate-400 font-semibold uppercase block">Patient Name</span>
-            <span className="text-slate-800 font-bold block mt-1">{patient.name}</span>
+            <span className="text-slate-800 font-bold block mt-0.5">{patient.name}</span>
           </div>
-          <div className="p-3 bg-white border border-slate-100 rounded-lg">
+          <div className="p-2.5 bg-white border border-slate-100 rounded-lg">
             <span className="text-slate-400 font-semibold uppercase block">MR Number</span>
-            <span className="text-slate-800 font-bold block mt-1">{patient.mrNo}</span>
+            <span className="text-slate-800 font-bold block mt-0.5">{patient.mrNo}</span>
           </div>
-          <div className="p-3 bg-white border border-slate-100 rounded-lg">
+          <div className="p-2.5 bg-white border border-slate-100 rounded-lg">
             <span className="text-slate-400 font-semibold uppercase block">Age / Gender</span>
-            <span className="text-slate-800 font-bold block mt-1">{patientAge ?? '—'} years / {patient.gender}</span>
+            <span className="text-slate-800 font-bold block mt-0.5">{patientAge ?? '—'} years / {patient.gender}</span>
           </div>
-          <div className="p-3 bg-white border border-slate-100 rounded-lg">
+          <div className="p-2.5 bg-white border border-slate-100 rounded-lg">
             <span className="text-slate-400 font-semibold uppercase block">Date of Birth</span>
-            <span className="text-slate-800 font-bold block mt-1">{patient.dob || 'N/A'}</span>
+            <span className="text-slate-800 font-bold block mt-0.5">{patient.dob || 'N/A'}</span>
           </div>
-          <div className="p-3 bg-white border border-slate-100 rounded-lg">
+          <div className="p-2.5 bg-white border border-slate-100 rounded-lg">
             <span className="text-slate-400 font-semibold uppercase block">Primary Consultant</span>
-            <span className="text-slate-800 font-bold block mt-1">{patient.primaryConsultant || 'N/A'}</span>
+            <span className="text-slate-800 font-bold block mt-0.5">{patient.primaryConsultant || 'N/A'}</span>
           </div>
         </div>
 
         {/* Extra demographics matching CARE HF assessment Word document */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1.5">
           <TextInput
             id="hf-monthly-income"
             label="Monthly Income"
@@ -540,7 +540,7 @@ const HFForm = forwardRef(function HFForm(
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <RadioGroup
             label="Highest Education Level"
             name="hf-education"
@@ -567,7 +567,7 @@ const HFForm = forwardRef(function HFForm(
 
       {/* 2. Inpatient & Visit Details */}
       <SectionCard title="2. Inpatient & Visit Details">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           <DateInput id="hf-date" label="Assessment Date" value={assessmentDate} onChange={setAssessmentDate} />
           <TextInput
             id="hf-encounter-id"
@@ -635,7 +635,7 @@ const HFForm = forwardRef(function HFForm(
 
       {/* 3. Initial Clinical Assessment */}
       <SectionCard title="3. Initial Clinical Assessment">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           <NumberInput id="hf-height" label="Height (cm)" value={vHeight} onChange={setVHeight} warning={getVitalsWarning('height', vHeight)} />
           <div>
             <NumberInput
@@ -646,7 +646,7 @@ const HFForm = forwardRef(function HFForm(
               onChange={setVWeight}
               warning={getVitalsWarning('weight', vWeight)}
             />
-            <label className="flex items-center gap-1.5 mt-1.5 cursor-pointer">
+            <label className="flex items-center gap-1.5 mt-1 cursor-pointer text-xs">
               <input id="hf-unweight" type="checkbox" className="accent-teal-600" checked={vUnableToWeigh} onChange={(e) => setVUnableToWeigh(e.target.checked)} />
               Unable to weigh
             </label>
@@ -679,13 +679,13 @@ const HFForm = forwardRef(function HFForm(
         </div>
 
         {vBmi && (
-          <div className="bg-teal-50 border border-teal-100 p-3 rounded-lg text-xs text-teal-800 flex items-center justify-between">
+          <div className="bg-teal-50 border border-teal-100 p-2.5 rounded-lg text-xs text-teal-800 flex items-center justify-between">
             <span>EHR Calculation Engine:</span>
             <span><strong>Patient BMI:</strong> {vBmi} (Normal is 18.5 - 24.9)</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <RadioGroup
             label="HR Rhythm Variability"
             name="hf-hrvar"
@@ -710,46 +710,46 @@ const HFForm = forwardRef(function HFForm(
         <CheckboxGroup theme="hf" label="Risk Factors" options={RISK_FACTOR_OPTIONS} values={riskFactors} onChange={setRiskFactors} columns={3} />
         <CheckboxGroup theme="hf" label="Comorbidities" options={COMORBIDITY_OPTIONS} values={assessmentComorbidities} onChange={setAssessmentComorbidities} columns={3} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <RadioGroup theme="hf" label="Type of Heart Failure" name="hf-type" value={hfType} onChange={setHfType} columns={2} options={['HFrEF', 'HFpEF', 'HFmrEF', 'Unknown']} />
-          <RadioGroup theme="hf" label="HF Stage (ACC/AHA)" name="hf-stage" value={hfStage} onChange={setHfStage} columns={2} options={['Stage A', 'Stage B', 'Stage C', 'Stage D']} />
-          <RadioGroup theme="hf" label="NYHA Functional Class" name="hf-nyha" value={hfNyha} onChange={setHfNyha} columns={2} options={['NYHA Class I', 'NYHA Class II', 'NYHA Class III', 'NYHA Class IV']} />
-          <RadioGroup theme="hf" label="Atrial Fibrillation (AF) Status" name="hf-af" value={hfAf} onChange={setHfAf} columns={2} options={['NSR', 'Paroxysmal', 'Persistent', 'Permanent']} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <RadioGroup theme="hf" label="Type of Heart Failure" name="hf-type" value={hfType} onChange={setHfType} columns={4} options={['HFrEF', 'HFpEF', 'HFmrEF', 'Unknown']} />
+          <RadioGroup theme="hf" label="HF Stage (ACC/AHA)" name="hf-stage" value={hfStage} onChange={setHfStage} columns={4} options={['Stage A', 'Stage B', 'Stage C', 'Stage D']} />
+          <RadioGroup theme="hf" label="NYHA Functional Class" name="hf-nyha" value={hfNyha} onChange={setHfNyha} columns={4} options={['NYHA Class I', 'NYHA Class II', 'NYHA Class III', 'NYHA Class IV']} />
+          <RadioGroup theme="hf" label="Atrial Fibrillation (AF) Status" name="hf-af" value={hfAf} onChange={setHfAf} columns={4} options={['NSR', 'Paroxysmal', 'Persistent', 'Permanent']} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           <CheckboxGroup theme="hf" label="HF Etiology — Cardiovascular" options={HF_ETIOLOGY_CV} values={hfEtiologyCv} onChange={setHfEtiologyCv} columns={1} />
           <CheckboxGroup theme="hf" label="HF Etiology — Non-Cardiac" options={HF_ETIOLOGY_NON_CV} values={hfEtiologyNonCv} onChange={setHfEtiologyNonCv} columns={1} />
           <CheckboxGroup theme="hf" label="HF Etiology — Pulmonary" options={HF_ETIOLOGY_PULM} values={hfEtiologyPulm} onChange={setHfEtiologyPulm} columns={1} />
         </div>
 
-        <TextArea id="hf-initial-notes" label="Initial Clinical Notes / Diagnosis" value={initialClinicalNotes} onChange={setInitialClinicalNotes} placeholder="Document initial clinical impression and working diagnosis." rows={4} />
+        <TextArea id="hf-initial-notes" label="Initial Clinical Notes / Diagnosis" value={initialClinicalNotes} onChange={setInitialClinicalNotes} placeholder="Document initial clinical impression and working diagnosis." rows={3} />
       </SectionCard>
 
       {/* 4. Final Clinical Assessment */}
       <SectionCard title="4. Final Clinical Assessment">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <RadioGroup theme="hf" label="Final Type of HF" name="hf-final-type" value={finalHfType} onChange={setFinalHfType} columns={2} options={['HFrEF', 'HFpEF', 'HFmrEF', 'Unknown']} />
-          <RadioGroup theme="hf" label="Final HF Stage (ACC/AHA)" name="hf-final-stage" value={finalStage} onChange={setFinalStage} columns={2} options={['Stage A', 'Stage B', 'Stage C', 'Stage D']} />
-          <RadioGroup theme="hf" label="Final NYHA Class" name="hf-final-nyha" value={finalNyha} onChange={setFinalNyha} columns={2} options={['NYHA Class I', 'NYHA Class II', 'NYHA Class III', 'NYHA Class IV']} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <RadioGroup theme="hf" label="Final Type of HF" name="hf-final-type" value={finalHfType} onChange={setFinalHfType} columns={4} options={['HFrEF', 'HFpEF', 'HFmrEF', 'Unknown']} />
+          <RadioGroup theme="hf" label="Final HF Stage (ACC/AHA)" name="hf-final-stage" value={finalStage} onChange={setFinalStage} columns={4} options={['Stage A', 'Stage B', 'Stage C', 'Stage D']} />
+          <RadioGroup theme="hf" label="Final NYHA Class" name="hf-final-nyha" value={finalNyha} onChange={setFinalNyha} columns={4} options={['NYHA Class I', 'NYHA Class II', 'NYHA Class III', 'NYHA Class IV']} />
         </div>
 
         <CheckboxGroup theme="hf" label="MACE (Major Adverse Cardiovascular Events)" options={MACE_OPTIONS} values={maceEvents} onChange={setMaceEvents} columns={3} />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-          <label className="flex items-center gap-2 p-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer">
+          <label className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-slate-200 cursor-pointer">
             <input type="checkbox" className="accent-teal-600" checked={hfRiskVtvf} onChange={(e) => setHfRiskVtvf(e.target.checked)} />
             <span className="font-medium text-slate-700">Documented VT / VF</span>
           </label>
-          <label className="flex items-center gap-2 p-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer">
+          <label className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-slate-200 cursor-pointer">
             <input type="checkbox" className="accent-teal-600" checked={hfRiskSyncope} onChange={(e) => setHfRiskSyncope(e.target.checked)} />
             <span className="font-medium text-slate-700">Recurrent Syncope</span>
           </label>
-          <label className="flex items-center gap-2 p-2.5 bg-white rounded-lg border border-slate-200 cursor-pointer">
+          <label className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-slate-200 cursor-pointer">
             <input type="checkbox" className="accent-teal-600" checked={hfRiskNsvt} onChange={(e) => setHfRiskNsvt(e.target.checked)} />
             <span className="font-medium text-slate-700">Documented NSVT</span>
           </label>
-          <div className="p-2.5 bg-white rounded-lg border border-slate-200 space-y-1.5">
+          <div className="px-3 py-1.5 bg-white rounded-lg border border-slate-200 space-y-1.5">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" className="accent-teal-600" checked={hfRiskPvcs} onChange={(e) => setHfRiskPvcs(e.target.checked)} />
               <span className="font-medium text-slate-700">Documented PVCs</span>
@@ -760,20 +760,20 @@ const HFForm = forwardRef(function HFForm(
           </div>
         </div>
 
-        <TextArea id="hf-final-notes" label="Final Clinical Notes / Summary" value={finalClinicalNotes} onChange={setFinalClinicalNotes} placeholder="Document final assessment, response to therapy and discharge summary." rows={4} />
+        <TextArea id="hf-final-notes" label="Final Clinical Notes / Summary" value={finalClinicalNotes} onChange={setFinalClinicalNotes} placeholder="Document final assessment, response to therapy and discharge summary." rows={3} />
       </SectionCard>
 
       {/* 5. Investigations */}
       <SectionCard title="5. Investigations">
         <CheckboxGroup theme="hf" label="Investigations Performed / Ordered" options={INVESTIGATION_OPTIONS} values={selectedInvestigations} onChange={setSelectedInvestigations} columns={3} />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           <NumberInput id="hf-ecg-hr" label="ECG Heart Rate (bpm)" value={ecgHr} onChange={setEcgHr} />
           <NumberInput id="hf-echo-ef" label="Echo EF (%)" value={echoEf} onChange={setEchoEf} />
           <NumberInput id="hf-bnp" label="BNP / NT-proBNP" value={bnpValue} onChange={setBnpValue} />
           <NumberInput id="hf-creatinine" label="Serum Creatinine (mg/dL)" step={0.01} value={creatinineValue} onChange={setCreatinineValue} />
           <NumberInput id="hf-potassium" label="Serum Potassium (mEq/L)" step={0.01} value={potassiumValue} onChange={setPotassiumValue} />
         </div>
-        <TextArea id="hf-investigation-notes" label="Investigation Notes" value={investigationNotes} onChange={setInvestigationNotes} placeholder="Summarize key investigation findings." rows={3} />
+        <TextArea id="hf-investigation-notes" label="Investigation Notes" value={investigationNotes} onChange={setInvestigationNotes} placeholder="Summarize key investigation findings." rows={2} />
       </SectionCard>
 
       {/* 6. Medical Therapy (Dose & Frequency) */}
@@ -786,14 +786,14 @@ const HFForm = forwardRef(function HFForm(
       <SectionCard title="7. Device Therapy">
         <RadioGroup theme="hf" label="Has Implanted Device?" name="hf-dev-has" value={hfDevHas} onChange={setHfDevHas} columns={2} options={['No', 'Yes']} />
         {hfDevHas === 'Yes' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <RadioGroup theme="hf" label="Current Device Type" name="hf-dev-type" value={hfDevType} onChange={setHfDevType} columns={2} options={DEVICE_TYPES} />
             <TextInput id="hf-dev-brand" label="Device Brand / Model" value={hfDevBrand} onChange={setHfDevBrand} placeholder="E.g. Medtronic, Boston Scientific" />
           </div>
         )}
         <RadioGroup theme="hf" label="Device Therapy Eligible?" name="hf-dev-eligible" value={deviceEligible} onChange={setDeviceEligible} columns={2} options={['No', 'Yes']} />
         {deviceEligible === 'Yes' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             <RadioGroup theme="hf" label="Recommended Device Type" name="hf-eligible-type" value={eligibleDeviceType} onChange={setEligibleDeviceType} columns={2} options={DEVICE_TYPES} />
             <TextInput id="hf-eligible-brand" label="Recommended Brand / Model" value={eligibleDeviceBrand} onChange={setEligibleDeviceBrand} />
             <RadioGroup theme="hf" label="Patient Acceptance" name="hf-dev-acceptance" value={patientAcceptance} onChange={setPatientAcceptance} columns={3} options={['Yes', 'No', 'Unknown']} />
@@ -808,13 +808,13 @@ const HFForm = forwardRef(function HFForm(
 
       {/* 9. Recommendations */}
       <SectionCard title="9. Recommendations">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <TextArea id="hf-rec-fluid" label="Fluid & Diet Recommendations" value={recFluidDiet} onChange={setRecFluidDiet} placeholder="E.g. Restrict fluids to 1.5L daily. Salt < 2g/day." rows={3} />
-          <TextArea id="hf-rec-exercise" label="Exercise Recommendations" value={recExercise} onChange={setRecExercise} placeholder="E.g. Gentle walking 10 minutes, as tolerated." rows={3} />
-          <TextArea id="hf-rec-yoga" label="Yoga / Breathing Exercises" value={recYoga} onChange={setRecYoga} placeholder="E.g. Pranayama breathing exercise only." rows={3} />
-          <TextArea id="hf-rec-drugs" label="Drug Recommendations" value={recDrugs} onChange={setRecDrugs} placeholder="Summarize medication plan and titration guidance." rows={3} />
-          <TextArea id="hf-rec-investigations" label="Investigation Recommendations" value={recInvestigations} onChange={setRecInvestigations} placeholder="E.g. Repeat Creatinine and Potassium in 3 days." rows={3} />
-          <TextArea id="hf-rec-procedures" label="Procedure Recommendations" value={recProcedures} onChange={setRecProcedures} placeholder="E.g. Schedule diagnostic coronary angiogram." rows={3} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <TextArea id="hf-rec-fluid" label="Fluid & Diet Recommendations" value={recFluidDiet} onChange={setRecFluidDiet} placeholder="E.g. Restrict fluids to 1.5L daily. Salt < 2g/day." rows={2} />
+          <TextArea id="hf-rec-exercise" label="Exercise Recommendations" value={recExercise} onChange={setRecExercise} placeholder="E.g. Gentle walking 10 minutes, as tolerated." rows={2} />
+          <TextArea id="hf-rec-yoga" label="Yoga / Breathing Exercises" value={recYoga} onChange={setRecYoga} placeholder="E.g. Pranayama breathing exercise only." rows={2} />
+          <TextArea id="hf-rec-drugs" label="Drug Recommendations" value={recDrugs} onChange={setRecDrugs} placeholder="Summarize medication plan and titration guidance." rows={2} />
+          <TextArea id="hf-rec-investigations" label="Investigation Recommendations" value={recInvestigations} onChange={setRecInvestigations} placeholder="E.g. Repeat Creatinine and Potassium in 3 days." rows={2} />
+          <TextArea id="hf-rec-procedures" label="Procedure Recommendations" value={recProcedures} onChange={setRecProcedures} placeholder="E.g. Schedule diagnostic coronary angiogram." rows={2} />
         </div>
       </SectionCard>
     </div>
