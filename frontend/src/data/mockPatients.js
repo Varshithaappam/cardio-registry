@@ -1003,31 +1003,33 @@ export function calculateDataQualityScore(record) {
   let score = 100;
   const alerts = [];
 
+  if (!record || !record.patient) {
+    return { score: 100, alerts: [] };
+  }
+
   // 1. Basic Demographics Checklist
-  if (!record.patient.name) {score -= 15;alerts.push('Missing Patient Name in Demographics');}
-  if (!record.patient.dob) {score -= 10;alerts.push('Missing Patient Date of Birth');}
+  if (!record.patient?.name) { score -= 15; alerts.push('Missing Patient Name in Demographics'); }
+  if (!record.patient?.dob) { score -= 10; alerts.push('Missing Patient Date of Birth'); }
   else {
     const age = calculateAge(record.patient.dob);
-    if (age === null || age < 0) {score -= 10;alerts.push('Invalid Patient Date of Birth');}
+    if (age === null || age < 0) { score -= 10; alerts.push('Invalid Patient Date of Birth'); }
   }
-  if (!record.patient.mrNo) {score -= 15;alerts.push('Missing MR Number in Master Record');}
+  if (!record.patient?.mrNo) { score -= 15; alerts.push('Missing MR Number in Master Record'); }
 
   // 2. Clinical consistency check - EF and ECG Rhythm
-  if (record.hfAssessments.length > 0) {
+  if (Array.isArray(record.hfAssessments) && record.hfAssessments.length > 0) {
     const lastHF = record.hfAssessments[record.hfAssessments.length - 1];
-    // Check if JVP is elevated but no peripheral edema is selected
-    if (lastHF.volumeOverloadSigns.jvpElevated && !lastHF.volumeOverloadSigns.peripheralEdema) {
+    if (lastHF?.volumeOverloadSigns?.jvpElevated && !lastHF?.volumeOverloadSigns?.peripheralEdema) {
       score -= 5;
       alerts.push('Clinical Consistency Alert: JVP is elevated but peripheral edema is absent');
     }
-    // Check if type of HF matches Echo Ejection Fraction
-    const lastEcho = record.investigations.find((i) => i.testType === 'ECHO');
-    if (lastEcho && lastEcho.results.ef) {
+    const lastEcho = Array.isArray(record.investigations) ? record.investigations.find((i) => i?.testType === 'ECHO') : null;
+    if (lastEcho?.results?.ef) {
       const efVal = lastEcho.results.ef;
-      if (efVal < 40 && lastHF.typeOfHF === 'HFpEF') {
+      if (efVal < 40 && lastHF?.typeOfHF === 'HFpEF') {
         score -= 10;
         alerts.push('Clinical Discrepancy: Patient labeled as HFpEF but last measured EF is ' + efVal + '% (Reduced)');
-      } else if (efVal > 50 && lastHF.typeOfHF === 'HFrEF') {
+      } else if (efVal > 50 && lastHF?.typeOfHF === 'HFrEF') {
         score -= 10;
         alerts.push('Clinical Discrepancy: Patient labeled as HFrEF but last measured EF is ' + efVal + '% (Preserved)');
       }
@@ -1035,8 +1037,8 @@ export function calculateDataQualityScore(record) {
   }
 
   // 3. Clinical consistency - Creatinine vs Renal Failure Label
-  if (record.comorbidities.renalFailure === 'No') {
-    const highCreatinineObs = record.labResults.find((l) => l.creatinine && l.creatinine > 2.0);
+  if (record?.comorbidities?.renalFailure === 'No' && Array.isArray(record?.labResults)) {
+    const highCreatinineObs = record.labResults.find((l) => l?.creatinine && l.creatinine > 2.0);
     if (highCreatinineObs) {
       score -= 10;
       alerts.push('Clinical Alert: Patient has high lab creatinine (' + highCreatinineObs.creatinine + ' mg/dl) but Renal Failure is marked "No" in Medical History');
@@ -1044,9 +1046,9 @@ export function calculateDataQualityScore(record) {
   }
 
   // 4. STEMI/NSTEMI reperfusion time check
-  if (record.acsEvents.length > 0) {
+  if (Array.isArray(record.acsEvents) && record.acsEvents.length > 0) {
     const lastACS = record.acsEvents[record.acsEvents.length - 1];
-    if (lastACS.treatmentStrategy === 'PAMI' && lastACS.pamiDetails) {
+    if (lastACS?.treatmentStrategy === 'PAMI' && lastACS?.pamiDetails) {
       const dbTime = lastACS.pamiDetails.doorToBalloonTime;
       if (dbTime && dbTime > 90) {
         score -= 5;
@@ -1056,9 +1058,9 @@ export function calculateDataQualityScore(record) {
   }
 
   // 5. CABG perfusion consistency
-  if (record.cabgProcedures.length > 0) {
+  if (Array.isArray(record.cabgProcedures) && record.cabgProcedures.length > 0) {
     const lastCABG = record.cabgProcedures[record.cabgProcedures.length - 1];
-    if (lastCABG.cpbUtilization === 'Full' && lastCABG.cpbDetails && !lastCABG.cpbDetails.perfusionTimeMinutes) {
+    if (lastCABG?.cpbUtilization === 'Full' && lastCABG?.cpbDetails && !lastCABG.cpbDetails.perfusionTimeMinutes) {
       score -= 8;
       alerts.push('Missing Operative Data: Full CPB utilized but perfusion time is unrecorded');
     }

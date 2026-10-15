@@ -3,13 +3,19 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig } from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const isProd = mode === 'production';
+
   return {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
       },
+    },
+    // Drops console and debugger statements from production bundles
+    esbuild: {
+      drop: isProd ? ['console', 'debugger'] : [],
     },
     server: {
       port: 3000,

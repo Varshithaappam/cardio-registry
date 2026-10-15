@@ -229,15 +229,17 @@ async function createNstemiRecord(req, res) {
     reqRegistry.input('admission_date', sql.VarChar(50), admission_date);
     reqRegistry.input('discharge_date', sql.VarChar(50), discharge_date);
     reqRegistry.input('primary_consultant', sql.VarChar(150), val('primary_consultant'));
+    reqRegistry.input('admission_type', sql.VarChar(50), val('admission_type'));
+    reqRegistry.input('admission_reason', sql.VarChar(100), val('admission_reason'));
     reqRegistry.input('status', sql.Int, payload.status === 'draft' || payload.isDraft ? 2 : 0);
 
     const registryResult = await reqRegistry.query(`
       INSERT INTO [nstemi_registry] (
-        [reg_patient_id], [acs_no], [ip_no], [admission_date], [discharge_date], [primary_consultant], [status]
+        [reg_patient_id], [acs_no], [ip_no], [admission_date], [discharge_date], [primary_consultant], [admission_type], [admission_reason], [status]
       )
       OUTPUT INSERTED.[nstemi_id]
       VALUES (
-        @reg_patient_id, @acs_no, @ip_no, @admission_date, @discharge_date, @primary_consultant, @status
+        @reg_patient_id, @acs_no, @ip_no, @admission_date, @discharge_date, @primary_consultant, @admission_type, @admission_reason, @status
       );
     `);
 
@@ -835,6 +837,7 @@ async function getNstemiHistory(req, res) {
       .input('regPatientId', sql.Int, regPatientId)
       .query(`
         SELECT n.nstemi_id, n.acs_no, n.ip_no, n.admission_date, n.discharge_date, n.created_at,
+               n.admission_type, n.admission_reason,
                n.[status],
                p.patient_name
         FROM nstemi_registry n
@@ -1251,6 +1254,8 @@ async function updateNstemiRecord(req, res) {
     reqRegistry.input('admission_date', sql.VarChar(50), admission_date);
     reqRegistry.input('discharge_date', sql.VarChar(50), discharge_date);
     reqRegistry.input('primary_consultant', sql.VarChar(150), val('primary_consultant'));
+    reqRegistry.input('admission_type', sql.VarChar(50), val('admission_type'));
+    reqRegistry.input('admission_reason', sql.VarChar(100), val('admission_reason'));
     reqRegistry.input('status', sql.Int, payload.status === 'draft' || payload.isDraft ? 2 : 0);
     await reqRegistry.query(`
       UPDATE [nstemi_registry]
@@ -1258,7 +1263,7 @@ async function updateNstemiRecord(req, res) {
           [acs_no] = COALESCE(@acs_no, [acs_no]),
           [admission_date] = @admission_date,
           [discharge_date] = @discharge_date,
-          [primary_consultant] = @primary_consultant,
+          [primary_consultant] = @primary_consultant, [admission_type] = @admission_type, [admission_reason] = @admission_reason,
           [status] = @status,
           [updated_at] = GETDATE()
       WHERE [nstemi_id] = @nstemi_id;

@@ -38,6 +38,9 @@ import {
 const OVERALL_REGISTRY_STATUS_OPTIONS = [
   'All (Default)',
   'Pending',
+  'Due in 7 Days',
+  'Tests Pending',
+  'Missed / Overdue',
   'In Progress',
   'Completed',
   'Unable to Contact',
@@ -567,104 +570,160 @@ export default function NurseFollowUpReport() {
     }
   };
 
-  // 3. Dynamic KPI Calculations strictly from fetched state
-  const kpis = useMemo(() => {
-    const total = tasks.length;
-    const required = tasks.filter((t) => {
-      const s = (t.overall_registry_status || t.status || '').toLowerCase();
-      return s === 'required' || s === 'follow-up scheduled';
-    }).length;
-    const pending = tasks.filter((t) => {
-      const s = (t.overall_registry_status || t.status || '').toLowerCase();
-      return s === 'pending' || s === 'pending nurse outreach' || s === 'pending outreach';
-    }).length;
-    
+  // Helper evaluation functions for KPI categorization & filtering
+  const isTaskPending = (t) => {
+    const s = (t.overall_registry_status || t.status || '').toLowerCase().trim();
+    return (
+      s === 'pending' ||
+      s === 'pending nurse outreach' ||
+      s === 'pending outreach' ||
+      s === 'required' ||
+      s === 'follow-up scheduled' ||
+      (!s && !t.is_deceased)
+    );
+  };
+
+  const isTaskDueIn7Days = (t) => {
+    const s = (t.overall_registry_status || t.status || '').toLowerCase().trim();
+    if (s === 'completed' || s === 'deceased') return false;
+    const target = t.target_date ? String(t.target_date).split('T')[0] : '';
     const today = getLocalDateString();
-    const overdue = tasks.filter((t) => {
-      const s = (t.overall_registry_status || t.status || '').toLowerCase();
-      return (t.target_date && t.target_date < today) || s === 'missed / overdue' || s === 'overdue / urgent action';
-    }).length;
-    const completed = tasks.filter((t) => {
-      const s = (t.overall_registry_status || t.status || '').toLowerCase();
-      return s === 'completed';
-    }).length;
-    const percentage = total > 0 ? Math.round((required / total) * 100) : 0;
+    const todayObj = new Date();
+    const in7DaysObj = new Date(todayObj.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const in7DaysStr = `${in7DaysObj.getFullYear()}-${String(in7DaysObj.getMonth() + 1).padStart(2, '0')}-${String(in7DaysObj.getDate()).padStart(2, '0')}`;
+    return Boolean(target && target >= today && target <= in7DaysStr);
+  };
 
-    return { total, required, percentage, pending, overdue, completed };
-  }, [tasks]);
+  const isTaskPreVisitTestsPending = (t) => {
+    const s = (t.overall_registry_status || t.status || '').toLowerCase().trim();
+    if (s === 'completed' || s === 'deceased') return false;
+    return Boolean(
+      Number(t.investigation_serum_lytes) === 1 ||
+      Number(t.investigation_ecg) === 1 ||
+      Number(t.investigation_echo) === 1 ||
+      Number(t.investigation_bnp_ntprobnp) === 1 ||
+      Number(t.investigation_6mw_test) === 1 ||
+      (t.pre_visit_diagnostics && String(t.pre_visit_diagnostics).trim() !== '')
+    );
+  };
 
-  // 4. Filtered & Sorted Tasks
-  const filteredTasks = useMemo(() => {
-    let result = tasks.filter((task) => {
+  const isTaskOverdue = (t) => {
+    const s = (t.overall_registry_status || t.status || '').toLowerCase().trim();
+    if (s === 'completed' || s === 'deceased') return false;
+    const today = getLocalDateString();
+    const target = t.target_date ? String(t.target_date).split('T')[0] : '';
+    return Boolean((target && target < today) || s === 'missed / overdue' || s === 'overdue / urgent action');
+  };
+
+  const isTaskUnreachable = (t) => {
+    const s = (t.overall_registry_status || t.status || '').toLowerCase().trim();
+    const o = (t.outcome || '').toLowerCase().trim();
+    return (
+      s === 'unable to contact' ||
+      s === 'patient unreachable' ||
+      s.includes('unreachable') ||
+      o.includes('unable to contact') ||
+      o.includes('unreachable') ||
+      o.includes('switched off') ||
+      o.includes('no answer')
+    );
+  };
+
+  const isTaskCompleted = (t) => {
+    const s = (t.overall_registry_status || t.status || '').toLowerCase().trim();
+    return (
+      s === 'completed' ||
+      s === 'patient contacted & appointment confirmed' ||
+      s === 'detailed form logged'
+    );
+  };
+
+  // 3. Base filtered tasks (filtered by Search, Registry, and Date Range)
+  // This allows all KPI cards to dynamically reflect the selected search, registry pathway, and date range!
+  const kpiBaseTasks = useMemo(() => {
+    return tasks.filter((task) => {
       // 1. Search Query Filter
       const q = searchQuery.toLowerCase().trim();
-      const nameMatch = task.patient_name?.toLowerCase().includes(q);
-      const mrnMatch = task.mr_no?.toLowerCase().includes(q);
-      const phoneMatch = task.phone_no?.includes(q);
-      const matchesSearch = !q || nameMatch || mrnMatch || phoneMatch;
-
-      // 2. Overall Registry Status Filter
-      let matchesStatus = true;
-      if (statusFilter && statusFilter !== 'All' && statusFilter !== 'All (Default)') {
-        const rawTaskStatus = (task.overall_registry_status || task.status || '').trim();
-        const normTaskStatus = rawTaskStatus.toLowerCase();
-        const normFilter = statusFilter.toLowerCase();
-
-        if (statusFilter === 'Pending') {
-          matchesStatus = normTaskStatus === 'pending' || 
-                          normTaskStatus === 'pending nurse outreach' || 
-                          normTaskStatus === 'pending outreach';
-        } else if (statusFilter === 'In Progress') {
-          matchesStatus = normTaskStatus === 'in progress' || 
-                          normTaskStatus === 'in-progress' || 
-                          normTaskStatus === 'inprogress';
-        } else if (statusFilter === 'Completed') {
-          matchesStatus = normTaskStatus === 'completed' || 
-                          normTaskStatus === 'patient contacted & appointment confirmed' || 
-                          normTaskStatus === 'detailed form logged';
-        } else if (statusFilter === 'Unable to Contact') {
-          matchesStatus = normTaskStatus === 'unable to contact' || 
-                          normTaskStatus === 'patient unreachable' || 
-                          normTaskStatus.includes('unreachable');
-        } else if (statusFilter === 'Deceased') {
-          matchesStatus = normTaskStatus === 'deceased' || 
-                          String(task.is_deceased).toLowerCase() === 'yes';
-        } else if (statusFilter === 'Required') {
-          matchesStatus = normTaskStatus === 'required' || normTaskStatus === 'follow-up scheduled';
-        } else if (statusFilter === 'Missed / Overdue') {
-          matchesStatus = normTaskStatus === 'missed / overdue' || normTaskStatus === 'overdue / urgent action';
-        } else {
-          matchesStatus = normTaskStatus === normFilter;
-        }
+      if (q) {
+        const nameMatch = task.patient_name?.toLowerCase().includes(q);
+        const mrnMatch = task.mr_no?.toLowerCase().includes(q);
+        const phoneMatch = task.phone_no?.includes(q);
+        if (!nameMatch && !mrnMatch && !phoneMatch) return false;
       }
 
-      // 3. Registry Pathway Filter
-      let matchesRegistry = true;
+      // 2. Registry Pathway Filter
       if (registryTypeFilter !== 'All') {
         const regType = getTaskRegistryType(task).toUpperCase();
-        matchesRegistry = (regType === registryTypeFilter.toUpperCase());
+        if (regType !== registryTypeFilter.toUpperCase()) return false;
       }
 
-      // 4. Follow-Up Date Range Filter
-      let matchesDate = true;
+      // 3. Follow-Up Date Range Filter
       const targetIso = task.target_date ? String(task.target_date).split('T')[0] : '';
-      if (fromDate && targetIso) {
+      if (fromDate) {
         const fromIso = toYYYYMMDD(fromDate);
-        if (fromIso) {
-          matchesDate = matchesDate && targetIso >= fromIso;
-        }
+        if (fromIso && (!targetIso || targetIso < fromIso)) return false;
       }
-      if (toDate && targetIso) {
+      if (toDate) {
         const toIso = toYYYYMMDD(toDate);
-        if (toIso) {
-          matchesDate = matchesDate && targetIso <= toIso;
-        }
+        if (toIso && (!targetIso || targetIso > toIso)) return false;
       }
 
-      return matchesSearch && matchesStatus && matchesRegistry && matchesDate;
+      return true;
+    });
+  }, [tasks, searchQuery, registryTypeFilter, fromDate, toDate]);
+
+  // 4. Dynamic KPI Calculations strictly from base-filtered state
+  const kpis = useMemo(() => {
+    const total = kpiBaseTasks.length;
+    const pending = kpiBaseTasks.filter(isTaskPending).length;
+    const dueIn7Days = kpiBaseTasks.filter(isTaskDueIn7Days).length;
+    const testsPending = kpiBaseTasks.filter(isTaskPreVisitTestsPending).length;
+    const overdue = kpiBaseTasks.filter(isTaskOverdue).length;
+    const unreachable = kpiBaseTasks.filter(isTaskUnreachable).length;
+    const completed = kpiBaseTasks.filter(isTaskCompleted).length;
+    const percentage = total > 0 ? Math.round((pending / total) * 100) : 0;
+
+    return { total, pending, dueIn7Days, testsPending, overdue, unreachable, completed, percentage };
+  }, [kpiBaseTasks]);
+
+  // 5. Filtered & Sorted Tasks for Table Display (applies Status Filter & Column Sorting)
+  const filteredTasks = useMemo(() => {
+    let result = kpiBaseTasks.filter((task) => {
+      // Overall Registry Status Filter
+      if (!statusFilter || statusFilter === 'All' || statusFilter === 'All (Default)') {
+        return true;
+      }
+      if (statusFilter === 'Pending') {
+        return isTaskPending(task);
+      }
+      if (statusFilter === 'Due in 7 Days') {
+        return isTaskDueIn7Days(task);
+      }
+      if (statusFilter === 'Tests Pending') {
+        return isTaskPreVisitTestsPending(task);
+      }
+      if (statusFilter === 'Missed / Overdue') {
+        return isTaskOverdue(task);
+      }
+      if (statusFilter === 'Unable to Contact') {
+        return isTaskUnreachable(task);
+      }
+      if (statusFilter === 'Completed') {
+        return isTaskCompleted(task);
+      }
+      if (statusFilter === 'In Progress') {
+        const raw = (task.overall_registry_status || task.status || '').toLowerCase();
+        return raw === 'in progress' || raw === 'in-progress' || raw === 'inprogress';
+      }
+      if (statusFilter === 'Deceased') {
+        const raw = (task.overall_registry_status || task.status || '').toLowerCase();
+        return raw === 'deceased' || String(task.is_deceased).toLowerCase() === 'yes';
+      }
+      const raw = (task.overall_registry_status || task.status || '').toLowerCase().trim();
+      return raw === statusFilter.toLowerCase().trim();
     });
 
-    // 4. Column Sorting Logic
+    // Column Sorting Logic
     if (sortConfig.key) {
       result.sort((a, b) => {
         if (sortConfig.key === 'patient_name') {
@@ -692,7 +751,7 @@ export default function NurseFollowUpReport() {
     }
 
     return result;
-  }, [tasks, searchQuery, statusFilter, registryTypeFilter, fromDate, toDate, sortConfig]);
+  }, [kpiBaseTasks, statusFilter, sortConfig]);
 
   // 5. Open Log Outreach Modal
   const handleOpenModal = (task) => {
@@ -772,38 +831,71 @@ export default function NurseFollowUpReport() {
     }
   };
 
-  // 7. Export CSV / Excel
+  // 7. Export CSV / Excel (Blob with UTF-8 BOM, exports filtered records safely without truncation)
   const handleExportCSV = () => {
-    if (tasks.length === 0) return;
-    const headers = ['Task ID', 'MRN', 'Patient Name', 'Gender', 'Age', 'Phone', 'Registry', 'Status', 'Target Date', 'Visit Mode', 'Assigned Nurse', 'Notes'];
-    const rows = tasks.map((t) => [
-      t.task_id,
-      t.mr_no,
-      `"${t.patient_name || ''}"`,
-      t.gender || '',
-      t.age || '',
-      t.phone_no || '',
-      t.source_registry || '',
-      t.status || '',
-      t.target_date ? String(t.target_date).split('T')[0] : '',
-      `"${t.visit_mode || ''}"`,
-      `"${t.assigned_nurse || ''}"`,
-      `"${(t.nurse_notes || '').replace(/"/g, '""')}"`
-    ]);
+    const exportDataset = (filteredTasks && filteredTasks.length > 0) ? filteredTasks : tasks;
+    if (exportDataset.length === 0) {
+      alert('No records available to export.');
+      return;
+    }
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
+    const headers = [
+      'Task ID',
+      'MRN',
+      'Patient Name',
+      'Gender',
+      'Age',
+      'Phone',
+      'Registry Pathway',
+      'Status',
+      'Target Date',
+      'Visit Mode',
+      'Assigned Nurse',
+      'Notes'
+    ];
+
+    const escapeCell = (val) => {
+      if (val === null || val === undefined) return '""';
+      const cleanStr = String(val).replace(/[\r\n]+/g, ' ').trim();
+      return `"${cleanStr.replace(/"/g, '""')}"`;
+    };
+
+    const rows = exportDataset.map((t) => {
+      const rawStatus = (t.overall_registry_status || t.status || '').trim();
+      const sLower = rawStatus.toLowerCase();
+      const statusLabel = (sLower === 'required' || sLower === 'follow-up scheduled') ? 'Pending' : (rawStatus || 'Pending');
+
+      return [
+        t.task_id || '',
+        escapeCell(t.mr_no),
+        escapeCell(t.patient_name),
+        escapeCell(t.gender),
+        t.age || '',
+        escapeCell(t.phone_no),
+        escapeCell(t.source_registry || t.registry_type),
+        escapeCell(statusLabel),
+        t.target_date ? String(t.target_date).split('T')[0] : '',
+        escapeCell(t.visit_mode),
+        escapeCell(t.assigned_nurse),
+        escapeCell(t.nurse_notes)
+      ].join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.map(escapeCell).join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Nurse_Followup_Report_${getLocalDateString()}.csv`);
+    link.href = url;
+    link.download = `Nurse_Followup_Report_${getLocalDateString()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const getStatusBadge = (rawStatus, task = {}) => {
-    const status = (rawStatus || task?.overall_registry_status || task?.status || '').trim();
-    const sLower = status.toLowerCase();
+    const raw = (rawStatus || task?.overall_registry_status || task?.status || '').trim();
+    const sLower = raw.toLowerCase();
 
     if (sLower === 'completed') {
       return (
@@ -813,7 +905,7 @@ export default function NurseFollowUpReport() {
         </span>
       );
     }
-    if (sLower === 'pending' || sLower === 'pending nurse outreach' || sLower === 'pending outreach') {
+    if (sLower === 'pending' || sLower === 'pending nurse outreach' || sLower === 'pending outreach' || sLower === 'required' || sLower === 'follow-up scheduled') {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 font-extrabold rounded-lg text-[11px] border border-amber-200 shadow-2xs">
           <Clock className="w-3.5 h-3.5 text-amber-600" />
@@ -853,14 +945,6 @@ export default function NurseFollowUpReport() {
         </span>
       );
     }
-    if (sLower === 'required') {
-      return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 font-extrabold rounded-lg text-[11px] border border-blue-200 shadow-2xs">
-          <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
-          <span>Required</span>
-        </span>
-      );
-    }
     if (sLower === 'missed / overdue') {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 font-extrabold rounded-lg text-[11px] border border-amber-200 shadow-2xs">
@@ -872,7 +956,7 @@ export default function NurseFollowUpReport() {
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 text-slate-700 font-extrabold rounded-lg text-[11px] border border-slate-200 shadow-2xs">
         <CheckCircle2 className="w-3.5 h-3.5 text-slate-500" />
-        <span>{status || 'Pending'}</span>
+        <span>{raw || 'Pending'}</span>
       </span>
     );
   };
@@ -914,72 +998,7 @@ export default function NurseFollowUpReport() {
         </div>
       </div>
 
-      {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Total Patients */}
-        <div onClick={() => setStatusFilter('All')} className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-2 cursor-pointer hover:border-slate-300 transition-all">
-          <div className="flex justify-between items-center text-slate-500">
-            <span className="text-[11px] font-black uppercase tracking-wider">TOTAL PATIENTS</span>
-            <Users className="w-4 h-4 text-slate-400" />
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-black text-slate-900">{kpis.total}</span>
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium block">In active registry</span>
-        </div>
-
-        {/* Follow-up Required */}
-        <div onClick={() => setStatusFilter('Required')} className="bg-white rounded-2xl p-4 border border-slate-200 border-l-4 border-l-blue-600 shadow-2xs space-y-2 cursor-pointer hover:border-blue-300 transition-all">
-          <div className="flex justify-between items-center text-slate-500">
-            <span className="text-[11px] font-black uppercase tracking-wider">FOLLOW-UP REQUIRED</span>
-            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 font-black text-[10px] rounded border border-blue-200">
-              {kpis.percentage}%
-            </span>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-black text-blue-700">{kpis.required}</span>
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium block">Scheduled for clinic / telehealth</span>
-        </div>
-
-        {/* Pending Outreach */}
-        <div onClick={() => setStatusFilter('Pending')} className="bg-white rounded-2xl p-4 border border-slate-200 border-l-4 border-l-amber-500 shadow-2xs space-y-2 cursor-pointer hover:border-amber-300 transition-all">
-          <div className="flex justify-between items-center text-slate-500">
-            <span className="text-[11px] font-black uppercase tracking-wider">PENDING OUTREACH</span>
-            <Clock className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-black text-amber-600">{kpis.pending}</span>
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium block">Requires nurse contact</span>
-        </div>
-
-        {/* Overdue / Action Needed */}
-        <div onClick={() => setStatusFilter('Missed / Overdue')} className="bg-white rounded-2xl p-4 border border-slate-200 border-l-4 border-l-red-500 shadow-2xs space-y-2 cursor-pointer hover:border-red-300 transition-all">
-          <div className="flex justify-between items-center text-slate-500">
-            <span className="text-[11px] font-black uppercase tracking-wider">OVERDUE / ACTION NEEDED</span>
-            <AlertTriangle className="w-4 h-4 text-red-500" />
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-black text-red-600">{kpis.overdue}</span>
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium block">Passed target timeframe</span>
-        </div>
-
-        {/* Completed */}
-        <div onClick={() => setStatusFilter('Completed')} className="bg-white rounded-2xl p-4 border border-slate-200 border-l-4 border-l-teal-600 shadow-2xs space-y-2 cursor-pointer hover:border-teal-300 transition-all">
-          <div className="flex justify-between items-center text-slate-500">
-            <span className="text-[11px] font-black uppercase tracking-wider">COMPLETED</span>
-            <CheckCircle2 className="w-4 h-4 text-teal-600" />
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-black text-teal-700">{kpis.completed}</span>
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium block">Successfully contacted</span>
-        </div>
-      </div>
-
-      {/* Filter and Search Bar Card */}
+      {/* Filter and Search Bar Card (Positioned Above KPI Cards) */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
           {/* Search Patient Name or MRN */}
@@ -1099,6 +1118,11 @@ export default function NurseFollowUpReport() {
           <span>
             Showing <strong className="text-slate-900">{filteredTasks.length}</strong> of{' '}
             <strong className="text-slate-900">{tasks.length}</strong> patient records
+            {kpiBaseTasks.length !== tasks.length && (
+              <span className="ml-1 text-slate-400 font-normal">
+                ({kpiBaseTasks.length} in filtered cohort)
+              </span>
+            )}
           </span>
           {(searchQuery || statusFilter !== 'All' || registryTypeFilter !== 'All' || fromDate || toDate || sortConfig.key) && (
             <button
@@ -1115,6 +1139,165 @@ export default function NurseFollowUpReport() {
               Clear Filters
             </button>
           )}
+        </div>
+      </div>
+
+      {/* KPI Cards Row (Filtered dynamically by Search, Registry & Dates) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+        {/* 1. Total Patients */}
+        <div
+          onClick={() => setStatusFilter('All')}
+          className={`bg-white rounded-2xl p-3.5 border transition-all cursor-pointer space-y-1.5 ${
+            statusFilter === 'All' || statusFilter === 'All (Default)'
+              ? 'border-blue-600 ring-2 ring-blue-500/30 bg-blue-50/20 shadow-xs'
+              : 'border-slate-200 hover:border-slate-300 shadow-2xs'
+          }`}
+          title="Click to view all patients in current filtered cohort"
+        >
+          <div className="flex justify-between items-center text-slate-500">
+            <span className="text-[10px] font-black uppercase tracking-wider">TOTAL PATIENTS</span>
+            <Users className="w-3.5 h-3.5 text-slate-400" />
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-slate-900">{kpis.total}</span>
+          </div>
+          <span className="text-[10px] text-slate-400 font-medium block truncate">
+            In filtered cohort
+          </span>
+        </div>
+
+        {/* 2. Pending Outreach */}
+        <div
+          onClick={() => setStatusFilter(statusFilter === 'Pending' ? 'All' : 'Pending')}
+          className={`bg-white rounded-2xl p-3.5 border border-l-4 border-l-amber-500 transition-all cursor-pointer space-y-1.5 ${
+            statusFilter === 'Pending'
+              ? 'border-amber-500 ring-2 ring-amber-500/30 bg-amber-50/20 shadow-xs'
+              : 'border-slate-200 hover:border-amber-300 shadow-2xs'
+          }`}
+          title="Click to filter by Pending nurse outreach"
+        >
+          <div className="flex justify-between items-center text-slate-500">
+            <span className="text-[10px] font-black uppercase tracking-wider">PENDING</span>
+            <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 font-black text-[9px] rounded border border-amber-200">
+              {kpis.percentage}%
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-amber-600">{kpis.pending}</span>
+          </div>
+          <span className="text-[10px] text-slate-400 font-medium block truncate">
+            Requires outreach
+          </span>
+        </div>
+
+        {/* 3. Due in Next 7 Days */}
+        <div
+          onClick={() => setStatusFilter(statusFilter === 'Due in 7 Days' ? 'All' : 'Due in 7 Days')}
+          className={`bg-white rounded-2xl p-3.5 border border-l-4 border-l-sky-500 transition-all cursor-pointer space-y-1.5 ${
+            statusFilter === 'Due in 7 Days'
+              ? 'border-sky-500 ring-2 ring-sky-500/30 bg-sky-50/20 shadow-xs'
+              : 'border-slate-200 hover:border-sky-300 shadow-2xs'
+          }`}
+          title="Click to view outreach due in the next 7 days"
+        >
+          <div className="flex justify-between items-center text-slate-500">
+            <span className="text-[10px] font-black uppercase tracking-wider truncate">DUE IN 7 DAYS</span>
+            <Calendar className="w-3.5 h-3.5 text-sky-500" />
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-sky-600">{kpis.dueIn7Days}</span>
+          </div>
+          <span className="text-[10px] text-slate-400 font-medium block truncate">
+            Upcoming window
+          </span>
+        </div>
+
+        {/* 4. Pre-Visit Tests Pending */}
+        <div
+          onClick={() => setStatusFilter(statusFilter === 'Tests Pending' ? 'All' : 'Tests Pending')}
+          className={`bg-white rounded-2xl p-3.5 border border-l-4 border-l-purple-500 transition-all cursor-pointer space-y-1.5 ${
+            statusFilter === 'Tests Pending'
+              ? 'border-purple-500 ring-2 ring-purple-500/30 bg-purple-50/20 shadow-xs'
+              : 'border-slate-200 hover:border-purple-300 shadow-2xs'
+          }`}
+          title="Click to view patients with pending tests (ECG, Echo, Labs)"
+        >
+          <div className="flex justify-between items-center text-slate-500">
+            <span className="text-[10px] font-black uppercase tracking-wider truncate">TESTS PENDING</span>
+            <ClipboardList className="w-3.5 h-3.5 text-purple-500" />
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-purple-600">{kpis.testsPending}</span>
+          </div>
+          <span className="text-[10px] text-slate-400 font-medium block truncate">
+            ECG / Echo / Labs
+          </span>
+        </div>
+
+        {/* 5. Overdue / Action Needed */}
+        <div
+          onClick={() => setStatusFilter(statusFilter === 'Missed / Overdue' ? 'All' : 'Missed / Overdue')}
+          className={`bg-white rounded-2xl p-3.5 border border-l-4 border-l-rose-500 transition-all cursor-pointer space-y-1.5 ${
+            statusFilter === 'Missed / Overdue'
+              ? 'border-rose-500 ring-2 ring-rose-500/30 bg-rose-50/20 shadow-xs'
+              : 'border-slate-200 hover:border-rose-300 shadow-2xs'
+          }`}
+          title="Click to view overdue tasks past target date"
+        >
+          <div className="flex justify-between items-center text-slate-500">
+            <span className="text-[10px] font-black uppercase tracking-wider truncate">OVERDUE</span>
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-rose-600">{kpis.overdue}</span>
+          </div>
+          <span className="text-[10px] text-slate-400 font-medium block truncate">
+            Target date passed
+          </span>
+        </div>
+
+        {/* 6. Unreachable / Missed Calls */}
+        <div
+          onClick={() => setStatusFilter(statusFilter === 'Unable to Contact' ? 'All' : 'Unable to Contact')}
+          className={`bg-white rounded-2xl p-3.5 border border-l-4 border-l-slate-400 transition-all cursor-pointer space-y-1.5 ${
+            statusFilter === 'Unable to Contact'
+              ? 'border-slate-500 ring-2 ring-slate-400/30 bg-slate-100 shadow-xs'
+              : 'border-slate-200 hover:border-slate-300 shadow-2xs'
+          }`}
+          title="Click to view patients unreachable / failed call attempts"
+        >
+          <div className="flex justify-between items-center text-slate-500">
+            <span className="text-[10px] font-black uppercase tracking-wider truncate">UNREACHABLE</span>
+            <Phone className="w-3.5 h-3.5 text-slate-500" />
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-slate-700">{kpis.unreachable}</span>
+          </div>
+          <span className="text-[10px] text-slate-400 font-medium block truncate">
+            Failed call attempts
+          </span>
+        </div>
+
+        {/* 7. Completed */}
+        <div
+          onClick={() => setStatusFilter(statusFilter === 'Completed' ? 'All' : 'Completed')}
+          className={`bg-white rounded-2xl p-3.5 border border-l-4 border-l-emerald-600 transition-all cursor-pointer space-y-1.5 ${
+            statusFilter === 'Completed'
+              ? 'border-emerald-600 ring-2 ring-emerald-500/30 bg-emerald-50/20 shadow-xs'
+              : 'border-slate-200 hover:border-emerald-300 shadow-2xs'
+          }`}
+          title="Click to view completed follow-up assessments"
+        >
+          <div className="flex justify-between items-center text-slate-500">
+            <span className="text-[10px] font-black uppercase tracking-wider truncate">COMPLETED</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+          </div>
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-black text-emerald-700">{kpis.completed}</span>
+          </div>
+          <span className="text-[10px] text-slate-400 font-medium block truncate">
+            Outreach confirmed
+          </span>
         </div>
       </div>
 

@@ -1072,7 +1072,26 @@ const hf = forwardRef(function hf(
   // 2. Inpatient Course Metrics
   const [precipitatingFactors, setPrecipitatingFactors] = useState(editingRecord?.inpatientDetails?.precipitatingFactors ?? []);
   const [otherPrecipitatingFactor, setOtherPrecipitatingFactor] = useState(editingRecord?.inpatientDetails?.otherPrecipitatingFactor ?? '');
+  const [admissionType, setAdmissionType] = useState(
+    editingRecord?.inpatientDetails?.admission_type ?? editingRecord?.inpatientDetails?.admissionType ?? editingRecord?.admission_type ?? editingRecord?.admissionType ?? ''
+  );
+  const [admissionReason, setAdmissionReason] = useState(
+    editingRecord?.inpatientDetails?.admission_reason ?? editingRecord?.inpatientDetails?.admissionReason ?? editingRecord?.admission_reason ?? editingRecord?.admissionReason ?? editingRecord?.inpatientDetails?.nonHfAdmissionReason ?? ''
+  );
   const [nonHfAdmissionReason, setNonHfAdmissionReason] = useState(editingRecord?.inpatientDetails?.nonHfAdmissionReason ?? '');
+
+  const handleAdmissionTypeChange = (newType) => {
+    setAdmissionType(newType);
+    setAdmissionReason('');
+    if (formErrors.admissionType || formErrors.admission_type) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next.admissionType;
+        delete next.admission_type;
+        return next;
+      });
+    }
+  };
   const [daysHospitalized, setDaysHospitalized] = useState(editingRecord?.inpatientDetails?.daysHospitalized ?? '');
 
   // Visit Info Context
@@ -2228,6 +2247,15 @@ const hf = forwardRef(function hf(
 
   useEffect(() => {
     if (editingRecord) {
+      const recAdmType = editingRecord.inpatientDetails?.admission_type ?? editingRecord.inpatientDetails?.admissionType ?? editingRecord.admission_type ?? editingRecord.admissionType;
+      if (recAdmType) {
+        setAdmissionType(recAdmType);
+      }
+      const recAdmReason = editingRecord.inpatientDetails?.admission_reason ?? editingRecord.inpatientDetails?.admissionReason ?? editingRecord.admission_reason ?? editingRecord.admissionReason ?? editingRecord.inpatientDetails?.nonHfAdmissionReason;
+      if (recAdmReason) {
+        setAdmissionReason(recAdmReason);
+      }
+
       const fa = editingRecord.followupAssessment || editingRecord.followup_assessment || editingRecord.followupReport || editingRecord.followup;
       if (fa) {
         setFollowupAssessment(fa);
@@ -2556,6 +2584,10 @@ const hf = forwardRef(function hf(
     assessed_by: activeUserId,
     assessmentDate,
     visitType,
+    admission_type: admissionType || undefined,
+    admissionType: admissionType || undefined,
+    admission_reason: admissionReason || undefined,
+    admissionReason: admissionReason || undefined,
     referredFrom: referredFrom || undefined,
     referred_from: referredFrom || undefined,
     patient: {
@@ -2582,7 +2614,11 @@ const hf = forwardRef(function hf(
       encounterId: encounterId || undefined,
       precipitatingFactors,
       otherPrecipitatingFactor: otherPrecipitatingFactor || undefined,
-      nonHfAdmissionReason: nonHfAdmissionReason || undefined,
+      admission_type: admissionType || undefined,
+      admissionType: admissionType || undefined,
+      admission_reason: admissionReason || undefined,
+      admissionReason: admissionReason || undefined,
+      nonHfAdmissionReason: admissionReason || nonHfAdmissionReason || undefined,
       daysHospitalized: daysHospitalized !== '' ? Number(daysHospitalized) : undefined
     },
     
@@ -3954,17 +3990,103 @@ const hf = forwardRef(function hf(
 
           <hr className="border-slate-200 my-2" />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2">
-              <TextInput readOnly={readOnly || visitType !== 'Inpatient'}
-                id="nonHfAdmissionReason"
-                label="If admission for reasons other than heart failure, please specify reason(s):"
-                value={nonHfAdmissionReason}
-                onChange={setNonHfAdmissionReason}
-                placeholder=""
-                error={formErrors.nonHfAdmissionReason}
-              />
+          {/* Admission Type & Reason for Admission/Readmission */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="form-field-label flex items-center gap-1 font-semibold text-slate-700">
+                <span>Admission Type</span>
+                <span className="text-red-500 font-bold text-[11px]">(Required)</span>
+              </label>
+              <div className="flex items-center gap-6 p-2 bg-slate-50 border border-slate-200 rounded-md min-h-[42px] mt-1">
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="radio"
+                    name="hf_admission_type"
+                    value="Admission"
+                    disabled={readOnly || visitType !== 'Inpatient'}
+                    checked={admissionType === 'Admission'}
+                    onChange={() => handleAdmissionTypeChange('Admission')}
+                    className="w-4 h-4 text-teal-600 border-slate-300 focus:ring-teal-500 cursor-pointer"
+                  />
+                  <span className="text-xs md:text-sm font-medium text-slate-800">Admission</span>
+                </label>
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="radio"
+                    name="hf_admission_type"
+                    value="Readmission"
+                    disabled={readOnly || visitType !== 'Inpatient'}
+                    checked={admissionType === 'Readmission'}
+                    onChange={() => handleAdmissionTypeChange('Readmission')}
+                    className="w-4 h-4 text-teal-600 border-slate-300 focus:ring-teal-500 cursor-pointer"
+                  />
+                  <span className="text-xs md:text-sm font-medium text-slate-800">Readmission</span>
+                </label>
+              </div>
+              {formErrors.admissionType && (
+                <span className="text-[10px] font-bold text-red-600 mt-1 block">
+                  ⚠️ {formErrors.admissionType}
+                </span>
+              )}
             </div>
+
+            <div>
+              <label className="form-field-label font-semibold text-slate-700 block">
+                Reason for Admission/Readmission
+              </label>
+              <select
+                id="hf_admission_reason"
+                disabled={readOnly || visitType !== 'Inpatient' || !admissionType}
+                value={admissionReason}
+                onChange={(e) => setAdmissionReason(e.target.value)}
+                className={`w-full p-2 border rounded-md text-xs md:text-sm font-medium transition-all mt-1 ${
+                  !admissionType
+                    ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                    : readOnly
+                      ? 'bg-slate-50 border-slate-200 text-slate-900 cursor-default opacity-100'
+                      : 'bg-white border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500'
+                }`}
+              >
+                <option value="">{admissionType ? '-- Select Reason --' : (readOnly ? '— None Selected —' : '-- Select Admission Type First --')}</option>
+                {admissionReason && ![
+                  'Heart Failure Exacerbation',
+                  'Recurrent Angina / Ischemia',
+                  'Arrhythmia',
+                  'Bleeding Complication',
+                  'Stent Thrombosis',
+                  'Infection',
+                  'Medication Non-adherence',
+                  'Non-cardiovascular / Other',
+                  'Acute Coronary Syndrome',
+                  'Acute Decompensated Heart Failure',
+                  'Cardiogenic Shock',
+                  'Elective Procedure',
+                  'Syncope / Bradyarrhythmia',
+                  'Uncontrolled Hypertension'
+                ].includes(admissionReason) && (
+                  <option value={admissionReason}>{admissionReason}</option>
+                )}
+                <option value="Heart Failure Exacerbation">Heart Failure Exacerbation / Volume Overload</option>
+                <option value="Recurrent Angina / Ischemia">Recurrent Angina / Ischemia</option>
+                <option value="Arrhythmia">Arrhythmia (VT/VF/AF)</option>
+                <option value="Bleeding Complication">Bleeding Complication</option>
+                <option value="Stent Thrombosis">Stent Thrombosis / Target Lesion Failure</option>
+                <option value="Infection">Infection / Sepsis</option>
+                <option value="Medication Non-adherence">Medication Non-adherence / Adverse Drug Reaction</option>
+                <option value="Non-cardiovascular / Other">Non-cardiovascular / Other Medical Reason</option>
+                <optgroup label="Other Clinical Indications">
+                  <option value="Acute Coronary Syndrome">Acute Coronary Syndrome</option>
+                  <option value="Acute Decompensated Heart Failure">Acute Decompensated Heart Failure</option>
+                  <option value="Cardiogenic Shock">Cardiogenic Shock</option>
+                  <option value="Elective Procedure">Elective Procedure</option>
+                  <option value="Syncope / Bradyarrhythmia">Syncope / Bradyarrhythmia</option>
+                  <option value="Uncontrolled Hypertension">Uncontrolled Hypertension</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
             <div>
               <NumberInput readOnly={readOnly || visitType !== 'Inpatient'}
                 id="daysHospitalized"

@@ -231,6 +231,8 @@ async function saveHfAssessment(data, userId = 1) {
             excessive_water_ingestion: data.inpatientDetails?.precipitatingFactors?.includes('Excessive water ingestion') ? 'Yes' : 'No',
             progressive_worsening: data.inpatientDetails?.precipitatingFactors?.includes('Progressive worsening') ? 'Yes' : 'No',
             precipitating_other: data.inpatientDetails?.otherPrecipitatingFactor,
+            admission_type: data.inpatientDetails?.admission_type || data.inpatientDetails?.admissionType || data.admission_type || data.admissionType || null,
+            admission_reason: data.inpatientDetails?.admission_reason || data.inpatientDetails?.admissionReason || data.admission_reason || data.admissionReason || null,
             other_admission_reason: data.inpatientDetails?.nonHfAdmissionReason,
             hospitalization_days: data.inpatientDetails?.daysHospitalized ? Number(data.inpatientDetails.daysHospitalized) : null
         };
@@ -751,41 +753,46 @@ async function getHfHistory(regPatientId) {
 }
 
 async function getHfAssessment(hf_id) {
-    const conn = await db.getConnection();
-    try {
-        const { recordset: registries } = await conn.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @hfId;', { hfId: hf_id });
-        if (registries.length === 0) return null;
-        const registry = registries[0];
+    const batchQuery = `
+        SELECT r.*, u.username AS deleted_by_username, u.email AS deleted_by_email 
+        FROM [hf_registry] r WITH (NOLOCK)
+        LEFT JOIN [users] u WITH (NOLOCK) ON u.user_id = r.deleted_by
+        WHERE r.[hf_id] = @hfId;
 
-        let deleted_by_user = null;
-        if (registry.deleted_by) {
-            try {
-                const { recordset: uRows } = await conn.query('SELECT [username], [email] FROM [users] WHERE [user_id] = @userId;', { userId: registry.deleted_by });
-                if (uRows.length > 0) {
-                    deleted_by_user = uRows[0].username || uRows[0].email;
-                }
-            } catch (uErr) {
-                console.error("Error resolving deleted_by_user:", uErr);
-            }
-        }
+        SELECT * FROM [hf_administrative] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+        SELECT * FROM [hf_initial_assessment] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+        SELECT * FROM [hf_final_clinical_assessment] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+        SELECT * FROM [hf_medical_therapy_part1] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+        SELECT * FROM [hf_medical_therapy_part2] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+        SELECT * FROM [hf_medical_therapy_part3] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+        SELECT * FROM [hf_device_therapy] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+        SELECT * FROM [hf_patient_education] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+        SELECT * FROM [hf_recommendations] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+        SELECT * FROM [hf_lab_tests] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+        SELECT * FROM [hf_cardiac_investigations] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+        SELECT * FROM [hf_advanced_investigations] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+        SELECT * FROM [hf_followup_assessments] WITH (NOLOCK) WHERE [hf_id] = @hfId;
+    `;
 
-        const tables = ['hf_administrative', 'hf_initial_assessment', 'hf_final_clinical_assessment', 'hf_medical_therapy_part1', 'hf_medical_therapy_part2', 'hf_medical_therapy_part3', 'hf_device_therapy', 'hf_patient_education', 'hf_recommendations', 'hf_lab_tests', 'hf_cardiac_investigations', 'hf_advanced_investigations', 'hf_followup_assessments'];
-        const detailResults = await Promise.all(tables.map((table) => conn.query(`SELECT * FROM [${table}] WHERE [hf_id] = @hfId;`, { hfId: hf_id })));
-        const [adminRows, initialRows, finalRows, part1Rows, part2Rows, part3Rows, deviceRows, educationRows, recommendationRows, labRows, cardiacRows, advancedRows, followupRows] = detailResults.map((result) => result.recordset);
+    const { recordsets } = await db.query(batchQuery, { hfId: hf_id });
+    if (!recordsets || recordsets.length === 0 || recordsets[0].length === 0) return null;
 
-        const admin = adminRows[0] || {};
-        const initial = initialRows[0] || {};
-        const final = finalRows[0] || {};
-        const part1 = part1Rows[0] || {};
-        const part2 = part2Rows[0] || {};
-        const part3 = part3Rows[0] || {};
-        const device = deviceRows[0] || {};
-        const education = educationRows[0] || {};
-        const recommendation = recommendationRows[0] || {};
-        const lab = labRows[0] || {};
-        const cardiac = cardiacRows[0] || {};
-        const advanced = advancedRows[0] || {};
-        const followup = followupRows[0] || null;
+    const registry = recordsets[0][0];
+    const deleted_by_user = registry.deleted_by_username || registry.deleted_by_email || null;
+
+    const admin = recordsets[1]?.[0] || {};
+    const initial = recordsets[2]?.[0] || {};
+    const final = recordsets[3]?.[0] || {};
+    const part1 = recordsets[4]?.[0] || {};
+    const part2 = recordsets[5]?.[0] || {};
+    const part3 = recordsets[6]?.[0] || {};
+    const device = recordsets[7]?.[0] || {};
+    const education = recordsets[8]?.[0] || {};
+    const recommendation = recordsets[9]?.[0] || {};
+    const lab = recordsets[10]?.[0] || {};
+    const cardiac = recordsets[11]?.[0] || {};
+    const advanced = recordsets[12]?.[0] || {};
+    const followup = recordsets[13]?.[0] || null;
 
         // Merge medical therapy
         const medicalTherapy = { ...part1, ...part2, ...part3 };
@@ -958,6 +965,10 @@ async function getHfAssessment(hf_id) {
             encounterId: admin.care_mr_no,
             assessmentDate: admin.assessment_date,
             visitType: admin.visit_type,
+            admission_type: admin.admission_type,
+            admissionType: admin.admission_type,
+            admission_reason: admin.admission_reason || admin.other_admission_reason,
+            admissionReason: admin.admission_reason || admin.other_admission_reason,
             address: admin.address,
             referredFrom: admin.referred_from,
             referred_from: admin.referred_from,
@@ -983,7 +994,11 @@ async function getHfAssessment(hf_id) {
                 encounterId: admin.care_mr_no,
                 precipitatingFactors,
                 otherPrecipitatingFactor: admin.precipitating_other,
-                nonHfAdmissionReason: admin.other_admission_reason,
+                admission_type: admin.admission_type,
+                admissionType: admin.admission_type,
+                admission_reason: admin.admission_reason || admin.other_admission_reason,
+                admissionReason: admin.admission_reason || admin.other_admission_reason,
+                nonHfAdmissionReason: admin.admission_reason || admin.other_admission_reason,
                 daysHospitalized: admin.hospitalization_days
             },
             previous_diagnosis: initial.previous_diagnosis,
@@ -1263,9 +1278,6 @@ async function getHfAssessment(hf_id) {
             status: registry.status || 'final',
             isDraft: registry.status === 'draft' || registry.status === 'DRAFT'
         };
-    } finally {
-        conn.release();
-    }
 }
 
 module.exports = {

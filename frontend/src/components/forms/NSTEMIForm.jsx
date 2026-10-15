@@ -1,4 +1,4 @@
-import React, { useState, forwardRef, useImperativeHandle, useMemo } from 'react';
+import React, { useState, forwardRef, useImperativeHandle, useMemo, useEffect } from 'react';
 import { Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import SectionCard from './common/SectionCard';
 import { LABEL_STYLES, INPUT_DISABLED_STYLES } from './common/formStyles';
@@ -187,6 +187,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     admission_date: editingRecord?.admission_date || '',
     discharge_date: editingRecord?.discharge_date || '',
     primary_consultant: editingRecord?.primary_consultant || patient.primaryConsultant || '',
+    admission_type: editingRecord?.admission_type ?? editingRecord?.admissionType ?? '',
+    admission_reason: editingRecord?.admission_reason ?? editingRecord?.admissionReason ?? '',
 
     // Background: Yes/No/Unknown (using 'Yes' / 'No' / 'Unknown' strings)
     hypertension: editingRecord?.hypertension ?? editingRecord?.administrative?.hypertension ?? null,
@@ -473,6 +475,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     appr_other_drug_appropriateness_note: editingRecord?.appr_other_drug_appropriateness_note ?? editingRecord?.appr_any_other_drug_note ?? editingRecord?.appropriateness?.any_other_drug_note ?? editingRecord?.any_other_drug_note ?? ''
   });
 
+  const [formErrors, setFormErrors] = useState({});
+
   // Calculate dynamic TIMI Score points exactly based on PDF Page 1 & 2
   const calculateTimiScore = (data) => {
     let score = 0;
@@ -515,6 +519,10 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
     setFormData((prev) => {
       const updated = { ...prev, [field]: sanitizedVal };
+
+      if (field === 'admission_type') {
+        updated.admission_reason = '';
+      }
 
       // Recompute TIMI Risk Score dynamically
       updated.timi_total_score = calculateTimiScore(updated);
@@ -562,6 +570,36 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
       return updated;
     });
+
+    if (formErrors[field]) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+    // Sync editingRecord to admission_type and admission_reason
+  useEffect(() => {
+    if (editingRecord) {
+      setFormData((prev) => {
+        const nextType = editingRecord?.admission_type ?? editingRecord?.admissionType ?? prev.admission_type ?? '';
+        const nextReason = editingRecord?.admission_reason ?? editingRecord?.admissionReason ?? prev.admission_reason ?? '';
+        if (prev.admission_type === nextType && prev.admission_reason === nextReason) {
+          return prev;
+        }
+        return {
+          ...prev,
+          admission_type: nextType,
+          admission_reason: nextReason
+        };
+      });
+    }
+  }, [editingRecord]);
+
+  const handleAdmissionTypeChange = (value) => {
+    handleChange('admission_type', value);
   };
 
   const handleToggleRadio = (field, opt) => {
@@ -571,6 +609,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
 
   const getFlattenedData = () => {
     const payload = { ...formData };
+    payload.admission_type = formData.admission_type || null;
+    payload.admission_reason = formData.admission_reason || null;
     if (!payload.acs_no || String(payload.acs_no).trim() === 'ACS.' || String(payload.acs_no).trim().length <= 4) {
       payload.acs_no = null;
     }
@@ -1014,7 +1054,23 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
   useImperativeHandle(ref, () => ({
     fillDummyData,
     getSubmissionData: () => getFlattenedData(),
-    validateForm: async () => {
+    validateForm: async (isDraft = false) => {
+      if (!isDraft && !formData.admission_type) {
+        setFormErrors(prev => ({
+          ...prev,
+          admission_type: 'Admission Type is required'
+        }));
+        if (showAlert) {
+          showAlert({
+            type: 'danger',
+            title: 'Validation Error',
+            message: 'Admission Type is required before finalizing submission.',
+            confirmText: 'OK',
+            targetField: 'nstemi_admission_type'
+          });
+        }
+        return false;
+      }
       if (isUniqueChecking) {
         if (showAlert) {
           showAlert({
@@ -1417,6 +1473,102 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
               value={patient.email || '—'}
               className={INPUT_DISABLED_STYLES}
             />
+          </div>
+        
+          {/* Admission Type & Reason for Admission/Readmission */}
+          <div className="col-span-full grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-1 border-t border-slate-100">
+            <div>
+              <label className="form-field-label flex items-center gap-1 font-semibold text-slate-700">
+                <span>Admission Type</span>
+                <span className="text-red-500 font-bold text-[11px]">(Required)</span>
+              </label>
+              <div className="flex items-center gap-6 p-2 bg-slate-50 border border-slate-200 rounded-md min-h-[42px] mt-1">
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="radio"
+                    name="nstemi_admission_type"
+                    value="Admission"
+                    disabled={readOnly}
+                    checked={formData.admission_type === 'Admission'}
+                    onChange={() => handleAdmissionTypeChange('Admission')}
+                    className="w-4 h-4 text-orange-600 border-slate-300 focus:ring-orange-500 cursor-pointer"
+                  />
+                  <span className="text-xs md:text-sm font-medium text-slate-800">Admission</span>
+                </label>
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="radio"
+                    name="nstemi_admission_type"
+                    value="Readmission"
+                    disabled={readOnly}
+                    checked={formData.admission_type === 'Readmission'}
+                    onChange={() => handleAdmissionTypeChange('Readmission')}
+                    className="w-4 h-4 text-orange-600 border-slate-300 focus:ring-orange-500 cursor-pointer"
+                  />
+                  <span className="text-xs md:text-sm font-medium text-slate-800">Readmission</span>
+                </label>
+              </div>
+              {formErrors.admission_type && (
+                <span className="text-[10px] font-bold text-red-600 mt-1 block">
+                  ⚠️ {formErrors.admission_type}
+                </span>
+              )}
+            </div>
+
+            <div>
+              <label className="form-field-label font-semibold text-slate-700 block">
+                Reason for Admission/Readmission
+              </label>
+              <select
+                id="nstemi_admission_reason"
+                disabled={readOnly || !formData.admission_type}
+                value={formData.admission_reason || ''}
+                onChange={(e) => handleChange('admission_reason', e.target.value)}
+                className={`w-full p-2 border rounded-md text-xs md:text-sm font-medium transition-all mt-1 ${
+                  !formData.admission_type
+                    ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                    : readOnly
+                      ? 'bg-slate-50 border-slate-200 text-slate-900 cursor-default opacity-100'
+                      : 'bg-white border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500'
+                }`}
+              >
+                <option value="">{formData.admission_type ? '-- Select Reason --' : (readOnly ? '— None Selected —' : '-- Select Admission Type First --')}</option>
+                {formData.admission_reason && ![
+                  'Heart Failure Exacerbation',
+                  'Recurrent Angina / Ischemia',
+                  'Arrhythmia',
+                  'Bleeding Complication',
+                  'Stent Thrombosis',
+                  'Infection',
+                  'Medication Non-adherence',
+                  'Non-cardiovascular / Other',
+                  'Acute Coronary Syndrome',
+                  'Acute Decompensated Heart Failure',
+                  'Cardiogenic Shock',
+                  'Elective Procedure',
+                  'Syncope / Bradyarrhythmia',
+                  'Uncontrolled Hypertension'
+                ].includes(formData.admission_reason) && (
+                  <option value={formData.admission_reason}>{formData.admission_reason}</option>
+                )}
+                <option value="Heart Failure Exacerbation">Heart Failure Exacerbation / Volume Overload</option>
+                <option value="Recurrent Angina / Ischemia">Recurrent Angina / Ischemia</option>
+                <option value="Arrhythmia">Arrhythmia (VT/VF/AF)</option>
+                <option value="Bleeding Complication">Bleeding Complication</option>
+                <option value="Stent Thrombosis">Stent Thrombosis / Target Lesion Failure</option>
+                <option value="Infection">Infection / Sepsis</option>
+                <option value="Medication Non-adherence">Medication Non-adherence / Adverse Drug Reaction</option>
+                <option value="Non-cardiovascular / Other">Non-cardiovascular / Other Medical Reason</option>
+                <optgroup label="Other Clinical Indications">
+                  <option value="Acute Coronary Syndrome">Acute Coronary Syndrome</option>
+                  <option value="Acute Decompensated Heart Failure">Acute Decompensated Heart Failure</option>
+                  <option value="Cardiogenic Shock">Cardiogenic Shock</option>
+                  <option value="Elective Procedure">Elective Procedure</option>
+                  <option value="Syncope / Bradyarrhythmia">Syncope / Bradyarrhythmia</option>
+                  <option value="Uncontrolled Hypertension">Uncontrolled Hypertension</option>
+                </optgroup>
+              </select>
+            </div>
           </div>
         </div>
       </SectionCard>
@@ -2915,7 +3067,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                     }`}
                   >
                     <select
-                      value={formData[`angina_${t}`]}
+                      value={formData[`angina_${t}`] || 'No'}
                       onChange={(e) => handleChange(`angina_${t}`, e.target.value)}
                       disabled={!formData[`enabled_${t}`]}
                       className="p-1 border rounded w-20 text-center bg-white"
@@ -2965,7 +3117,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                   >
                     <input
                       type="number"
-                      value={formData[`antiang_${t}`]}
+                      value={formData[`antiang_${t}`] ?? ''}
                       onChange={(e) => handleChange(`antiang_${t}`, e.target.value)}
                       disabled={!formData[`enabled_${t}`]}
                       className="p-1 border rounded w-20 text-center"
@@ -2985,7 +3137,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                     }`}
                   >
                     <select
-                      value={formData[`dapt_${t}`]}
+                      value={formData[`dapt_${t}`] || 'No'}
                       onChange={(e) => handleChange(`dapt_${t}`, e.target.value)}
                       disabled={!formData[`enabled_${t}`]}
                       className="p-1 border rounded w-20 text-center bg-white"
@@ -3008,7 +3160,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                     }`}
                   >
                     <select
-                      value={formData[`statin_${t}`]}
+                      value={formData[`statin_${t}`] || 'No'}
                       onChange={(e) => handleChange(`statin_${t}`, e.target.value)}
                       disabled={!formData[`enabled_${t}`]}
                       className="p-1 border rounded w-20 text-center bg-white"
@@ -3040,7 +3192,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
                       }`}
                     >
                       <select
-                        value={formData[`${row.key}_${t}`]}
+                        value={formData[`${row.key}_${t}`] || 'No'}
                         onChange={(e) => handleChange(`${row.key}_${t}`, e.target.value)}
                         disabled={!formData[`enabled_${t}`]}
                         className="p-1 border rounded w-20 text-center bg-white"

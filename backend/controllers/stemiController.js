@@ -261,18 +261,20 @@ async function createStemiRecord(req, res) {
     reqRegistry.input('admission_date', sql.Date, admission_date ? new Date(admission_date) : new Date());
     reqRegistry.input('discharge_date', sql.Date, discharge_date ? new Date(discharge_date) : null);
     reqRegistry.input('primary_consultant', sql.VarChar(150), getVal('primary_consultant', 'Dr. K. Sridhar (Cardiologist)'));
+    reqRegistry.input('admission_type', sql.VarChar(50), getVal('admission_type', null));
+    reqRegistry.input('admission_reason', sql.VarChar(100), getVal('admission_reason', null));
     if (hasStatusCol) {
       reqRegistry.input('status', sql.Int, payload.status === 'draft' || payload.isDraft ? 2 : 0);
     }
 
     const registryResult = await reqRegistry.query(`
       INSERT INTO [stemi_registry] (
-        [reg_patient_id], [acs_no], [ip_no], [admission_date], [discharge_date], [primary_consultant]
+        [reg_patient_id], [acs_no], [ip_no], [admission_date], [discharge_date], [primary_consultant], [admission_type], [admission_reason]
         ${hasStatusCol ? ', [status]' : ''}, [created_at], [updated_at]
       )
       OUTPUT INSERTED.[stemi_id]
       VALUES (
-        @reg_patient_id, @acs_no, @ip_no, @admission_date, @discharge_date, @primary_consultant
+        @reg_patient_id, @acs_no, @ip_no, @admission_date, @discharge_date, @primary_consultant, @admission_type, @admission_reason
         ${hasStatusCol ? ', @status' : ''}, GETDATE(), GETDATE()
       );
     `);
@@ -842,6 +844,8 @@ async function getStemiHistory(req, res) {
           [admission_date],
           [discharge_date],
           [primary_consultant],
+          [admission_type],
+          [admission_reason],
           ${hasStatusCol ? 'ISNULL([status], 0)' : '0'} AS [status],
           ${hasIsDeleted ? '[is_deleted]' : '0'} AS [is_deleted],
           [created_at],
@@ -881,6 +885,8 @@ async function getStemiHistory(req, res) {
         admission_date: formatDate(row.admission_date),
         discharge_date: formatDate(row.discharge_date),
         primary_consultant: row.primary_consultant,
+        admission_type: row.admission_type,
+        admission_reason: row.admission_reason,
         status: statusStr,
         is_deleted: isDel,
         created_at: row.created_at,
@@ -1187,6 +1193,8 @@ async function updateStemiRecord(req, res) {
     reqReg.input('admission_date', sql.Date, admission_date ? new Date(admission_date) : null);
     reqReg.input('discharge_date', sql.Date, discharge_date ? new Date(discharge_date) : null);
     reqReg.input('primary_consultant', sql.VarChar(150), getVal('primary_consultant'));
+    reqReg.input('admission_type', sql.VarChar(50), getVal('admission_type', null));
+    reqReg.input('admission_reason', sql.VarChar(100), getVal('admission_reason', null));
     if (hasStatusCol) {
       reqReg.input('status', sql.Int, payload.status === 'draft' || payload.isDraft ? 2 : 0);
     }
@@ -1194,7 +1202,7 @@ async function updateStemiRecord(req, res) {
     await reqReg.query(`
       UPDATE [stemi_registry]
       SET [acs_no] = @acs_no, [ip_no] = @ip_no, [admission_date] = @admission_date,
-          [discharge_date] = @discharge_date, [primary_consultant] = @primary_consultant,
+          [discharge_date] = @discharge_date, [primary_consultant] = @primary_consultant, [admission_type] = @admission_type, [admission_reason] = @admission_reason,
           ${hasStatusCol ? '[status] = @status,' : ''} [updated_at] = GETDATE()
       WHERE [stemi_id] = @stemi_id;
     `);

@@ -26,7 +26,7 @@ async function insertHfAdministrative(conn, data) {
         'treating_cardiologist', 'referring_doctor', 'referred_from', 'present_diagnosis', 'myocardial_ischemia',
         'atrial_fibrillation', 'bradyarrhythmia', 'ventricular_tachycardia', 'uncontrolled_hypertension', 'infection',
         'renal_failure', 'anaemia', 'medication_non_adherence', 'excessive_salt_intake', 'excessive_water_ingestion',
-        'progressive_worsening', 'precipitating_other', 'other_admission_reason', 'hospitalization_days'
+        'progressive_worsening', 'precipitating_other', 'admission_type', 'admission_reason', 'other_admission_reason', 'hospitalization_days'
     ];
     return insertRow(conn, 'hf_administrative', data, keys);
 }

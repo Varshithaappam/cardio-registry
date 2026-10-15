@@ -175,9 +175,9 @@ function MainLayout({ records, nurse, onLogout }) {
 }
 
 // Page Components
-function DashboardPage({ records }) {
+function DashboardPage({ records, loadPatients }) {
   const navigate = useNavigate();
-  return <Dashboard patients={records} onSelectPatient={(id) => navigate(`/patient/${id}`)} />;
+  return <Dashboard patients={records} loadPatients={loadPatients} onSelectPatient={(id) => navigate(`/patient/${id}`)} />;
 }
 
 function PatientListPage({ records, loadPatients }) {
@@ -339,7 +339,17 @@ function EditFormPage({ records, loadPatients }) {
   const formType = searchParams.get('formType') || 'HF';
   const [editingRecord, setEditingRecord] = useState(null);
   const [loading, setLoading] = useState(!!hfId);
+  const [fetchingPatients, setFetchingPatients] = useState(records.length === 0);
   const { showAlert } = useAlert();
+
+  useEffect(() => {
+    if (records.length === 0 && loadPatients) {
+      setFetchingPatients(true);
+      loadPatients().finally(() => setFetchingPatients(false));
+    } else {
+      setFetchingPatients(false);
+    }
+  }, [records.length]);
 
   const activePatientRecord = records.find((r) => String(r?.patient?.id) === String(regPatientId)) || null;
 
@@ -363,8 +373,14 @@ function EditFormPage({ records, loadPatients }) {
     }
   }, [hfId, formType]);
 
-  if (loading) {
-    return <div className="p-8 text-center text-slate-500">Loading form details...</div>;
+  if (loading || fetchingPatients) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs my-6 max-w-xl mx-auto">
+        <div className="w-9 h-9 border-3 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        <h3 className="text-slate-800 font-bold text-sm sm:text-base">Loading {formType} Assessment Record...</h3>
+        <p className="text-xs text-slate-500 mt-1">Retrieving clinical findings, medications, and registry parameters.</p>
+      </div>
+    );
   }
 
   if (!activePatientRecord) {
@@ -585,7 +601,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout records={records} nurse={nurse} onLogout={handleLogout} />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<DashboardPage records={records} />} />
+            <Route path="/dashboard" element={<DashboardPage records={records} loadPatients={loadPatients} />} />
             <Route path="/clinical-dashboard" element={<Navigate to="/dashboard" replace />} />
 
             <Route path="/patients" element={<PatientListPage records={records} loadPatients={loadPatients} />} />

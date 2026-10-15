@@ -240,6 +240,7 @@ export default function HFFormView() {
                   patientRecord={patientRecord}
                   patient={patientRecord.patient}
                   editingRecord={assessmentData}
+                  readOnly={true}
                 />
               </div>
             ) : (

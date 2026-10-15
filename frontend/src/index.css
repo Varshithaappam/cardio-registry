@@ -173,39 +173,137 @@ textarea[class*="border-red"]:focus {
   box-shadow: 0 0 0 2px #dc2626 !important;
 }
 
-/* Registry-specific Checkbox and Radio styling (ticks and dots) */
-input[type="checkbox"],
+/* Registry-specific Checkbox and Radio styling (custom pixel-perfect ticks and dots) */
+:root {
+  --radio-dot-color: #0d9488;
+}
+
 input[type="radio"] {
-  accent-color: #0d9488; /* default fallback: teal-600 */
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border: 1.5px solid #cbd5e1; /* slate-300 */
+  background-color: #ffffff;
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+  vertical-align: middle;
+  flex-shrink: 0;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: border-color 0.15s ease-in-out;
+}
+
+input[type="radio"]::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transform: scale(0);
+  transition: transform 0.12s ease-in-out;
+  background-color: var(--radio-dot-color, #0d9488);
+}
+
+input[type="radio"]:checked {
+  border-color: var(--radio-dot-color, #0d9488) !important;
+}
+
+input[type="radio"]:checked::before {
+  transform: scale(1);
+}
+
+/* Custom Checkbox styling: clean white checkmark */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 4px;
+  border: 1.5px solid #cbd5e1; /* slate-300 */
+  background-color: #ffffff;
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+  vertical-align: middle;
+  flex-shrink: 0;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease-in-out;
+}
+
+input[type="checkbox"]::before {
+  content: "";
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  transform: rotate(-45deg) translate(1px, -1px) scale(0);
+  transition: transform 0.12s ease-in-out;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--radio-dot-color, #0d9488) !important;
+  border-color: var(--radio-dot-color, #0d9488) !important;
+}
+
+input[type="checkbox"]:checked::before {
+  transform: rotate(-45deg) translate(1px, -1px) scale(1);
+}
+
+input[type="radio"]:disabled,
+input[type="checkbox"]:disabled {
+  cursor: default;
 }
 
 /* HF Registry: Teal Green (#0d9488) */
-.theme-hf input[type="checkbox"],
+.theme-hf,
+[data-registry="hf"],
+#hfFormBlock,
 .theme-hf input[type="radio"],
-[data-registry="hf"] input[type="checkbox"],
+.theme-hf input[type="checkbox"],
 [data-registry="hf"] input[type="radio"],
+[data-registry="hf"] input[type="checkbox"],
+#hfFormBlock input[type="radio"],
 #hfFormBlock input[type="checkbox"],
-#hfFormBlock input[type="radio"] {
+input[type="radio"][class*="teal"],
+input[type="checkbox"][class*="teal"] {
+  --radio-dot-color: #0d9488 !important;
   accent-color: #0d9488 !important;
 }
 
 /* STEMI Registry: Red (#dc2626) */
-.theme-stemi input[type="checkbox"],
+.theme-stemi,
+[data-registry="stemi"],
+#stemiFormBlock,
 .theme-stemi input[type="radio"],
-[data-registry="stemi"] input[type="checkbox"],
+.theme-stemi input[type="checkbox"],
 [data-registry="stemi"] input[type="radio"],
+[data-registry="stemi"] input[type="checkbox"],
+#stemiFormBlock input[type="radio"],
 #stemiFormBlock input[type="checkbox"],
-#stemiFormBlock input[type="radio"] {
+input[type="radio"][class*="red"],
+input[type="checkbox"][class*="red"] {
+  --radio-dot-color: #dc2626 !important;
   accent-color: #dc2626 !important;
 }
 
 /* NSTEMI Registry: Orange (#f97316) */
-.theme-nstemi input[type="checkbox"],
+.theme-nstemi,
+[data-registry="nstemi"],
+#nstemiFormBlock,
 .theme-nstemi input[type="radio"],
-[data-registry="nstemi"] input[type="checkbox"],
+.theme-nstemi input[type="checkbox"],
 [data-registry="nstemi"] input[type="radio"],
+[data-registry="nstemi"] input[type="checkbox"],
+#nstemiFormBlock input[type="radio"],
 #nstemiFormBlock input[type="checkbox"],
-#nstemiFormBlock input[type="radio"] {
+input[type="radio"][class*="orange"],
+input[type="checkbox"][class*="orange"] {
+  --radio-dot-color: #f97316 !important;
   accent-color: #f97316 !important;
 }
 
