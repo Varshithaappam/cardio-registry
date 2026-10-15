@@ -31,8 +31,12 @@ router.get("/audit", authenticateToken, patientController.getAuditLogs);
 router.get("/counts/all", authenticateToken, patientController.getAllPatientCounts);
 router.get("/counts/:regPatientId", authenticateToken, patientController.getPatientCounts);
 
+// GDMT Clinical Intelligence & Cohort Analytics Endpoint
+router.get("/gdmt-cohort", patientController.getGdmtCohort);
+
 // Get All Patients
 router.get("/", authenticateToken, patientController.getAllPatients);
+
 
 // Get Patient By ID
 router.get("/:id", authenticateToken, patientController.getPatientById);
