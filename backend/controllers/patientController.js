@@ -342,6 +342,28 @@ async function getAllPatientCounts(req, res) {
     }
 }
 
+/**
+ * Get GDMT Clinical Intelligence & Cohort Analytics
+ */
+async function getGdmtCohort(req, res) {
+    try {
+        const gdmtService = require("../services/gdmtService");
+        const patients = await gdmtService.getPatientsCohort();
+        const analytics = gdmtService.calculateCohortAnalytics(patients);
+
+        return res.status(200).json({
+            success: true,
+            source: 'database',
+            count: patients.length,
+            analytics,
+            data: patients
+        });
+    } catch (error) {
+        return handlePatientError(res, error, "Get GDMT Cohort");
+    }
+}
+
+
 module.exports = {
     registerPatient,
     resolveStaging,
@@ -354,5 +376,7 @@ module.exports = {
     updatePatient,
     deletePatient,
     getPatientCounts,
-    getAllPatientCounts
+    getAllPatientCounts,
+    getGdmtCohort
 };
+
