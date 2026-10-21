@@ -148,7 +148,7 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
         <style>
           @page {
             size: A4 portrait;
-            margin: 8mm 10mm 10mm 10mm;
+            margin: 8mm 8mm 8mm 8mm;
           }
           html, body {
             background: #ffffff !important;
@@ -156,12 +156,36 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
             margin: 0 !important;
             padding: 0 !important;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+            font-size: 10px !important;
+            line-height: 1.3 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          *, *::before, *::after {
+            box-sizing: border-box !important;
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
+          }
+          table {
+            table-layout: fixed !important;
+            width: 100% !important;
+          }
+          tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .pdf-section-card {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            margin-bottom: 8px !important;
           }
           ${cssStyles}
         </style>
       </head>
       <body>
-        ${content.outerHTML}
+        <div style="max-width: 1000px; margin: 0 auto; padding: 6px;">
+          ${content.innerHTML}
+        </div>
       </body>
       </html>
     `);
@@ -215,7 +239,23 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
         </div>
 
         {/* Modal Body */}
-        <div id="acs-pdf-printable-area" className="p-6 overflow-y-auto space-y-6 text-slate-800 text-sm">
+        <div id="acs-pdf-printable-area" className="p-4 sm:p-6 overflow-y-auto space-y-4 text-slate-800 text-sm">
+          {/* CARE HEALTH SYSTEM Header Banner */}
+          <div className={`text-white rounded-xl p-3.5 shadow-xs flex justify-between items-center flex-wrap gap-2 border mb-3 ${
+            isStemi 
+              ? 'bg-gradient-to-r from-red-800 via-red-700 to-slate-900 border-red-900/40' 
+              : 'bg-gradient-to-r from-amber-800 via-amber-700 to-slate-900 border-amber-900/40'
+          }`}>
+            <div>
+              <h1 className="tracking-tight text-white uppercase text-base font-black">
+                CARE HEALTH SYSTEM
+              </h1>
+              <p className={`text-[11px] font-medium mt-0.5 ${isStemi ? 'text-red-200' : 'text-amber-200'}`}>
+                {titleType} Registry • Post-Discharge Patient Outreach Record
+              </p>
+            </div>
+          </div>
+
           {/* Section 1: Encounter Metadata */}
           <div className="border border-slate-200 rounded-xl p-4 space-y-3 bg-slate-50/50">
             <h4 className="border-b border-slate-100 pb-2 uppercase tracking-wider text-slate-600">
@@ -513,6 +553,18 @@ export default function AcsFollowupPdfModal({ isOpen, onClose, logData = {}, pat
                   <p className="text-slate-800 mt-0.5 italic">{rawData.patient_feedback}</p>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Sign-off Footer */}
+          <div className="pt-3 border-t border-slate-300 flex justify-between items-end flex-wrap gap-3 text-xs pdf-section-card">
+            <div>
+              <p className="text-[10px] font-semibold text-slate-500">Report Generated: {formatDateTimeForDisplay(new Date())}</p>
+              <p className="text-[9px] text-slate-400">CARE Health System • {titleType} Audit Registry</p>
+            </div>
+            <div className="border-t border-slate-900 pt-1 w-44 text-center">
+              <span className="font-extrabold text-slate-800 block text-xs">{logData.assigned_nurse || logData.nurse_name || patientData.assigned_nurse || 'Staff Nurse'}</span>
+              <span className="text-[8px] text-slate-400 block uppercase font-medium">Staff Nurse Signature & Stamp</span>
             </div>
           </div>
         </div>

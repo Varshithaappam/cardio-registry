@@ -49,10 +49,10 @@ export default function KeyPointsTab({ analytics }) {
 
   // NYHA Radial Data
   const nyhaData = [
-    { name: 'NYHA Class I', count: kpi.nyha1Count, fill: '#10b981' },
-    { name: 'NYHA Class II', count: kpi.nyha2Count, fill: '#06b6d4' },
-    { name: 'NYHA Class III', count: kpi.nyha3Count, fill: '#f59e0b' },
-    { name: 'NYHA Class IV', count: kpi.nyha4Count, fill: '#ef4444' }
+    { name: 'Class I', count: kpi.nyha1Count, fill: '#10b981' },
+    { name: 'Class II', count: kpi.nyha2Count, fill: '#06b6d4' },
+    { name: 'Class III', count: kpi.nyha3Count, fill: '#f59e0b' },
+    { name: 'Class IV', count: kpi.nyha4Count, fill: '#ef4444' }
   ];
 
   // Comorbidity Burden Data
@@ -87,9 +87,6 @@ export default function KeyPointsTab({ analytics }) {
               Unique Hospital Identifiers
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] font-mono text-slate-400">
-            Formula: =COUNTA(UHID)
-          </div>
         </div>
 
         {/* Card 2: Mean Age (Highlighted) */}
@@ -111,9 +108,6 @@ export default function KeyPointsTab({ analytics }) {
               Standard Deviation: ±{kpi.sdAge} yrs
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-teal-100 text-[10px] font-mono text-teal-700">
-            Formula: =AVERAGE(Age)
-          </div>
         </div>
 
         {/* Card 3: Mean EF % */}
@@ -133,9 +127,6 @@ export default function KeyPointsTab({ analytics }) {
             <div className="text-[11px] text-slate-600 font-medium mt-1">
               Ejection Fraction Average
             </div>
-          </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] font-mono text-slate-400">
-            Formula: =AVERAGE(EF%)
           </div>
         </div>
 
@@ -157,9 +148,6 @@ export default function KeyPointsTab({ analytics }) {
               {kpi.mortalityPercent}% Cohort Mortality
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] font-mono text-slate-400">
-            Formula: =COUNTIF(Death, "Y*")
-          </div>
         </div>
 
         {/* Card 5: Mean GDMT Drugs */}
@@ -180,9 +168,6 @@ export default function KeyPointsTab({ analytics }) {
               Average Pillars Prescribed
             </div>
           </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] font-mono text-slate-400">
-            Formula: =AVERAGE(GDMT Taken)
-          </div>
         </div>
 
         {/* Card 6: Mean % GDMT Adherence */}
@@ -202,9 +187,6 @@ export default function KeyPointsTab({ analytics }) {
             <div className="text-[11px] text-emerald-700 font-bold mt-1">
               Zero Deviation Appropriate Care
             </div>
-          </div>
-          <div className="mt-3 pt-2 border-t border-slate-100 text-[10px] font-mono text-slate-400">
-            Formula: =AVERAGE(% GDMT adhered)
           </div>
         </div>
       </div>
@@ -350,7 +332,22 @@ export default function KeyPointsTab({ analytics }) {
                   dataKey="count"
                   cornerRadius={6}
                 />
-                <Tooltip />
+                <Tooltip 
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const item = payload[0].payload;
+                      return (
+                        <div className="bg-white p-2.5 rounded-lg shadow-md border border-slate-200 text-xs">
+                          <p className="font-bold text-slate-800">{item.name}</p>
+                          <p className="text-slate-600 mt-0.5">
+                            count : <span className="font-semibold text-slate-900">{item.count}</span>
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
               </RadialBarChart>
             </ResponsiveContainer>
           </div>
@@ -459,9 +456,6 @@ export default function KeyPointsTab({ analytics }) {
                 ({kpi.diabetesPercent}%)
               </span>
             </div>
-            <p className="text-[11px] text-slate-600 mt-2 leading-normal">
-              Matches any comorbidity column = "Diabetes mellitus" / DM
-            </p>
           </div>
 
           {/* HTN */}
@@ -477,9 +471,6 @@ export default function KeyPointsTab({ analytics }) {
                 ({kpi.hypertensionPercent}%)
               </span>
             </div>
-            <p className="text-[11px] text-slate-600 mt-2 leading-normal">
-              Matches any comorbidity column = "HYPERTENSION" / HTN
-            </p>
           </div>
 
           {/* Renal */}
@@ -495,9 +486,6 @@ export default function KeyPointsTab({ analytics }) {
                 ({kpi.renalFailurePercent}%)
               </span>
             </div>
-            <p className="text-[11px] text-slate-600 mt-2 leading-normal">
-              Renal contraindication flagged by Serum Creatinine &gt; 2.5 mg/dL
-            </p>
           </div>
         </div>
       </div>

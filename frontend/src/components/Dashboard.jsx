@@ -10,7 +10,6 @@ import {
   Heart, 
   Download, 
   Sparkles, 
-  Layers, 
   FileSpreadsheet, 
   Activity, 
   Loader2,
@@ -21,7 +20,6 @@ import {
 import UniversalFilterBar from './dashboard/UniversalFilterBar';
 import KeyPointsTab from './dashboard/KeyPointsTab';
 import GdmtSummaryTab from './dashboard/GdmtSummaryTab';
-import PipelineAndCohortTab from './dashboard/PipelineAndCohortTab';
 import PatientDossierModal from './dashboard/PatientDossierModal';
 import ContraindicationDrawer from './dashboard/ContraindicationDrawer';
 
@@ -29,7 +27,7 @@ import { fetchGdmtCohort } from '../api/gdmtApi';
 import { filterCohort, computeAnalytics, exportCohortCsv } from '../utils/gdmtEngine';
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState('keyPoints'); // 'keyPoints' | 'gdmt' | 'pipeline'
+  const [activeTab, setActiveTab] = useState('keyPoints'); // 'keyPoints' | 'gdmt'
   const [dataSource, setDataSource] = useState('database'); // database source
   const [cohortData, setCohortData] = useState([]);
 
@@ -155,19 +153,6 @@ export default function Dashboard() {
               <Sparkles className="w-3.5 h-3.5" />
               <span>GDMT Analysis</span>
             </button>
-
-            <button
-              id="tab-pipeline"
-              onClick={() => setActiveTab('pipeline')}
-              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'pipeline'
-                  ? 'bg-teal-700 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>3-Tier Data Pipeline</span>
-            </button>
           </div>
 
           {/* Export Report Button */}
@@ -226,13 +211,6 @@ export default function Dashboard() {
             <GdmtSummaryTab 
               analytics={analytics} 
               onOpenExclusionGuide={() => setIsDrawerOpen(true)}
-            />
-          )}
-
-          {activeTab === 'pipeline' && (
-            <PipelineAndCohortTab 
-              patients={filteredCohort} 
-              onSelectPatient={(pt) => setSelectedPatient(pt)}
             />
           )}
         </div>

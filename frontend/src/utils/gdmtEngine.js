@@ -453,11 +453,15 @@ export function computeAnalytics(patients) {
       { bracket: '61-70 yrs', count: age61to70, percent: Math.round((age61to70 / total) * 1000) / 10 },
       { bracket: '>70 yrs', count: ageOver70, percent: Math.round((ageOver70 / total) * 1000) / 10 }
     ],
-    adherenceDistribution: Object.entries(adherenceBrackets).map(([bracket, count]) => ({
-      bracket,
-      count,
-      percent: Math.round((count / total) * 1000) / 10
-    })),
+    adherenceDistribution: Object.entries(adherenceBrackets).map(([bracket, count]) => {
+      const devMap = { '0.0%': 6, '16.7%': 5, '33.3%': 4, '50.0%': 3, '66.7%': 2, '83.3%': 1, '100.0%': 0 };
+      return {
+        bracket,
+        deviations: devMap[bracket] !== undefined ? devMap[bracket] : 0,
+        count,
+        percent: Math.round((count / total) * 1000) / 10
+      };
+    }),
     drugsTakenDistribution: [
       { drugs: '0 Drugs', count: countZero, percent: Math.round((countZero / total) * 1000) / 10, label: 'Untreated / Contraindicated' },
       { drugs: '1 Drug', count: countMono, percent: Math.round((countMono / total) * 1000) / 10, label: 'Monotherapy (Dominant)' },

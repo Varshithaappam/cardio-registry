@@ -190,7 +190,7 @@ export default function HfFollowupPdfModal({ isOpen, onClose, logData = {}, pati
         <style>
           @page {
             size: A4 portrait;
-            margin: 8mm 10mm 10mm 10mm;
+            margin: 8mm 8mm 8mm 8mm;
           }
           html, body {
             background: #ffffff !important;
@@ -205,18 +205,21 @@ export default function HfFollowupPdfModal({ isOpen, onClose, logData = {}, pati
           }
           *, *::before, *::after {
             box-sizing: border-box !important;
-            word-break: break-all !important;
+            word-break: break-word !important;
             overflow-wrap: anywhere !important;
-            white-space: pre-wrap !important;
           }
           table {
             table-layout: fixed !important;
             width: 100% !important;
           }
+          tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
           .pdf-section-card {
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-            margin-bottom: 10px !important;
+            margin-bottom: 8px !important;
           }
           ${cssStyles}
         </style>
@@ -287,12 +290,12 @@ export default function HfFollowupPdfModal({ isOpen, onClose, logData = {}, pati
         </div>
 
         {/* Document Content Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 bg-slate-50/50" id="hf-pdf-printable-area">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-3 bg-slate-50/50" id="hf-pdf-printable-area">
           
           {/* CARE HEALTH SYSTEM Header Banner */}
-          <div className="bg-gradient-to-r from-teal-800 via-teal-700 to-slate-900 text-white rounded-xl p-4 shadow-xs flex justify-between items-center flex-wrap gap-2 border border-teal-900/40 pdf-section-card">
+          <div className="bg-gradient-to-r from-teal-800 via-teal-700 to-slate-900 text-white rounded-xl p-3.5 shadow-xs flex justify-between items-center flex-wrap gap-2 border border-teal-900/40 mb-3">
             <div>
-              <h1 className="tracking-tight text-white uppercase">
+              <h1 className="tracking-tight text-white uppercase text-base font-black">
                 CARE HEALTH SYSTEM
               </h1>
               <p className="text-[11px] text-teal-200 font-medium mt-0.5">Heart Failure Registry • Post-Discharge Patient Outreach Record</p>
@@ -300,7 +303,7 @@ export default function HfFollowupPdfModal({ isOpen, onClose, logData = {}, pati
           </div>
 
           {/* Continuous Single Report Container */}
-          <div className="bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-2xs space-y-4 pdf-section-card">
+          <div className="bg-white rounded-xl p-3 sm:p-4 border border-slate-200 shadow-2xs space-y-3">
 
             {/* Encounter Metadata Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5 text-xs bg-slate-50/80 p-3 rounded-xl border border-slate-200">

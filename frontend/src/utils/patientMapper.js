@@ -176,6 +176,7 @@ const normalizeRecord = (dbPatient) => {
   const abhaAddress = patient.abha_address || patient.abhaAddress || "";
   const createdAt = patient.created_at || patient.createdAt || new Date().toISOString();
   const updatedAt = patient.updated_at || patient.updatedAt || createdAt;
+  const primaryConsultant = patient.primary_consultant || dbPatient?.primary_consultant || patient.primaryConsultant || dbPatient?.primaryConsultant || patient.treating_cardiologist || patient.treatingCardiologist || "";
 
   return {
     patient: {
@@ -216,7 +217,8 @@ const normalizeRecord = (dbPatient) => {
       status: patient.patient_status || patient.status || "ACTIVE",
       date_of_death: patient.date_of_death || patient.dateOfDeath || null,
       dateOfDeath: patient.date_of_death || patient.dateOfDeath || null,
-      primaryConsultant: patient.primaryConsultant || "Dr. K. Sridhar",
+      primaryConsultant: primaryConsultant || null,
+      primary_consultant: primaryConsultant || null,
       createdAt,
       updatedAt,
       hypertension,

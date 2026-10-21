@@ -468,15 +468,6 @@ export default function RegisterNewPatient({
       }
     }
 
-    if (!bloodGroup) {
-      await showAlert({
-        type: 'warning',
-        title: 'Required Field',
-        message: 'Blood Group is required.',
-        targetField: 'blood_group'
-      });
-      return;
-    }
 
     if (occupation.length > 255) {
       await showAlert({
@@ -616,7 +607,7 @@ export default function RegisterNewPatient({
       mrNo,
       dob,
       gender,
-      bloodGroup,
+      bloodGroup: bloodGroup || 'Unknown',
       phone,
       email,
       address: fullAddressCombined || address,
@@ -838,11 +829,10 @@ export default function RegisterNewPatient({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="form-field-label">
-                Blood Group <span className="text-red-500 font-bold ml-0.5">*</span>
+                Blood Group
               </label>
               <select
                 id="reg-bloodgroup"
-                required
                 className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium"
                 value={bloodGroup}
                 onChange={(e) => setBloodGroup(e.target.value)}

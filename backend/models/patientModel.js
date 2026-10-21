@@ -103,12 +103,76 @@ async function updatePatientNumbers(regPatientId, mr_no, ip_no) {
 }
 
 async function getAllPatients() {
-  const result = await db.query('SELECT * FROM [patient_demographics] ORDER BY [reg_patient_id] DESC;');
+  const query = `
+    SELECT 
+      p.*,
+      COALESCE(recent_hf.treating_cardiologist, recent_stemi.primary_consultant, recent_nstemi.primary_consultant) AS primary_consultant
+    FROM [patient_demographics] p
+    OUTER APPLY (
+      SELECT TOP 1 adm.treating_cardiologist
+      FROM [hf_registry] r WITH (NOLOCK)
+      INNER JOIN [hf_administrative] adm WITH (NOLOCK) ON r.hf_id = adm.hf_id
+      WHERE r.reg_patient_id = p.reg_patient_id
+        AND adm.treating_cardiologist IS NOT NULL
+        AND LTRIM(RTRIM(adm.treating_cardiologist)) <> ''
+      ORDER BY COALESCE(adm.assessment_date, adm.visit_date, r.created_at) DESC, r.hf_id DESC
+    ) recent_hf
+    OUTER APPLY (
+      SELECT TOP 1 s.primary_consultant
+      FROM [stemi_registry] s WITH (NOLOCK)
+      WHERE s.reg_patient_id = p.reg_patient_id
+        AND s.primary_consultant IS NOT NULL
+        AND LTRIM(RTRIM(s.primary_consultant)) <> ''
+      ORDER BY COALESCE(s.discharge_date, s.admission_date, s.created_at) DESC, s.stemi_id DESC
+    ) recent_stemi
+    OUTER APPLY (
+      SELECT TOP 1 ns.primary_consultant
+      FROM [nstemi_registry] ns WITH (NOLOCK)
+      WHERE ns.reg_patient_id = p.reg_patient_id
+        AND ns.primary_consultant IS NOT NULL
+        AND LTRIM(RTRIM(ns.primary_consultant)) <> ''
+      ORDER BY COALESCE(ns.discharge_date, ns.admission_date, ns.created_at) DESC, ns.nstemi_id DESC
+    ) recent_nstemi
+    ORDER BY p.[reg_patient_id] DESC;
+  `;
+  const result = await db.query(query);
   return result.recordset;
 }
 
 async function getPatientById(regPatientId) {
-  const result = await db.query('SELECT * FROM [patient_demographics] WHERE [reg_patient_id] = @regPatientId;', { regPatientId });
+  const query = `
+    SELECT 
+      p.*,
+      COALESCE(recent_hf.treating_cardiologist, recent_stemi.primary_consultant, recent_nstemi.primary_consultant) AS primary_consultant
+    FROM [patient_demographics] p
+    OUTER APPLY (
+      SELECT TOP 1 adm.treating_cardiologist
+      FROM [hf_registry] r WITH (NOLOCK)
+      INNER JOIN [hf_administrative] adm WITH (NOLOCK) ON r.hf_id = adm.hf_id
+      WHERE r.reg_patient_id = p.reg_patient_id
+        AND adm.treating_cardiologist IS NOT NULL
+        AND LTRIM(RTRIM(adm.treating_cardiologist)) <> ''
+      ORDER BY COALESCE(adm.assessment_date, adm.visit_date, r.created_at) DESC, r.hf_id DESC
+    ) recent_hf
+    OUTER APPLY (
+      SELECT TOP 1 s.primary_consultant
+      FROM [stemi_registry] s WITH (NOLOCK)
+      WHERE s.reg_patient_id = p.reg_patient_id
+        AND s.primary_consultant IS NOT NULL
+        AND LTRIM(RTRIM(s.primary_consultant)) <> ''
+      ORDER BY COALESCE(s.discharge_date, s.admission_date, s.created_at) DESC, s.stemi_id DESC
+    ) recent_stemi
+    OUTER APPLY (
+      SELECT TOP 1 ns.primary_consultant
+      FROM [nstemi_registry] ns WITH (NOLOCK)
+      WHERE ns.reg_patient_id = p.reg_patient_id
+        AND ns.primary_consultant IS NOT NULL
+        AND LTRIM(RTRIM(ns.primary_consultant)) <> ''
+      ORDER BY COALESCE(ns.discharge_date, ns.admission_date, ns.created_at) DESC, ns.nstemi_id DESC
+    ) recent_nstemi
+    WHERE p.[reg_patient_id] = @regPatientId;
+  `;
+  const result = await db.query(query, { regPatientId });
   return result.recordset[0];
 }
 

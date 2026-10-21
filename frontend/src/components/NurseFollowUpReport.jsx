@@ -39,7 +39,6 @@ const OVERALL_REGISTRY_STATUS_OPTIONS = [
   'All (Default)',
   'Pending',
   'Due in 7 Days',
-  'Tests Pending',
   'Missed / Overdue',
   'In Progress',
   'Completed',
@@ -677,13 +676,12 @@ export default function NurseFollowUpReport() {
     const total = kpiBaseTasks.length;
     const pending = kpiBaseTasks.filter(isTaskPending).length;
     const dueIn7Days = kpiBaseTasks.filter(isTaskDueIn7Days).length;
-    const testsPending = kpiBaseTasks.filter(isTaskPreVisitTestsPending).length;
     const overdue = kpiBaseTasks.filter(isTaskOverdue).length;
     const unreachable = kpiBaseTasks.filter(isTaskUnreachable).length;
     const completed = kpiBaseTasks.filter(isTaskCompleted).length;
     const percentage = total > 0 ? Math.round((pending / total) * 100) : 0;
 
-    return { total, pending, dueIn7Days, testsPending, overdue, unreachable, completed, percentage };
+    return { total, pending, dueIn7Days, overdue, unreachable, completed, percentage };
   }, [kpiBaseTasks]);
 
   // 5. Filtered & Sorted Tasks for Table Display (applies Status Filter & Column Sorting)
@@ -698,9 +696,6 @@ export default function NurseFollowUpReport() {
       }
       if (statusFilter === 'Due in 7 Days') {
         return isTaskDueIn7Days(task);
-      }
-      if (statusFilter === 'Tests Pending') {
-        return isTaskPreVisitTestsPending(task);
       }
       if (statusFilter === 'Missed / Overdue') {
         return isTaskOverdue(task);
@@ -1143,7 +1138,7 @@ export default function NurseFollowUpReport() {
       </div>
 
       {/* KPI Cards Row (Filtered dynamically by Search, Registry & Dates) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
         {/* 1. Total Patients */}
         <div
           onClick={() => setStatusFilter('All')}
@@ -1209,28 +1204,6 @@ export default function NurseFollowUpReport() {
           </div>
           <span className="text-[10px] text-slate-400 font-medium block truncate">
             Upcoming window
-          </span>
-        </div>
-
-        {/* 4. Pre-Visit Tests Pending */}
-        <div
-          onClick={() => setStatusFilter(statusFilter === 'Tests Pending' ? 'All' : 'Tests Pending')}
-          className={`bg-white rounded-2xl p-3.5 border border-l-4 border-l-purple-500 transition-all cursor-pointer space-y-1.5 ${
-            statusFilter === 'Tests Pending'
-              ? 'border-purple-500 ring-2 ring-purple-500/30 bg-purple-50/20 shadow-xs'
-              : 'border-slate-200 hover:border-purple-300 shadow-2xs'
-          }`}
-          title="Click to view patients with pending tests (ECG, Echo, Labs)"
-        >
-          <div className="flex justify-between items-center text-slate-500">
-            <span className="text-[10px] font-black uppercase tracking-wider truncate">TESTS PENDING</span>
-            <ClipboardList className="w-3.5 h-3.5 text-purple-500" />
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-black text-purple-600">{kpis.testsPending}</span>
-          </div>
-          <span className="text-[10px] text-slate-400 font-medium block truncate">
-            ECG / Echo / Labs
           </span>
         </div>
 

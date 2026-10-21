@@ -100,12 +100,7 @@ export default function UniversalFilterBar({
 
         {/* Right side: Cohort Counter & Data Source Switcher */}
         <div className="flex items-center gap-3 shrink-0 flex-wrap">
-          {/* Connected MSSQL Database Badge */}
-          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs font-semibold text-emerald-900 shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <Database className="w-3.5 h-3.5 text-emerald-600" />
-            <span>MSSQL Live Database</span>
-          </div>
+          
 
 
           {/* Real-time Count Counter */}

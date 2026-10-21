@@ -367,7 +367,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       {/* Consultant & Care */}
                       <td className="px-4 py-4">
                         <div>
-                          <span className="font-bold text-slate-800 block text-xs">{record.patient.primaryConsultant || 'Dr. K. Sridhar'}</span>
+                          <span className="font-bold text-slate-800 block text-xs">{record.patient.primaryConsultant || '—'}</span>
                           <span className="text-[10px] text-slate-400 font-semibold block mt-0.5">{record.patient.insuranceMode}</span>
                         </div>
                       </td>
