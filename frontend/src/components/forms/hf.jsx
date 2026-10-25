@@ -3164,8 +3164,13 @@ const hf = forwardRef(function hf(
   };
 
   const fillDummyData = () => {
+    setFormErrors({});
+    setSectionErrors([]);
     // Section 1
     setVisitType('Inpatient');
+    if (!visitId || visitId.trim() === '') {
+      setVisitId('Auto-generated upon save');
+    }
     setPresentDiagnosis('Heart Failure');
     setDaysHospitalized('5');
     setNonHfAdmissionReason('');
@@ -3640,8 +3645,22 @@ const hf = forwardRef(function hf(
       >
       {/* 1. Patient Profile */}
       <SectionCard title="1. Patient Profile">
+        <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Registry Demographics</span>
+          {!readOnly && (
+            <button
+              type="button"
+              id="btn-hf-section1-dummy"
+              onClick={fillDummyData}
+              className="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 rounded-lg flex items-center gap-1.5 text-xs font-bold cursor-pointer transition shadow-2xs"
+              title="Auto-fill all sections with dummy test data"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+              <span>Fill Dummy Data</span>
+            </button>
+          )}
+        </div>
 
-        
         {/* Top Demographics Grid (4-Column Layout) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 mb-4">
           
@@ -6313,201 +6332,174 @@ const hf = forwardRef(function hf(
             </div>
 
             {/* Beta Blockers Row */}
-            {(() => {
-              const isBetaPrescribed = [carvedilol, bisoprolol, metoprololSuccinate, nebivolol].some(d => d === 'Yes') || (betaBlockerOther === 'Yes');
-              const showBetaContraindications = !isBetaPrescribed || [betaNotUsedBradycardia, betaNotUsedHeartBlocks, betaNotUsedCopdAsthma, betaNotUsedHypotension, betaNotUsedOther].some(c => c === 'Yes');
-
-              return (
-                <div className="bg-white p-3.5 space-y-3" id="drugBetaBlocker">
-                  <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                    <span className={SUBSECTION_HEADER_STYLES + ' border-0 pb-0 mb-0'}>Beta-Blocker Therapy</span>
-                    {formErrors.betaBlocker && (
-                      <span className="text-red-500 text-xs font-bold">{formErrors.betaBlocker}</span>
-                    )}
-                  </div>
-                  <div className={`grid grid-cols-1 ${showBetaContraindications ? 'lg:grid-cols-12' : 'grid-cols-1'} gap-4`}>
-                    <div className={`${showBetaContraindications ? 'lg:col-span-8' : 'w-full'} grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2`}>
-                      {[
-                        { val: carvedilol, set: setCarvedilol, dose: carvedilolDose, setDose: setCarvedilolDose, label: 'Carvedilol', clsKey: 'carvedilol' },
-                        { val: bisoprolol, set: setBisoprolol, dose: bisoprololDose, setDose: setBisoprololDose, label: 'Bisoprolol', clsKey: 'bisoprolol' },
-                        { val: metoprololSuccinate, set: setMetoprololSuccinate, dose: metoprololSuccinateDose, setDose: setMetoprololSuccinateDose, label: 'Metoprolol Succinate', clsKey: 'metoprolol' },
-                        { val: nebivolol, set: setNebivolol, dose: nebivololDose, setDose: setNebivololDose, label: 'Nebivolol', clsKey: 'nebivolol' },
-                        { val: betaBlockerOther, set: setBetaBlockerOther, dose: betaBlockerOtherDose, setDose: setBetaBlockerOtherDose, label: 'Other:', name: betaBlockerOtherName, setName: setBetaBlockerOtherName, isOther: true }
-                      ].map((drug) => {
-                        const errorKey = drug.label === 'Metoprolol Succinate' ? 'metoprololSuccinateDose' : (drug.label === 'Carvedilol' ? 'carvedilolDose' : (drug.label === 'Bisoprolol' ? 'bisoprololDose' : (drug.label === 'Nebivolol' ? 'nebivololDose' : '')));
-                        return renderDrugRow(drug, errorKey);
-                      })}
-                    </div>
-                    {showBetaContraindications && (
-                      <div className="lg:col-span-4 p-3 bg-white border border-slate-200 rounded-lg space-y-2">
-                        <span className="block font-bold text-slate-700 uppercase text-[10px] tracking-wider mb-1">Contraindication / Reason Not Prescribed:</span>
-                        <div className="grid grid-cols-2 gap-2">
-                          {[
-                            { val: betaNotUsedBradycardia, set: setBetaNotUsedBradycardia, label: 'Bradycardia' },
-                            { val: betaNotUsedHeartBlocks, set: setBetaNotUsedHeartBlocks, label: 'Heart blocks' },
-                            { val: betaNotUsedCopdAsthma, set: setBetaNotUsedCopdAsthma, label: 'COPD/Asthma' },
-                            { val: betaNotUsedHypotension, set: setBetaNotUsedHypotension, label: 'Hypotension' },
-                            { val: betaNotUsedOther, set: setBetaNotUsedOther, label: 'Other' }
-                          ].map((item) => (
-                            <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                              <input disabled={readOnly}
-                                type="checkbox"
-                                checked={item.val === 'Yes'}
-                                onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
-                                className={CHECKBOX_STYLES}
-                              />
-                              <span>{item.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                        {betaNotUsedOther === 'Yes' && (
-                          <div className="mt-2">
-                            <input disabled={readOnly}
-                              type="text"
-                              value={betaNotUsedOtherReason ?? ''}
-                              onChange={(e) => setBetaNotUsedOtherReason(e.target.value)}
-                              className={INPUT_NORMAL_STYLES}
-                              placeholder="Specify reason..."
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+            <div className="bg-white p-3.5 space-y-3" id="drugBetaBlocker">
+              <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                <span className={SUBSECTION_HEADER_STYLES + ' border-0 pb-0 mb-0'}>Beta-Blocker Therapy</span>
+                {formErrors.betaBlocker && (
+                  <span className="text-red-500 text-xs font-bold">{formErrors.betaBlocker}</span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                  {[
+                    { val: carvedilol, set: setCarvedilol, dose: carvedilolDose, setDose: setCarvedilolDose, label: 'Carvedilol', clsKey: 'carvedilol' },
+                    { val: bisoprolol, set: setBisoprolol, dose: bisoprololDose, setDose: setBisoprololDose, label: 'Bisoprolol', clsKey: 'bisoprolol' },
+                    { val: metoprololSuccinate, set: setMetoprololSuccinate, dose: metoprololSuccinateDose, setDose: setMetoprololSuccinateDose, label: 'Metoprolol Succinate', clsKey: 'metoprolol' },
+                    { val: nebivolol, set: setNebivolol, dose: nebivololDose, setDose: setNebivololDose, label: 'Nebivolol', clsKey: 'nebivolol' },
+                    { val: betaBlockerOther, set: setBetaBlockerOther, dose: betaBlockerOtherDose, setDose: setBetaBlockerOtherDose, label: 'Other:', name: betaBlockerOtherName, setName: setBetaBlockerOtherName, isOther: true }
+                  ].map((drug) => {
+                    const errorKey = drug.label === 'Metoprolol Succinate' ? 'metoprololSuccinateDose' : (drug.label === 'Carvedilol' ? 'carvedilolDose' : (drug.label === 'Bisoprolol' ? 'bisoprololDose' : (drug.label === 'Nebivolol' ? 'nebivololDose' : '')));
+                    return renderDrugRow(drug, errorKey);
+                  })}
                 </div>
-              );
-            })()}
+                <div className="lg:col-span-4 p-3 bg-white border border-slate-200 rounded-lg space-y-2">
+                  <span className="block font-bold text-slate-700 uppercase text-[10px] tracking-wider mb-1">Contraindication / Reason Not Prescribed:</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { val: betaNotUsedBradycardia, set: setBetaNotUsedBradycardia, label: 'Bradycardia' },
+                      { val: betaNotUsedHeartBlocks, set: setBetaNotUsedHeartBlocks, label: 'Heart blocks' },
+                      { val: betaNotUsedCopdAsthma, set: setBetaNotUsedCopdAsthma, label: 'COPD/Asthma' },
+                      { val: betaNotUsedHypotension, set: setBetaNotUsedHypotension, label: 'Hypotension' },
+                      { val: betaNotUsedOther, set: setBetaNotUsedOther, label: 'Other' }
+                    ].map((item) => (
+                      <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
+                        <input disabled={readOnly}
+                          type="checkbox"
+                          checked={item.val === 'Yes'}
+                          onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
+                          className={CHECKBOX_STYLES}
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {betaNotUsedOther === 'Yes' && (
+                    <div className="mt-2">
+                      <input disabled={readOnly}
+                        type="text"
+                        value={betaNotUsedOtherReason ?? ''}
+                        onChange={(e) => setBetaNotUsedOtherReason(e.target.value)}
+                        className={INPUT_NORMAL_STYLES}
+                        placeholder="Specify reason..."
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {/* ACE Inhibitors Row */}
-            {(() => {
-              const isAcePrescribed = [enalapril, ramipril, lisinopril, perindopril].some(d => d === 'Yes') || (aceOther === 'Yes');
-              const showAceContraindications = !isAcePrescribed || [aceNotUsedElevatedCreatinine, aceNotUsedHyperkalemia, aceNotUsedCough, aceNotUsedHypotension, aceNotUsedOther].some(c => c === 'Yes');
-
-              return (
-                <div className="bg-white p-3.5 space-y-3" id="drugAceInhibitor">
-                  <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                    <span className={SUBSECTION_HEADER_STYLES + ' border-0 pb-0 mb-0'}>ACE Inhibitor Therapy</span>
-                    {formErrors.aceInhibitor && (
-                      <span className="text-red-500 text-xs font-bold">{formErrors.aceInhibitor}</span>
-                    )}
-                  </div>
-                  <div className={`grid grid-cols-1 ${showAceContraindications ? 'lg:grid-cols-12' : 'grid-cols-1'} gap-4`}>
-                    <div className={`${showAceContraindications ? 'lg:col-span-8' : 'w-full'} grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2`}>
-                      {[
-                        { val: enalapril, set: setEnalapril, dose: enalaprilDose, setDose: setEnalaprilDose, label: 'Enalapril', clsKey: 'enalapril' },
-                        { val: ramipril, set: setRamipril, dose: ramiprilDose, setDose: setRamiprilDose, label: 'Ramipril', clsKey: 'ramipril' },
-                        { val: lisinopril, set: setLisinopril, dose: lisinoprilDose, setDose: setLisinoprilDose, label: 'Lisinopril', clsKey: 'lisinopril' },
-                        { val: perindopril, set: setPerindopril, dose: perindoprilDose, setDose: setPerindoprilDose, label: 'Perindopril', clsKey: 'perindopril' },
-                        { val: aceOther, set: setAceOther, dose: aceOtherDose, setDose: setAceOtherDose, label: 'Other:', name: aceOtherName, setName: setAceOtherName, isOther: true }
-                      ].map((drug) => {
-                        const errorKey = drug.label === 'Enalapril' ? 'enalaprilDose' : (drug.label === 'Ramipril' ? 'ramiprilDose' : (drug.label === 'Lisinopril' ? 'lisinoprilDose' : (drug.label === 'Perindopril' ? 'perindoprilDose' : (drug.isOther ? 'aceOtherDose' : ''))));
-                        return renderDrugRow(drug, errorKey);
-                      })}
-                    </div>
-                    {showAceContraindications && (
-                      <div className="lg:col-span-4 p-3 bg-white border border-slate-200 rounded-lg space-y-2">
-                        <span className="block font-bold text-slate-700 uppercase text-[10px] tracking-wider mb-1">Contraindication / Reason Not Prescribed:</span>
-                        <div className="grid grid-cols-2 gap-2">
-                          {[
-                            { val: aceNotUsedElevatedCreatinine, set: setAceNotUsedElevatedCreatinine, label: 'Renal Failure (Elevated Cr)' },
-                            { val: aceNotUsedHyperkalemia, set: setAceNotUsedHyperkalemia, label: 'Hyperkalemia' },
-                            { val: aceNotUsedCough, set: setAceNotUsedCough, label: 'Intolerable Cough' },
-                            { val: aceNotUsedHypotension, set: setAceNotUsedHypotension, label: 'Hypotension' },
-                            { val: aceNotUsedOther, set: setAceNotUsedOther, label: 'Other' }
-                          ].map((item) => (
-                            <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                              <input disabled={readOnly}
-                                type="checkbox"
-                                checked={item.val === 'Yes'}
-                                onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
-                                className={CHECKBOX_STYLES}
-                              />
-                              <span>{item.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                        {aceNotUsedOther === 'Yes' && (
-                          <div className="mt-2">
-                            <input disabled={readOnly}
-                              type="text"
-                              value={aceNotUsedOtherReason ?? ''}
-                              onChange={(e) => setAceNotUsedOtherReason(e.target.value)}
-                              className={INPUT_NORMAL_STYLES}
-                              placeholder="Specify reason..."
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+            <div className="bg-white p-3.5 space-y-3" id="drugAceInhibitor">
+              <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                <span className={SUBSECTION_HEADER_STYLES + ' border-0 pb-0 mb-0'}>ACE Inhibitor Therapy</span>
+                {formErrors.aceInhibitor && (
+                  <span className="text-red-500 text-xs font-bold">{formErrors.aceInhibitor}</span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                  {[
+                    { val: enalapril, set: setEnalapril, dose: enalaprilDose, setDose: setEnalaprilDose, label: 'Enalapril', clsKey: 'enalapril' },
+                    { val: ramipril, set: setRamipril, dose: ramiprilDose, setDose: setRamiprilDose, label: 'Ramipril', clsKey: 'ramipril' },
+                    { val: lisinopril, set: setLisinopril, dose: lisinoprilDose, setDose: setLisinoprilDose, label: 'Lisinopril', clsKey: 'lisinopril' },
+                    { val: perindopril, set: setPerindopril, dose: perindoprilDose, setDose: setPerindoprilDose, label: 'Perindopril', clsKey: 'perindopril' },
+                    { val: aceOther, set: setAceOther, dose: aceOtherDose, setDose: setAceOtherDose, label: 'Other:', name: aceOtherName, setName: setAceOtherName, isOther: true }
+                  ].map((drug) => {
+                    const errorKey = drug.label === 'Enalapril' ? 'enalaprilDose' : (drug.label === 'Ramipril' ? 'ramiprilDose' : (drug.label === 'Lisinopril' ? 'lisinoprilDose' : (drug.label === 'Perindopril' ? 'perindoprilDose' : (drug.isOther ? 'aceOtherDose' : ''))));
+                    return renderDrugRow(drug, errorKey);
+                  })}
                 </div>
-              );
-            })()}
+                <div className="lg:col-span-4 p-3 bg-white border border-slate-200 rounded-lg space-y-2">
+                  <span className="block font-bold text-slate-700 uppercase text-[10px] tracking-wider mb-1">Contraindication / Reason Not Prescribed:</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { val: aceNotUsedElevatedCreatinine, set: setAceNotUsedElevatedCreatinine, label: 'Renal Failure (Elevated Cr)' },
+                      { val: aceNotUsedHyperkalemia, set: setAceNotUsedHyperkalemia, label: 'Hyperkalemia' },
+                      { val: aceNotUsedCough, set: setAceNotUsedCough, label: 'Intolerable Cough' },
+                      { val: aceNotUsedHypotension, set: setAceNotUsedHypotension, label: 'Hypotension' },
+                      { val: aceNotUsedOther, set: setAceNotUsedOther, label: 'Other' }
+                    ].map((item) => (
+                      <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
+                        <input disabled={readOnly}
+                          type="checkbox"
+                          checked={item.val === 'Yes'}
+                          onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
+                          className={CHECKBOX_STYLES}
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {aceNotUsedOther === 'Yes' && (
+                    <div className="mt-2">
+                      <input disabled={readOnly}
+                        type="text"
+                        value={aceNotUsedOtherReason ?? ''}
+                        onChange={(e) => setAceNotUsedOtherReason(e.target.value)}
+                        className={INPUT_NORMAL_STYLES}
+                        placeholder="Specify reason..."
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
             {/* ARBs Row */}
-            {(() => {
-              const isArbPrescribed = [valsartan, losartan, telmisartan, olmesartan].some(d => d === 'Yes') || (arbOther === 'Yes');
-              const showArbContraindications = !isArbPrescribed || [arbNotUsedElevatedCreatinine, arbNotUsedHyperkalemia, arbNotUsedHypotension, arbNotUsedOther].some(c => c === 'Yes');
-
-              return (
-                <div className="bg-white p-3.5 space-y-3" id="drugArb">
-                  <div className="flex justify-between items-center border-b border-slate-200 pb-2">
-                    <span className={SUBSECTION_HEADER_STYLES + ' border-0 pb-0 mb-0'}>Angiotensin Receptor Blocker (ARB)</span>
-                    {formErrors.arb && (
-                      <span className="text-red-500 text-xs font-bold">{formErrors.arb}</span>
-                    )}
-                  </div>
-                  <div className={`grid grid-cols-1 ${showArbContraindications ? 'lg:grid-cols-12' : 'grid-cols-1'} gap-4`}>
-                    <div className={`${showArbContraindications ? 'lg:col-span-8' : 'w-full'} grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2`}>
-                      {[
-                        { val: valsartan, set: setValsartan, dose: valsartanDose, setDose: setValsartanDose, label: 'Valsartan', clsKey: 'valsartan' },
-                        { val: losartan, set: setLosartan, dose: losartanDose, setDose: setLosartanDose, label: 'Losartan', clsKey: 'losartan' },
-                        { val: telmisartan, set: setTelmisartan, dose: telmisartanDose, setDose: setTelmisartanDose, label: 'Telmisartan', clsKey: 'telmisartan' },
-                        { val: olmesartan, set: setOlmesartan, dose: olmesartanDose, setDose: setOlmesartanDose, label: 'Olmesartan', clsKey: 'olmesartan' },
-                        { val: arbOther, set: setArbOther, dose: arbOtherDose, setDose: setArbOtherDose, label: 'Other:', name: arbOtherName, setName: setArbOtherName, isOther: true }
-                      ].map((drug) => {
-                        const errorKey = drug.label === 'Valsartan' ? 'valsartanDose' : (drug.label === 'Losartan' ? 'losartanDose' : (drug.label === 'Telmisartan' ? 'telmisartanDose' : (drug.label === 'Olmesartan' ? 'olmesartanDose' : (drug.isOther ? 'arbOtherDose' : ''))));
-                        return renderDrugRow(drug, errorKey);
-                      })}
-                    </div>
-                    {showArbContraindications && (
-                      <div className="lg:col-span-4 p-3 bg-white border border-slate-200 rounded-lg space-y-2">
-                        <span className="block font-bold text-slate-700 uppercase text-[10px] tracking-wider mb-1">Contraindication / Reason Not Prescribed:</span>
-                        <div className="grid grid-cols-2 gap-2">
-                          {[
-                            { val: arbNotUsedElevatedCreatinine, set: setArbNotUsedElevatedCreatinine, label: 'Renal Failure (Elevated Cr)' },
-                            { val: arbNotUsedHyperkalemia, set: setArbNotUsedHyperkalemia, label: 'Hyperkalemia' },
-                            { val: arbNotUsedHypotension, set: setArbNotUsedHypotension, label: 'Hypotension' },
-                            { val: arbNotUsedOther, set: setArbNotUsedOther, label: 'Others' }
-                          ].map((item) => (
-                            <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
-                              <input disabled={readOnly}
-                                type="checkbox"
-                                checked={item.val === 'Yes'}
-                                onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
-                                className={CHECKBOX_STYLES}
-                              />
-                              <span>{item.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                        {arbNotUsedOther === 'Yes' && (
-                          <div className="mt-2">
-                            <input disabled={readOnly}
-                              type="text"
-                              value={arbNotUsedOtherReason ?? ''}
-                              onChange={(e) => setArbNotUsedOtherReason(e.target.value)}
-                              className={INPUT_NORMAL_STYLES}
-                              placeholder="Specify reason..."
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+            <div className="bg-white p-3.5 space-y-3" id="drugArb">
+              <div className="flex justify-between items-center border-b border-slate-200 pb-2">
+                <span className={SUBSECTION_HEADER_STYLES + ' border-0 pb-0 mb-0'}>Angiotensin Receptor Blocker (ARB)</span>
+                {formErrors.arb && (
+                  <span className="text-red-500 text-xs font-bold">{formErrors.arb}</span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+                  {[
+                    { val: valsartan, set: setValsartan, dose: valsartanDose, setDose: setValsartanDose, label: 'Valsartan', clsKey: 'valsartan' },
+                    { val: losartan, set: setLosartan, dose: losartanDose, setDose: setLosartanDose, label: 'Losartan', clsKey: 'losartan' },
+                    { val: telmisartan, set: setTelmisartan, dose: telmisartanDose, setDose: setTelmisartanDose, label: 'Telmisartan', clsKey: 'telmisartan' },
+                    { val: olmesartan, set: setOlmesartan, dose: olmesartanDose, setDose: setOlmesartanDose, label: 'Olmesartan', clsKey: 'olmesartan' },
+                    { val: arbOther, set: setArbOther, dose: arbOtherDose, setDose: setArbOtherDose, label: 'Other:', name: arbOtherName, setName: setArbOtherName, isOther: true }
+                  ].map((drug) => {
+                    const errorKey = drug.label === 'Valsartan' ? 'valsartanDose' : (drug.label === 'Losartan' ? 'losartanDose' : (drug.label === 'Telmisartan' ? 'telmisartanDose' : (drug.label === 'Olmesartan' ? 'olmesartanDose' : (drug.isOther ? 'arbOtherDose' : ''))));
+                    return renderDrugRow(drug, errorKey);
+                  })}
                 </div>
-              );
-            })()}
+                <div className="lg:col-span-4 p-3 bg-white border border-slate-200 rounded-lg space-y-2">
+                  <span className="block font-bold text-slate-700 uppercase text-[10px] tracking-wider mb-1">Contraindication / Reason Not Prescribed:</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { val: arbNotUsedElevatedCreatinine, set: setArbNotUsedElevatedCreatinine, label: 'Renal Failure (Elevated Cr)' },
+                      { val: arbNotUsedHyperkalemia, set: setArbNotUsedHyperkalemia, label: 'Hyperkalemia' },
+                      { val: arbNotUsedHypotension, set: setArbNotUsedHypotension, label: 'Hypotension' },
+                      { val: arbNotUsedOther, set: setArbNotUsedOther, label: 'Others' }
+                    ].map((item) => (
+                      <label key={item.label} className="flex items-center gap-1.5 cursor-pointer text-slate-700">
+                        <input disabled={readOnly}
+                          type="checkbox"
+                          checked={item.val === 'Yes'}
+                          onChange={(e) => item.set(e.target.checked ? 'Yes' : 'No')}
+                          className={CHECKBOX_STYLES}
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                  {arbNotUsedOther === 'Yes' && (
+                    <div className="mt-2">
+                      <input disabled={readOnly}
+                        type="text"
+                        value={arbNotUsedOtherReason ?? ''}
+                        onChange={(e) => setArbNotUsedOtherReason(e.target.value)}
+                        className={INPUT_NORMAL_STYLES}
+                        placeholder="Specify reason..."
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
           {/* Aldosterone Antagonists Row */}
           <div className="bg-white" id="drugAldosterone">

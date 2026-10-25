@@ -17,45 +17,44 @@ export const CONTRAINDICATION_THRESHOLDS = [
     pillar: 'Beta Blocker',
     rules: [
       'Heart Rate < 50 bpm (Severe Symptomatic Bradycardia)',
-      'Systolic Blood Pressure < 90 mmHg (Severe Hypotension / Cardiogenic Shock)',
-      'High-grade AV Block (2nd or 3rd degree without pacemaker)',
-      'Severe Active Bronchospastic Disease / Refractory Asthma'
+      'Systolic Blood Pressure < 90 mmHg (Severe Hypotension)',
+      'Cardiogenic Shock / Inotrope support (Dobutamine, Noradrenaline)',
+      'Severe Active Bronchospastic Disease / Refractory Asthma or COPD',
+      'High-grade AV Block / Complete Heart Block (CHB) / Sick Sinus Syndrome'
     ]
   },
   {
     pillar: 'ACE Inhibitor / ARB',
     rules: [
-      'Serum Creatinine > 2.5 mg/dL or eGFR < 30 mL/min/1.73m²',
-      'Serum Potassium (K⁺) > 5.0 mEq/L (Hyperkalemia)',
       'Systolic Blood Pressure < 90 mmHg (Severe Hypotension)',
-      'Documented History of Angioedema (Absolute Contraindication for ACEi)',
-      'Bilateral Renal Artery Stenosis'
+      'Serum Potassium (K⁺) > 5.5 mEq/L (Hyperkalemia keyword / lab test)',
+      'Serum Creatinine > 2.5 mg/dL (Renal Impairment safety threshold)',
+      'Documented History of Angioedema / Cough (ACEi-specific intolerance)'
     ]
   },
   {
     pillar: 'ARNI (Sacubitril/Valsartan)',
     rules: [
-      'Serum Creatinine > 2.5 mg/dL or eGFR < 30 mL/min',
-      'Serum Potassium (K⁺) > 5.0 mEq/L',
-      'Systolic Blood Pressure < 90 mmHg',
-      'History of Angioedema related to previous ACEi/ARB therapy',
-      'Concomitant ACE inhibitor therapy (requires mandatory 36h washout period)'
+      'Systolic Blood Pressure < 100 mmHg (Stricter hemodynamics required for initiation)',
+      'Serum Potassium (K⁺) > 5.5 mEq/L (Hyperkalemia)',
+      'Serum Creatinine > 2.5 mg/dL (Renal Impairment threshold)',
+      'History of Angioedema related to previous ACEi/ARB therapy'
     ]
   },
   {
     pillar: 'MRA (Mineralocorticoid Receptor Antagonist)',
     rules: [
-      'Serum Potassium (K⁺) > 5.0 mEq/L (High risk of fatal hyperkalemic arrhythmias)',
-      'Serum Creatinine > 2.5 mg/dL or eGFR < 30 mL/min',
-      'Severe Hyponatremia (Serum Na⁺ < 125 mEq/L)'
+      'Serum Potassium (K⁺) > 5.0 mEq/L (Lower safety boundary due to hyperkalemic arrhythmia risk)',
+      'Serum Creatinine > 2.5 mg/dL (Renal Impairment safety threshold)',
+      'Severe Hyponatremia or documented aldosterone antagonist intolerance'
     ]
   },
   {
     pillar: 'SGLT2 Inhibitor',
     rules: [
-      'Severe Renal Impairment (eGFR < 20-25 mL/min/1.73m²)',
-      'Type 1 Diabetes Mellitus (Euglycemic DKA risk without specialist endocrine supervision)',
-      'Active Recurrent Mycotic Genitourinary Sepsis / Fournier Gangrene risk'
+      'Severe Renal Impairment (Serum Creatinine > 3.0 mg/dL)',
+      'History or active risk of Diabetic Ketoacidosis (DKA / Ketoacidosis)',
+      'Active Recurrent Urinary Tract Infection / Urosepsis'
     ]
   }
 ];
@@ -155,12 +154,16 @@ export function filterCohort(cohort, filters = {}) {
     registry = 'All Registries',
     phenotype = 'All Phenotypes',
     gender = 'All Genders',
+    minAge = '',
+    maxAge = '',
     startDate = '',
     endDate = '',
     search = ''
   } = filters;
 
   const searchNorm = search.trim().toLowerCase();
+  const parsedMinAge = minAge !== '' && !isNaN(Number(minAge)) ? Number(minAge) : null;
+  const parsedMaxAge = maxAge !== '' && !isNaN(Number(maxAge)) ? Number(maxAge) : null;
 
   return cohort.filter(p => {
     // Registry filter
@@ -184,6 +187,16 @@ export function filterCohort(cohort, filters = {}) {
       if (String(p.gender).toLowerCase() !== gender.toLowerCase()) {
         return false;
       }
+    }
+
+    // Age range filter
+    if (parsedMinAge !== null) {
+      const patientAge = p.age != null && p.age !== '' ? Number(p.age) : NaN;
+      if (isNaN(patientAge) || patientAge < parsedMinAge) return false;
+    }
+    if (parsedMaxAge !== null) {
+      const patientAge = p.age != null && p.age !== '' ? Number(p.age) : NaN;
+      if (isNaN(patientAge) || patientAge > parsedMaxAge) return false;
     }
 
     // Date range filter
@@ -218,6 +231,8 @@ export function computeAnalytics(patients) {
     return {
       cohortSize: 0,
       kpi: {
+        totalHfRecords: 0,
+        uniquePatients: 0,
         totalPatients: 0,
         males: 0,
         females: 0,
@@ -242,6 +257,12 @@ export function computeAnalytics(patients) {
         severeNyhaPercent: 0,
         deathsRecorded: 0,
         mortalityPercent: 0,
+        deathsHospital: 0,
+        deathsHospitalPercent: 0,
+        deathsHome: 0,
+        deathsHomePercent: 0,
+        deathsWithin30Days: 0,
+        deathsWithin30DaysPercent: 0,
         meanGdmtDrugs: 0,
         meanAdherencePercent: 0,
         quadrupleTherapyCount: 0,
@@ -259,6 +280,19 @@ export function computeAnalytics(patients) {
         cadCount: 0,
         cadPercent: 0
       },
+      mortalityAnalytics: {
+        totalDeaths: 0,
+        mortalityRate: 0,
+        inHospital: 0,
+        inHospitalPercent: 0,
+        atHome: 0,
+        atHomePercent: 0,
+        within30Days: 0,
+        within30DaysPercent: 0,
+        beyond30Days: 0,
+        beyond30DaysPercent: 0,
+        chartData: []
+      },
       ageDistribution: [],
       adherenceDistribution: [],
       drugsTakenDistribution: [],
@@ -266,29 +300,60 @@ export function computeAnalytics(patients) {
     };
   }
 
+  // 1. Demographics (Gender & Age) derived strictly from unique patients (patient_demographics)
+  const uniquePatientsMap = new Map();
+  patients.forEach(p => {
+    const key = p.regPatientId || p.uhid;
+    if (key && !uniquePatientsMap.has(key)) {
+      uniquePatientsMap.set(key, p);
+    }
+  });
+  const uniquePatientsList = Array.from(uniquePatientsMap.values());
+  const uniqueTotal = uniquePatientsList.length || total;
+
   let males = 0;
   let females = 0;
   let sumAge = 0;
+  let ageUnder50 = 0;
+  let age50to60 = 0;
+  let age61to70 = 0;
+  let ageOver70 = 0;
+
+  uniquePatientsList.forEach(p => {
+    if (p.gender === 'Female') females++;
+    else males++;
+
+    if (p.age) {
+      sumAge += p.age;
+      if (p.age < 50) ageUnder50++;
+      else if (p.age <= 60) age50to60++;
+      else if (p.age <= 70) age61to70++;
+      else ageOver70++;
+    }
+  });
+
+  const meanAge = uniqueTotal > 0 ? (sumAge / uniqueTotal) : 50;
+  const varianceAge = uniquePatientsList.reduce((acc, p) => acc + Math.pow((p.age || meanAge) - meanAge, 2), 0) / uniqueTotal;
+  const sdAge = Math.sqrt(varianceAge);
+
+  // 2. Admission-level clinical metrics
   let sumEf = 0;
   let countEf = 0;
   let countHFrEF = 0;
-  let countHFmrEF = 0;
   let countHFpEF = 0;
   let countNYHA1 = 0;
   let countNYHA2 = 0;
   let countNYHA3 = 0;
   let countNYHA4 = 0;
   let countDeath = 0;
+  let countDeathHospital = 0;
+  let countDeathHome = 0;
+  let countDeathWithin30Days = 0;
 
   let countDM = 0;
   let countHTN = 0;
   let countRenal = 0;
   let countCAD = 0;
-
-  let ageUnder50 = 0;
-  let age50to60 = 0;
-  let age61to70 = 0;
-  let ageOver70 = 0;
 
   let sumAdherence = 0;
   let sumDrugsTaken = 0;
@@ -319,35 +384,47 @@ export function computeAnalytics(patients) {
   };
 
   patients.forEach(p => {
-    if (p.gender === 'Female') females++;
-    else males++;
-
-    sumAge += p.age;
-    if (p.age < 50) ageUnder50++;
-    else if (p.age <= 60) age50to60++;
-    else if (p.age <= 70) age61to70++;
-    else ageOver70++;
-
     if (typeof p.efPercent === 'number' && !isNaN(p.efPercent)) {
       sumEf += p.efPercent;
       countEf++;
     }
+    // Phenotype: strictly from hfref and hfpef
     if (p.hfType === 'HFrEF') countHFrEF++;
-    else if (p.hfType === 'HFmrEF') countHFmrEF++;
-    else countHFpEF++;
+    else if (p.hfType === 'HFpEF') countHFpEF++;
 
+    // NYHA: strictly from nyha_class_1..4
     const nyha = String(p.functionalStatus || '').toLowerCase();
-    if (nyha.includes('iv')) countNYHA4++;
-    else if (nyha.includes('iii')) countNYHA3++;
-    else if (nyha.includes('ii')) countNYHA2++;
-    else countNYHA1++;
+    if (nyha.includes('class iv') || nyha.includes('class 4')) countNYHA4++;
+    else if (nyha.includes('class iii') || nyha.includes('class 3')) countNYHA3++;
+    else if (nyha.includes('class ii') || nyha.includes('class 2')) countNYHA2++;
+    else if (nyha.includes('class i') || nyha.includes('class 1')) countNYHA1++;
 
-    if (p.death) countDeath++;
+    if (p.death) {
+      countDeath++;
+      const isHosp = p.deathHospital === true || p.deathHospital === 1 || String(p.deathHospital).toLowerCase() === 'yes' || p.deathLocation === 'Hospital';
+      const isHome = p.deathHome === true || p.deathHome === 1 || String(p.deathHome).toLowerCase() === 'yes' || p.deathLocation === 'Home';
+      if (isHosp) {
+        countDeathHospital++;
+      } else if (isHome) {
+        countDeathHome++;
+      }
+
+      if (p.deathDate && p.dischargeDate) {
+        const diffDays = Math.round((new Date(p.deathDate).getTime() - new Date(p.dischargeDate).getTime()) / (1000 * 3600 * 24));
+        if (diffDays >= 0 && diffDays <= 30) {
+          countDeathWithin30Days++;
+        } else if (diffDays < 0 && isHosp) {
+          countDeathWithin30Days++;
+        }
+      } else if (isHosp) {
+        countDeathWithin30Days++;
+      }
+    }
 
     const comorbStr = (p.comorbidities || []).join(' ').toLowerCase();
     if (comorbStr.includes('diabet') || comorbStr.includes('dm')) countDM++;
     if (comorbStr.includes('hyperten') || comorbStr.includes('htn')) countHTN++;
-    if (comorbStr.includes('renal') || comorbStr.includes('ckd') || p.creatinine > 2.5) countRenal++;
+    if (comorbStr.includes('renal') || comorbStr.includes('ckd')) countRenal++;
     if (comorbStr.includes('cad') || comorbStr.includes('cabg') || comorbStr.includes('ischemic')) countCAD++;
 
     sumAdherence += p.adherencePercent;
@@ -378,9 +455,6 @@ export function computeAnalytics(patients) {
     });
   });
 
-  const meanAge = sumAge / total;
-  const varianceAge = patients.reduce((acc, p) => acc + Math.pow(p.age - meanAge, 2), 0) / total;
-  const sdAge = Math.sqrt(varianceAge);
   const meanEf = countEf > 0 ? (sumEf / countEf) : 36.9;
 
   const performanceMatrix = GDMT_PILLARS.map(pillar => {
@@ -406,19 +480,19 @@ export function computeAnalytics(patients) {
   return {
     cohortSize: total,
     kpi: {
+      totalHfRecords: total,
+      uniquePatients: uniqueTotal,
       totalPatients: total,
       males,
       females,
-      malePercent: Math.round((males / total) * 1000) / 10,
-      femalePercent: Math.round((females / total) * 1000) / 10,
+      malePercent: Math.round((males / uniqueTotal) * 1000) / 10,
+      femalePercent: Math.round((females / uniqueTotal) * 1000) / 10,
       meanAge: Math.round(meanAge * 10) / 10,
       sdAge: Math.round(sdAge * 10) / 10,
       meanEf: Math.round(meanEf * 10) / 10,
       hfrEFCount: countHFrEF,
       hfrEFPercent: Math.round((countHFrEF / total) * 1000) / 10,
-      hfmrEFCount: countHFmrEF,
-      hfmrEFPercent: Math.round((countHFmrEF / total) * 1000) / 10,
-      hfpEFCount: countHFpEF,
+            hfpEFCount: countHFpEF,
       hfpEFPercent: Math.round((countHFpEF / total) * 1000) / 10,
       nyha1Count: countNYHA1,
       nyha2Count: countNYHA2,
@@ -429,7 +503,13 @@ export function computeAnalytics(patients) {
       severeNyhaCount: countNYHA3 + countNYHA4,
       severeNyhaPercent: Math.round(((countNYHA3 + countNYHA4) / total) * 1000) / 10,
       deathsRecorded: countDeath,
-      mortalityPercent: Math.round((countDeath / total) * 1000) / 10,
+      mortalityPercent: total > 0 ? Math.round((countDeath / total) * 1000) / 10 : 0,
+      deathsHospital: countDeathHospital,
+      deathsHospitalPercent: countDeath > 0 ? Math.round((countDeathHospital / countDeath) * 1000) / 10 : 0,
+      deathsHome: countDeathHome,
+      deathsHomePercent: countDeath > 0 ? Math.round((countDeathHome / countDeath) * 1000) / 10 : 0,
+      deathsWithin30Days: countDeathWithin30Days,
+      deathsWithin30DaysPercent: countDeath > 0 ? Math.round((countDeathWithin30Days / countDeath) * 1000) / 10 : 0,
       meanGdmtDrugs: Math.round((sumDrugsTaken / total) * 100) / 100,
       meanAdherencePercent: Math.round((sumAdherence / total) * 10) / 10,
       quadrupleTherapyCount: countQuadruple,
@@ -447,11 +527,29 @@ export function computeAnalytics(patients) {
       cadCount: countCAD,
       cadPercent: Math.round((countCAD / total) * 1000) / 10
     },
+    mortalityAnalytics: {
+      totalDeaths: countDeath,
+      mortalityRate: total > 0 ? Math.round((countDeath / total) * 1000) / 10 : 0,
+      inHospital: countDeathHospital,
+      inHospitalPercent: countDeath > 0 ? Math.round((countDeathHospital / countDeath) * 1000) / 10 : 0,
+      atHome: countDeathHome,
+      atHomePercent: countDeath > 0 ? Math.round((countDeathHome / countDeath) * 1000) / 10 : 0,
+      within30Days: countDeathWithin30Days,
+      within30DaysPercent: countDeath > 0 ? Math.round((countDeathWithin30Days / countDeath) * 1000) / 10 : 0,
+      beyond30Days: Math.max(0, countDeath - countDeathWithin30Days),
+      beyond30DaysPercent: countDeath > 0 ? Math.round((Math.max(0, countDeath - countDeathWithin30Days) / countDeath) * 1000) / 10 : 0,
+      chartData: [
+        { name: 'Total Deaths', count: countDeath, rate: total > 0 ? Math.round((countDeath / total) * 1000) / 10 : 0, fill: '#e11d48', desc: 'All Recorded Deaths in Registry' },
+        { name: 'In Hospital', count: countDeathHospital, rate: countDeath > 0 ? Math.round((countDeathHospital / countDeath) * 1000) / 10 : 0, fill: '#f59e0b', desc: 'In-Hospital Mortality' },
+        { name: 'At Home', count: countDeathHome, rate: countDeath > 0 ? Math.round((countDeathHome / countDeath) * 1000) / 10 : 0, fill: '#8b5cf6', desc: 'Out-of-Hospital / Home Mortality' },
+        { name: '≤30 Days Post-Discharge', count: countDeathWithin30Days, rate: countDeath > 0 ? Math.round((countDeathWithin30Days / countDeath) * 1000) / 10 : 0, fill: '#ef4444', desc: 'Mortality within 30 Days of Discharge' }
+      ]
+    },
     ageDistribution: [
-      { bracket: '<50 yrs', count: ageUnder50, percent: Math.round((ageUnder50 / total) * 1000) / 10 },
-      { bracket: '50-60 yrs', count: age50to60, percent: Math.round((age50to60 / total) * 1000) / 10 },
-      { bracket: '61-70 yrs', count: age61to70, percent: Math.round((age61to70 / total) * 1000) / 10 },
-      { bracket: '>70 yrs', count: ageOver70, percent: Math.round((ageOver70 / total) * 1000) / 10 }
+      { bracket: '<50 yrs', count: ageUnder50, percent: Math.round((ageUnder50 / uniqueTotal) * 1000) / 10 },
+      { bracket: '50-60 yrs', count: age50to60, percent: Math.round((age50to60 / uniqueTotal) * 1000) / 10 },
+      { bracket: '61-70 yrs', count: age61to70, percent: Math.round((age61to70 / uniqueTotal) * 1000) / 10 },
+      { bracket: '>70 yrs', count: ageOver70, percent: Math.round((ageOver70 / uniqueTotal) * 1000) / 10 }
     ],
     adherenceDistribution: Object.entries(adherenceBrackets).map(([bracket, count]) => {
       const devMap = { '0.0%': 6, '16.7%': 5, '33.3%': 4, '50.0%': 3, '66.7%': 2, '83.3%': 1, '100.0%': 0 };

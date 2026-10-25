@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const { logAuditTrail } = require('../utils/logAuditTrail');
 const { generateAuditExcel } = require('../utils/auditExcelGenerator');
+const { materializeSingleHfGdmt, softDeleteHfGdmt, restoreHfGdmt } = require('../services/gdmtEvaluationService');
 
 /**
  * Format registry number e.g., HF00001
@@ -44,6 +45,7 @@ const createRecord = async (req, res) => {
       { registryNo: hf_registry_no, hfId: newRecordId }
     );
 
+    await materializeSingleHfGdmt(newRecordId, conn);
     await conn.commit();
     conn.release();
 
@@ -99,6 +101,7 @@ const updateRecord = async (req, res) => {
       WHERE [hf_id] = @recordId;
     `;
     await db.query(updateQuery, { userId, recordId });
+    await materializeSingleHfGdmt(recordId);
 
     // 3. Fetch updated record data (updatedData)
     const { recordset: updatedRows } = await db.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @recordId;', { recordId });
@@ -156,6 +159,7 @@ const deleteRecord = async (req, res) => {
       'UPDATE [hf_registry] SET [is_deleted] = 1, [deleted_at] = SYSDATETIME(), [deleted_by] = @userId WHERE [hf_id] = @recordId;',
       { userId, recordId }
     );
+    await softDeleteHfGdmt(recordId);
 
     const { recordset: updatedRows } = await db.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @recordId;', { recordId });
     const softDeletedData = updatedRows[0] || { ...previousData, is_deleted: 1, deleted_by: userId, deleted_at: new Date() };
@@ -206,6 +210,7 @@ const undeleteRecord = async (req, res) => {
       'UPDATE [hf_registry] SET [is_deleted] = 0, [deleted_at] = NULL, [deleted_by] = NULL, [updated_at] = SYSDATETIME(), [updated_by] = @userId WHERE [hf_id] = @recordId;',
       { userId, recordId }
     );
+    await restoreHfGdmt(recordId);
 
     const { recordset: updatedRows } = await db.query('SELECT * FROM [hf_registry] WHERE [hf_id] = @recordId;', { recordId });
     const restoredData = updatedRows[0] || { ...previousData, is_deleted: 0, deleted_by: null, deleted_at: null };

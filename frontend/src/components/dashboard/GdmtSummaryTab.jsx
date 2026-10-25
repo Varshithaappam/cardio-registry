@@ -30,8 +30,7 @@ import {
   Pie,
   Cell,
   RadialBarChart,
-  RadialBar,
-  LabelList
+  RadialBar
 } from 'recharts';
 
 export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
@@ -88,6 +87,33 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
   // Colors for therapy intensity
   const INTENSITY_COLORS = ['#e62031', '#0d9488', '#0284c7', '#8b5cf6', '#f59e0b', '#10b981'];
 
+  // Neat modern tooltip styling with smooth rounded borders
+  const tooltipStyle = {
+    content: {
+      backgroundColor: '#ffffff',
+      borderRadius: '12px',
+      border: '1px solid #e2e8f0',
+      boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.06)',
+      padding: '10px 14px',
+    },
+    label: {
+      fontWeight: 700,
+      color: '#0f172a',
+      marginBottom: '6px',
+      fontSize: '13px',
+    },
+    item: {
+      fontSize: '12px',
+      fontWeight: 600,
+      padding: '2px 0',
+    },
+    cursor: {
+      fill: '#f1f5f9',
+      opacity: 0.5,
+      radius: 6,
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* ROW 1: 2 Graphs side-by-side */}
@@ -101,18 +127,11 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                   MULTIDIMENSIONAL PILLAR PROFILE
                 </span>
                 <h3 className="text-sm font-bold text-slate-900 mt-0.5">
-                  GDMT Category Prescription Profile ({kpi.totalPatients} Pts)
+                  GDMT Category Prescription Profile ({kpi.totalHfRecords || kpi.totalPatients} Records)
                 </h3>
-                {/* Visual Label Explanation */}
-                <div className="flex items-center gap-2 mt-1 text-[11px] font-semibold">
-                  <span className="flex items-center gap-1.5 text-sky-700">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#0284c7]"></span>
-                    Blue: % Prescribed
-                  </span>
-                </div>
               </div>
               <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 self-start sm:self-auto">
-                Cohort: N={kpi.totalPatients}
+                Cohort: N={kpi.totalHfRecords || kpi.totalPatients}
               </span>
             </div>
 
@@ -121,7 +140,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                   data={categoryProfileData} 
-                  margin={{ top: 28, right: 15, left: -20, bottom: 5 }} 
+                  margin={{ top: 10, right: 15, left: -20, bottom: 5 }} 
                   barSize={32}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -141,27 +160,22 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     tickLine={false} 
                   />
                   <Tooltip 
+                    contentStyle={tooltipStyle.content}
+                    labelStyle={tooltipStyle.label}
+                    itemStyle={tooltipStyle.item}
+                    cursor={tooltipStyle.cursor}
                     formatter={(val, name, props) => [
-                      `${val}% (${props.payload.count} Patients)`,
+                      `${val}% (${props.payload.count} HF Records)`,
                       'Prescribed'
                     ]}
                   />
+                  <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
                   <Bar 
                     dataKey="percent" 
                     name="% Prescribed" 
                     fill="#0284c7" 
                     radius={[5, 5, 0, 0]}
-                  >
-                    <LabelList 
-                      dataKey="percent" 
-                      position="top" 
-                      formatter={(val) => `${val}% prescribed`} 
-                      fill="#0284c7" 
-                      fontSize={9} 
-                      fontWeight={700} 
-                      offset={6}
-                    />
-                  </Bar>
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -179,20 +193,9 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                 <h3 className="text-sm font-bold text-slate-900 mt-0.5">
                   Drugs Given Irrespective of CI vs. Clinical Deviations
                 </h3>
-                {/* Visual Label Explanation */}
-                <div className="flex items-center gap-3 mt-1 text-[11px] font-semibold">
-                  <span className="flex items-center gap-1.5 text-sky-700">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#0284c7]"></span>
-                    Blue: % Drugs Given
-                  </span>
-                  <span className="flex items-center gap-1.5 text-orange-700">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#ea580c]"></span>
-                    Orange: % Clinical Deviations
-                  </span>
-                </div>
               </div>
               <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 self-start sm:self-auto">
-                Cohort: N={kpi.totalPatients}
+                Cohort: N={kpi.totalHfRecords || kpi.totalPatients}
               </span>
             </div>
 
@@ -201,7 +204,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={coverageData}
-                  margin={{ top: 28, right: 15, left: -20, bottom: 5 }}
+                  margin={{ top: 10, right: 15, left: -20, bottom: 5 }}
                   barGap={4}
                 >
                   <CartesianGrid
@@ -224,8 +227,12 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     tickLine={false}
                   />
                   <Tooltip 
+                    contentStyle={tooltipStyle.content}
+                    labelStyle={tooltipStyle.label}
+                    itemStyle={tooltipStyle.item}
+                    cursor={tooltipStyle.cursor}
                     formatter={(val, name, props) => [
-                      `${val}% (${name === '% Drugs Given' ? props.payload.onDrugCount : props.payload.deviationsCount} Patients)`,
+                      `${val}% (${name === '% Drugs Given' ? props.payload.onDrugCount : props.payload.deviationsCount} HF Records)`,
                       name
                     ]}
                   />
@@ -235,33 +242,13 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     name="% Drugs Given"
                     fill="#0284c7"
                     radius={[4, 4, 0, 0]}
-                  >
-                    <LabelList 
-                      dataKey="onDrug" 
-                      position="top" 
-                      formatter={(val) => `${val}% given`} 
-                      fill="#0284c7" 
-                      fontSize={8.5} 
-                      fontWeight={700} 
-                      offset={5}
-                    />
-                  </Bar>
+                  />
                   <Bar
                     dataKey="deviations"
                     name="% Clinical Deviations"
                     fill="#ea580c"
                     radius={[4, 4, 0, 0]}
-                  >
-                    <LabelList 
-                      dataKey="deviations" 
-                      position="top" 
-                      formatter={(val) => `${val}% dev`} 
-                      fill="#ea580c" 
-                      fontSize={8.5} 
-                      fontWeight={700} 
-                      offset={5}
-                    />
-                  </Bar>
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -282,13 +269,6 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                 <h3 className="text-sm font-bold text-slate-900 mt-0.5">
                   % Adherence to GDMT Distribution
                 </h3>
-                {/* Visual Label Explanation */}
-                <div className="flex items-center gap-2 mt-1 text-[11px] font-semibold">
-                  <span className="flex items-center gap-1.5 text-blue-700">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#3b82f6]"></span>
-                    Blue: Number of Patients (UHID Count)
-                  </span>
-                </div>
               </div>
 
               <div className="flex items-center gap-2 self-start sm:self-auto">
@@ -326,7 +306,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
             <div className="h-64 my-2">
               {adherenceViewMode === 'bar' ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={adherenceData} margin={{ top: 28, right: 15, left: -20, bottom: 5 }} barSize={30}>
+                  <BarChart data={adherenceData} margin={{ top: 10, right: 15, left: -20, bottom: 5 }} barSize={30}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis 
                       dataKey="bracket" 
@@ -340,28 +320,28 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                       tickLine={false} 
                     />
                     <Tooltip 
+                      cursor={tooltipStyle.cursor}
                       content={({ active, payload }) => {
                         if (!active || !payload || !payload.length) return null;
                         const d = payload[0].payload;
                         return (
-                          <div className="bg-slate-900 text-white p-2.5 rounded-xl shadow-lg border border-slate-700 text-xs">
-                            <div className="font-bold text-sky-400">{d.bracket} Adherence</div>
-                            <div className="text-slate-300 mt-0.5">{d.deviations} Deviations</div>
-                            <div className="text-sm font-black font-mono text-white mt-1">
-                              {d.patients} Patients <span className="text-xs font-normal text-slate-400">({d.percent}%)</span>
+                          <div className="bg-white text-slate-800 p-3 rounded-xl shadow-xl border border-slate-200 text-xs">
+                            <div className="font-bold text-slate-900 text-[13px]">{d.bracket} Adherence</div>
+                            <div className="text-slate-500 mt-0.5">{d.deviations} Deviations</div>
+                            <div className="text-sm font-black font-mono text-blue-600 mt-1">
+                              {d.patients} HF Records <span className="text-xs font-normal text-slate-400">({d.percent}%)</span>
                             </div>
                           </div>
                         );
                       }}
                     />
-                    <Bar dataKey="patients" name="Number of Patients (UHID)" fill="#3b82f6" radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="patients" position="top" formatter={(val) => `${val} pts`} fill="#1e293b" fontSize={9} fontWeight={700} offset={5} />
-                    </Bar>
+                    <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
+                    <Bar dataKey="patients" name="HF Records" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={adherenceData} margin={{ top: 20, right: 15, left: -20, bottom: 5 }}>
+                  <AreaChart data={adherenceData} margin={{ top: 10, right: 15, left: -20, bottom: 5 }}>
                     <defs>
                       <linearGradient id="adherenceGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#0d9488" stopOpacity={0.4} />
@@ -371,10 +351,17 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="bracket" tick={{ fontSize: 9.5, fill: '#334155', fontWeight: 600 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                    <Tooltip formatter={(val, name, props) => [`${val} Patients (${props.payload.percent}%)`, 'Count']} />
+                    <Tooltip 
+                      contentStyle={tooltipStyle.content}
+                      labelStyle={tooltipStyle.label}
+                      itemStyle={tooltipStyle.item}
+                      cursor={tooltipStyle.cursor}
+                      formatter={(val, name, props) => [`${val} HF Records (${props.payload.percent}%)`, 'Count']} 
+                    />
                     <Area 
                       type="natural" 
                       dataKey="patients" 
+                      name="HF Records"
                       stroke="#0d9488" 
                       strokeWidth={2.5} 
                       fillOpacity={1} 
@@ -399,25 +386,18 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                 <h3 className="text-sm font-bold text-slate-900 mt-0.5">
                   Number of GDMT Drugs Taken Distribution
                 </h3>
-                {/* Visual Label Explanation */}
-                <div className="flex items-center gap-2 mt-1 text-[11px] font-semibold">
-                  <span className="flex items-center gap-1.5 text-teal-700">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-teal-600"></span>
-                    Color Bars: % Cohort Taking 0 to 5 GDMT Drugs
-                  </span>
-                </div>
               </div>
               <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 self-start sm:self-auto">
-                Cohort: N={kpi.totalPatients}
+                Cohort: N={kpi.totalHfRecords || kpi.totalPatients}
               </span>
             </div>
 
-            {/* Vertical Column Chart for Drugs Taken with values on top */}
+            {/* Vertical Column Chart for Drugs Taken */}
             <div className="h-64 my-2">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                   data={drugsTakenDistribution} 
-                  margin={{ top: 28, right: 15, left: -20, bottom: 5 }} 
+                  margin={{ top: 10, right: 15, left: -20, bottom: 5 }} 
                   barSize={32}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -436,28 +416,24 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     tickLine={false} 
                   />
                   <Tooltip 
+                    contentStyle={tooltipStyle.content}
+                    labelStyle={tooltipStyle.label}
+                    itemStyle={tooltipStyle.item}
+                    cursor={tooltipStyle.cursor}
                     formatter={(val, name, props) => [
-                      `${val}% (${props.payload.count} Patients)`,
+                      `${val}% (${props.payload.count} HF Records)`,
                       props.payload.drugs
                     ]}
                   />
+                  <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
                   <Bar 
                     dataKey="percent" 
-                    name="% Patients" 
+                    name="% HF Records" 
                     radius={[5, 5, 0, 0]}
                   >
                     {drugsTakenDistribution.map((entry, index) => (
                       <Cell key={`cell-drug-${index}`} fill={INTENSITY_COLORS[index % INTENSITY_COLORS.length]} />
                     ))}
-                    <LabelList 
-                      dataKey="percent" 
-                      position="top" 
-                      formatter={(val) => `${val}%`} 
-                      fill="#0f172a" 
-                      fontSize={9.5} 
-                      fontWeight={700} 
-                      offset={6}
-                    />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -479,27 +455,16 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                 <h3 className="text-sm font-bold text-slate-900 mt-0.5">
                   GDMT Prescription vs. Contraindications
                 </h3>
-                {/* Visual Label Explanation */}
-                <div className="flex items-center gap-3 mt-1 text-[11px] font-semibold">
-                  <span className="flex items-center gap-1.5 text-sky-700">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#0284c7]"></span>
-                    Blue: % on Drug
-                  </span>
-                  <span className="flex items-center gap-1.5 text-orange-700">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#ea580c]"></span>
-                    Orange: % with Contraindication
-                  </span>
-                </div>
               </div>
               <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 self-start sm:self-auto">
-                Cohort: N={kpi.totalPatients}
+                Cohort: N={kpi.totalHfRecords || kpi.totalPatients}
               </span>
             </div>
 
             {/* Clustered Column Chart */}
             <div className="h-64 my-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={coverageData} margin={{ top: 28, right: 15, left: -20, bottom: 5 }} barGap={4}>
+                <BarChart data={coverageData} margin={{ top: 10, right: 15, left: -20, bottom: 5 }} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis 
                     dataKey="name" 
@@ -510,34 +475,18 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                   />
                   <YAxis unit="%" domain={[0, 115]} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <Tooltip 
+                    contentStyle={tooltipStyle.content}
+                    labelStyle={tooltipStyle.label}
+                    itemStyle={tooltipStyle.item}
+                    cursor={tooltipStyle.cursor}
                     formatter={(val, name, props) => [
-                      `${val}% (${name === '% on Drug' ? props.payload.onDrugCount : props.payload.withCICount} Patients)`,
+                      `${val}% (${name === '% on Drug' ? props.payload.onDrugCount : props.payload.withCICount} HF Records)`,
                       name
                     ]}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
-                  <Bar dataKey="onDrug" name="% on Drug" fill="#0284c7" radius={[4, 4, 0, 0]}>
-                    <LabelList 
-                      dataKey="onDrug" 
-                      position="top" 
-                      formatter={(val) => `${val}% on drug`} 
-                      fill="#0284c7" 
-                      fontSize={8.5} 
-                      fontWeight={700} 
-                      offset={5}
-                    />
-                  </Bar>
-                  <Bar dataKey="withCI" name="% with Contraindication" fill="#ea580c" radius={[4, 4, 0, 0]}>
-                    <LabelList 
-                      dataKey="withCI" 
-                      position="top" 
-                      formatter={(val) => `${val}% contra`} 
-                      fill="#ea580c" 
-                      fontSize={8.5} 
-                      fontWeight={700} 
-                      offset={5}
-                    />
-                  </Bar>
+                  <Bar dataKey="onDrug" name="% on Drug" fill="#0284c7" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="withCI" name="% with Contraindication" fill="#ea580c" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -555,17 +504,6 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                 <h3 className="text-sm font-bold text-slate-900 mt-0.5">
                   Appropriate Care vs. Clinical Deviations
                 </h3>
-                {/* Visual Label Explanation */}
-                <div className="flex items-center gap-3 mt-1 text-[11px] font-semibold">
-                  <span className="flex items-center gap-1.5 text-emerald-700">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#10b981]"></span>
-                    Green: % Appropriate Care
-                  </span>
-                  <span className="flex items-center gap-1.5 text-orange-700">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#ea580c]"></span>
-                    Orange: % Clinical Deviations
-                  </span>
-                </div>
               </div>
               <button
                 onClick={onOpenExclusionGuide}
@@ -579,7 +517,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
             {/* Clustered Column Chart */}
             <div className="h-64 my-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={complianceData} margin={{ top: 28, right: 15, left: -20, bottom: 5 }} barGap={4}>
+                <BarChart data={complianceData} margin={{ top: 10, right: 15, left: -20, bottom: 5 }} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis 
                     dataKey="name" 
@@ -590,31 +528,15 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                   />
                   <YAxis unit="%" domain={[0, 115]} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <Tooltip 
+                    contentStyle={tooltipStyle.content}
+                    labelStyle={tooltipStyle.label}
+                    itemStyle={tooltipStyle.item}
+                    cursor={tooltipStyle.cursor}
                     formatter={(val, name, props) => [`${val}%`, name]}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
-                  <Bar dataKey="appropCare" name="% Appropriate Care" fill="#10b981" radius={[4, 4, 0, 0]}>
-                    <LabelList 
-                      dataKey="appropCare" 
-                      position="top" 
-                      formatter={(val) => `${val}% approp`} 
-                      fill="#059669" 
-                      fontSize={8.5} 
-                      fontWeight={700} 
-                      offset={5}
-                    />
-                  </Bar>
-                  <Bar dataKey="deviations" name="% Clinical Deviations" fill="#ea580c" radius={[4, 4, 0, 0]}>
-                    <LabelList 
-                      dataKey="deviations" 
-                      position="top" 
-                      formatter={(val) => `${val}% dev`} 
-                      fill="#ea580c" 
-                      fontSize={8.5} 
-                      fontWeight={700} 
-                      offset={5}
-                    />
-                  </Bar>
+                  <Bar dataKey="appropCare" name="% Appropriate Care" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="deviations" name="% Clinical Deviations" fill="#ea580c" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

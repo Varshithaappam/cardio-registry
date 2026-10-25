@@ -2,6 +2,7 @@ const db = require("../config/db");
 const hfModel = require("../models/hfModel");
 const { logAudit } = require("../utils/auditLogger");
 const { logAuditTrail, sanitizeAuditPayload } = require("../utils/logAuditTrail");
+const { materializeSingleHfGdmt } = require("./gdmtEvaluationService");
 
 /**
  * Format an HF registry number from the database insert ID.
@@ -691,6 +692,13 @@ async function saveHfAssessment(data, userId = 1) {
             } catch (faErr) {
                 console.error("Error inserting into hf_followup_assessments:", faErr);
             }
+        }
+
+        // Approach 3: Automatically materialize GDMT evaluation into dbo.hf_gdmt_evaluation
+        try {
+            await materializeSingleHfGdmt(hf_id, conn);
+        } catch (matErr) {
+            console.error('[GDMT Materialization] Error materializing hf_id ' + hf_id + ':', matErr);
         }
 
         await conn.commit();

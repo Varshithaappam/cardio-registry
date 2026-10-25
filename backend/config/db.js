@@ -354,6 +354,9 @@ async function ensureRegisterPatientSP() {
           @occupation            VARCHAR(255)  = NULL,
           @uhid                  VARCHAR(50)   = NULL,
           @abha_number           VARCHAR(50)   = NULL,
+          @national_id_type      VARCHAR(20)   = NULL,
+          @aadhaar_number        VARCHAR(20)   = NULL,
+          @abha_address          VARCHAR(100)  = NULL,
           @patient_status        VARCHAR(20)   = 'ACTIVE',
           @date_of_death         DATE          = NULL,
           @merged_into_patient_id INT          = NULL,
@@ -368,6 +371,7 @@ async function ensureRegisterPatientSP() {
               diabetes_control_type, renal_failure, active_dialysis_status, address,
               house_flat_no, street_locality, village_town, mandal, district, state, pincode,
               higher_education, occupation, uhid, abha_number,
+              national_id_type, aadhaar_number, abha_address,
               patient_status, date_of_death, merged_into_patient_id,
               created_at, updated_at
           )
@@ -377,6 +381,7 @@ async function ensureRegisterPatientSP() {
               @diabetes_control_type, @renal_failure, @active_dialysis_status, @address,
               @house_flat_no, @street_locality, @village_town, @mandal, @district, @state, @pincode,
               @higher_education, @occupation, @uhid, @abha_number,
+              @national_id_type, @aadhaar_number, @abha_address,
               ISNULL(@patient_status, 'ACTIVE'), @date_of_death, @merged_into_patient_id,
               SYSDATETIME(), SYSDATETIME()
           );
@@ -532,6 +537,25 @@ async function ensureAcsFollowupTables() {
   }
 }
 
+async function ensurePatientIndexes() {
+  try {
+    const check = await query(`
+      SELECT i.name, i.has_filter 
+      FROM sys.indexes i 
+      WHERE i.object_id = OBJECT_ID('dbo.patient_demographics') AND i.name = 'UX_patients_ip_no';
+    `);
+    if (check.recordset && check.recordset.length > 0 && !check.recordset[0].has_filter) {
+      await query(`
+        DROP INDEX UX_patients_ip_no ON dbo.patient_demographics;
+        CREATE UNIQUE NONCLUSTERED INDEX UX_patients_ip_no ON dbo.patient_demographics(ip_no) WHERE ip_no IS NOT NULL;
+      `);
+      console.log('✓ Rebuilt [UX_patients_ip_no] as filtered unique index');
+    }
+  } catch (err) {
+    console.warn('⚠️ ensurePatientIndexes notice:', err.message);
+  }
+}
+
 async function healthCheck() {
   try {
     const result = await query('SELECT 1 AS ok;');
@@ -541,6 +565,7 @@ async function healthCheck() {
     await ensureAppropriatenessColumns();
     await ensureRegisterPatientSP();
     await ensureHfFollowupTable();
+    await ensurePatientIndexes();
     return result.recordset[0];
   } catch (error) {
     console.error('❌ SQL Server Connection Failed');
@@ -552,7 +577,7 @@ async function healthCheck() {
   }
 }
 
-module.exports = { sql, poolPromise, getPool, getConnection, query, insert, healthCheck, ensureAppropriatenessColumns, ensureAuditTable, ensureRegisterPatientSP, ensureHfFollowupTable };
+module.exports = { sql, poolPromise, getPool, getConnection, query, insert, healthCheck, ensureAppropriatenessColumns, ensureAuditTable, ensureRegisterPatientSP, ensureHfFollowupTable, ensurePatientIndexes };
 
 
 

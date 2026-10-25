@@ -41,9 +41,8 @@ export default function UniversalFilterBar({
             className="text-xs bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium transition cursor-pointer focus:outline-hidden focus:ring-1 focus:ring-teal-500"
           >
             <option value="All Phenotypes">All Phenotypes</option>
-            <option value="HFrEF">HFrEF (EF ≤ 40%)</option>
-            <option value="HFmrEF">HFmrEF (EF 41-49%)</option>
-            <option value="HFpEF">HFpEF (EF ≥ 50%)</option>
+            <option value="HFrEF">HFrEF (Reduced EF)</option>
+            <option value="HFpEF">HFpEF (Preserved EF)</option>
           </select>
 
           {/* Gender Selector */}
@@ -57,15 +56,42 @@ export default function UniversalFilterBar({
             <option value="Female">Female</option>
           </select>
 
-          {/* Date Range Inputs */}
+          {/* Age Range Filter */}
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs">
+            <span className="text-slate-500 font-medium">Age:</span>
+            <input
+              type="number"
+              min="0"
+              max="120"
+              placeholder="From"
+              value={filters.minAge || ''}
+              onChange={(e) => onFilterChange('minAge', e.target.value)}
+              className="w-11 bg-transparent text-slate-700 text-xs focus:outline-hidden text-center placeholder:text-slate-400 font-medium"
+              title="Age From"
+            />
+            <span className="text-slate-400">to</span>
+            <input
+              type="number"
+              min="0"
+              max="120"
+              placeholder="To"
+              value={filters.maxAge || ''}
+              onChange={(e) => onFilterChange('maxAge', e.target.value)}
+              className="w-11 bg-transparent text-slate-700 text-xs focus:outline-hidden text-center placeholder:text-slate-400 font-medium"
+              title="Age To"
+            />
+          </div>
+
+          {/* Admission Date Range Inputs */}
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-slate-500 font-medium whitespace-nowrap">Admission:</span>
             <input
               type="date"
               value={filters.startDate}
               onChange={(e) => onFilterChange('startDate', e.target.value)}
               className="bg-transparent text-slate-700 text-xs focus:outline-hidden"
-              title="Start Date"
+              title="Admission / Visit Start Date"
             />
             <span className="text-slate-400">to</span>
             <input
@@ -73,7 +99,7 @@ export default function UniversalFilterBar({
               value={filters.endDate}
               onChange={(e) => onFilterChange('endDate', e.target.value)}
               className="bg-transparent text-slate-700 text-xs focus:outline-hidden"
-              title="End Date"
+              title="Admission / Visit End Date"
             />
           </div>
 
@@ -113,6 +139,8 @@ export default function UniversalFilterBar({
           {(filters.registry !== 'All Registries' ||
             filters.phenotype !== 'All Phenotypes' ||
             filters.gender !== 'All Genders' ||
+            filters.minAge ||
+            filters.maxAge ||
             filters.startDate ||
             filters.endDate ||
             filters.search) && (

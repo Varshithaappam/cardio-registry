@@ -37,10 +37,10 @@ export default function ContraindicationDrawer({ isOpen, onClose }) {
             <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
               <div className="flex items-center gap-2 text-red-700 font-bold text-xs uppercase tracking-wider mb-1">
                 <Droplets className="w-4 h-4 text-red-500" />
-                Renal Impairment
+                Renal Safety
               </div>
               <p className="text-lg font-black text-slate-900">Creatinine &gt; 2.5</p>
-              <p className="text-[11px] text-slate-600 mt-0.5">mg/dL or eGFR &lt; 30 mL/min</p>
+              <p className="text-[11px] text-slate-600 mt-0.5">&gt; 2.5 for RAAS/MRA, &gt; 3.0 for SGLT2</p>
             </div>
 
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
@@ -48,26 +48,26 @@ export default function ContraindicationDrawer({ isOpen, onClose }) {
                 <Gauge className="w-4 h-4 text-amber-500" />
                 Hyperkalemia
               </div>
-              <p className="text-lg font-black text-slate-900">Potassium &gt; 5.0</p>
-              <p className="text-[11px] text-slate-600 mt-0.5">mEq/L (Contraindicates MRA/RAAS)</p>
+              <p className="text-lg font-black text-slate-900">K⁺ &gt; 5.0 / 5.5</p>
+              <p className="text-[11px] text-slate-600 mt-0.5">&gt; 5.0 for MRA, &gt; 5.5 for ACEi/ARB/ARNI</p>
             </div>
 
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
               <div className="flex items-center gap-2 text-blue-700 font-bold text-xs uppercase tracking-wider mb-1">
                 <Heart className="w-4 h-4 text-blue-500" />
-                Severe Hypotension
+                Hypotension
               </div>
-              <p className="text-lg font-black text-slate-900">SBP &lt; 90</p>
-              <p className="text-[11px] text-slate-600 mt-0.5">mmHg sitting/standing systolic</p>
+              <p className="text-lg font-black text-slate-900">SBP &lt; 90 / 100</p>
+              <p className="text-[11px] text-slate-600 mt-0.5">&lt; 90 for BB/ACEi/ARB, &lt; 100 for ARNI</p>
             </div>
 
             <div className="p-3 bg-purple-50 border border-purple-200 rounded-xl">
               <div className="flex items-center gap-2 text-purple-700 font-bold text-xs uppercase tracking-wider mb-1">
                 <AlertTriangle className="w-4 h-4 text-purple-500" />
-                Severe Bradycardia
+                Bradycardia
               </div>
               <p className="text-lg font-black text-slate-900">HR &lt; 50</p>
-              <p className="text-[11px] text-slate-600 mt-0.5">bpm resting heart rate</p>
+              <p className="text-[11px] text-slate-600 mt-0.5">bpm resting heart rate for Beta Blocker</p>
             </div>
           </div>
 

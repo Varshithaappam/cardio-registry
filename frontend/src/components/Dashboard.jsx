@@ -19,7 +19,6 @@ import {
 
 import UniversalFilterBar from './dashboard/UniversalFilterBar';
 import KeyPointsTab from './dashboard/KeyPointsTab';
-import GdmtSummaryTab from './dashboard/GdmtSummaryTab';
 import PatientDossierModal from './dashboard/PatientDossierModal';
 import ContraindicationDrawer from './dashboard/ContraindicationDrawer';
 
@@ -27,7 +26,6 @@ import { fetchGdmtCohort } from '../api/gdmtApi';
 import { filterCohort, computeAnalytics, exportCohortCsv } from '../utils/gdmtEngine';
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState('keyPoints'); // 'keyPoints' | 'gdmt'
   const [dataSource, setDataSource] = useState('database'); // database source
   const [cohortData, setCohortData] = useState([]);
 
@@ -39,6 +37,8 @@ export default function Dashboard() {
     registry: 'All Registries',
     phenotype: 'All Phenotypes',
     gender: 'All Genders',
+    minAge: '',
+    maxAge: '',
     startDate: '',
     endDate: '',
     search: ''
@@ -79,6 +79,8 @@ export default function Dashboard() {
       registry: 'All Registries',
       phenotype: 'All Phenotypes',
       gender: 'All Genders',
+      minAge: '',
+      maxAge: '',
       startDate: '',
       endDate: '',
       search: ''
@@ -124,37 +126,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Right Actions: Tabs & Export Report */}
+        {/* Right Actions: Export Report */}
         <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto">
-          {/* Tab Switcher Buttons */}
-          <div className="bg-slate-100 p-1 rounded-xl border border-slate-200/80 flex items-center gap-1 text-xs font-bold">
-            <button
-              id="tab-key-points"
-              onClick={() => setActiveTab('keyPoints')}
-              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'keyPoints'
-                  ? 'bg-teal-700 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-              }`}
-            >
-              <Activity className="w-3.5 h-3.5" />
-              <span>Key Points</span>
-            </button>
-
-            <button
-              id="tab-gdmt-summary"
-              onClick={() => setActiveTab('gdmt')}
-              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'gdmt'
-                  ? 'bg-teal-700 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>GDMT Analysis</span>
-            </button>
-          </div>
-
           {/* Export Report Button */}
           <button
             id="btn-export-csv"
@@ -201,19 +174,11 @@ export default function Dashboard() {
           </button>
         </div>
       ) : (
-        /* Tab Views */
-        <div>
-          {activeTab === 'keyPoints' && (
-            <KeyPointsTab analytics={analytics} />
-          )}
-
-          {activeTab === 'gdmt' && (
-            <GdmtSummaryTab 
-              analytics={analytics} 
-              onOpenExclusionGuide={() => setIsDrawerOpen(true)}
-            />
-          )}
-        </div>
+        /* Unified Dashboard View */
+        <KeyPointsTab 
+          analytics={analytics} 
+          onOpenExclusionGuide={() => setIsDrawerOpen(true)}
+        />
       )}
 
       {/* Patient Detail Dossier Modal */}

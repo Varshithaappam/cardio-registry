@@ -11,6 +11,13 @@ function handlePatientError(res, error, action) {
         sqlMessage: error.sqlMessage
     });
 
+    if (error.statusCode) {
+        return res.status(error.statusCode).json({
+            success: false,
+            message: error.message
+        });
+    }
+
     if (error.message && !error.code) {
         return res.status(400).json({
             success: false,

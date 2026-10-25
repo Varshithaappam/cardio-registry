@@ -72,7 +72,6 @@ async function createPatient(patientData) {
         patient_status, date_of_death, merged_into_patient_id,
         created_at, updated_at
       )
-      OUTPUT INSERTED.reg_patient_id
       VALUES (
         @mr_no, @ip_no, @patient_name, @date_of_birth, @gender, @blood_group,
         @insurance_mode, @phone_no, @email, @hypertension, @smoking, @diabetes,
@@ -83,6 +82,7 @@ async function createPatient(patientData) {
         ISNULL(@patient_status, 'ACTIVE'), @date_of_death, @merged_into_patient_id,
         SYSDATETIME(), SYSDATETIME()
       );
+      SELECT SCOPE_IDENTITY() AS reg_patient_id;
     `;
 
     const res = await request.query(directInsertQuery);
