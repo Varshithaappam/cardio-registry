@@ -19,8 +19,12 @@ export async function fetchGdmtCohort() {
 /**
  * Fetch dedicated Sheet1 export data mapped up to "Current device therapy"
  */
-export async function fetchHfSheet1Export() {
-  const res = await api.get('/patients/hf-export-sheet1');
+export async function fetchHfSheet1Export(hfIds) {
+  const params = {};
+  if (hfIds) {
+    params.hfIds = Array.isArray(hfIds) ? hfIds.join(',') : hfIds;
+  }
+  const res = await api.get('/patients/hf-export-sheet1', { params });
   if (res.data && res.data.success) {
     return res.data;
   }

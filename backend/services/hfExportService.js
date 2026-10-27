@@ -24,24 +24,160 @@ function formatDate(d) {
 }
 
 /**
- * Evaluates a list of column names for a row.
- * Returns the exact column name of the first column that has a positive value.
- * (Strict Rule: Final output value MUST be the literal string name of that database column)
+ * Clinical display label dictionary matching the HF Form and hf.pdf
  */
-function evaluatePositiveColName(row, colNames) {
+const CLINICAL_LABELS = {
+  // Mental status
+  mental_status_alert_oriented: 'Alert & Oriented',
+  mental_status_confused: 'Confused',
+  mental_status_drowsy: 'Drowsy',
+
+  // Symptoms
+  dyspnea_at_rest: 'Dyspnea at rest',
+  dyspnea_with_exertion: 'Dyspnea with exertion',
+  fatigue: 'Fatigue',
+  orthopnea: 'Orthopnea',
+  loss_of_appetite_bloating: 'Loss of appetite/Bloating',
+  decreased_exercise_tolerance: 'Decreased exercise tolerance',
+  weight_gain: 'Weight Gain',
+  weight_loss: 'Weight Loss',
+  syncope: 'Syncope',
+  pnd: 'PND',
+  muscle_cramps: 'Muscle Cramps',
+  wheeze: 'Wheeze',
+  giddiness: 'Giddiness',
+  symptom_other: 'Other',
+
+  // Clinical signs of volume overload
+  peripheral_edema: 'Peripheral edema',
+  ascites: 'Ascites',
+  rales: 'Rales',
+  jugular_venous_pressure: 'Jugular venous pressure',
+  hepatomegaly: 'Hepatomegaly',
+  clinical_sign_other: 'Other',
+
+  // Type of Heart failure
+  hfref: 'HFrEF',
+  hfpef: 'HFpEF',
+
+  // Comorbidities
+  cad: 'Associated CAD',
+  anemia: 'Anemia',
+  renal_failure: 'Renal Failure',
+  cva: 'CVA',
+  diabetes_mellitus: 'Diabetes Mellitus',
+  severe_musculoskeletal_disease: 'Severe musculoskeletal disease',
+  hypertension: 'Hypertension',
+  cancer: 'Cancer',
+  valvular_disease: 'Valvular Disease',
+  apd: 'APD',
+  asthma: 'Asthma',
+  bleeding_diathesis: 'Bleeding diathesis',
+  copd: 'COPD',
+  pvd: 'PVD',
+  osa: 'OSA',
+  comorbidity_other: 'Other',
+
+  // Risk factors
+  smoking: 'Smoking',
+  alcohol: 'Alcohol',
+  risk_factor_other: 'Other',
+
+  // Stage of HF
+  stage_a: 'Stage A',
+  stage_b: 'Stage B',
+  stage_c: 'Stage C',
+  stage_d: 'Stage D',
+
+  // Functional Status (NYHA)
+  nyha_class_1: 'NYHA Class I',
+  nyha_class_2: 'NYHA Class II',
+  nyha_class_3: 'NYHA Class III',
+  nyha_class_4: 'NYHA Class IV',
+
+  // AF status
+  af_nsr: 'NSR',
+  af_paroxysmal: 'Paroxysmal AF',
+  af_persistent: 'Persistent AF',
+  af_permanent: 'Permanent AF',
+
+  // Location of death
+  death_hospital: 'Hospital',
+  death_home: 'Home',
+
+  // ECHO RWMI
+  rwmi_none: 'None',
+  rwmi_global: 'Global',
+  rwmi_anterior: 'Anterior',
+  rwmi_lateral: 'Lateral',
+  rwmi_inferior: 'Inferior',
+
+  // Medical History
+  history_cabg: 'CABG',
+  history_ptca: 'PTCA',
+  history_stroke: 'Stroke',
+  history_major_bleed: 'Major Bleed',
+  history_thrombolysis: 'Thrombolysis',
+  history_past_mi: 'Past MI',
+
+  // MACE
+  mace_hospitalization: 'HF Hospitalization',
+  mace_stroke: 'Stroke',
+  mace_major_bleed: 'Major Bleed',
+  mace_severe_arrhythmia: 'Severe Arrhythmia',
+  mace_major_procedure: 'Major Procedure',
+  mace_death: 'Death',
+  mace_other: 'Other'
+};
+
+function toClinicalLabel(colName) {
+  if (!colName) return '';
+  return CLINICAL_LABELS[colName] || colName;
+}
+
+/**
+ * Evaluates a list of column names for a row.
+ * Returns the human-readable clinical label from the HF form for doctors/nurses.
+ */
+function evaluatePositiveLabel(row, colNames, detailsField = null) {
   for (const col of colNames) {
     if (isYes(row[col])) {
-      return col;
+      if (detailsField && row[detailsField] && col.includes('other')) {
+        return row[detailsField];
+      }
+      return toClinicalLabel(col);
     }
   }
   return '';
+}
+
+function evaluatePositiveColName(row, colNames) {
+  return evaluatePositiveLabel(row, colNames);
 }
 
 /**
  * Fetches all HF patient records joined with their clinical child tables,
  * and formats them strictly following the mapping in mapping.xlsx up to "Current device therapy".
  */
-async function getHfSheet1ExportData() {
+async function getHfSheet1ExportData(options = {}) {
+  const whereConditions = [
+    '(hr.is_deleted = 0 OR hr.is_deleted IS NULL)',
+    'p.uhid IS NOT NULL',
+    "LTRIM(RTRIM(p.uhid)) != ''"
+  ];
+
+  if (options && options.hfIds) {
+    const idList = Array.isArray(options.hfIds)
+      ? options.hfIds
+      : String(options.hfIds).split(',').map(s => s.trim()).filter(Boolean);
+    const sanitizedIds = idList.map(id => parseInt(id, 10)).filter(n => !isNaN(n));
+    if (sanitizedIds.length > 0) {
+      whereConditions.push(`hr.hf_id IN (${sanitizedIds.join(',')})`);
+    } else {
+      whereConditions.push('1 = 0');
+    }
+  }
+
   const query = `
     SELECT 
       hr.hf_id,
@@ -108,12 +244,14 @@ async function getHfSheet1ExportData() {
       ia.wheeze,
       ia.giddiness,
       ia.symptom_other,
+      ia.symptom_other_details,
       ia.peripheral_edema,
       ia.ascites,
       ia.rales,
       ia.jugular_venous_pressure,
       ia.hepatomegaly,
       ia.clinical_sign_other,
+      ia.clinical_sign_other_details,
       fa.hfref,
       fa.hfpef,
       fa.cad,
@@ -211,7 +349,7 @@ async function getHfSheet1ExportData() {
     LEFT JOIN dbo.hf_device_therapy dt ON dt.hf_id = hr.hf_id
     LEFT JOIN dbo.hf_recommendations hr_rec ON hr_rec.hf_id = hr.hf_id
     LEFT JOIN dbo.hf_medical_therapy_part1 t1 ON t1.hf_id = hr.hf_id
-    WHERE hr.is_deleted = 0 OR hr.is_deleted IS NULL
+    WHERE ${whereConditions.join(' AND ')}
     ORDER BY hr.hf_id ASC;
   `;
 
@@ -368,20 +506,20 @@ async function getHfSheet1ExportData() {
       caregiver = row.caregiver_name || row.caregiver_relationship || '';
     }
 
-    // Medical History
+    // Medical History (Clinical labels)
     const medHistoryPresent = isYes(row.history_cabg) || isYes(row.history_ptca) || 
       isYes(row.history_stroke) || isYes(row.history_major_bleed) || 
       isYes(row.history_thrombolysis) || isYes(row.history_past_mi);
     let medHistoryVal = '';
     if (medHistoryPresent) {
       const parts = [];
-      if (isYes(row.history_cabg)) parts.push('history_cabg');
-      if (isYes(row.history_ptca)) parts.push('history_ptca');
-      if (isYes(row.history_stroke)) parts.push('history_stroke');
-      if (isYes(row.history_major_bleed)) parts.push('history_major_bleed');
-      if (isYes(row.history_thrombolysis)) parts.push('history_thrombolysis');
+      if (isYes(row.history_cabg)) parts.push('CABG');
+      if (isYes(row.history_ptca)) parts.push('PTCA');
+      if (isYes(row.history_stroke)) parts.push('Stroke');
+      if (isYes(row.history_major_bleed)) parts.push('Major Bleed');
+      if (isYes(row.history_thrombolysis)) parts.push('Thrombolysis');
       if (isYes(row.history_past_mi)) {
-        let miStr = 'history_past_mi';
+        let miStr = 'Past MI';
         if (row.past_mi_years_ago) miStr += ` (${row.past_mi_years_ago} yrs ago)`;
         if (row.past_mi_location) miStr += ` [${row.past_mi_location}]`;
         parts.push(miStr);
@@ -405,94 +543,106 @@ async function getHfSheet1ExportData() {
       bpStanding = String(row.systolic_bp_standing);
     }
 
-    // Mental status: literal column name
-    const mentalStatusVal = evaluatePositiveColName(row, [
+    // Mental status (HF form clinical label)
+    const mentalStatusVal = evaluatePositiveLabel(row, [
       'mental_status_alert_oriented',
       'mental_status_confused',
       'mental_status_drowsy'
     ]);
 
-    // Type of Heart failure
+    // Type of Heart failure (HF form clinical label)
     let hfTypeVal = '';
-    if (isYes(row.hfref)) hfTypeVal = 'hfref';
-    else if (isYes(row.hfpef)) hfTypeVal = 'hfpef';
+    if (isYes(row.hfref)) hfTypeVal = 'HFrEF';
+    else if (isYes(row.hfpef)) hfTypeVal = 'HFpEF';
 
-    // Sequential Symptoms (literal column names)
-    const activeSymptomCols = [];
+    // Sequential Symptoms (HF form clinical labels)
+    const activeSymptoms = [];
     for (const sCol of symptomCandidateCols) {
       if (isYes(row[sCol])) {
-        activeSymptomCols.push(sCol);
+        if (sCol === 'symptom_other' && row.symptom_other_details) {
+          activeSymptoms.push(row.symptom_other_details);
+        } else {
+          activeSymptoms.push(toClinicalLabel(sCol));
+        }
       }
     }
 
-    // Sequential Clinical signs of volume overload (literal column names)
-    const activeVolumeCols = [];
+    // Sequential Clinical signs of volume overload (HF form clinical labels)
+    const activeVolumeSigns = [];
     for (const vCol of volumeOverloadCandidateCols) {
       if (isYes(row[vCol])) {
-        activeVolumeCols.push(vCol);
+        if (vCol === 'clinical_sign_other' && row.clinical_sign_other_details) {
+          activeVolumeSigns.push(row.clinical_sign_other_details);
+        } else {
+          activeVolumeSigns.push(toClinicalLabel(vCol));
+        }
       }
     }
 
-    // Sequential Comorbidities (literal column names)
-    const activeComorbCols = [];
+    // Sequential Comorbidities (HF form clinical labels)
+    const activeComorbidities = [];
     for (const cCol of comorbidityCandidateCols) {
       if (isYes(row[cCol])) {
-        activeComorbCols.push(cCol);
+        if (cCol === 'comorbidity_other' && row.comorbidity_other) {
+          activeComorbidities.push(row.comorbidity_other);
+        } else {
+          activeComorbidities.push(toClinicalLabel(cCol));
+        }
       }
     }
 
-    // Risk factors1 (literal column name)
-    const riskFactorVal = evaluatePositiveColName(row, ['smoking', 'alcohol', 'risk_factor_other']);
+    // Risk factors1 (HF form clinical label)
+    const riskFactorVal = evaluatePositiveLabel(row, ['smoking', 'alcohol', 'risk_factor_other'], 'risk_factor_other');
 
-    // Stage of HF (literal column name)
-    const stageVal = evaluatePositiveColName(row, ['stage_a', 'stage_b', 'stage_c', 'stage_d']);
+    // Stage of HF (HF form clinical label)
+    const stageVal = evaluatePositiveLabel(row, ['stage_a', 'stage_b', 'stage_c', 'stage_d']);
 
-    // Functional Status (literal column name: nyha_class_1..4)
-    const functionalStatusVal = evaluatePositiveColName(row, [
+    // Functional Status (HF form clinical label: NYHA Class I-IV)
+    const functionalStatusVal = evaluatePositiveLabel(row, [
       'nyha_class_1',
       'nyha_class_2',
       'nyha_class_3',
       'nyha_class_4'
     ]);
 
-    // AF status (literal column name)
-    const afStatusVal = evaluatePositiveColName(row, [
-      'af_permanent',
+    // AF status (HF form clinical label)
+    const afStatusVal = evaluatePositiveLabel(row, [
+      'af_nsr',
       'af_paroxysmal',
       'af_persistent',
-      'af_nsr'
+      'af_permanent'
     ]);
 
     // MACE (Y/N)
     const hasMace = maceCols.some(col => isYes(row[col])) || Boolean(row.mace_other_details);
     const maceYn = hasMace ? 'Yes' : 'No';
 
-    // MACE Unstructured (comma-separated literal column names + details)
-    const activeMaceCols = [];
+    // MACE Unstructured (comma-separated clinical labels + details)
+    const activeMaceLabels = [];
     for (const mCol of maceCols) {
       if (isYes(row[mCol])) {
-        activeMaceCols.push(mCol);
+        activeMaceLabels.push(toClinicalLabel(mCol));
       }
     }
     if (row.mace_other_details) {
-      activeMaceCols.push(`mace_other_details: ${row.mace_other_details}`);
+      activeMaceLabels.push(row.mace_other_details);
     }
-    const maceUnstructured = activeMaceCols.join(', ');
+    const maceUnstructured = activeMaceLabels.join(', ');
 
-    // Death & Death location
+    // Death & Death location (HF form clinical label)
     const isDeath = isYes(row.mace_death) || isYes(row.death_hospital) || isYes(row.death_home) || Boolean(row.death_date);
     let deathLocationVal = '';
-    if (isYes(row.death_hospital)) deathLocationVal = 'death_hospital';
-    else if (isYes(row.death_home)) deathLocationVal = 'death_home';
+    if (isYes(row.death_hospital)) deathLocationVal = 'Hospital';
+    else if (isYes(row.death_home)) deathLocationVal = 'Home';
 
-    // ECHO (RWMI) - comma-separated list of positive RWMI column names
-    const activeRwmiCols = [];
+    // ECHO (RWMI) - comma-separated list of positive RWMI clinical labels
+    const activeRwmiLabels = [];
     for (const rwCol of rwmiCols) {
       if (isYes(row[rwCol])) {
-        activeRwmiCols.push(rwCol);
+        activeRwmiLabels.push(toClinicalLabel(rwCol));
       }
     }
-    const echoRwmiVal = activeRwmiCols.join(', ');
+    const echoRwmiVal = activeRwmiLabels.join(', ');
 
     const hfRegistryNo = row.hf_registry_no || `HF${String(row.hf_id).padStart(5, '0')}`;
 
@@ -539,7 +689,7 @@ async function getHfSheet1ExportData() {
     return [
       idx + 1,                                       // 1. SL No
       row.uhid || '',                                // 2. UHID(T3)
-      row.ip_no || '',                               // 3. IP No(T3) (patient_demographics.ip_no)
+      row.visit_id || '',                            // 3. IP No(T3) (synchronized with IP No Prosoft)
       row.visit_id || '',                            // 4. IP No(Prosoft) (hf_administrative.visit_id)
       hfRegistryNo,                                  // 5. HF ID (added next to IP No Prosoft)
       row.pincode || '',                             // 6. PINCODE
@@ -571,17 +721,17 @@ async function getHfSheet1ExportData() {
       '',                                            // 32. Column2 (blank placeholder)
       bpSitting,                                     // 33. Blood pressure sitting
       bpStanding,                                    // 34. Blood pressure standing
-      mentalStatusVal,                               // 35. Mental status (literal column name)
-      activeSymptomCols[0] || '',                    // 36. Symptoms1
-      activeSymptomCols[1] || '',                    // 37. Symptoms2
-      activeSymptomCols[2] || '',                    // 38. Symptoms3
-      activeVolumeCols[0] || '',                     // 39. Clinical signs of volume overload1
-      activeVolumeCols[1] || '',                     // 40. Clinical signs of volume overload2
-      hfTypeVal,                                     // 41. Type of Heart failure (hfref / hfpef)
-      activeComorbCols[0] || '',                     // 42. Comorbidities1 (literal column name)
-      activeComorbCols[1] || '',                     // 43. Comorbidities2 (literal column name)
-      activeComorbCols[2] || '',                     // 44. Comorbidities3 (literal column name)
-      activeComorbCols[3] || '',                     // 45. Comorbidities4 (literal column name)
+      mentalStatusVal,                               // 35. Mental status
+      activeSymptoms[0] || '',                       // 36. Symptoms1
+      activeSymptoms[1] || '',                       // 37. Symptoms2
+      activeSymptoms[2] || '',                       // 38. Symptoms3
+      activeVolumeSigns[0] || '',                    // 39. Clinical signs of volume overload1
+      activeVolumeSigns[1] || '',                    // 40. Clinical signs of volume overload2
+      hfTypeVal,                                     // 41. Type of Heart failure (HFrEF / HFpEF)
+      activeComorbidities[0] || '',                  // 42. Comorbidities1
+      activeComorbidities[1] || '',                  // 43. Comorbidities2
+      activeComorbidities[2] || '',                  // 44. Comorbidities3
+      activeComorbidities[3] || '',                  // 45. Comorbidities4
       riskFactorVal,                                 // 46. Risk factors1 (literal column name)
       stageVal,                                      // 47. Stage of HF (literal column name)
       functionalStatusVal,                           // 48. Functional Status (literal column name: nyha_class_1..4)

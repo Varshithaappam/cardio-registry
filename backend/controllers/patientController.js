@@ -376,7 +376,9 @@ async function getGdmtCohort(req, res) {
 async function getHfSheet1Export(req, res) {
     try {
         const hfExportService = require("../services/hfExportService");
-        const exportData = await hfExportService.getHfSheet1ExportData();
+        const exportData = await hfExportService.getHfSheet1ExportData({
+            hfIds: req.query.hfIds
+        });
         return res.status(200).json({
             success: true,
             ...exportData
