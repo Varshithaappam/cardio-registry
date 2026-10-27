@@ -338,15 +338,31 @@ async function getPatientsCohort(options = {}) {
       const matQuery = `
         SELECT 
           e.*,
+          hr.hf_registry_no,
           p.mr_no,
           p.ip_no,
+          p.phone_no,
+          p.pincode,
           fa.death_reason,
           fa.death_note,
-          ha.visit_date
+          ha.visit_id,
+          ha.visit_date,
+          ha.treating_cardiologist,
+          ha.present_diagnosis,
+          ha.admission_reason,
+          ia.systolic_bp_sitting,
+          ia.diastolic_bp_sitting,
+          ia.heart_rate,
+          lt.potassium_result,
+          lt.creatinine_result,
+          lt.hb_result
         FROM dbo.hf_gdmt_evaluation e
+        LEFT JOIN dbo.hf_registry hr ON hr.hf_id = e.hf_id
         LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = e.reg_patient_id
         LEFT JOIN dbo.hf_final_clinical_assessment fa ON fa.hf_id = e.hf_id
         LEFT JOIN dbo.hf_administrative ha ON ha.hf_id = e.hf_id
+        LEFT JOIN dbo.hf_initial_assessment ia ON ia.hf_id = e.hf_id
+        LEFT JOIN dbo.hf_lab_tests lt ON lt.hf_id = e.hf_id
         WHERE e.is_deleted = 0
         ORDER BY e.hf_id ASC
       `;
@@ -354,7 +370,8 @@ async function getPatientsCohort(options = {}) {
       if (matRes.recordset && matRes.recordset.length > 0) {
         return matRes.recordset.map(row => {
           const uhid = String(row.uhid || row.mr_no || `UHID-${String(row.reg_patient_id).padStart(5, '0')}`).trim();
-          const ipNo = String(row.ip_no || `HF${String(row.hf_id).padStart(5, '0')}`).trim();
+          const ipNo = String(row.ip_no || '').trim();
+          const visitId = String(row.visit_id || '').trim();
           const name = String(row.patient_name || `Patient ${uhid}`).trim();
 
           const comorbidities = [];
@@ -388,11 +405,17 @@ async function getPatientsCohort(options = {}) {
           const deathDate = parseDate(row.death_date);
           const dischargeDate = parseDate(row.discharge_date);
 
+          const sbpVal = row.systolic_bp_sitting ? Number(row.systolic_bp_sitting) : null;
+          const dbpVal = row.diastolic_bp_sitting ? Number(row.diastolic_bp_sitting) : null;
+          const bpDisplay = sbpVal ? (dbpVal ? `${sbpVal}/${dbpVal}` : `${sbpVal}/80`) : '120/80';
+
           const patientObj = {
             hfId: row.hf_id,
+            hfRegistryNo: row.hf_registry_no || `HF${String(row.hf_id).padStart(5, '0')}`,
             regPatientId: row.reg_patient_id,
             uhid,
             ipNo,
+            visitId,
             name,
             age: row.age,
             gender: row.gender,
@@ -411,11 +434,17 @@ async function getPatientsCohort(options = {}) {
             deathNote: row.death_note || '',
             dischargeDate,
             visitDate: row.visit_date,
-            bloodPressureSitting: '120/80',
-            heartRate: 72,
-            potassium: 4.2,
-            creatinine: 1.1,
-            hemoglobin: 13.0,
+            bloodPressureSitting: bpDisplay,
+            systolicBp: sbpVal || 120,
+            heartRate: row.heart_rate ? Number(row.heart_rate) : 72,
+            potassium: row.potassium_result ? Number(row.potassium_result) : 4.2,
+            creatinine: row.creatinine_result ? Number(row.creatinine_result) : 1.1,
+            hemoglobin: row.hb_result ? Number(row.hb_result) : 13.0,
+            treatingCardiologist: row.treating_cardiologist || '',
+            presentDiagnosis: row.present_diagnosis || '',
+            admissionReason: row.admission_reason || '',
+            phoneNo: row.phone_no || '',
+            pincode: row.pincode || '',
             prescribedDrugsSummary: activeDrugs.join(', ') || 'No GDMT Recorded on Ingest',
 
             // 6 Drug Prescribed flags (1 or 0)

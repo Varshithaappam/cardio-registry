@@ -370,6 +370,21 @@ async function getGdmtCohort(req, res) {
     }
 }
 
+/**
+ * Get Sheet1 Export Data according to mapping.xlsx rules up to "Current device therapy"
+ */
+async function getHfSheet1Export(req, res) {
+    try {
+        const hfExportService = require("../services/hfExportService");
+        const exportData = await hfExportService.getHfSheet1ExportData();
+        return res.status(200).json({
+            success: true,
+            ...exportData
+        });
+    } catch (error) {
+        return handlePatientError(res, error, "Get HF Sheet1 Export Data");
+    }
+}
 
 module.exports = {
     registerPatient,
@@ -384,6 +399,7 @@ module.exports = {
     deletePatient,
     getPatientCounts,
     getAllPatientCounts,
-    getGdmtCohort
+    getGdmtCohort,
+    getHfSheet1Export
 };
 

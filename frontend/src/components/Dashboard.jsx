@@ -23,13 +23,15 @@ import PatientDossierModal from './dashboard/PatientDossierModal';
 import ContraindicationDrawer from './dashboard/ContraindicationDrawer';
 
 import { fetchGdmtCohort } from '../api/gdmtApi';
-import { filterCohort, computeAnalytics, exportCohortCsv } from '../utils/gdmtEngine';
+import { filterCohort, computeAnalytics } from '../utils/gdmtEngine';
+import { exportCohortExcel } from '../utils/excelReportGenerator';
 
 export default function Dashboard() {
   const [dataSource, setDataSource] = useState('database'); // database source
   const [cohortData, setCohortData] = useState([]);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [error, setError] = useState(null);
 
   // Universal Filter State
@@ -97,9 +99,18 @@ export default function Dashboard() {
     return computeAnalytics(filteredCohort);
   }, [filteredCohort]);
 
-  // Export CSV Report handler
-  function handleExportCsv() {
-    exportCohortCsv(filteredCohort);
+  // Export Multi-Sheet Excel Workbook handler
+  async function handleExportExcel() {
+    if (filteredCohort.length === 0 || isExporting) return;
+    try {
+      setIsExporting(true);
+      await exportCohortExcel(filteredCohort, analytics);
+    } catch (err) {
+      console.error('Failed to export Excel report:', err);
+      alert('Failed to generate Excel report: ' + (err?.message || 'Unknown error'));
+    } finally {
+      setIsExporting(false);
+    }
   }
 
   return (
@@ -130,14 +141,18 @@ export default function Dashboard() {
         <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto">
           {/* Export Report Button */}
           <button
-            id="btn-export-csv"
-            onClick={handleExportCsv}
-            disabled={filteredCohort.length === 0}
+            id="btn-export-excel"
+            onClick={handleExportExcel}
+            disabled={filteredCohort.length === 0 || isExporting}
             className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs hover:shadow-xs disabled:opacity-50 cursor-pointer"
-            title="Download CSV report of filtered cohort with all derived flags"
+            title="Download multi-sheet Excel workbook (Sheet1, Notes, GDMT Summary, Contraindications, CI Flags, Key Points)"
           >
-            <Download className="w-3.5 h-3.5 text-slate-600" />
-            <span>Export Report</span>
+            {isExporting ? (
+              <Loader2 className="w-3.5 h-3.5 text-teal-600 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            )}
+            <span>{isExporting ? 'Generating Excel...' : 'Export Report (.xlsx)'}</span>
           </button>
         </div>
       </div>

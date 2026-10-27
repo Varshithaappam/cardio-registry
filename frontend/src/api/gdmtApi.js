@@ -15,3 +15,14 @@ export async function fetchGdmtCohort() {
   }
   throw new Error('Unable to retrieve patient data from database.');
 }
+
+/**
+ * Fetch dedicated Sheet1 export data mapped up to "Current device therapy"
+ */
+export async function fetchHfSheet1Export() {
+  const res = await api.get('/patients/hf-export-sheet1');
+  if (res.data && res.data.success) {
+    return res.data;
+  }
+  throw new Error('Unable to retrieve HF Sheet1 export data from database.');
+}
