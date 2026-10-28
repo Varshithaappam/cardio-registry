@@ -411,10 +411,14 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
       {/* 4-Panel Clinical Epidemiology Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Panel 1: Gender Distribution */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Gender Distribution</h3>
-            <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200">Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records</span>
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between h-auto min-h-full">
+          <div className="flex items-start justify-between gap-2 min-h-[38px]">
+            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide leading-snug break-words">
+              Gender Distribution
+            </h3>
+            <span className="text-[10.5px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200 shrink-0 whitespace-nowrap">
+              Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
+            </span>
           </div>
 
           <div className="h-48 my-1 relative flex items-center justify-center">
@@ -455,34 +459,38 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-100">
-            <div className="bg-sky-50/60 border border-sky-100 px-3 py-2 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-1.5 min-w-0">
+            <div className="bg-sky-50/70 border border-sky-200/80 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px]">
+              <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-sky-600 shrink-0"></span>
-                <span className="text-xs font-bold text-sky-900 truncate">Male</span>
+                <span className="text-xs font-bold text-sky-950 whitespace-normal leading-tight">Male</span>
               </div>
-              <div className="text-right font-mono shrink-0 pl-1">
+              <div className="text-right font-mono flex items-baseline justify-end gap-1">
                 <span className="text-xs font-black text-slate-900">{kpi.males}</span>
-                <span className="text-[10px] font-bold text-sky-700 ml-1">({kpi.malePercent}%)</span>
+                <span className="text-[10.5px] font-bold text-sky-700">({kpi.malePercent}%)</span>
               </div>
             </div>
-            <div className="bg-pink-50/60 border border-pink-100 px-3 py-2 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-1.5 min-w-0">
+            <div className="bg-pink-50/70 border border-pink-200/80 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px]">
+              <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-pink-500 shrink-0"></span>
-                <span className="text-xs font-bold text-pink-900 truncate">Female</span>
+                <span className="text-xs font-bold text-pink-950 whitespace-normal leading-tight">Female</span>
               </div>
-              <div className="text-right font-mono shrink-0 pl-1">
+              <div className="text-right font-mono flex items-baseline justify-end gap-1">
                 <span className="text-xs font-black text-slate-900">{kpi.females}</span>
-                <span className="text-[10px] font-bold text-pink-700 ml-1">({kpi.femalePercent}%)</span>
+                <span className="text-[10.5px] font-bold text-pink-700">({kpi.femalePercent}%)</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Panel 2: HF Phenotype Classification */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">HF Phenotype Classification</h3>
-            <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200">Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records</span>
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between h-auto min-h-full">
+          <div className="flex items-start justify-between gap-2 min-h-[38px]">
+            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide leading-snug break-words">
+              HF Phenotype Classification
+            </h3>
+            <span className="text-[10.5px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200 shrink-0 whitespace-nowrap">
+              Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
+            </span>
           </div>
 
           <div className="h-48 my-1 relative flex items-center justify-center">
@@ -537,34 +545,38 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-100">
-            <div className="bg-teal-50/60 border border-teal-100 px-3 py-2 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-1.5 min-w-0">
+            <div className="bg-teal-50/70 border border-teal-200/80 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px]">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="w-2.5 h-2.5 rounded-full bg-teal-600 shrink-0"></span>
-                <span className="text-xs font-bold text-teal-900 truncate">HFrEF</span>
+                <span className="text-xs font-bold text-teal-950 whitespace-normal leading-tight">HFrEF</span>
               </div>
-              <div className="text-right font-mono shrink-0 pl-1">
+              <div className="text-right font-mono flex items-baseline justify-end gap-1">
                 <span className="text-xs font-black text-slate-900">{kpi.hfrEFCount}</span>
-                <span className="text-[10px] font-bold text-teal-700 ml-1">({kpi.hfrEFPercent}%)</span>
+                <span className="text-[10.5px] font-bold text-teal-700">({kpi.hfrEFPercent}%)</span>
               </div>
             </div>
-            <div className="bg-sky-50/60 border border-sky-100 px-3 py-2 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-1.5 min-w-0">
+            <div className="bg-sky-50/70 border border-sky-200/80 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px]">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="w-2.5 h-2.5 rounded-full bg-sky-600 shrink-0"></span>
-                <span className="text-xs font-bold text-sky-900 truncate">HFpEF</span>
+                <span className="text-xs font-bold text-sky-950 whitespace-normal leading-tight">HFpEF</span>
               </div>
-              <div className="text-right font-mono shrink-0 pl-1">
+              <div className="text-right font-mono flex items-baseline justify-end gap-1">
                 <span className="text-xs font-black text-slate-900">{kpi.hfpEFCount}</span>
-                <span className="text-[10px] font-bold text-sky-700 ml-1">({kpi.hfpEFPercent}%)</span>
+                <span className="text-[10.5px] font-bold text-sky-700">({kpi.hfpEFPercent}%)</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Panel 3: NYHA Functional Classification */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">NYHA Functional Class</h3>
-            <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200">Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records</span>
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between h-auto min-h-full">
+          <div className="flex items-start justify-between gap-2 min-h-[38px]">
+            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide leading-snug break-words">
+              NYHA Functional Class
+            </h3>
+            <span className="text-[10.5px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200 shrink-0 whitespace-nowrap">
+              Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
+            </span>
           </div>
 
           <div className="h-48 flex items-center justify-center my-1">
@@ -607,34 +619,38 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-100">
-            <div className="bg-amber-50/60 border border-amber-100 px-3 py-2 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-1.5 min-w-0">
+            <div className="bg-amber-50/70 border border-amber-200/80 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px]">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
-                <span className="text-xs font-bold text-amber-900 truncate">Class III</span>
+                <span className="text-xs font-bold text-amber-950 whitespace-normal leading-tight">Class III</span>
               </div>
-              <div className="text-right font-mono shrink-0 pl-1">
+              <div className="text-right font-mono flex items-baseline justify-end gap-1">
                 <span className="text-xs font-black text-slate-900">{kpi.nyha3Count}</span>
-                <span className="text-[10px] font-bold text-amber-700 ml-1">({kpi.nyha3Percent}%)</span>
+                <span className="text-[10.5px] font-bold text-amber-700">({kpi.nyha3Percent}%)</span>
               </div>
             </div>
-            <div className="bg-rose-50/60 border border-rose-100 px-3 py-2 rounded-xl flex items-center justify-between">
-              <div className="flex items-center gap-1.5 min-w-0">
+            <div className="bg-rose-50/70 border border-rose-200/80 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px]">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
-                <span className="text-xs font-bold text-rose-900 truncate">Class IV</span>
+                <span className="text-xs font-bold text-rose-950 whitespace-normal leading-tight">Class IV</span>
               </div>
-              <div className="text-right font-mono shrink-0 pl-1">
+              <div className="text-right font-mono flex items-baseline justify-end gap-1">
                 <span className="text-xs font-black text-slate-900">{kpi.nyha4Count}</span>
-                <span className="text-[10px] font-bold text-rose-700 ml-1">({kpi.nyha4Percent}%)</span>
+                <span className="text-[10.5px] font-bold text-rose-700">({kpi.nyha4Percent}%)</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Panel 4: Age Distribution Spectrum */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Age Distribution Spectrum</h3>
-            <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200">Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records</span>
+        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between h-auto min-h-full">
+          <div className="flex items-start justify-between gap-2 min-h-[38px]">
+            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide leading-snug break-words">
+              Age Distribution Spectrum
+            </h3>
+            <span className="text-[10.5px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200 shrink-0 whitespace-nowrap">
+              Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
+            </span>
           </div>
 
           <div className="h-48 my-1 flex items-center justify-center">
@@ -677,11 +693,15 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
           </div>
 
           <div className="pt-2.5 border-t border-slate-100">
-            <div className="bg-teal-50/60 border border-teal-100 px-3 py-2 rounded-xl flex items-center justify-between text-xs">
-              <span className="font-bold text-teal-900">Peak Density</span>
-              <span className="font-mono font-bold text-teal-800">
-                {peakAge?.bracket} <span className="text-[10px] font-medium text-slate-500">({peakAge?.count} Records, {peakAge?.percent}%)</span>
-              </span>
+            <div className="bg-teal-50/70 border border-teal-200/70 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px] text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-teal-600 shrink-0"></span>
+                <span className="font-bold text-teal-950 whitespace-normal leading-tight">Peak Density</span>
+              </div>
+              <div className="font-mono font-bold text-teal-800 text-right flex items-baseline justify-end gap-1">
+                <span>{peakAge?.bracket}</span>
+                <span className="text-[10.5px] font-medium text-slate-600 font-sans">({peakAge?.count} Records, {peakAge?.percent}%)</span>
+              </div>
             </div>
           </div>
         </div>
