@@ -353,7 +353,7 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
       p.currentDeviceTherapy || '',
       p.prescribedDrugsSummary || '',
       p.prescribedDrugsSummary || '',
-      'Heart Failure GDMT',
+      p.prescribedDrugsSummary || '',
       p.pillarEvaluations?.betaBlocker?.prescribed ? 1 : 0,
       p.pillarEvaluations?.aceInhibitor?.prescribed ? 1 : 0,
       p.pillarEvaluations?.arb?.prescribed ? 1 : 0,

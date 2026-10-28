@@ -24,6 +24,219 @@ function formatDate(d) {
 }
 
 /**
+ * Check if a medication dose or value has been selected/entered by the user
+ */
+function hasDoseOrValue(val, dose, customName = null) {
+  if (dose !== null && dose !== undefined) {
+    const s = String(dose).trim();
+    if (s !== '' && s !== '0') return true;
+  }
+  if (isYes(val)) return true;
+  if (customName !== null && customName !== undefined) {
+    const s = String(customName).trim();
+    if (s !== '') return true;
+  }
+  return false;
+}
+
+/**
+ * Extracts all generic drug names from HF Medical Therapy sections (Part 1, 2, and 3)
+ * where the user enters any drug dose, selects/ticks the drug, or provides custom names.
+ */
+function extractGenericDrugs(row) {
+  const drugs = [];
+
+  // Part 1: Beta-blockers, ACEi, ARB, Aldosterone Antagonists
+  if (hasDoseOrValue(row.carvedilol, row.carvedilol_dose)) drugs.push('Carvedilol');
+  if (hasDoseOrValue(row.bisoprolol, row.bisoprolol_dose)) drugs.push('Bisoprolol');
+  if (hasDoseOrValue(row.metoprolol_succinate, row.metoprolol_succinate_dose)) drugs.push('Metoprolol Succinate');
+  if (hasDoseOrValue(row.nebivolol, row.nebivolol_dose)) drugs.push('Nebivolol');
+  if (hasDoseOrValue(row.beta_blocker_other, row.beta_blocker_other_dose, row.beta_blocker_other_name)) {
+    drugs.push(row.beta_blocker_other_name ? row.beta_blocker_other_name.trim() : 'Other Beta-Blocker');
+  }
+
+  if (hasDoseOrValue(row.enalapril, row.enalapril_dose)) drugs.push('Enalapril');
+  if (hasDoseOrValue(row.ramipril, row.ramipril_dose)) drugs.push('Ramipril');
+  if (hasDoseOrValue(row.lisinopril, row.lisinopril_dose)) drugs.push('Lisinopril');
+  if (hasDoseOrValue(row.perindopril, row.perindopril_dose)) drugs.push('Perindopril');
+  if (hasDoseOrValue(row.ace_other, row.ace_other_dose, row.ace_other_name)) {
+    drugs.push(row.ace_other_name ? row.ace_other_name.trim() : 'Other ACE Inhibitor');
+  }
+
+  if (hasDoseOrValue(row.valsartan, row.valsartan_dose)) drugs.push('Valsartan');
+  if (hasDoseOrValue(row.losartan, row.losartan_dose)) drugs.push('Losartan');
+  if (hasDoseOrValue(row.telmisartan, row.telmisartan_dose)) drugs.push('Telmisartan');
+  if (hasDoseOrValue(row.olmesartan, row.olmesartan_dose)) drugs.push('Olmesartan');
+  if (hasDoseOrValue(row.arb_other, row.arb_other_dose, row.arb_other_name)) {
+    drugs.push(row.arb_other_name ? row.arb_other_name.trim() : 'Other ARB');
+  }
+
+  if (hasDoseOrValue(row.spironolactone, row.spironolactone_dose)) drugs.push('Spironolactone');
+  if (hasDoseOrValue(row.eplerenone, row.eplerenone_dose)) drugs.push('Eplerenone');
+
+  // Part 2: Hydralazine, Nitrates, Anticoagulation, Antiplatelets, Antiarrhythmics, Diuretics
+  if (hasDoseOrValue(row.hydralazine, row.hydralazine_dose, row.hydralazine_name)) {
+    drugs.push(row.hydralazine_name ? row.hydralazine_name.trim() : 'Hydralazine');
+  }
+  if (hasDoseOrValue(row.nitrate_1, row.nitrate_1_dose, row.nitrate_1_name)) {
+    drugs.push(row.nitrate_1_name ? row.nitrate_1_name.trim() : 'Nitrate 1');
+  }
+  if (hasDoseOrValue(row.nitrate_2, row.nitrate_2_dose, row.nitrate_2_name)) {
+    drugs.push(row.nitrate_2_name ? row.nitrate_2_name.trim() : 'Nitrate 2');
+  }
+  if (isYes(row.warfarin) || (row.warfarin_inr != null && String(row.warfarin_inr).trim() !== '') || (row.warfarin_target_inr != null && String(row.warfarin_target_inr).trim() !== '')) {
+    drugs.push('Warfarin');
+  }
+  if (hasDoseOrValue(row.vitamin_k_inhibitor, row.vitamin_k_inhibitor_dose, row.vitamin_k_inhibitor_name)) {
+    drugs.push(row.vitamin_k_inhibitor_name ? row.vitamin_k_inhibitor_name.trim() : 'Vitamin K Inhibitor');
+  }
+  if (hasDoseOrValue(row.noac, row.noac_dose, row.noac_name)) {
+    drugs.push(row.noac_name ? row.noac_name.trim() : 'NOAC');
+  }
+  if (hasDoseOrValue(row.acitrom, row.acitrom_dose)) drugs.push('Acitrom');
+  if (hasDoseOrValue(row.ufh, row.ufh_dose)) drugs.push('UFH');
+  if (hasDoseOrValue(row.lmwh, row.lmwh_dose)) drugs.push('LMWH');
+
+  if (hasDoseOrValue(row.aspirin, row.aspirin_dose)) drugs.push('Aspirin');
+  if (hasDoseOrValue(row.clopidogrel, row.clopidogrel_dose)) drugs.push('Clopidogrel');
+  if (hasDoseOrValue(row.prasugrel, row.prasugrel_dose)) drugs.push('Prasugrel');
+  if (hasDoseOrValue(row.ticagrelor, row.ticagrelor_dose)) drugs.push('Ticagrelor');
+
+  if (hasDoseOrValue(row.amiodarone, row.amiodarone_dose)) drugs.push('Amiodarone');
+  if (hasDoseOrValue(row.antiarrhythmic_other, row.antiarrhythmic_other_dose, row.antiarrhythmic_other_name)) {
+    drugs.push(row.antiarrhythmic_other_name ? row.antiarrhythmic_other_name.trim() : 'Other Antiarrhythmic');
+  }
+
+  if (hasDoseOrValue(row.furosemide, row.furosemide_dose)) drugs.push('Furosemide');
+  if (hasDoseOrValue(row.torsemide, row.torsemide_dose)) drugs.push('Torsemide');
+  if (hasDoseOrValue(row.metolazone, row.metolazone_dose)) drugs.push('Metolazone');
+  if (hasDoseOrValue(row.diuretic_other, row.diuretic_other_dose, row.diuretic_other_name)) {
+    drugs.push(row.diuretic_other_name ? row.diuretic_other_name.trim() : 'Other Diuretic');
+  }
+
+  // Part 3: Digoxin, Ivabradine, Statins, Antidiabetics, Thyroxine, Other Meds
+  if (hasDoseOrValue(row.digoxin, row.digoxin_dose, row.digoxin_name)) drugs.push('Digoxin');
+  if (hasDoseOrValue(row.ivabradine, row.ivabradine_dose)) drugs.push('Ivabradine');
+
+  if (hasDoseOrValue(row.atorvastatin, row.atorvastatin_dose)) drugs.push('Atorvastatin');
+  if (hasDoseOrValue(row.simvastatin, row.simvastatin_dose)) drugs.push('Simvastatin');
+  if (hasDoseOrValue(row.rosuvastatin, row.rosuvastatin_dose)) drugs.push('Rosuvastatin');
+
+  if (hasDoseOrValue(row.sulfonylureas, row.sulfonylureas_dose)) drugs.push('Sulfonylureas');
+  if (hasDoseOrValue(row.metformin, row.metformin_dose)) drugs.push('Metformin');
+  if (hasDoseOrValue(row.glitazone, row.glitazone_dose)) drugs.push('Glitazone');
+  if (hasDoseOrValue(row.gliptin, row.gliptin_dose)) drugs.push('Gliptin');
+  if (hasDoseOrValue(row.acarbose_derivative, row.acarbose_derivative_dose)) drugs.push('Acarbose Derivative');
+  if (hasDoseOrValue(row.human_insulin, row.human_insulin_dose)) drugs.push('Human Insulin');
+  if (hasDoseOrValue(row.synthetic_insulin, row.synthetic_insulin_dose)) drugs.push('Synthetic Insulin');
+
+  if (hasDoseOrValue(row.antihypertensive, row.antihypertensive_dose, row.antihypertensive_name)) {
+    drugs.push(row.antihypertensive_name ? row.antihypertensive_name.trim() : 'Antihypertensive');
+  }
+  if (hasDoseOrValue(row.thyroxine, row.thyroxine_dose)) drugs.push('Thyroxine');
+
+  if (hasDoseOrValue(row.other_medication_1, row.other_medication_1_dose, row.other_medication_1_name)) {
+    drugs.push(row.other_medication_1_name ? row.other_medication_1_name.trim() : 'Other Medication 1');
+  }
+  if (hasDoseOrValue(row.other_medication_2, row.other_medication_2_dose, row.other_medication_2_name)) {
+    drugs.push(row.other_medication_2_name ? row.other_medication_2_name.trim() : 'Other Medication 2');
+  }
+  if (hasDoseOrValue(row.other_medication_3, row.other_medication_3_dose, row.other_medication_3_name)) {
+    drugs.push(row.other_medication_3_name ? row.other_medication_3_name.trim() : 'Other Medication 3');
+  }
+  if (hasDoseOrValue(row.other_medication_4, row.other_medication_4_dose, row.other_medication_4_name)) {
+    drugs.push(row.other_medication_4_name ? row.other_medication_4_name.trim() : 'Other Medication 4');
+  }
+
+  return drugs.join(', ');
+}
+
+/**
+ * Evaluates GDMT medication pillars directly from the patient's recorded generic medications.
+ * Instead of fixed generic labels, specifies the exact drug taken in parentheses (e.g., 'Beta Blocker (Metoprolol Succinate)').
+ */
+function getGdmtPillarsFromRow(row) {
+  const bb = [];
+  if (hasDoseOrValue(row.carvedilol, row.carvedilol_dose)) bb.push('Carvedilol');
+  if (hasDoseOrValue(row.bisoprolol, row.bisoprolol_dose)) bb.push('Bisoprolol');
+  if (hasDoseOrValue(row.metoprolol_succinate, row.metoprolol_succinate_dose)) bb.push('Metoprolol Succinate');
+  if (hasDoseOrValue(row.nebivolol, row.nebivolol_dose)) bb.push('Nebivolol');
+  if (hasDoseOrValue(row.beta_blocker_other, row.beta_blocker_other_dose, row.beta_blocker_other_name)) {
+    bb.push(row.beta_blocker_other_name ? row.beta_blocker_other_name.trim() : 'Other Beta-Blocker');
+  }
+
+  const ace = [];
+  if (hasDoseOrValue(row.enalapril, row.enalapril_dose)) ace.push('Enalapril');
+  if (hasDoseOrValue(row.ramipril, row.ramipril_dose)) ace.push('Ramipril');
+  if (hasDoseOrValue(row.lisinopril, row.lisinopril_dose)) ace.push('Lisinopril');
+  if (hasDoseOrValue(row.perindopril, row.perindopril_dose)) ace.push('Perindopril');
+  if (hasDoseOrValue(row.ace_other, row.ace_other_dose, row.ace_other_name)) {
+    ace.push(row.ace_other_name ? row.ace_other_name.trim() : 'Other ACE Inhibitor');
+  }
+
+  const arb = [];
+  if (hasDoseOrValue(row.valsartan, row.valsartan_dose)) arb.push('Valsartan');
+  if (hasDoseOrValue(row.losartan, row.losartan_dose)) arb.push('Losartan');
+  if (hasDoseOrValue(row.telmisartan, row.telmisartan_dose)) arb.push('Telmisartan');
+  if (hasDoseOrValue(row.olmesartan, row.olmesartan_dose)) arb.push('Olmesartan');
+  if (hasDoseOrValue(row.arb_other, row.arb_other_dose, row.arb_other_name)) {
+    const name = (row.arb_other_name || '').trim();
+    if (!name.toLowerCase().includes('sacubitril')) {
+      arb.push(name || 'Other ARB');
+    }
+  }
+
+  const arni = [];
+  const otherMedsText = [
+    row.arb_other_name,
+    row.other_medication_1_name,
+    row.other_medication_2_name,
+    row.other_medication_3_name,
+    row.other_medication_4_name,
+    row.antihypertensive_name,
+    row.drugs
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  if (otherMedsText.includes('sacubitril') || otherMedsText.includes('entresto') || otherMedsText.includes('cidmus') || otherMedsText.includes('vymada') || otherMedsText.includes('arney') || otherMedsText.includes('sacurise')) {
+    arni.push('Sacubitril/Valsartan');
+  }
+
+  const mra = [];
+  if (hasDoseOrValue(row.spironolactone, row.spironolactone_dose)) mra.push('Spironolactone');
+  if (hasDoseOrValue(row.eplerenone, row.eplerenone_dose)) mra.push('Eplerenone');
+  if (otherMedsText.includes('finerenone') || otherMedsText.includes('planep')) {
+    mra.push('Finerenone');
+  }
+
+  const sglt2 = [];
+  if (otherMedsText.includes('dapa') || otherMedsText.includes('forxiga') || otherMedsText.includes('oxra')) {
+    sglt2.push('Dapagliflozin');
+  } else if (otherMedsText.includes('empagli') || otherMedsText.includes('jardiance')) {
+    sglt2.push('Empagliflozin');
+  } else if (otherMedsText.includes('cana') || otherMedsText.includes('invokana')) {
+    sglt2.push('Canagliflozin');
+  }
+
+  const categories = [];
+  if (bb.length > 0) categories.push(`Beta Blocker (${bb.join(', ')})`);
+  if (ace.length > 0) categories.push(`ACEi (${ace.join(', ')})`);
+  if (arb.length > 0) categories.push(`ARB (${arb.join(', ')})`);
+  if (arni.length > 0) categories.push(`ARNI (${arni.join(', ')})`);
+  if (mra.length > 0) categories.push(`MRA (${mra.join(', ')})`);
+  if (sglt2.length > 0) categories.push(`SGLT2i (${sglt2.join(', ')})`);
+
+  return {
+    bb,
+    ace,
+    arb,
+    arni,
+    mra,
+    sglt2,
+    summary: categories.join(', ')
+  };
+}
+
+/**
  * Clinical display label dictionary matching the HF Form and hf.pdf
  */
 const CLINICAL_LABELS = {
@@ -320,7 +533,131 @@ async function getHfSheet1ExportData(options = {}) {
       lt.nt_pro_bnp_result,
       dt.current_device_yes,
       hr_rec.drugs,
+      t1.carvedilol,
+      t1.carvedilol_dose,
+      t1.bisoprolol,
+      t1.bisoprolol_dose,
+      t1.metoprolol_succinate,
+      t1.metoprolol_succinate_dose,
+      t1.nebivolol,
+      t1.nebivolol_dose,
+      t1.beta_blocker_other,
       t1.beta_blocker_other_name,
+      t1.beta_blocker_other_dose,
+      t1.enalapril,
+      t1.enalapril_dose,
+      t1.ramipril,
+      t1.ramipril_dose,
+      t1.lisinopril,
+      t1.lisinopril_dose,
+      t1.perindopril,
+      t1.perindopril_dose,
+      t1.ace_other,
+      t1.ace_other_name,
+      t1.ace_other_dose,
+      t1.valsartan,
+      t1.valsartan_dose,
+      t1.losartan,
+      t1.losartan_dose,
+      t1.telmisartan,
+      t1.telmisartan_dose,
+      t1.olmesartan,
+      t1.olmesartan_dose,
+      t1.arb_other,
+      t1.arb_other_name,
+      t1.arb_other_dose,
+      t1.spironolactone,
+      t1.spironolactone_dose,
+      t1.eplerenone,
+      t1.eplerenone_dose,
+      t2.hydralazine,
+      t2.hydralazine_name,
+      t2.hydralazine_dose,
+      t2.nitrate_1,
+      t2.nitrate_1_name,
+      t2.nitrate_1_dose,
+      t2.nitrate_2,
+      t2.nitrate_2_name,
+      t2.nitrate_2_dose,
+      t2.warfarin,
+      t2.warfarin_inr,
+      t2.warfarin_target_inr,
+      t2.vitamin_k_inhibitor,
+      t2.vitamin_k_inhibitor_name,
+      t2.vitamin_k_inhibitor_dose,
+      t2.noac,
+      t2.noac_name,
+      t2.noac_dose,
+      t2.acitrom,
+      t2.acitrom_dose,
+      t2.ufh,
+      t2.ufh_dose,
+      t2.lmwh,
+      t2.lmwh_dose,
+      t2.aspirin,
+      t2.aspirin_dose,
+      t2.clopidogrel,
+      t2.clopidogrel_dose,
+      t2.prasugrel,
+      t2.prasugrel_dose,
+      t2.ticagrelor,
+      t2.ticagrelor_dose,
+      t2.amiodarone,
+      t2.amiodarone_dose,
+      t2.antiarrhythmic_other,
+      t2.antiarrhythmic_other_name,
+      t2.antiarrhythmic_other_dose,
+      t2.furosemide,
+      t2.furosemide_dose,
+      t2.torsemide,
+      t2.torsemide_dose,
+      t2.metolazone,
+      t2.metolazone_dose,
+      t2.diuretic_other,
+      t2.diuretic_other_name,
+      t2.diuretic_other_dose,
+      t3.digoxin,
+      t3.digoxin_name,
+      t3.digoxin_dose,
+      t3.ivabradine,
+      t3.ivabradine_dose,
+      t3.atorvastatin,
+      t3.atorvastatin_dose,
+      t3.simvastatin,
+      t3.simvastatin_dose,
+      t3.rosuvastatin,
+      t3.rosuvastatin_dose,
+      t3.sulfonylureas,
+      t3.sulfonylureas_dose,
+      t3.metformin,
+      t3.metformin_dose,
+      t3.glitazone,
+      t3.glitazone_dose,
+      t3.gliptin,
+      t3.gliptin_dose,
+      t3.acarbose_derivative,
+      t3.acarbose_derivative_dose,
+      t3.human_insulin,
+      t3.human_insulin_dose,
+      t3.synthetic_insulin,
+      t3.synthetic_insulin_dose,
+      t3.antihypertensive,
+      t3.antihypertensive_name,
+      t3.antihypertensive_dose,
+      t3.thyroxine,
+      t3.thyroxine_dose,
+      t3.other_medication_1,
+      t3.other_medication_1_name,
+      t3.other_medication_1_dose,
+      t3.other_medication_2,
+      t3.other_medication_2_name,
+      t3.other_medication_2_dose,
+      t3.other_medication_3,
+      t3.other_medication_3_name,
+      t3.other_medication_3_dose,
+      t3.other_medication_4,
+      t3.other_medication_4_name,
+      t3.other_medication_4_dose,
       e.rx_beta_blocker,
       e.rx_ace_inhibitor,
       e.rx_arb,
@@ -349,6 +686,8 @@ async function getHfSheet1ExportData(options = {}) {
     LEFT JOIN dbo.hf_device_therapy dt ON dt.hf_id = hr.hf_id
     LEFT JOIN dbo.hf_recommendations hr_rec ON hr_rec.hf_id = hr.hf_id
     LEFT JOIN dbo.hf_medical_therapy_part1 t1 ON t1.hf_id = hr.hf_id
+    LEFT JOIN dbo.hf_medical_therapy_part2 t2 ON t2.hf_id = hr.hf_id
+    LEFT JOIN dbo.hf_medical_therapy_part3 t3 ON t3.hf_id = hr.hf_id
     WHERE ${whereConditions.join(' AND ')}
     ORDER BY hr.hf_id ASC;
   `;
@@ -646,13 +985,14 @@ async function getHfSheet1ExportData(options = {}) {
 
     const hfRegistryNo = row.hf_registry_no || `HF${String(row.hf_id).padStart(5, '0')}`;
 
-    // 73-97: GDMT Drug & Adherence columns
-    const rxBB = isYes(row.rx_beta_blocker) ? 1 : 0;
-    const rxAce = isYes(row.rx_ace_inhibitor) ? 1 : 0;
-    const rxArb = isYes(row.rx_arb) ? 1 : 0;
-    const rxArni = isYes(row.rx_arni) ? 1 : 0;
-    const rxMra = isYes(row.rx_mra) ? 1 : 0;
-    const rxSglt2 = isYes(row.rx_sglt2_inhibitor) ? 1 : 0;
+    // 73-97: GDMT Drug & Adherence columns evaluated directly from active generic medications
+    const gdmtPillars = getGdmtPillarsFromRow(row);
+    const rxBB = gdmtPillars.bb.length > 0 ? 1 : 0;
+    const rxAce = gdmtPillars.ace.length > 0 ? 1 : 0;
+    const rxArb = gdmtPillars.arb.length > 0 ? 1 : 0;
+    const rxArni = gdmtPillars.arni.length > 0 ? 1 : 0;
+    const rxMra = gdmtPillars.mra.length > 0 ? 1 : 0;
+    const rxSglt2 = gdmtPillars.sglt2.length > 0 ? 1 : 0;
 
     const ciBB = isYes(row.ci_beta_blocker) ? 1 : 0;
     const ciAce = isYes(row.ci_ace_inhibitor) ? 1 : 0;
@@ -661,14 +1001,7 @@ async function getHfSheet1ExportData(options = {}) {
     const ciMra = isYes(row.ci_mra) ? 1 : 0;
     const ciSglt2 = isYes(row.ci_sglt2_inhibitor) ? 1 : 0;
 
-    const activeDrugs = [];
-    if (rxBB) activeDrugs.push('Beta Blocker (Bisoprolol/Carvedilol)');
-    if (rxAce) activeDrugs.push('ACEi (Ramipril/Enalapril)');
-    if (rxArb) activeDrugs.push('ARB (Telmisartan)');
-    if (rxArni) activeDrugs.push('ARNI (Sacubitril/Valsartan)');
-    if (rxMra) activeDrugs.push('MRA (Spironolactone/Eplerenone)');
-    if (rxSglt2) activeDrugs.push('SGLT2i (Dapagliflozin/Empagliflozin)');
-    const drugsSummary = activeDrugs.join(', ');
+    const drugsSummary = gdmtPillars.summary;
 
     const numPrescribed = rxBB + rxAce + rxArb + rxArni + rxMra + rxSglt2;
 
@@ -760,8 +1093,8 @@ async function getHfSheet1ExportData(options = {}) {
       row.nt_pro_bnp_result || '',                   // 71. NT-proBNP
       row.current_device_yes || '',                  // 72. Current device therapy
       drugsSummary,                                  // 73. Drugs
-      drugsSummary,                                  // 74. Generic Names
-      'Heart Failure GDMT',                          // 75. Drug Category
+      extractGenericDrugs(row),                      // 74. Generic Names
+      drugsSummary,                                  // 75. Drug Category
       rxBB,                                          // 76. Beta blocker
       rxAce,                                         // 77. ACE inhibitor
       rxArb,                                         // 78. ARB
