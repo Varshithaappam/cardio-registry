@@ -310,20 +310,22 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
               </button>
             </div>
           )}
-          <button
-            type="button"
-            id="btn-top-fill-dummy"
-            onClick={() => {
-              if (formRef.current?.fillDummyData) {
-                formRef.current.fillDummyData();
-              }
-            }}
-            className="px-3 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 hover:border-teal-400 rounded-xl flex items-center gap-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
-            title="Auto-fill form with sample clinical test data"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-teal-300" />
-            <span>Fill Dummy Data</span>
-          </button>
+          {!isHfForm && (
+            <button
+              type="button"
+              id="btn-top-fill-dummy"
+              onClick={() => {
+                if (formRef.current?.fillDummyData) {
+                  formRef.current.fillDummyData();
+                }
+              }}
+              className="px-3 py-2 bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 hover:border-teal-400 rounded-xl flex items-center gap-1.5 text-xs font-bold transition cursor-pointer shadow-xs"
+              title="Auto-fill form with sample clinical test data"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-teal-300" />
+              <span>Fill Dummy Data</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -340,23 +342,25 @@ export default function ClinicalForm({ patientRecord, formType, editingRecord, o
           <div />
 
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button
-              id="btn-fill-dummy-data"
-              type="button"
-              disabled={isSubmitting}
-              onClick={() => {
-                if (formRef.current?.fillDummyData) {
-                  formRef.current.fillDummyData();
-                }
-              }}
-              className={`w-full sm:w-auto px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 rounded-lg flex items-center justify-center gap-1.5 shadow-xs font-semibold text-xs cursor-pointer transition ${
-                isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-              }`}
-              title="Auto-fill form with sample clinical test data"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-              <span>Fill Dummy Data</span>
-            </button>
+            {!isHfForm && (
+              <button
+                id="btn-fill-dummy-data"
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => {
+                  if (formRef.current?.fillDummyData) {
+                    formRef.current.fillDummyData();
+                  }
+                }}
+                className={`w-full sm:w-auto px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 rounded-lg flex items-center justify-center gap-1.5 shadow-xs font-semibold text-xs cursor-pointer transition ${
+                  isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                }`}
+                title="Auto-fill form with sample clinical test data"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                <span>Fill Dummy Data</span>
+              </button>
+            )}
             <button
               id="btn-draft-form"
               type="button"

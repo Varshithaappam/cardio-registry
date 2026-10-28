@@ -30,7 +30,8 @@ import {
   Pie,
   Cell,
   RadialBarChart,
-  RadialBar
+  RadialBar,
+  LabelList
 } from 'recharts';
 
 export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
@@ -84,7 +85,8 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
   // Find peak adherence bracket
   const peakAdherence = [...(adherenceData || [])].sort((a, b) => b.patients - a.patients)[0];
 
-  // Colors for therapy intensity
+  // Colors for therapy intensity & unified chart styling
+  const UNIFIED_BAR_COLOR = '#0d9488';
   const INTENSITY_COLORS = ['#e62031', '#0d9488', '#0284c7', '#8b5cf6', '#f59e0b', '#10b981'];
 
   // Neat modern tooltip styling with smooth rounded borders
@@ -131,7 +133,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                 </h3>
               </div>
               <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 self-start sm:self-auto">
-                Cohort: N={kpi.totalHfRecords || kpi.totalPatients}
+                Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
               </span>
             </div>
 
@@ -140,7 +142,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                   data={categoryProfileData} 
-                  margin={{ top: 10, right: 15, left: -20, bottom: 5 }} 
+                  margin={{ top: 22, right: 15, left: -20, bottom: 5 }} 
                   barSize={32}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -153,8 +155,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                   />
                   <YAxis 
                     unit="%" 
-                    domain={[0, 95]} 
-                    ticks={[0, 25, 50, 75, 95]} 
+                    domain={[0, 115]} 
                     tick={{ fontSize: 10, fill: '#64748b' }} 
                     axisLine={false} 
                     tickLine={false} 
@@ -175,7 +176,14 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     name="% Prescribed" 
                     fill="#0284c7" 
                     radius={[5, 5, 0, 0]}
-                  />
+                  >
+                    <LabelList 
+                      dataKey="percent" 
+                      position="top" 
+                      formatter={(val) => `${val}%`} 
+                      style={{ fontSize: '11px', fontWeight: 'bold', fill: '#0284c7', fontFamily: 'ui-monospace, monospace' }} 
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -195,7 +203,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                 </h3>
               </div>
               <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 self-start sm:self-auto">
-                Cohort: N={kpi.totalHfRecords || kpi.totalPatients}
+                Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
               </span>
             </div>
 
@@ -204,7 +212,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={coverageData}
-                  margin={{ top: 10, right: 15, left: -20, bottom: 5 }}
+                  margin={{ top: 22, right: 15, left: -20, bottom: 5 }}
                   barGap={4}
                 >
                   <CartesianGrid
@@ -221,7 +229,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                   />
                   <YAxis
                     unit="%"
-                    domain={[0, 115]}
+                    domain={[0, 128]}
                     tick={{ fontSize: 10, fill: "#64748b" }}
                     axisLine={false}
                     tickLine={false}
@@ -242,13 +250,27 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     name="% Drugs Given"
                     fill="#0284c7"
                     radius={[4, 4, 0, 0]}
-                  />
+                  >
+                    <LabelList 
+                      dataKey="onDrug" 
+                      position="top" 
+                      formatter={(val) => `${val}%`} 
+                      style={{ fontSize: '9.5px', fontWeight: 'bold', fill: '#0284c7', fontFamily: 'ui-monospace, monospace' }} 
+                    />
+                  </Bar>
                   <Bar
                     dataKey="deviations"
                     name="% Clinical Deviations"
                     fill="#ea580c"
                     radius={[4, 4, 0, 0]}
-                  />
+                  >
+                    <LabelList 
+                      dataKey="deviations" 
+                      position="top" 
+                      formatter={(val) => `${val}%`} 
+                      style={{ fontSize: '9.5px', fontWeight: 'bold', fill: '#ea580c', fontFamily: 'ui-monospace, monospace' }} 
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -277,7 +299,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     onClick={() => setAdherenceViewMode('bar')}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
                       adherenceViewMode === 'bar'
-                        ? 'bg-white text-blue-600 shadow-2xs'
+                        ? 'bg-white text-teal-700 shadow-2xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -288,7 +310,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     onClick={() => setAdherenceViewMode('curve')}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
                       adherenceViewMode === 'curve'
-                        ? 'bg-white text-teal-600 shadow-2xs'
+                        ? 'bg-white text-teal-700 shadow-2xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -296,8 +318,8 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     <span>Curve</span>
                   </button>
                 </div>
-                <span className="text-[11px] font-bold bg-teal-50 text-teal-800 px-2 py-0.5 rounded-md border border-teal-200">
-                  Peak: {peakAdherence?.bracket}
+                <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200">
+                  Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
                 </span>
               </div>
             </div>
@@ -306,7 +328,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
             <div className="h-64 my-2">
               {adherenceViewMode === 'bar' ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={adherenceData} margin={{ top: 10, right: 15, left: -20, bottom: 5 }} barSize={30}>
+                  <BarChart data={adherenceData} margin={{ top: 22, right: 15, left: -15, bottom: 5 }} barSize={34}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis 
                       dataKey="bracket" 
@@ -315,6 +337,8 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                       tickLine={false} 
                     />
                     <YAxis 
+                      unit="%"
+                      domain={[0, 'dataMax + 15']}
                       tick={{ fontSize: 10, fill: '#64748b' }} 
                       axisLine={{ stroke: '#cbd5e1' }}
                       tickLine={false} 
@@ -328,46 +352,64 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                           <div className="bg-white text-slate-800 p-3 rounded-xl shadow-xl border border-slate-200 text-xs">
                             <div className="font-bold text-slate-900 text-[13px]">{d.bracket} Adherence</div>
                             <div className="text-slate-500 mt-0.5">{d.deviations} Deviations</div>
-                            <div className="text-sm font-black font-mono text-blue-600 mt-1">
-                              {d.patients} HF Records <span className="text-xs font-normal text-slate-400">({d.percent}%)</span>
+                            <div className="text-sm font-black font-mono text-teal-700 mt-1">
+                              {d.percent}% <span className="text-xs font-normal text-slate-500">({d.patients} HF Records)</span>
                             </div>
                           </div>
                         );
                       }}
                     />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
-                    <Bar dataKey="patients" name="HF Records" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="percent" name="% HF Records" fill={UNIFIED_BAR_COLOR} radius={[6, 6, 0, 0]}>
+                      {adherenceData.map((entry, index) => (
+                        <Cell key={`cell-adh-${index}`} fill={UNIFIED_BAR_COLOR} />
+                      ))}
+                      <LabelList 
+                        dataKey="percent" 
+                        position="top" 
+                        formatter={(val) => `${val}%`} 
+                        style={{ fontSize: '11px', fontWeight: 'bold', fill: '#0f172a', fontFamily: 'ui-monospace, monospace' }} 
+                      />
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={adherenceData} margin={{ top: 10, right: 15, left: -20, bottom: 5 }}>
+                  <AreaChart data={adherenceData} margin={{ top: 22, right: 15, left: -15, bottom: 5 }}>
                     <defs>
                       <linearGradient id="adherenceGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0d9488" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#0d9488" stopOpacity={0.0} />
+                        <stop offset="5%" stopColor={UNIFIED_BAR_COLOR} stopOpacity={0.4} />
+                        <stop offset="95%" stopColor={UNIFIED_BAR_COLOR} stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="bracket" tick={{ fontSize: 9.5, fill: '#334155', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    <YAxis unit="%" domain={[0, 'dataMax + 15']} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                     <Tooltip 
                       contentStyle={tooltipStyle.content}
                       labelStyle={tooltipStyle.label}
                       itemStyle={tooltipStyle.item}
                       cursor={tooltipStyle.cursor}
-                      formatter={(val, name, props) => [`${val} HF Records (${props.payload.percent}%)`, 'Count']} 
+                      formatter={(val, name, props) => [`${val}% (${props.payload.patients} HF Records)`, 'Percentage']} 
                     />
                     <Area 
                       type="natural" 
-                      dataKey="patients" 
-                      name="HF Records"
-                      stroke="#0d9488" 
+                      dataKey="percent" 
+                      name="% HF Records"
+                      stroke={UNIFIED_BAR_COLOR} 
                       strokeWidth={2.5} 
                       fillOpacity={1} 
                       fill="url(#adherenceGrad)"
-                      dot={{ r: 3.5, fill: '#0d9488', strokeWidth: 2, stroke: '#ffffff' }}
-                    />
+                      dot={{ r: 4, fill: UNIFIED_BAR_COLOR, strokeWidth: 2, stroke: '#ffffff' }}
+                    >
+                      <LabelList 
+                        dataKey="percent" 
+                        position="top" 
+                        offset={8} 
+                        formatter={(val) => `${val}%`}
+                        style={{ fontSize: '11px', fontWeight: 'bold', fill: '#0f766e', fontFamily: 'ui-monospace, monospace' }} 
+                      />
+                    </Area>
                   </AreaChart>
                 </ResponsiveContainer>
               )}
@@ -388,7 +430,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                 </h3>
               </div>
               <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 self-start sm:self-auto">
-                Cohort: N={kpi.totalHfRecords || kpi.totalPatients}
+                Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
               </span>
             </div>
 
@@ -397,7 +439,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart 
                   data={drugsTakenDistribution} 
-                  margin={{ top: 10, right: 15, left: -20, bottom: 5 }} 
+                  margin={{ top: 22, right: 15, left: -20, bottom: 5 }} 
                   barSize={32}
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -410,7 +452,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                   />
                   <YAxis 
                     unit="%" 
-                    domain={[0, 'dataMax + 12']} 
+                    domain={[0, 'dataMax + 18']} 
                     tick={{ fontSize: 10, fill: '#64748b' }} 
                     axisLine={false} 
                     tickLine={false} 
@@ -429,11 +471,18 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                   <Bar 
                     dataKey="percent" 
                     name="% HF Records" 
+                    fill={UNIFIED_BAR_COLOR}
                     radius={[5, 5, 0, 0]}
                   >
                     {drugsTakenDistribution.map((entry, index) => (
-                      <Cell key={`cell-drug-${index}`} fill={INTENSITY_COLORS[index % INTENSITY_COLORS.length]} />
+                      <Cell key={`cell-drug-${index}`} fill={UNIFIED_BAR_COLOR} />
                     ))}
+                    <LabelList 
+                      dataKey="percent" 
+                      position="top" 
+                      formatter={(val) => `${val}%`} 
+                      style={{ fontSize: '11px', fontWeight: 'bold', fill: '#0f172a', fontFamily: 'ui-monospace, monospace' }} 
+                    />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -457,14 +506,14 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                 </h3>
               </div>
               <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 self-start sm:self-auto">
-                Cohort: N={kpi.totalHfRecords || kpi.totalPatients}
+                Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
               </span>
             </div>
 
             {/* Clustered Column Chart */}
             <div className="h-64 my-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={coverageData} margin={{ top: 10, right: 15, left: -20, bottom: 5 }} barGap={4}>
+                <BarChart data={coverageData} margin={{ top: 22, right: 15, left: -20, bottom: 5 }} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis 
                     dataKey="name" 
@@ -473,7 +522,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     axisLine={false} 
                     tickLine={false} 
                   />
-                  <YAxis unit="%" domain={[0, 115]} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <YAxis unit="%" domain={[0, 128]} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <Tooltip 
                     contentStyle={tooltipStyle.content}
                     labelStyle={tooltipStyle.label}
@@ -485,8 +534,22 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     ]}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
-                  <Bar dataKey="onDrug" name="% on Drug" fill="#0284c7" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="withCI" name="% with Contraindication" fill="#ea580c" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="onDrug" name="% on Drug" fill="#0284c7" radius={[4, 4, 0, 0]}>
+                    <LabelList 
+                      dataKey="onDrug" 
+                      position="top" 
+                      formatter={(val) => `${val}%`} 
+                      style={{ fontSize: '9.5px', fontWeight: 'bold', fill: '#0284c7', fontFamily: 'ui-monospace, monospace' }} 
+                    />
+                  </Bar>
+                  <Bar dataKey="withCI" name="% with Contraindication" fill="#ea580c" radius={[4, 4, 0, 0]}>
+                    <LabelList 
+                      dataKey="withCI" 
+                      position="top" 
+                      formatter={(val) => `${val}%`} 
+                      style={{ fontSize: '9.5px', fontWeight: 'bold', fill: '#ea580c', fontFamily: 'ui-monospace, monospace' }} 
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -505,19 +568,24 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                   Appropriate Care vs. Clinical Deviations
                 </h3>
               </div>
-              <button
-                onClick={onOpenExclusionGuide}
-                className="flex items-center gap-1 px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg text-xs font-bold transition cursor-pointer self-start sm:self-auto"
-              >
-                <HelpCircle className="w-3.5 h-3.5 text-teal-600" />
-                <span>Exclusion Guide</span>
-              </button>
+              <div className="flex items-center gap-2 self-start sm:self-auto">
+                <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200">
+                  Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
+                </span>
+                <button
+                  onClick={onOpenExclusionGuide}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200 rounded-lg text-xs font-bold transition cursor-pointer"
+                >
+                  <HelpCircle className="w-3.5 h-3.5 text-teal-600" />
+                  <span>Exclusion Guide</span>
+                </button>
+              </div>
             </div>
 
             {/* Clustered Column Chart */}
             <div className="h-64 my-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={complianceData} margin={{ top: 10, right: 15, left: -20, bottom: 5 }} barGap={4}>
+                <BarChart data={complianceData} margin={{ top: 22, right: 15, left: -20, bottom: 5 }} barGap={4}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis 
                     dataKey="name" 
@@ -526,7 +594,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     axisLine={false} 
                     tickLine={false} 
                   />
-                  <YAxis unit="%" domain={[0, 115]} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                  <YAxis unit="%" domain={[0, 128]} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <Tooltip 
                     contentStyle={tooltipStyle.content}
                     labelStyle={tooltipStyle.label}
@@ -535,8 +603,22 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     formatter={(val, name, props) => [`${val}%`, name]}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
-                  <Bar dataKey="appropCare" name="% Appropriate Care" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="deviations" name="% Clinical Deviations" fill="#ea580c" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="appropCare" name="% Appropriate Care" fill="#10b981" radius={[4, 4, 0, 0]}>
+                    <LabelList 
+                      dataKey="appropCare" 
+                      position="top" 
+                      formatter={(val) => `${val}%`} 
+                      style={{ fontSize: '9.5px', fontWeight: 'bold', fill: '#059669', fontFamily: 'ui-monospace, monospace' }} 
+                    />
+                  </Bar>
+                  <Bar dataKey="deviations" name="% Clinical Deviations" fill="#ea580c" radius={[4, 4, 0, 0]}>
+                    <LabelList 
+                      dataKey="deviations" 
+                      position="top" 
+                      formatter={(val) => `${val}%`} 
+                      style={{ fontSize: '9.5px', fontWeight: 'bold', fill: '#ea580c', fontFamily: 'ui-monospace, monospace' }} 
+                    />
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>

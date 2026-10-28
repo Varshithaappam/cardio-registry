@@ -111,7 +111,18 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
       return false;
     });
 
-    const headerRow = ws.addRow(sheet1Data.headers);
+    // Prepare headers: remove Reasons for Admission2 and rename Reasons for admission3 to admission type
+    const headers = [...sheet1Data.headers];
+    const admission2Idx = headers.findIndex(h => /reasons for admission\s*2/i.test(h));
+    const admission3Idx = headers.findIndex(h => /reasons for admission\s*3/i.test(h));
+    if (admission3Idx !== -1) {
+      headers[admission3Idx] = 'admission type';
+    }
+    if (admission2Idx !== -1) {
+      headers.splice(admission2Idx, 1);
+    }
+
+    const headerRow = ws.addRow(headers);
     headerRow.eachCell(cell => {
       cell.fill = HEADER_FILL_TEAL;
       cell.font = HEADER_FONT;
@@ -120,7 +131,12 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
     });
     headerRow.height = 28;
 
-    filteredRows.forEach((rowVals, idx) => {
+    filteredRows.forEach((rawRowVals, idx) => {
+      const rowVals = [...rawRowVals];
+      if (admission2Idx !== -1) {
+        rowVals.splice(admission2Idx, 1);
+      }
+
       // Re-number SL No continuously (column 0)
       rowVals[0] = idx + 1;
 
@@ -131,7 +147,7 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
       dataRow.eachCell((cell, colNum) => {
         cell.border = BORDER_THIN;
         cell.font = { name: 'Calibri', size: 10 };
-        if (colNum === 97) {
+        if (colNum === headers.length) {
           cell.numFmt = '0.0%';
           cell.alignment = { horizontal: 'right', vertical: 'middle' };
         }
@@ -172,8 +188,7 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
     'Discharge Date',
     'Present diagnosis',
     'Reasons for Admission1',
-    'Reasons for Admission2',
-    'Reasons for admission3',
+    'admission type',
     'Reasons other than HF',
     'Previous Diagnosis',
     'Medical History',
@@ -283,7 +298,6 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
       p.dischargeDate || '',
       p.presentDiagnosis || '',
       p.admissionReason || '',
-      '',
       '',
       '',
       p.previousDiagnosis || '',
@@ -873,17 +887,17 @@ function buildKeyPointsSheet(workbook, analytics, patients) {
     { r: 6, label: 'Male', formula: `COUNTIF('Sheet1'!I2:I${total + 1},"Male")`, result: males, src: 'Sheet1 col I', numFmt: undefined },
     { r: 7, label: 'Female', formula: `COUNTIF('Sheet1'!I2:I${total + 1},"Female")`, result: females, src: 'Sheet1 col I', numFmt: undefined },
     { r: 8, label: 'Mean age (years)', formula: `AVERAGE('Sheet1'!H2:H${total + 1})`, result: meanAge, src: 'Sheet1 col H', numFmt: '0.0' },
-    { r: 9, label: 'HFrEF', formula: `COUNTIF('Sheet1'!AO2:AO${total + 1},"HFrEF")`, result: hfref, src: 'Sheet1 col AO', numFmt: undefined },
-    { r: 10, label: 'HFpEF', formula: `COUNTIF('Sheet1'!AO2:AO${total + 1},"HFpEF")`, result: hfpef, src: 'Sheet1 col AO', numFmt: undefined },
-    { r: 11, label: 'Mean EF %', formula: `AVERAGE('Sheet1'!BJ2:BJ${total + 1})`, result: meanEf, src: 'Sheet1 col BJ', numFmt: '0.0' },
-    { r: 12, label: 'NYHA class III', formula: `COUNTIF('Sheet1'!AV2:AV${total + 1},"NYHA class III")`, result: nyha3, src: 'Sheet1 col AV', numFmt: undefined },
-    { r: 13, label: 'NYHA class IV', formula: `COUNTIF('Sheet1'!AV2:AV${total + 1},"NYHA class IV")`, result: nyha4, src: 'Sheet1 col AV', numFmt: undefined },
-    { r: 14, label: 'Diabetes mellitus (any comorbidity column)', result: dm, src: 'Sheet1 AP:AS', numFmt: undefined },
-    { r: 15, label: 'Hypertension', result: htn, src: 'Sheet1 AP:AS', numFmt: undefined },
+    { r: 9, label: 'HFrEF', formula: `COUNTIF('Sheet1'!AN2:AN${total + 1},"HFrEF")`, result: hfref, src: 'Sheet1 col AN', numFmt: undefined },
+    { r: 10, label: 'HFpEF', formula: `COUNTIF('Sheet1'!AN2:AN${total + 1},"HFpEF")`, result: hfpef, src: 'Sheet1 col AN', numFmt: undefined },
+    { r: 11, label: 'Mean EF %', formula: `AVERAGE('Sheet1'!BI2:BI${total + 1})`, result: meanEf, src: 'Sheet1 col BI', numFmt: '0.0' },
+    { r: 12, label: 'NYHA class III', formula: `COUNTIF('Sheet1'!AU2:AU${total + 1},"NYHA class III")`, result: nyha3, src: 'Sheet1 col AU', numFmt: undefined },
+    { r: 13, label: 'NYHA class IV', formula: `COUNTIF('Sheet1'!AU2:AU${total + 1},"NYHA class IV")`, result: nyha4, src: 'Sheet1 col AU', numFmt: undefined },
+    { r: 14, label: 'Diabetes mellitus (any comorbidity column)', result: dm, src: 'Sheet1 AO:AR', numFmt: undefined },
+    { r: 15, label: 'Hypertension', result: htn, src: 'Sheet1 AO:AR', numFmt: undefined },
     { r: 16, label: 'Renal failure / CKD flagged (renal contraindication)', result: ckd, src: 'CI Flags col O', numFmt: undefined },
-    { r: 17, label: 'Deaths recorded', formula: `COUNTIF('Sheet1'!BA2:BA${total + 1},"Y*")+COUNTIF('Sheet1'!BA2:BA${total + 1},"Yes")`, result: deaths, src: 'Sheet1 col BA', numFmt: undefined },
-    { r: 18, label: 'Mean number of GDMT drugs per patient', formula: `AVERAGE('Sheet1'!CD2:CD${total + 1})`, result: meanDrugs, src: 'Sheet1 col CD', numFmt: '0.0' },
-    { r: 19, label: 'Mean % GDMT adherence (no deviation)', formula: `AVERAGE('Sheet1'!CS2:CS${total + 1})`, result: meanAdh, src: 'Sheet1 col CS', numFmt: '0.0%' }
+    { r: 17, label: 'Deaths recorded', formula: `COUNTIF('Sheet1'!AZ2:AZ${total + 1},"Y*")+COUNTIF('Sheet1'!AZ2:AZ${total + 1},"Yes")`, result: deaths, src: 'Sheet1 col AZ', numFmt: undefined },
+    { r: 18, label: 'Mean number of GDMT drugs per patient', formula: `AVERAGE('Sheet1'!CC2:CC${total + 1})`, result: meanDrugs, src: 'Sheet1 col CC', numFmt: '0.0' },
+    { r: 19, label: 'Mean % GDMT adherence (no deviation)', formula: `AVERAGE('Sheet1'!CR2:CR${total + 1})`, result: meanAdh, src: 'Sheet1 col CR', numFmt: '0.0%' }
   ];
 
   metricSpecs.forEach(m => {
@@ -1118,8 +1132,7 @@ function buildExportToDbMappingSheet(workbook) {
     ['Discharge Date', 'discharge_date', 'hf_gdmt_evaluation'],
     ['Present diagnosis', 'present_diagnosis', 'hf_administrative'],
     ['Reasons for Admission1', 'admission_reason', 'hf_administrative'],
-    ['Reasons for Admission2', 'other_admission_reason', 'hf_administrative'],
-    ['Reasons for admission3', 'admission_type', 'hf_administrative'],
+    ['admission type', 'admission_type', 'hf_administrative'],
     ['Reasons other than HF', 'precipitating_other', 'hf_administrative'],
     ['Previous Diagnosis', 'previous_diagnosis', 'hf_initial_assessment'],
     ['Medical History', 'history_other', 'hf_initial_assessment'],

@@ -3647,18 +3647,6 @@ const hf = forwardRef(function hf(
       <SectionCard title="1. Patient Profile">
         <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Registry Demographics</span>
-          {!readOnly && (
-            <button
-              type="button"
-              id="btn-hf-section1-dummy"
-              onClick={fillDummyData}
-              className="px-3 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-300 rounded-lg flex items-center gap-1.5 text-xs font-bold cursor-pointer transition shadow-2xs"
-              title="Auto-fill all sections with dummy test data"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-teal-600" />
-              <span>Fill Dummy Data</span>
-            </button>
-          )}
         </div>
 
         {/* Top Demographics Grid (4-Column Layout) */}
