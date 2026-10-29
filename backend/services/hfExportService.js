@@ -374,9 +374,7 @@ function evaluatePositiveColName(row, colNames) {
  */
 async function getHfSheet1ExportData(options = {}) {
   const whereConditions = [
-    '(hr.is_deleted = 0 OR hr.is_deleted IS NULL)',
-    'p.uhid IS NOT NULL',
-    "LTRIM(RTRIM(p.uhid)) != ''"
+    '(hr.is_deleted = 0 OR hr.is_deleted IS NULL)'
   ];
 
   if (options && options.hfIds) {
@@ -396,7 +394,8 @@ async function getHfSheet1ExportData(options = {}) {
       hr.hf_id,
       hr.hf_registry_no,
       p.reg_patient_id,
-      p.uhid,
+      COALESCE(NULLIF(LTRIM(RTRIM(p.uhid)), ''), NULLIF(LTRIM(RTRIM(p.mr_no)), ''), CONCAT('PAT-', p.reg_patient_id)) AS uhid,
+      p.mr_no,
       p.patient_name,
       p.date_of_birth,
       CASE 
@@ -432,10 +431,15 @@ async function getHfSheet1ExportData(options = {}) {
       ia.recent_hospitalization_dates,
       ia.recent_hospitalization_reasons,
       ia.documented_vt_vf,
+      ia.documented_pvcs,
+      ia.complaints_syncope_presyncope,
+      ia.documented_nsvt,
+      ia.syncope,
       ia.weight,
       ia.height,
       ia.heart_rate,
       ia.respiratory_rate,
+      ia.oxygen_saturation,
       ia.systolic_bp_sitting,
       ia.diastolic_bp_sitting,
       ia.systolic_bp_standing,
@@ -531,6 +535,7 @@ async function getHfSheet1ExportData(options = {}) {
       lt.hb_result,
       lt.bnp_result,
       lt.sodium_result,
+      lt.other_lab_test_name,
       lt.other_lab_test_result,
       lt.ldl_result,
       lt.nt_pro_bnp_result,
@@ -729,7 +734,7 @@ async function getHfSheet1ExportData(options = {}) {
     'Heart rate',
     'Heart rate variability',
     'Respiratory rate',
-    'Column2',
+    'O₂ Saturation (%)',
     'Blood pressure sitting',
     'Blood pressure standing',
     'Mental status',
@@ -998,6 +1003,16 @@ async function getHfSheet1ExportData(options = {}) {
       ? blockages.join(', ')
       : (!row.ecg_lbbb && !row.ecg_rbbb && !row.ecg_block_other ? '' : 'No');
 
+    // VT/VF risk assessment (Column Y): positive items from hf_initial_assessment
+    const vtvfRisks = [];
+    if (isYes(row.documented_vt_vf)) vtvfRisks.push('Documented episode of VT/VF');
+    if (isYes(row.complaints_syncope_presyncope) || isYes(row.syncope)) vtvfRisks.push('Complaints of Syncope / Pre-syncope');
+    if (isYes(row.documented_pvcs)) vtvfRisks.push('Documented PVCs');
+    if (isYes(row.documented_nsvt)) vtvfRisks.push('Documented NSVT');
+    const vtvfRiskVal = vtvfRisks.length > 0
+      ? vtvfRisks.join(', ')
+      : (!row.documented_vt_vf && !row.complaints_syncope_presyncope && !row.documented_pvcs && !row.documented_nsvt ? '' : 'No');
+
     const hfRegistryNo = row.hf_registry_no || `HF${String(row.hf_id).padStart(5, '0')}`;
 
     // 73-97: GDMT Drug & Adherence columns evaluated directly from active generic medications
@@ -1036,7 +1051,7 @@ async function getHfSheet1ExportData(options = {}) {
 
     return [
       idx + 1,                                       // 1. SL No
-      row.uhid || '',                                // 2. UHID(T3)
+      row.uhid || row.mr_no || (row.reg_patient_id ? `PAT-${row.reg_patient_id}` : ''), // 2. UHID(T3)
       row.visit_id || '',                            // 3. IP No(T3) (synchronized with IP No Prosoft)
       row.visit_id || '',                            // 4. IP No(Prosoft) (hf_administrative.visit_id)
       hfRegistryNo,                                  // 5. HF ID (added next to IP No Prosoft)
@@ -1060,13 +1075,13 @@ async function getHfSheet1ExportData(options = {}) {
       medHistoryVal,                                 // 23. Medical History
       formatDate(row.recent_hospitalization_dates),  // 24. Recent hospitalization date
       row.recent_hospitalization_reasons || '',      // 25. Reason for hospitalization
-      row.documented_vt_vf || '',                    // 26. VT/VF risk assessment
+      vtvfRiskVal,                                   // 26. VT/VF risk assessment
       row.weight != null ? row.weight : '',          // 27. Weight
       row.height != null ? row.height : '',          // 28. Height
       row.heart_rate != null ? row.heart_rate : '',  // 29. Heart rate
       row.heart_rate_variability || '',              // 30. Heart rate variability
       row.respiratory_rate != null ? row.respiratory_rate : '', // 31. Respiratory rate
-      '',                                            // 32. Column2 (blank placeholder)
+      row.oxygen_saturation != null ? row.oxygen_saturation : '', // 32. O₂ Saturation (%)
       bpSitting,                                     // 33. Blood pressure sitting
       bpStanding,                                    // 34. Blood pressure standing
       mentalStatusVal,                               // 35. Mental status
@@ -1103,8 +1118,12 @@ async function getHfSheet1ExportData(options = {}) {
       row.hb_result || '',                           // 66. Hb
       row.bnp_result || '',                          // 67. BNP
       row.sodium_result || '',                       // 68. Sodium
-      row.other_lab_test_result || '',               // 69. Uric acid
-      row.ldl_result || '',                          // 70. Total Cholesterol
+      (String(row.other_lab_test_name || '').toLowerCase().includes('uric') && row.other_lab_test_result != null)
+        ? String(row.other_lab_test_result).trim()
+        : '',                                        // 69. Uric acid
+      (String(row.other_lab_test_name || '').toLowerCase().includes('cholesterol') && row.other_lab_test_result != null)
+        ? String(row.other_lab_test_result).trim()
+        : '',                                        // 70. Total Cholesterol
       row.nt_pro_bnp_result || '',                   // 71. NT-proBNP
       row.current_device_yes || '',                  // 72. Current device therapy
       drugsSummary,                                  // 73. Drugs

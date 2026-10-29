@@ -93,11 +93,8 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
     const allowedUhids = new Set((patients || []).map(p => String(p.uhid || '').trim().toUpperCase()).filter(Boolean));
     const filterActive = Boolean(patients && patients.length > 0 && (allowedHfIds.size > 0 || allowedUhids.size > 0));
 
-    // Filter rows strictly to patients who have UHIDs, and if filters are active, match the filtered cohort
+    // If filters are active, match the filtered cohort by HF ID or UHID
     const filteredRows = sheet1Data.rows.filter(rowVals => {
-      const rowUhid = String(rowVals[1] || '').trim().toUpperCase();
-      if (!rowUhid) return false; // Must have UHID
-
       if (!filterActive) return true;
 
       // Check HF ID (column index 4, e.g. "HF00154" or "154")
@@ -105,8 +102,9 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
       const parsedHfId = rawHf ? parseInt(rawHf, 10) : null;
       if (parsedHfId && allowedHfIds.has(parsedHfId)) return true;
 
-      // Check UHID
-      if (allowedUhids.has(rowUhid)) return true;
+      // Check UHID / Identifier (column index 1)
+      const rowUhid = String(rowVals[1] || '').trim().toUpperCase();
+      if (rowUhid && allowedUhids.has(rowUhid)) return true;
 
       return false;
     });
@@ -120,6 +118,11 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
     }
     if (admission2Idx !== -1) {
       headers.splice(admission2Idx, 1);
+    }
+
+    const col2Idx = headers.findIndex(h => /^column\s*2$/i.test(h.trim()));
+    if (col2Idx !== -1) {
+      headers[col2Idx] = 'O₂ Saturation (%)';
     }
 
     const headerRow = ws.addRow(headers);
@@ -200,7 +203,7 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
     'Heart rate',
     'Heart rate variability',
     'Respiratory rate',
-    'Column2',
+    'O₂ Saturation (%)',
     'Blood pressure sitting',
     'Blood pressure standing',
     'Mental status',
@@ -309,8 +312,8 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
       '',
       p.heartRate || '',
       '',
-      '',
-      '',
+      p.respiratoryRate || '',
+      p.oxygenSaturation || '',
       p.bloodPressureSitting || '',
       '',
       '',
@@ -604,11 +607,11 @@ function buildGdmtSummarySheet(workbook, analytics, patients) {
 
   const adhRows = [
     { dev: 6, formula: '1-6/6', pct: 0 },
-    { dev: 5, formula: '1-5/6', pct: 1/6 },
-    { dev: 4, formula: '1-4/6', pct: 2/6 },
-    { dev: 3, formula: '1-3/6', pct: 3/6 },
-    { dev: 2, formula: '1-2/6', pct: 4/6 },
-    { dev: 1, formula: '1-1/6', pct: 5/6 },
+    { dev: 5, formula: '1-5/6', pct: 1 / 6 },
+    { dev: 4, formula: '1-4/6', pct: 2 / 6 },
+    { dev: 3, formula: '1-3/6', pct: 3 / 6 },
+    { dev: 2, formula: '1-2/6', pct: 4 / 6 },
+    { dev: 1, formula: '1-1/6', pct: 5 / 6 },
     { dev: 0, formula: '1-0/6', pct: 1 }
   ];
 
@@ -685,9 +688,9 @@ function buildGdmtSummarySheet(workbook, analytics, patients) {
 
   ws.columns = [
     { width: 28 }, { width: 14 }, { width: 14 }, { width: 28 }, { width: 8 },
-    { width: 4 },  { width: 28 }, { width: 8 },  { width: 4 },  { width: 28 },
-    { width: 8 },  { width: 4 },  { width: 28 }, { width: 8 },  { width: 4 },
-    { width: 28 }, { width: 8 },  { width: 4 },  { width: 28 }, { width: 8 }
+    { width: 4 }, { width: 28 }, { width: 8 }, { width: 4 }, { width: 28 },
+    { width: 8 }, { width: 4 }, { width: 28 }, { width: 8 }, { width: 4 },
+    { width: 28 }, { width: 8 }, { width: 4 }, { width: 28 }, { width: 8 }
   ];
 }
 
@@ -997,11 +1000,11 @@ function buildKeyPointsSheet(workbook, analytics, patients) {
 
   const adhDistrib = [
     { dev: 6, refSummaryRow: 39, label: '0.0%', pct: 0 },
-    { dev: 5, refSummaryRow: 40, label: '16.7%', pct: 1/6 },
-    { dev: 4, refSummaryRow: 41, label: '33.3%', pct: 2/6 },
-    { dev: 3, refSummaryRow: 42, label: '50.0%', pct: 3/6 },
-    { dev: 2, refSummaryRow: 43, label: '66.7%', pct: 4/6 },
-    { dev: 1, refSummaryRow: 44, label: '83.3%', pct: 5/6 },
+    { dev: 5, refSummaryRow: 40, label: '16.7%', pct: 1 / 6 },
+    { dev: 4, refSummaryRow: 41, label: '33.3%', pct: 2 / 6 },
+    { dev: 3, refSummaryRow: 42, label: '50.0%', pct: 3 / 6 },
+    { dev: 2, refSummaryRow: 43, label: '66.7%', pct: 4 / 6 },
+    { dev: 1, refSummaryRow: 44, label: '83.3%', pct: 5 / 6 },
     { dev: 0, refSummaryRow: 45, label: '100.0%', pct: 1 }
   ];
 
@@ -1138,13 +1141,13 @@ function buildExportToDbMappingSheet(workbook) {
     ['Medical History', 'history_other', 'hf_initial_assessment'],
     ['Recent hospitalization date', 'recent_hospitalization_dates', 'hf_initial_assessment'],
     ['Reason for hospitalization', 'recent_hospitalization_reasons', 'hf_initial_assessment'],
-    ['VT/VF risk assessment', 'documented_vt_vf', 'hf_initial_assessment'],
+    ['VT/VF risk assessment', 'documented_vt_vf, complaints_syncope_presyncope, documented_pvcs, documented_nsvt', 'hf_initial_assessment'],
     ['Weight', 'weight', 'hf_initial_assessment'],
     ['Height', 'height', 'hf_initial_assessment'],
     ['Heart rate', 'heart_rate', 'hf_initial_assessment'],
     ['Heart rate variability', 'heart_rate_variability', 'hf_advanced_investigations'],
     ['Respiratory rate', 'respiratory_rate', 'hf_initial_assessment'],
-    ['Column2', '', ''],
+    ['O₂ Saturation (%)', 'oxygen_saturation', 'hf_initial_assessment'],
     ['Blood pressure sitting', 'systolic_bp_sitting', 'hf_initial_assessment'],
     ['Blood pressure standing', 'systolic_bp_standing', 'hf_initial_assessment'],
     ['Mental status', 'mental_status_alert_oriented', 'hf_initial_assessment'],
@@ -1181,8 +1184,8 @@ function buildExportToDbMappingSheet(workbook) {
     ['Hb', 'hb_result', 'hf_lab_tests'],
     ['BNP', 'bnp_result', 'hf_lab_tests'],
     ['Sodium', 'sodium_result', 'hf_lab_tests'],
-    ['Uric acid', 'other_lab_test_result', 'hf_lab_tests'],
-    ['Total Cholesterol', 'ldl_result', 'hf_lab_tests'],
+    ['Uric acid', 'other_lab_test_result (when test name is Uric Acid)', 'hf_lab_tests'],
+    ['Total Cholesterol', 'other_lab_test_result (when test name is Total Cholesterol)', 'hf_lab_tests'],
     ['NT-proBNP', 'nt_pro_bnp_result', 'hf_lab_tests'],
     ['Current device therapy', 'current_device_yes', 'hf_device_therapy'],
     ['Drugs', 'drugs', 'hf_recommendations'],
