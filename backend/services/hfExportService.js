@@ -512,7 +512,10 @@ async function getHfSheet1ExportData(options = {}) {
       fa.death_hospital,
       ci.ecg_qwaves_yes,
       ci.ecg_qwave_leads,
+      ci.ecg_lbbb,
+      ci.ecg_rbbb,
       ci.ecg_block_other,
+      ci.ecg_block_other_details,
       ci.ecg_qt,
       ci.ecg_qtc,
       ci.rwmi_none,
@@ -983,6 +986,18 @@ async function getHfSheet1ExportData(options = {}) {
     }
     const echoRwmiVal = activeRwmiLabels.join(', ');
 
+    // Any blockages (BE) from hf_cardiac_investigations: ecg_lbbb, ecg_rbbb, ecg_block_other, ecg_block_other_details
+    const blockages = [];
+    if (isYes(row.ecg_lbbb)) blockages.push('lbbb');
+    if (isYes(row.ecg_rbbb)) blockages.push('rbbb');
+    if (isYes(row.ecg_block_other)) {
+      const otherDetails = (row.ecg_block_other_details || '').trim();
+      blockages.push(otherDetails || 'Other');
+    }
+    const anyBlockagesVal = blockages.length > 0
+      ? blockages.join(', ')
+      : (!row.ecg_lbbb && !row.ecg_rbbb && !row.ecg_block_other ? '' : 'No');
+
     const hfRegistryNo = row.hf_registry_no || `HF${String(row.hf_id).padStart(5, '0')}`;
 
     // 73-97: GDMT Drug & Adherence columns evaluated directly from active generic medications
@@ -1077,7 +1092,7 @@ async function getHfSheet1ExportData(options = {}) {
       deathLocationVal,                              // 55. Location of Death (literal column name)
       row.ecg_qwaves_yes || '',                      // 56. ECG Q waves
       row.ecg_qwave_leads || '',                     // 57. Q waves Leads
-      row.ecg_block_other || '',                     // 58. Any blockages
+      anyBlockagesVal,                               // 58. Any blockages
       row.ecg_qt != null ? row.ecg_qt : '',          // 59. QT
       row.ecg_qtc != null ? row.ecg_qtc : '',        // 60. QTC
       echoRwmiVal,                                   // 61. ECHO(RWMI) (literal column names)

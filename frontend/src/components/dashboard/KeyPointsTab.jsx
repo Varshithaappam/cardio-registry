@@ -300,7 +300,7 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
               </div>
             </div>
             <div className="mt-2 text-2xl font-black text-slate-900 font-mono tracking-tight">
-              {kpi.uniquePatients || kpi.totalPatients} Patients
+              {kpi.uniquePatients || kpi.totalPatients} 
             </div>
           </div>
         </div>
@@ -737,12 +737,13 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                     labelStyle={tooltipStyle.label}
                     itemStyle={tooltipStyle.item}
                     cursor={tooltipStyle.cursor}
-                    formatter={(val, name, props) => [`${val}% (${props.payload.count} HF Records)`, props.payload.name]}
+                    formatter={(val, name, props) => [`${val}% (${props.payload.count} HF Records)`, '% HF Records']}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
                   <Bar 
                     dataKey="percent" 
                     name="% HF Records" 
+                    fill={UNIFIED_BAR_COLOR}
                     radius={[6, 6, 0, 0]}
                   >
                     {comorbidityData.map((entry, index) => (
@@ -854,7 +855,7 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                     cursor={tooltipStyle.cursor}
                     formatter={(val, name, props) => [
                       `${val}% (${props.payload.count} HF Records)`,
-                      props.payload.name
+                      '% HF Records'
                     ]}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
@@ -1513,7 +1514,7 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                     cursor={tooltipStyle.cursor}
                     formatter={(val, name, props) => [
                       `${val}% (${props.payload.count} HF Records)`,
-                      props.payload.drugs
+                      '% HF Records'
                     ]}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />

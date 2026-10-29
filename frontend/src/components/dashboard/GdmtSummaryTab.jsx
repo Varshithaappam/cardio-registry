@@ -464,7 +464,7 @@ export default function GdmtSummaryTab({ analytics, onOpenExclusionGuide }) {
                     cursor={tooltipStyle.cursor}
                     formatter={(val, name, props) => [
                       `${val}% (${props.payload.count} HF Records)`,
-                      props.payload.drugs
+                      '% HF Records'
                     ]}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />

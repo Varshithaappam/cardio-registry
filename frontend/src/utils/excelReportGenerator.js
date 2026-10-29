@@ -1170,7 +1170,7 @@ function buildExportToDbMappingSheet(workbook) {
     ['Location of Death', 'death_hospital', 'hf_gdmt_evaluation'],
     ['ECG Q waves', 'ecg_qwaves_yes', 'hf_cardiac_investigations'],
     ['Q waves Leads', 'ecg_qwave_leads', 'hf_cardiac_investigations'],
-    ['Any blockages', 'ecg_block_other', 'hf_cardiac_investigations'],
+    ['Any blockages', 'ecg_lbbb, ecg_rbbb, ecg_block_other, ecg_block_other_details', 'hf_cardiac_investigations'],
     ['QT', 'ecg_qt', 'hf_cardiac_investigations'],
     ['QTC', 'ecg_qtc', 'hf_cardiac_investigations'],
     ['ECHO(RWMI)', 'rwmi_global', 'hf_cardiac_investigations'],
