@@ -5,6 +5,9 @@ const db = require('../config/db');
  */
 function isYes(val) {
   if (val === null || val === undefined) return false;
+  if (Array.isArray(val)) {
+    return val.some(v => isYes(v));
+  }
   const s = String(val).trim().toLowerCase();
   return s === 'yes' || s === '1' || s === 'true';
 }
@@ -12,6 +15,14 @@ function isYes(val) {
 /**
  * Format dates to YYYY-MM-DD
  */
+function toNumericOrEmpty(val) {
+  if (val === null || val === undefined) return '';
+  const s = String(val).trim();
+  if (s === '') return '';
+  const num = Number(s);
+  return !isNaN(num) ? num : s;
+}
+
 function formatDate(d) {
   if (!d) return '';
   try {
@@ -380,7 +391,7 @@ function formatReasonsForAdmissions(row) {
   if (isYes(row.ventricular_tachycardia)) reasons.push('Ventricular tachycardia');
   if (isYes(row.uncontrolled_hypertension)) reasons.push('Uncontrolled hypertension');
   if (isYes(row.infection)) reasons.push('Infection');
-  if (isYes(row.renal_failure)) reasons.push('Renal failure');
+  if (isYes(row.precipitating_renal_failure !== undefined ? row.precipitating_renal_failure : row.renal_failure)) reasons.push('Renal failure');
   if (isYes(row.anaemia)) reasons.push('Anaemia');
   if (isYes(row.medication_non_adherence)) reasons.push('Medication non adherence');
   if (isYes(row.excessive_salt_intake)) reasons.push('Excessive salt intake');
@@ -445,7 +456,7 @@ async function getHfSheet1ExportData(options = {}) {
       ha.ventricular_tachycardia,
       ha.uncontrolled_hypertension,
       ha.infection,
-      ha.renal_failure,
+      ha.renal_failure AS precipitating_renal_failure,
       ha.anaemia,
       ha.medication_non_adherence,
       ha.excessive_salt_intake,
@@ -520,6 +531,7 @@ async function getHfSheet1ExportData(options = {}) {
       fa.bleeding_diathesis,
       fa.pvd,
       fa.comorbidity_other,
+      fa.comorbidity_other_details,
       fa.smoking,
       fa.alcohol,
       fa.risk_factor_other,
@@ -940,11 +952,13 @@ async function getHfSheet1ExportData(options = {}) {
     const activeSymptoms = [];
     for (const sCol of symptomCandidateCols) {
       if (isYes(row[sCol])) {
-        if (sCol === 'symptom_other' && row.symptom_other_details) {
-          activeSymptoms.push(row.symptom_other_details);
+        if (sCol === 'symptom_other') {
+          activeSymptoms.push(row.symptom_other_details && row.symptom_other_details.trim() ? row.symptom_other_details.trim() : 'Other');
         } else {
           activeSymptoms.push(toClinicalLabel(sCol));
         }
+      } else if (sCol === 'symptom_other' && row.symptom_other_details && row.symptom_other_details.trim()) {
+        activeSymptoms.push(row.symptom_other_details.trim());
       }
     }
 
@@ -952,11 +966,13 @@ async function getHfSheet1ExportData(options = {}) {
     const activeVolumeSigns = [];
     for (const vCol of volumeOverloadCandidateCols) {
       if (isYes(row[vCol])) {
-        if (vCol === 'clinical_sign_other' && row.clinical_sign_other_details) {
-          activeVolumeSigns.push(row.clinical_sign_other_details);
+        if (vCol === 'clinical_sign_other') {
+          activeVolumeSigns.push(row.clinical_sign_other_details && row.clinical_sign_other_details.trim() ? row.clinical_sign_other_details.trim() : 'Other');
         } else {
           activeVolumeSigns.push(toClinicalLabel(vCol));
         }
+      } else if (vCol === 'clinical_sign_other' && row.clinical_sign_other_details && row.clinical_sign_other_details.trim()) {
+        activeVolumeSigns.push(row.clinical_sign_other_details.trim());
       }
     }
 
@@ -964,11 +980,13 @@ async function getHfSheet1ExportData(options = {}) {
     const activeComorbidities = [];
     for (const cCol of comorbidityCandidateCols) {
       if (isYes(row[cCol])) {
-        if (cCol === 'comorbidity_other' && row.comorbidity_other) {
-          activeComorbidities.push(row.comorbidity_other);
+        if (cCol === 'comorbidity_other') {
+          activeComorbidities.push(row.comorbidity_other_details && row.comorbidity_other_details.trim() ? row.comorbidity_other_details.trim() : 'Other');
         } else {
           activeComorbidities.push(toClinicalLabel(cCol));
         }
+      } else if (cCol === 'comorbidity_other' && row.comorbidity_other_details && row.comorbidity_other_details.trim()) {
+        activeComorbidities.push(row.comorbidity_other_details.trim());
       }
     }
 
@@ -1122,14 +1140,14 @@ async function getHfSheet1ExportData(options = {}) {
       mentalStatusVal,                               // 35. Mental status
       activeSymptoms[0] || '',                       // 36. Symptoms1
       activeSymptoms[1] || '',                       // 37. Symptoms2
-      activeSymptoms[2] || '',                       // 38. Symptoms3
+      activeSymptoms.slice(2).join(', '),            // 38. Symptoms3
       activeVolumeSigns[0] || '',                    // 39. Clinical signs of volume overload1
-      activeVolumeSigns[1] || '',                    // 40. Clinical signs of volume overload2
+      activeVolumeSigns.slice(1).join(', '),         // 40. Clinical signs of volume overload2
       hfTypeVal,                                     // 41. Type of Heart failure (HFrEF / HFpEF)
       activeComorbidities[0] || '',                  // 42. Comorbidities1
       activeComorbidities[1] || '',                  // 43. Comorbidities2
       activeComorbidities[2] || '',                  // 44. Comorbidities3
-      activeComorbidities[3] || '',                  // 45. Comorbidities4
+      activeComorbidities.slice(3).join(', '),       // 45. Comorbidities4
       riskFactorVal,                                 // 46. Risk factors1 (literal column name)
       stageVal,                                      // 47. Stage of HF (literal column name)
       functionalStatusVal,                           // 48. Functional Status (literal column name: nyha_class_1..4)
@@ -1148,11 +1166,11 @@ async function getHfSheet1ExportData(options = {}) {
       echoRwmiVal,                                   // 61. ECHO(RWMI) (literal column names)
       row.echo_ef != null ? row.echo_ef : '',        // 62. EF%
       formatDate(row.holter_test_date),              // 63. Holter/Event Recorder
-      row.potassium_result || '',                    // 64. Lab tests Potassium
-      row.creatinine_result || '',                   // 65. Creatinine
-      row.hb_result || '',                           // 66. Hb
-      row.bnp_result || '',                          // 67. BNP
-      row.sodium_result || '',                       // 68. Sodium
+      toNumericOrEmpty(row.potassium_result),         // 64. Lab tests Potassium
+      toNumericOrEmpty(row.creatinine_result),        // 65. Creatinine
+      toNumericOrEmpty(row.hb_result),                // 66. Hb
+      toNumericOrEmpty(row.bnp_result),               // 67. BNP
+      toNumericOrEmpty(row.sodium_result),            // 68. Sodium
       (String(row.other_lab_test_name || '').toLowerCase().includes('uric') && row.other_lab_test_result != null)
         ? String(row.other_lab_test_result).trim()
         : '',                                        // 69. Uric acid

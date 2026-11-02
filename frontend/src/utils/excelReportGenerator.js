@@ -1,3 +1,10 @@
+function toNumericOrEmpty(val) {
+  if (val === null || val === undefined) return '';
+  const s = String(val).trim();
+  if (s === '') return '';
+  const num = Number(s);
+  return !isNaN(num) ? num : s;
+}
 /**
  * Clinical Intelligence & GDMT Multi-Sheet Excel Workbook Generator
  * Replicates the exact 6-sheet structure of HF_GDMT_160926_updated_as_per_calculations.xlsx:
@@ -370,8 +377,8 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
       '',
       p.efPercent != null ? p.efPercent : '',
       '',
-      p.potassium || '',
-      p.creatinine || '',
+      toNumericOrEmpty(p.potassium),
+      toNumericOrEmpty(p.creatinine),
       p.hemoglobin || '',
       '',
       '',
@@ -866,9 +873,9 @@ function buildCiFlagsSheet(workbook, patients) {
     // Live Excel formulas extracting directly from Sheet1 & Contraindications
     dataRow.getCell(1).value = p.uhid;
     dataRow.getCell(2).value = { formula: `IFERROR(VALUE(LEFT(Sheet1!AG${r},FIND("/",Sheet1!AG${r})-1)),"")`, result: sbp };
-    dataRow.getCell(3).value = { formula: `IF(ISNUMBER(Sheet1!AC${r}),Sheet1!AC${r},"")`, result: hr };
-    dataRow.getCell(4).value = { formula: `IF(ISNUMBER(Sheet1!BL${r}),Sheet1!BL${r},"")`, result: k };
-    dataRow.getCell(5).value = { formula: `IF(ISNUMBER(Sheet1!BM${r}),Sheet1!BM${r},"")`, result: creat };
+    dataRow.getCell(3).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!AC${r}),Sheet1!AC${r},VALUE(Sheet1!AC${r})),"")`, result: hr };
+    dataRow.getCell(4).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!BL${r}),Sheet1!BL${r},VALUE(Sheet1!BL${r})),"")`, result: k };
+    dataRow.getCell(5).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!BM${r}),Sheet1!BM${r},VALUE(Sheet1!BM${r})),"")`, result: creat };
     // Clinical text: Present diagnosis (Q), reasons for admissions (U), Previous Diagnosis (V), Comorbidities1-4 (AP, AQ, AR, AS)
     dataRow.getCell(6).value = { formula: `UPPER(Sheet1!Q${r}&" | "&Sheet1!U${r}&" | "&Sheet1!V${r}&" | "&Sheet1!AP${r}&" | "&Sheet1!AQ${r}&" | "&Sheet1!AR${r}&" | "&Sheet1!AS${r})`, result: p.presentDiagnosis || '' };
     dataRow.getCell(7).value = { formula: `UPPER(Sheet1!BU${r}&" | "&Sheet1!BV${r})`, result: p.prescribedDrugsSummary || '' };
@@ -918,9 +925,9 @@ function buildCiFlagsFormulaeSheet(workbook) {
   const formulaRows = [
     ['UHID', '', 'Sheet1', 'UHID(T3)', 'Unique Hospital Identifier from Sheet1 Col B'],
     ['Systolic BP', 'IFERROR(VALUE(LEFT(Sheet1!AG2,FIND("/",Sheet1!AG2)-1)),"")', 'Sheet1', 'Blood pressure sitting', 'Till slash e.g. 110/80 so value of Systolic BP=110'],
-    ['Heart rate', 'IF(ISNUMBER(Sheet1!AC2),Sheet1!AC2,"")', 'Sheet1', 'Heart rate', 'Numeric heart rate (bpm) extracted from Sheet1 Col AC'],
-    ['Potassium', 'IF(ISNUMBER(Sheet1!BL2),Sheet1!BL2,"")', 'Sheet1', 'Potassium', 'Exact serum potassium value (mEq/L) extracted from Sheet1 Col BL'],
-    ['Creatinine', 'IF(ISNUMBER(Sheet1!BM2),Sheet1!BM2,"")', 'Sheet1', 'Creatinine', 'Exact serum creatinine value (mg/dL) extracted from Sheet1 Col BM'],
+    ['Heart rate', 'IFERROR(IF(ISNUMBER(Sheet1!AC2),Sheet1!AC2,VALUE(Sheet1!AC2)),"")', 'Sheet1', 'Heart rate', 'Numeric heart rate (bpm) extracted from Sheet1 Col AC'],
+    ['Potassium', 'IFERROR(IF(ISNUMBER(Sheet1!BL2),Sheet1!BL2,VALUE(Sheet1!BL2)),"")', 'Sheet1', 'Potassium', 'Exact serum potassium value (mEq/L) extracted from Sheet1 Col BL'],
+    ['Creatinine', 'IFERROR(IF(ISNUMBER(Sheet1!BM2),Sheet1!BM2,VALUE(Sheet1!BM2)),"")', 'Sheet1', 'Creatinine', 'Exact serum creatinine value (mg/dL) extracted from Sheet1 Col BM'],
     ['Clinical text (Q,U,V,AP,AQ,AR,AS)', 'UPPER(Sheet1!Q2&" | "&Sheet1!U2&" | "&Sheet1!V2&" | "&Sheet1!AP2&" | "&Sheet1!AQ2&" | "&Sheet1!AR2&" | "&Sheet1!AS2)', 'Sheet1', 'Present diagnosis, reasons for admissions, previous diagnosis, comorbidities', 'Concatenated uppercase string of clinical diagnoses, admissions, and comorbidities'],
     ['Drug text (BU,BV)', 'UPPER(Sheet1!BU2&" | "&Sheet1!BV2)', 'Sheet1', 'Drugs, Generic Names', 'Concatenated uppercase string of active generic medications and drug names'],
     ['Bradycardia', 'IF(AND(ISNUMBER(C2),C2<Contraindications!$E$4),1,0)', 'CI Flags, Contraindications', 'Heart rate < threshold here threshold = 50', 'Flagged 1 if resting heart rate < 50 bpm (Contraindications!E4)'],
@@ -1317,14 +1324,14 @@ function buildExportToDbMappingSheet(workbook) {
     ['Mental status', 'mental_status_alert_oriented', 'hf_initial_assessment'],
     ['Symptoms1', 'dyspnea_at_rest', 'hf_initial_assessment'],
     ['Symptoms2', 'dyspnea_with_exertion', 'hf_initial_assessment'],
-    ['Symptoms3', 'fatigue', 'hf_initial_assessment'],
+    ['Symptoms3', 'All remaining active symptoms from 3rd onwards', 'hf_initial_assessment'],
     ['Clinical signs of volume overload1', 'peripheral_edema', 'hf_initial_assessment'],
-    ['Clinical signs of volume overload2', 'ascites', 'hf_initial_assessment'],
+    ['Clinical signs of volume overload2', 'All remaining active volume overload signs from 2nd onwards', 'hf_initial_assessment'],
     ['Type of Heart failure', 'hf_type', 'hf_gdmt_evaluation'],
-    ['Comorbidities1', 'has_dm', 'hf_gdmt_evaluation'],
-    ['Comorbidities2', 'has_htn', 'hf_gdmt_evaluation'],
-    ['Comorbidities3', 'has_ckd', 'hf_gdmt_evaluation'],
-    ['Comorbidities4', 'has_cad', 'hf_gdmt_evaluation'],
+    ['Comorbidities1', 'cad', 'hf_final_clinical_assessment'],
+    ['Comorbidities2', 'renal_failure / diabetes_mellitus', 'hf_final_clinical_assessment'],
+    ['Comorbidities3', 'hypertension / other active comorbidity', 'hf_final_clinical_assessment'],
+    ['Comorbidities4', 'All remaining active comorbidities from 4th onwards (comma-separated)', 'hf_final_clinical_assessment'],
     ['Risk factors1', 'smoking', 'hf_final_clinical_assessment'],
     ['Stage of HF', 'stage_c', 'hf_final_clinical_assessment'],
     ['Functional Status', 'nyha_class', 'hf_gdmt_evaluation'],
