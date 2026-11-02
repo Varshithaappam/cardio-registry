@@ -1,0 +1,302 @@
+const db = require('../backend/config/db');
+
+const BATCH_REFILL_SQL = `
+-- 1. Clear / Truncate the GDMT evaluation table
+TRUNCATE TABLE dbo.hf_gdmt_evaluation;
+
+-- 2. Refill the GDMT evaluation table across all active HF records
+WITH RawPool AS (
+    SELECT 
+        hr.hf_id,
+        hr.reg_patient_id,
+        p.uhid,
+        p.patient_name,
+        
+        -- Age
+        CASE 
+            WHEN p.date_of_birth IS NOT NULL AND DATEDIFF(year, p.date_of_birth, GETDATE()) BETWEEN 1 AND 114
+                THEN FLOOR(DATEDIFF(day, p.date_of_birth, GETDATE()) / 365.25)
+            ELSE 50 + (hr.hf_id % 35)
+        END AS age,
+
+        -- Gender
+        CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(p.gender, '')))) = 'female' THEN 'Female' ELSE 'Male' END AS gender,
+
+        -- HF Phenotype
+        CASE 
+            WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.hfref, '')))) = 'yes' THEN 'HFrEF'
+            WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.hfpef, '')))) = 'yes' THEN 'HFpEF'
+            ELSE 'Unspecified'
+        END AS hf_type,
+        TRY_CAST(ci.echo_ef AS FLOAT) AS ef_percent,
+
+        -- NYHA Class
+        CASE 
+            WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.nyha_class_4, '')))) = 'yes' THEN 'NYHA class IV'
+            WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.nyha_class_3, '')))) = 'yes' THEN 'NYHA class III'
+            WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.nyha_class_2, '')))) = 'yes' THEN 'NYHA class II'
+            WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.nyha_class_1, '')))) = 'yes' THEN 'NYHA class I'
+            ELSE 'Unspecified'
+        END AS nyha_class,
+
+        -- Mortality
+        CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.mace_death, '')))) = 'yes' OR fa.death_date IS NOT NULL THEN 1 ELSE 0 END AS is_death,
+        fa.death_date,
+        CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.death_home, '')))) = 'yes' THEN 1 ELSE 0 END AS death_home,
+        CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.death_hospital, '')))) = 'yes' THEN 1 ELSE 0 END AS death_hospital,
+        ha.discharge_date,
+
+        -- Comorbidities
+        CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.diabetes_mellitus, '')))) = 'yes' THEN 1 ELSE 0 END AS has_dm,
+        CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.hypertension, '')))) = 'yes' THEN 1 ELSE 0 END AS has_htn,
+        CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.renal_failure, '')))) = 'yes' THEN 1 ELSE 0 END AS has_ckd,
+        CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.cad, '')))) = 'yes' THEN 1 ELSE 0 END AS has_cad,
+
+        -- Vitals & Labs for CI evaluation
+        TRY_CAST(ia.systolic_bp_sitting AS FLOAT) AS sbp,
+        TRY_CAST(ia.heart_rate AS FLOAT) AS hr_bpm,
+        TRY_CAST(lt.creatinine_result AS FLOAT) AS creat,
+        TRY_CAST(lt.potassium_result AS FLOAT) AS k_val,
+
+        -- Clinical Diagnosis & Presentation Text Pool (strictly matches Export Sheet Column F)
+        LOWER(CONCAT(
+            ' ', ISNULL(ha.present_diagnosis, ''),
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.myocardial_ischemia, '')))) = 'yes' THEN 'myocardial ischemia ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.atrial_fibrillation, '')))) = 'yes' THEN 'atrial fibrillation ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.bradyarrhythmia, '')))) = 'yes' THEN 'bradyarrhythmia ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.ventricular_tachycardia, '')))) = 'yes' THEN 'ventricular tachycardia ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.uncontrolled_hypertension, '')))) = 'yes' THEN 'uncontrolled hypertension ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.infection, '')))) = 'yes' THEN 'infection ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.renal_failure, '')))) = 'yes' THEN 'renal failure ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.anaemia, '')))) = 'yes' THEN 'anaemia ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.medication_non_adherence, '')))) = 'yes' THEN 'medication non adherence ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.excessive_salt_intake, '')))) = 'yes' THEN 'excessive salt intake ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.excessive_water_ingestion, '')))) = 'yes' THEN 'excessive water ingestion ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.progressive_worsening, '')))) = 'yes' THEN 'progressive worsening ' ELSE '' END,
+            ' ', ISNULL(ha.precipitating_other, ''),
+            ' ', ISNULL(ia.previous_diagnosis, ''),
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.diabetes_mellitus, '')))) = 'yes' THEN 'diabetes mellitus ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.hypertension, '')))) = 'yes' THEN 'hypertension ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.renal_failure, '')))) = 'yes' THEN 'renal failure ckd ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.cad, '')))) = 'yes' THEN 'cad coronary artery disease ' ELSE '' END
+        )) AS diag_text,
+
+        -- Medication Text Pool
+        LOWER(CONCAT(
+            ' ', ISNULL(t1.carvedilol, ''), ' ', ISNULL(t1.bisoprolol, ''), ' ', ISNULL(t1.metoprolol_succinate, ''), ' ', ISNULL(t1.nebivolol, ''), ' ', ISNULL(t1.beta_blocker_other_name, ''),
+            ' ', ISNULL(t1.enalapril, ''), ' ', ISNULL(t1.ramipril, ''), ' ', ISNULL(t1.lisinopril, ''), ' ', ISNULL(t1.perindopril, ''), ' ', ISNULL(t1.ace_other_name, ''),
+            ' ', ISNULL(t1.valsartan, ''), ' ', ISNULL(t1.losartan, ''), ' ', ISNULL(t1.telmisartan, ''), ' ', ISNULL(t1.olmesartan, ''), ' ', ISNULL(t1.arb_other_name, ''),
+            ' ', ISNULL(t1.spironolactone, ''), ' ', ISNULL(t1.spironolactone_dose, ''), ' ', ISNULL(t1.eplerenone, ''), ' ', ISNULL(t1.eplerenone_dose, ''),
+            ' ', ISNULL(t2.diuretic_other_name, ''),
+            ' ', ISNULL(t3.other_medication_1_name, ''), ' ', ISNULL(t3.other_medication_2_name, ''), ' ', ISNULL(t3.other_medication_3_name, ''), ' ', ISNULL(t3.other_medication_4_name, '')
+        )) AS meds_text,
+
+        -- Structured Prescription Fields
+        t1.carvedilol, t1.bisoprolol, t1.metoprolol_succinate, t1.nebivolol, t1.beta_blocker_other,
+        t1.enalapril, t1.ramipril, t1.lisinopril, t1.perindopril, t1.ace_other,
+        t1.valsartan, t1.losartan, t1.telmisartan, t1.olmesartan, t1.arb_other,
+        t1.spironolactone, t1.eplerenone,
+        t1.arb_other_name,
+        t3.other_medication_1_name,
+        t3.other_medication_2_name,
+        t3.other_medication_3_name,
+        t3.other_medication_4_name,
+        
+        ISNULL(hr.is_deleted, 0) AS is_deleted
+    FROM dbo.hf_registry hr
+    LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = hr.reg_patient_id
+    LEFT JOIN dbo.hf_administrative ha ON ha.hf_id = hr.hf_id
+    LEFT JOIN dbo.hf_initial_assessment ia ON ia.hf_id = hr.hf_id
+    LEFT JOIN dbo.hf_cardiac_investigations ci ON ci.hf_id = hr.hf_id
+    LEFT JOIN dbo.hf_lab_tests lt ON lt.hf_id = hr.hf_id
+    LEFT JOIN dbo.hf_final_clinical_assessment fa ON fa.hf_id = hr.hf_id
+    LEFT JOIN dbo.hf_medical_therapy_part1 t1 ON t1.hf_id = hr.hf_id
+    LEFT JOIN dbo.hf_medical_therapy_part2 t2 ON t2.hf_id = hr.hf_id
+    LEFT JOIN dbo.hf_medical_therapy_part3 t3 ON t3.hf_id = hr.hf_id
+    WHERE hr.is_deleted = 0 OR hr.is_deleted IS NULL
+),
+PillarEvaluated AS (
+    SELECT 
+        hf_id, reg_patient_id, uhid, patient_name, age, gender,
+        hf_type, ef_percent, nyha_class, is_death, death_date, death_home, death_hospital, discharge_date, has_dm, has_htn, has_ckd, has_cad,
+
+        -- 1. Beta Blocker Prescribed
+        CASE 
+            WHEN LOWER(LTRIM(RTRIM(ISNULL(carvedilol, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(bisoprolol, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(metoprolol_succinate, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(nebivolol, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(beta_blocker_other, '')))) IN ('yes', '1', 'true')
+            THEN 1 ELSE 0 
+        END AS rx_bb,
+
+        -- 2. ACE Inhibitor Prescribed
+        CASE 
+            WHEN LOWER(LTRIM(RTRIM(ISNULL(enalapril, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(ramipril, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(lisinopril, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(perindopril, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(ace_other, '')))) IN ('yes', '1', 'true')
+            THEN 1 ELSE 0 
+        END AS rx_ace,
+
+        -- 3. ARB Prescribed
+        CASE 
+            WHEN LOWER(LTRIM(RTRIM(ISNULL(valsartan, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(losartan, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(telmisartan, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(olmesartan, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(arb_other, '')))) IN ('yes', '1', 'true')
+            THEN 1 ELSE 0 
+        END AS rx_arb,
+
+        -- 4. ARNI Prescribed (Sacubitril / Valsartan combinations, Entresto, Cidmus, Vymada, Arney, Sacurise)
+        CASE 
+            WHEN LOWER(ISNULL(arb_other_name, '')) LIKE '%sacubitril%'
+                 OR LOWER(ISNULL(arb_other_name, '')) LIKE '%entresto%'
+                 OR LOWER(ISNULL(arb_other_name, '')) LIKE '%cidmus%'
+                 OR LOWER(ISNULL(arb_other_name, '')) LIKE '%vymada%'
+                 OR LOWER(ISNULL(arb_other_name, '')) LIKE '%arney%'
+                 OR LOWER(ISNULL(arb_other_name, '')) LIKE '%sacurise%'
+                 OR meds_text LIKE '%sacubitril%'
+                 OR meds_text LIKE '%entresto%'
+                 OR meds_text LIKE '%cidmus%'
+                 OR meds_text LIKE '%vymada%'
+                 OR meds_text LIKE '%arney%'
+                 OR meds_text LIKE '%sacurise%'
+            THEN 1 ELSE 0 
+        END AS rx_arni,
+
+        -- 5. MRA Prescribed
+        CASE 
+            WHEN LOWER(LTRIM(RTRIM(ISNULL(spironolactone, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(LTRIM(RTRIM(ISNULL(eplerenone, '')))) IN ('yes', '1', 'true')
+                 OR LOWER(ISNULL(other_medication_1_name, '')) LIKE '%spironolactone%'
+                 OR LOWER(ISNULL(other_medication_1_name, '')) LIKE '%eplerenone%'
+            THEN 1 ELSE 0 
+        END AS rx_mra,
+
+        -- 6. SGLT2 Inhibitor Prescribed
+        CASE 
+            WHEN meds_text LIKE '%dapa%'
+                 OR meds_text LIKE '%forxiga%'
+                 OR meds_text LIKE '%oxra%'
+                 OR meds_text LIKE '%empagli%'
+                 OR meds_text LIKE '%jardiance%'
+                 OR meds_text LIKE '%gibi%'
+                 OR meds_text LIKE '%cana%'
+                 OR meds_text LIKE '%invokana%'
+            THEN 1 ELSE 0 
+        END AS rx_sglt2,
+
+        -- ==============================================================
+        -- EXACT CONTRAINDICATION RULES MATCHING EXPORT SHEET CI FLAGS
+        -- ==============================================================
+
+        -- 1. Beta Blocker CI: Flag H || Flag I || Flag K || Flag L || Flag P
+        CASE 
+            WHEN (hr_bpm IS NOT NULL AND hr_bpm < 50)
+                 OR (sbp IS NOT NULL AND sbp < 90)
+                 OR diag_text LIKE '%shock%' 
+                 OR meds_text LIKE '%dobutamine%' OR meds_text LIKE '%dobu%' OR meds_text LIKE '%norad%'
+                 OR diag_text LIKE '%asthma%' OR diag_text LIKE '%copd%' OR diag_text LIKE '%bronch%'
+                 OR diag_text LIKE '%av block%' OR diag_text LIKE '%heart block%' OR diag_text LIKE '%chb%' OR diag_text LIKE '%sick sinus%' OR diag_text LIKE '%brady%'
+            THEN 1 ELSE 0 
+        END AS ci_bb,
+
+        -- 2. ACE Inhibitor CI: Flag I || Flag M || Flag O
+        CASE 
+            WHEN (sbp IS NOT NULL AND sbp < 90)
+                 OR (k_val IS NOT NULL AND k_val > 5.5) OR diag_text LIKE '%hyperkal%'
+                 OR (creat IS NOT NULL AND creat > 2.5)
+            THEN 1 ELSE 0 
+        END AS ci_ace,
+
+        -- 3. ARB CI: Flag I || Flag M || Flag O
+        CASE 
+            WHEN (sbp IS NOT NULL AND sbp < 90)
+                 OR (k_val IS NOT NULL AND k_val > 5.5) OR diag_text LIKE '%hyperkal%'
+                 OR (creat IS NOT NULL AND creat > 2.5)
+            THEN 1 ELSE 0 
+        END AS ci_arb,
+
+        -- 4. ARNI CI: Flag J || Flag M || Flag O
+        CASE 
+            WHEN (sbp IS NOT NULL AND sbp < 100)
+                 OR (k_val IS NOT NULL AND k_val > 5.5) OR diag_text LIKE '%hyperkal%'
+                 OR (creat IS NOT NULL AND creat > 2.5)
+            THEN 1 ELSE 0 
+        END AS ci_arni,
+
+        -- 5. MRA CI: Flag N || Flag O
+        CASE 
+            WHEN (k_val IS NOT NULL AND k_val > 5.0) OR diag_text LIKE '%hyperkal%'
+                 OR (creat IS NOT NULL AND creat > 2.5)
+            THEN 1 ELSE 0 
+        END AS ci_mra,
+
+        -- 6. SGLT2 Inhibitor CI: Flag Q || Flag R || Flag S
+        CASE 
+            WHEN diag_text LIKE '%dka%' OR diag_text LIKE '%ketoacid%'
+                 OR diag_text LIKE '%uti%' OR diag_text LIKE '%urosepsis%'
+                 OR (creat IS NOT NULL AND creat > 3.0)
+            THEN 1 ELSE 0 
+        END AS ci_sglt2,
+        
+        is_deleted
+    FROM RawPool
+),
+ScoredData AS (
+    SELECT 
+        *,
+        (rx_bb + rx_ace + rx_arb + rx_arni + rx_mra + rx_sglt2) AS prescribed_drugs_count,
+        (
+            CASE WHEN rx_bb = ci_bb THEN 1 ELSE 0 END +
+            CASE WHEN rx_ace = ci_ace THEN 1 ELSE 0 END +
+            CASE WHEN rx_arb = ci_arb THEN 1 ELSE 0 END +
+            CASE WHEN rx_arni = ci_arni THEN 1 ELSE 0 END +
+            CASE WHEN rx_mra = ci_mra THEN 1 ELSE 0 END +
+            CASE WHEN rx_sglt2 = ci_sglt2 THEN 1 ELSE 0 END
+        ) AS deviations_count
+    FROM PillarEvaluated
+)
+INSERT INTO dbo.hf_gdmt_evaluation (
+    hf_id, reg_patient_id, uhid, patient_name, age, gender, hf_type, ef_percent, nyha_class, 
+    is_death, death_date, death_home, death_hospital, discharge_date, has_dm, has_htn, has_ckd, has_cad,
+    rx_beta_blocker, rx_ace_inhibitor, rx_arb, rx_arni, rx_mra, rx_sglt2_inhibitor, prescribed_drugs_count,
+    ci_beta_blocker, ci_ace_inhibitor, ci_arb, ci_arni, ci_mra, ci_sglt2_inhibitor,
+    deviations_count, appropriate_care_count, adherence_percent, adherence_bracket, is_deleted, last_evaluated_at
+)
+SELECT 
+    src.hf_id, src.reg_patient_id, src.uhid, src.patient_name, src.age, src.gender, src.hf_type, src.ef_percent, src.nyha_class,
+    src.is_death, src.death_date, src.death_home, src.death_hospital, src.discharge_date, src.has_dm, src.has_htn, src.has_ckd, src.has_cad,
+    src.rx_bb, src.rx_ace, src.rx_arb, src.rx_arni, src.rx_mra, src.rx_sglt2, src.prescribed_drugs_count,
+    src.ci_bb, src.ci_ace, src.ci_arb, src.ci_arni, src.ci_mra, src.ci_sglt2,
+    src.deviations_count, 6 - src.deviations_count,
+    ROUND((6.0 - src.deviations_count) / 6.0 * 100.0, 1),
+    CASE src.deviations_count
+        WHEN 0 THEN '100.0%'
+        WHEN 1 THEN '83.3%'
+        WHEN 2 THEN '66.7%'
+        WHEN 3 THEN '50.0%'
+        WHEN 4 THEN '33.3%'
+        WHEN 5 THEN '16.7%'
+        ELSE '0.0%'
+    END,
+    src.is_deleted, SYSDATETIME()
+FROM ScoredData src;
+`;
+
+async function testRefill() {
+  console.log('Executing batch refill SQL...');
+  await db.query(BATCH_REFILL_SQL);
+  const { recordset } = await db.query('SELECT COUNT(*) as total FROM dbo.hf_gdmt_evaluation');
+  console.log(`Refilled successfully! Total records in dbo.hf_gdmt_evaluation: ${recordset[0].total}`);
+  process.exit(0);
+}
+
+testRefill().catch(err => {
+  console.error('Error during batch refill:', err);
+  process.exit(1);
+});
+

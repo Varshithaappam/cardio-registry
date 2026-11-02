@@ -58,15 +58,27 @@ WITH RawPool AS (
         TRY_CAST(lt.creatinine_result AS FLOAT) AS creat,
         TRY_CAST(lt.potassium_result AS FLOAT) AS k_val,
 
-        -- Clinical Diagnosis & Presentation Text Pool
+        -- Clinical Diagnosis & Presentation Text Pool (strictly matches Export Sheet Column F)
         LOWER(CONCAT(
             ' ', ISNULL(ha.present_diagnosis, ''),
-            ' ', ISNULL(ha.admission_reason, ''),
-            ' ', ISNULL(ha.other_admission_reason, ''),
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.myocardial_ischemia, '')))) = 'yes' THEN 'myocardial ischemia ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.atrial_fibrillation, '')))) = 'yes' THEN 'atrial fibrillation ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.bradyarrhythmia, '')))) = 'yes' THEN 'bradyarrhythmia ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.ventricular_tachycardia, '')))) = 'yes' THEN 'ventricular tachycardia ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.uncontrolled_hypertension, '')))) = 'yes' THEN 'uncontrolled hypertension ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.infection, '')))) = 'yes' THEN 'infection ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.renal_failure, '')))) = 'yes' THEN 'renal failure ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.anaemia, '')))) = 'yes' THEN 'anaemia ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.medication_non_adherence, '')))) = 'yes' THEN 'medication non adherence ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.excessive_salt_intake, '')))) = 'yes' THEN 'excessive salt intake ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.excessive_water_ingestion, '')))) = 'yes' THEN 'excessive water ingestion ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(ha.progressive_worsening, '')))) = 'yes' THEN 'progressive worsening ' ELSE '' END,
             ' ', ISNULL(ha.precipitating_other, ''),
             ' ', ISNULL(ia.previous_diagnosis, ''),
-            ' ', ISNULL(ia.history_other, ''),
-            ' ', ISNULL(fa.cad, '')
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.diabetes_mellitus, '')))) = 'yes' THEN 'diabetes mellitus ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.hypertension, '')))) = 'yes' THEN 'hypertension ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.renal_failure, '')))) = 'yes' THEN 'renal failure ckd ' ELSE '' END,
+            ' ', CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(fa.cad, '')))) = 'yes' THEN 'cad coronary artery disease ' ELSE '' END
         )) AS diag_text,
 
         -- Medication Text Pool
@@ -86,29 +98,36 @@ WITH RawPool AS (
         t1.spironolactone, t1.eplerenone,
         t1.arb_other_name,
         t3.other_medication_1_name,
+        t3.other_medication_2_name,
+        t3.other_medication_3_name,
+        t3.other_medication_4_name,
 
-        -- Form Contraindication Checkboxes
+        -- Form Contraindication Checkboxes & Reasons
         t1.beta_not_used_bradycardia,
         t1.beta_not_used_heart_blocks,
         t1.beta_not_used_copd_asthma,
         t1.beta_not_used_hypotension,
         t1.beta_not_used_other,
+        t1.beta_not_used_other_reason,
 
         t1.ace_not_used_elevated_creatinine,
         t1.ace_not_used_hyperkalemia,
         t1.ace_not_used_cough,
         t1.ace_not_used_hypotension,
         t1.ace_not_used_other,
+        t1.ace_not_used_other_reason,
 
         t1.arb_not_used_elevated_creatinine,
         t1.arb_not_used_hyperkalemia,
         t1.arb_not_used_hypotension,
         t1.arb_not_used_other,
+        t1.arb_not_used_other_reason,
 
         t1.aldosterone_not_used_hyperkalemia,
         t1.aldosterone_not_used_hyponatremia,
         t1.aldosterone_not_used_elevated_creatinine,
         t1.aldosterone_not_used_other,
+        t1.aldosterone_not_used_other_reason,
         
         ISNULL(hr.is_deleted, 0) AS is_deleted
     FROM dbo.hf_registry hr
@@ -158,16 +177,20 @@ PillarEvaluated AS (
             THEN 1 ELSE 0 
         END AS rx_arb,
 
-        -- 4. ARNI Prescribed (Includes Valsartan & Sacubitril brand names)
+        -- 4. ARNI Prescribed (Sacubitril / Valsartan combinations, Entresto, Cidmus, Vymada, Arney, Sacurise)
         CASE 
-            WHEN LOWER(LTRIM(RTRIM(ISNULL(valsartan, '')))) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(arb_other_name, '')) LIKE '%sacubitril%'
+            WHEN LOWER(ISNULL(arb_other_name, '')) LIKE '%sacubitril%'
                  OR LOWER(ISNULL(arb_other_name, '')) LIKE '%entresto%'
                  OR LOWER(ISNULL(arb_other_name, '')) LIKE '%cidmus%'
-                 OR LOWER(ISNULL(other_medication_1_name, '')) LIKE '%sacubitril%'
-                 OR LOWER(ISNULL(other_medication_1_name, '')) LIKE '%entresto%'
-                 OR LOWER(ISNULL(other_medication_1_name, '')) LIKE '%cidmus%'
-                 OR LOWER(ISNULL(other_medication_1_name, '')) LIKE '%arni%'
+                 OR LOWER(ISNULL(arb_other_name, '')) LIKE '%vymada%'
+                 OR LOWER(ISNULL(arb_other_name, '')) LIKE '%arney%'
+                 OR LOWER(ISNULL(arb_other_name, '')) LIKE '%sacurise%'
+                 OR meds_text LIKE '%sacubitril%'
+                 OR meds_text LIKE '%entresto%'
+                 OR meds_text LIKE '%cidmus%'
+                 OR meds_text LIKE '%vymada%'
+                 OR meds_text LIKE '%arney%'
+                 OR meds_text LIKE '%sacurise%'
             THEN 1 ELSE 0 
         END AS rx_arni,
 
@@ -182,84 +205,68 @@ PillarEvaluated AS (
 
         -- 6. SGLT2 Inhibitor Prescribed
         CASE 
-            WHEN LOWER(ISNULL(other_medication_1_name, '')) LIKE '%dapa%'
-                 OR LOWER(ISNULL(other_medication_1_name, '')) LIKE '%oxra%'
-                 OR LOWER(ISNULL(other_medication_1_name, '')) LIKE '%empagli%'
-                 OR LOWER(ISNULL(other_medication_1_name, '')) LIKE '%forxiga%'
-                 OR LOWER(ISNULL(other_medication_1_name, '')) LIKE '%jardiance%'
-                 OR (LOWER(ISNULL(has_dm, 0)) = 1 AND hf_id % 4 = 0)
+            WHEN meds_text LIKE '%dapa%'
+                 OR meds_text LIKE '%forxiga%'
+                 OR meds_text LIKE '%oxra%'
+                 OR meds_text LIKE '%empagli%'
+                 OR meds_text LIKE '%jardiance%'
+                 OR meds_text LIKE '%gibi%'
+                 OR meds_text LIKE '%cana%'
+                 OR meds_text LIKE '%invokana%'
             THEN 1 ELSE 0 
         END AS rx_sglt2,
 
         -- ==============================================================
-        -- EXACT CONTRAINDICATION RULES MATCHING REGISTRY QUERY
+        -- EXACT CONTRAINDICATION RULES MATCHING EXPORT SHEET CI FLAGS
         -- ==============================================================
 
-        -- 1. Beta Blocker CI (Including shock, dobutamine, noradrenaline, and sick sinus syndrome)
+        -- 1. Beta Blocker CI: Flag H || Flag I || Flag K || Flag L || Flag P
         CASE 
-            WHEN LOWER(ISNULL(beta_not_used_bradycardia, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(beta_not_used_heart_blocks, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(beta_not_used_copd_asthma, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(beta_not_used_hypotension, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(beta_not_used_other, '')) IN ('yes', '1', 'true')
-                 OR ISNULL(hr_bpm, 72) < 50
-                 OR ISNULL(sbp, 120) < 90
-                 OR diag_text LIKE '%shock%'
-                 OR meds_text LIKE '%dobutamine%' OR meds_text LIKE '%dobu%' OR meds_text LIKE '%norad%' OR meds_text LIKE '%noradrenaline%'
-                 OR diag_text LIKE '%sick sinus%'
-                 OR diag_text LIKE '%av block%' OR diag_text LIKE '%heart block%' OR diag_text LIKE '%chb%'
+            WHEN (hr_bpm IS NOT NULL AND hr_bpm < 50)
+                 OR (sbp IS NOT NULL AND sbp < 90)
+                 OR diag_text LIKE '%shock%' 
+                 OR meds_text LIKE '%dobutamine%' OR meds_text LIKE '%dobu%' OR meds_text LIKE '%norad%'
+                 OR diag_text LIKE '%asthma%' OR diag_text LIKE '%copd%' OR diag_text LIKE '%bronch%'
+                 OR diag_text LIKE '%av block%' OR diag_text LIKE '%heart block%' OR diag_text LIKE '%chb%' OR diag_text LIKE '%sick sinus%' OR diag_text LIKE '%brady%'
             THEN 1 ELSE 0 
         END AS ci_bb,
 
-        -- 2. ACE Inhibitor CI
+        -- 2. ACE Inhibitor CI: Flag I || Flag M || Flag O
         CASE 
-            WHEN LOWER(ISNULL(ace_not_used_elevated_creatinine, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(ace_not_used_hyperkalemia, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(ace_not_used_cough, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(ace_not_used_hypotension, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(ace_not_used_other, '')) IN ('yes', '1', 'true')
-                 OR ISNULL(creat, 1.1) > 2.5
-                 OR ISNULL(k_val, 4.2) > 5.5
-                 OR ISNULL(sbp, 120) < 90
+            WHEN (sbp IS NOT NULL AND sbp < 90)
+                 OR (k_val IS NOT NULL AND k_val > 5.5) OR diag_text LIKE '%hyperkal%'
+                 OR (creat IS NOT NULL AND creat > 2.5)
             THEN 1 ELSE 0 
         END AS ci_ace,
 
-        -- 3. ARB CI
+        -- 3. ARB CI: Flag I || Flag M || Flag O
         CASE 
-            WHEN LOWER(ISNULL(arb_not_used_elevated_creatinine, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(arb_not_used_hyperkalemia, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(arb_not_used_hypotension, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(arb_not_used_other, '')) IN ('yes', '1', 'true')
-                 OR ISNULL(creat, 1.1) > 2.5
-                 OR ISNULL(k_val, 4.2) > 5.5
-                 OR ISNULL(sbp, 120) < 90
+            WHEN (sbp IS NOT NULL AND sbp < 90)
+                 OR (k_val IS NOT NULL AND k_val > 5.5) OR diag_text LIKE '%hyperkal%'
+                 OR (creat IS NOT NULL AND creat > 2.5)
             THEN 1 ELSE 0 
         END AS ci_arb,
 
-        -- 4. ARNI CI
+        -- 4. ARNI CI: Flag J || Flag M || Flag O
         CASE 
-            WHEN ISNULL(creat, 1.1) > 2.5
-                 OR ISNULL(k_val, 4.2) > 5.5
-                 OR ISNULL(sbp, 120) < 90
+            WHEN (sbp IS NOT NULL AND sbp < 100)
+                 OR (k_val IS NOT NULL AND k_val > 5.5) OR diag_text LIKE '%hyperkal%'
+                 OR (creat IS NOT NULL AND creat > 2.5)
             THEN 1 ELSE 0 
         END AS ci_arni,
 
-        -- 5. MRA CI
+        -- 5. MRA CI: Flag N || Flag O
         CASE 
-            WHEN LOWER(ISNULL(aldosterone_not_used_hyperkalemia, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(aldosterone_not_used_hyponatremia, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(aldosterone_not_used_elevated_creatinine, '')) IN ('yes', '1', 'true')
-                 OR LOWER(ISNULL(aldosterone_not_used_other, '')) IN ('yes', '1', 'true')
-                 OR ISNULL(creat, 1.1) > 2.5
-                 OR ISNULL(k_val, 4.2) > 5.0
+            WHEN (k_val IS NOT NULL AND k_val > 5.0) OR diag_text LIKE '%hyperkal%'
+                 OR (creat IS NOT NULL AND creat > 2.5)
             THEN 1 ELSE 0 
         END AS ci_mra,
 
-        -- 6. SGLT2 Inhibitor CI (Creatinine > 3 and DKA, UTI, UROSEPSIS in history/diagnosis)
+        -- 6. SGLT2 Inhibitor CI: Flag Q || Flag R || Flag S
         CASE 
-            WHEN ISNULL(creat, 1.1) > 3.0
-                 OR diag_text LIKE '%dka%' OR diag_text LIKE '%ketoacid%'
+            WHEN diag_text LIKE '%dka%' OR diag_text LIKE '%ketoacid%'
                  OR diag_text LIKE '%uti%' OR diag_text LIKE '%urosepsis%'
+                 OR (creat IS NOT NULL AND creat > 3.0)
             THEN 1 ELSE 0 
         END AS ci_sglt2,
         

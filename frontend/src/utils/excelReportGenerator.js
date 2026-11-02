@@ -147,6 +147,29 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
       rowVals[2] = rowVals[3] || rowVals[2] || '';
 
       const dataRow = ws.addRow(rowVals);
+      const r = idx + 2;
+
+      // Known Contraindications (cells 83 to 88)
+      dataRow.getCell(83).value = { formula: `IF(OR('CI Flags'!H${r}=1,'CI Flags'!I${r}=1,'CI Flags'!K${r}=1,'CI Flags'!L${r}=1,'CI Flags'!P${r}=1),1,0)`, result: rowVals[82] };
+      dataRow.getCell(84).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowVals[83] };
+      dataRow.getCell(85).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowVals[84] };
+      dataRow.getCell(86).value = { formula: `IF(OR('CI Flags'!J${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowVals[85] };
+      dataRow.getCell(87).value = { formula: `IF(OR('CI Flags'!N${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowVals[86] };
+      dataRow.getCell(88).value = { formula: `IF(OR('CI Flags'!Q${r}=1,'CI Flags'!R${r}=1,'CI Flags'!S${r}=1),1,0)`, result: rowVals[87] };
+
+      // Guideline Deviations (cells 89 to 94)
+      dataRow.getCell(89).value = { formula: `IF(BX${r}=CE${r},1,0)`, result: rowVals[88] };
+      dataRow.getCell(90).value = { formula: `IF(BY${r}=CF${r},1,0)`, result: rowVals[89] };
+      dataRow.getCell(91).value = { formula: `IF(BZ${r}=CG${r},1,0)`, result: rowVals[90] };
+      dataRow.getCell(92).value = { formula: `IF(CA${r}=CH${r},1,0)`, result: rowVals[91] };
+      dataRow.getCell(93).value = { formula: `IF(CB${r}=CI${r},1,0)`, result: rowVals[92] };
+      dataRow.getCell(94).value = { formula: `IF(CC${r}=CJ${r},1,0)`, result: rowVals[93] };
+
+      // Total Deviations, Variables & Adherence (cells 95 to 97)
+      dataRow.getCell(95).value = { formula: `SUM(CK${r}:CP${r})`, result: rowVals[94] };
+      dataRow.getCell(96).value = 6;
+      dataRow.getCell(97).value = { formula: `(CR${r}-CQ${r})/CR${r}`, result: rowVals[96] };
+
       dataRow.eachCell((cell, colNum) => {
         cell.border = BORDER_THIN;
         cell.font = { name: 'Calibri', size: 10 };
@@ -193,6 +216,7 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
     'Reasons for Admission1',
     'admission type',
     'Reasons other than HF',
+    'reasons for admissions',
     'Previous Diagnosis',
     'Medical History',
     'Recent hospitalization date',
@@ -303,6 +327,7 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
       p.admissionReason || '',
       '',
       '',
+      p.admissionReason || '',
       p.previousDiagnosis || '',
       '',
       '',
@@ -382,6 +407,26 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
     ];
 
     const dataRow = ws.addRow(rowValues);
+    const r = idx + 2;
+
+    dataRow.getCell(83).value = { formula: `IF(OR('CI Flags'!H${r}=1,'CI Flags'!I${r}=1,'CI Flags'!K${r}=1,'CI Flags'!L${r}=1,'CI Flags'!P${r}=1),1,0)`, result: rowValues[82] };
+    dataRow.getCell(84).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowValues[83] };
+    dataRow.getCell(85).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowValues[84] };
+    dataRow.getCell(86).value = { formula: `IF(OR('CI Flags'!J${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowValues[85] };
+    dataRow.getCell(87).value = { formula: `IF(OR('CI Flags'!N${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowValues[86] };
+    dataRow.getCell(88).value = { formula: `IF(OR('CI Flags'!Q${r}=1,'CI Flags'!R${r}=1,'CI Flags'!S${r}=1),1,0)`, result: rowValues[87] };
+
+    dataRow.getCell(89).value = { formula: `IF(BX${r}=CE${r},1,0)`, result: rowValues[88] };
+    dataRow.getCell(90).value = { formula: `IF(BY${r}=CF${r},1,0)`, result: rowValues[89] };
+    dataRow.getCell(91).value = { formula: `IF(BZ${r}=CG${r},1,0)`, result: rowValues[90] };
+    dataRow.getCell(92).value = { formula: `IF(CA${r}=CH${r},1,0)`, result: rowValues[91] };
+    dataRow.getCell(93).value = { formula: `IF(CB${r}=CI${r},1,0)`, result: rowValues[92] };
+    dataRow.getCell(94).value = { formula: `IF(CC${r}=CJ${r},1,0)`, result: rowValues[93] };
+
+    dataRow.getCell(95).value = { formula: `SUM(CK${r}:CP${r})`, result: rowValues[94] };
+    dataRow.getCell(96).value = 6;
+    dataRow.getCell(97).value = { formula: `(CR${r}-CQ${r})/CR${r}`, result: rowValues[96] };
+
     dataRow.eachCell((cell, colNum) => {
       cell.border = BORDER_THIN;
       cell.font = { name: 'Calibri', size: 10 };
@@ -764,8 +809,8 @@ function buildCiFlagsSheet(workbook, patients) {
     'Heart rate',
     'Potassium',
     'Creatinine',
-    'Clinical text (P,S,T,U,X,AO,AP,AQ,AR)',
-    'Drug text (BT,BU)',
+    'Clinical text (Q,U,V,AP,AQ,AR,AS)',
+    'Drug text (BU,BV)',
     'Bradycardia',
     'SBP < BB/ACEi/ARB threshold',
     'SBP < ARNI threshold',
@@ -788,6 +833,7 @@ function buildCiFlagsSheet(workbook, patients) {
   });
 
   patients.forEach((p, idx) => {
+    const r = idx + 2;
     const sbp = p.systolicBp || 120;
     const hr = p.heartRate || 72;
     const k = p.potassium || 4.2;
@@ -804,18 +850,41 @@ function buildCiFlagsSheet(workbook, patients) {
       hr < 50 ? 1 : 0,
       sbp < 90 ? 1 : 0,
       sbp < 100 ? 1 : 0,
-      String(p.presentDiagnosis || '').toLowerCase().includes('shock') ? 1 : 0,
-      String(p.presentDiagnosis || '').toLowerCase().includes('copd') || String(p.presentDiagnosis || '').toLowerCase().includes('asthma') ? 1 : 0,
+      0,
+      0,
       k > 5.5 ? 1 : 0,
       k > 5.0 ? 1 : 0,
       creat > 2.5 ? 1 : 0,
-      String(p.presentDiagnosis || '').toLowerCase().includes('block') ? 1 : 0,
-      String(p.presentDiagnosis || '').toLowerCase().includes('dka') ? 1 : 0,
-      String(p.presentDiagnosis || '').toLowerCase().includes('uti') ? 1 : 0,
+      0,
+      0,
+      0,
       creat > 3.0 ? 1 : 0
     ];
 
     const dataRow = ws.addRow(row);
+
+    // Live Excel formulas extracting directly from Sheet1 & Contraindications
+    dataRow.getCell(1).value = p.uhid;
+    dataRow.getCell(2).value = { formula: `IFERROR(VALUE(LEFT(Sheet1!AG${r},FIND("/",Sheet1!AG${r})-1)),"")`, result: sbp };
+    dataRow.getCell(3).value = { formula: `IF(ISNUMBER(Sheet1!AC${r}),Sheet1!AC${r},"")`, result: hr };
+    dataRow.getCell(4).value = { formula: `IF(ISNUMBER(Sheet1!BL${r}),Sheet1!BL${r},"")`, result: k };
+    dataRow.getCell(5).value = { formula: `IF(ISNUMBER(Sheet1!BM${r}),Sheet1!BM${r},"")`, result: creat };
+    // Clinical text: Present diagnosis (Q), reasons for admissions (U), Previous Diagnosis (V), Comorbidities1-4 (AP, AQ, AR, AS)
+    dataRow.getCell(6).value = { formula: `UPPER(Sheet1!Q${r}&" | "&Sheet1!U${r}&" | "&Sheet1!V${r}&" | "&Sheet1!AP${r}&" | "&Sheet1!AQ${r}&" | "&Sheet1!AR${r}&" | "&Sheet1!AS${r})`, result: p.presentDiagnosis || '' };
+    dataRow.getCell(7).value = { formula: `UPPER(Sheet1!BU${r}&" | "&Sheet1!BV${r})`, result: p.prescribedDrugsSummary || '' };
+    dataRow.getCell(8).value = { formula: `IF(AND(ISNUMBER(C${r}),C${r}<Contraindications!$E$4),1,0)`, result: hr < 50 ? 1 : 0 };
+    dataRow.getCell(9).value = { formula: `IF(AND(ISNUMBER(B${r}),B${r}<Contraindications!$E$5),1,0)`, result: sbp < 90 ? 1 : 0 };
+    dataRow.getCell(10).value = { formula: `IF(AND(ISNUMBER(B${r}),B${r}<Contraindications!$E$16),1,0)`, result: sbp < 100 ? 1 : 0 };
+    dataRow.getCell(11).value = { formula: `IF(OR(ISNUMBER(SEARCH("SHOCK",F${r})),ISNUMBER(SEARCH("DOBUTAMINE",G${r})),ISNUMBER(SEARCH("DOBU",G${r})),ISNUMBER(SEARCH("NORAD",G${r}))),1,0)`, result: 0 };
+    dataRow.getCell(12).value = { formula: `IF(OR(ISNUMBER(SEARCH("ASTHMA",F${r})),ISNUMBER(SEARCH("COPD",F${r})),ISNUMBER(SEARCH("BRONCH",F${r}))),1,0)`, result: 0 };
+    dataRow.getCell(13).value = { formula: `IF(OR(AND(ISNUMBER(D${r}),D${r}>Contraindications!$E$10),ISNUMBER(SEARCH("HYPERKAL",F${r}))),1,0)`, result: k > 5.5 ? 1 : 0 };
+    dataRow.getCell(14).value = { formula: `IF(OR(AND(ISNUMBER(D${r}),D${r}>Contraindications!$E$19),ISNUMBER(SEARCH("HYPERKAL",F${r}))),1,0)`, result: k > 5.0 ? 1 : 0 };
+    dataRow.getCell(15).value = { formula: `IF(AND(ISNUMBER(E${r}),E${r}>Contraindications!$E$11),1,0)`, result: creat > 2.5 ? 1 : 0 };
+    dataRow.getCell(16).value = { formula: `IF(OR(ISNUMBER(SEARCH("AV BLOCK",F${r})),ISNUMBER(SEARCH("HEART BLOCK",F${r})),ISNUMBER(SEARCH("CHB",F${r})),ISNUMBER(SEARCH("SICK SINUS",F${r})),ISNUMBER(SEARCH("BRADY",F${r}))),1,0)`, result: 0 };
+    dataRow.getCell(17).value = { formula: `IF(OR(ISNUMBER(SEARCH("DKA",F${r})),ISNUMBER(SEARCH("KETOACID",F${r}))),1,0)`, result: 0 };
+    dataRow.getCell(18).value = { formula: `IF(OR(ISNUMBER(SEARCH("UTI",F${r})),ISNUMBER(SEARCH("UROSEPSIS",F${r}))),1,0)`, result: 0 };
+    dataRow.getCell(19).value = { formula: `IF(AND(ISNUMBER(E${r}),E${r}>Contraindications!$E$21),1,0)`, result: creat > 3.0 ? 1 : 0 };
+
     dataRow.eachCell(cell => (cell.border = BORDER_THIN));
 
     if (idx % 2 === 1) {
@@ -831,6 +900,101 @@ function buildCiFlagsSheet(workbook, patients) {
 
   autoFitColumns(ws, 10, 45);
 }
+
+/**
+ * Build CI FLAGS FORMULAE Sheet: Documentation showing how every CI Flag is extracted and calculated
+ */
+function buildCiFlagsFormulaeSheet(workbook) {
+  const ws = workbook.addWorksheet('CI FLAGS FORMULAE');
+
+  const headers = ['Columns', 'formula', 'Sheet', 'Columns', 'Explanation'];
+  const headerRow = ws.addRow(headers);
+  headerRow.eachCell(cell => {
+    cell.fill = HEADER_FILL_NAVY;
+    cell.font = HEADER_FONT;
+    cell.border = BORDER_THIN;
+  });
+
+  const formulaRows = [
+    ['UHID', '', 'Sheet1', 'UHID(T3)', 'Unique Hospital Identifier from Sheet1 Col B'],
+    ['Systolic BP', 'IFERROR(VALUE(LEFT(Sheet1!AG2,FIND("/",Sheet1!AG2)-1)),"")', 'Sheet1', 'Blood pressure sitting', 'Till slash e.g. 110/80 so value of Systolic BP=110'],
+    ['Heart rate', 'IF(ISNUMBER(Sheet1!AC2),Sheet1!AC2,"")', 'Sheet1', 'Heart rate', 'Numeric heart rate (bpm) extracted from Sheet1 Col AC'],
+    ['Potassium', 'IF(ISNUMBER(Sheet1!BL2),Sheet1!BL2,"")', 'Sheet1', 'Potassium', 'Exact serum potassium value (mEq/L) extracted from Sheet1 Col BL'],
+    ['Creatinine', 'IF(ISNUMBER(Sheet1!BM2),Sheet1!BM2,"")', 'Sheet1', 'Creatinine', 'Exact serum creatinine value (mg/dL) extracted from Sheet1 Col BM'],
+    ['Clinical text (Q,U,V,AP,AQ,AR,AS)', 'UPPER(Sheet1!Q2&" | "&Sheet1!U2&" | "&Sheet1!V2&" | "&Sheet1!AP2&" | "&Sheet1!AQ2&" | "&Sheet1!AR2&" | "&Sheet1!AS2)', 'Sheet1', 'Present diagnosis, reasons for admissions, previous diagnosis, comorbidities', 'Concatenated uppercase string of clinical diagnoses, admissions, and comorbidities'],
+    ['Drug text (BU,BV)', 'UPPER(Sheet1!BU2&" | "&Sheet1!BV2)', 'Sheet1', 'Drugs, Generic Names', 'Concatenated uppercase string of active generic medications and drug names'],
+    ['Bradycardia', 'IF(AND(ISNUMBER(C2),C2<Contraindications!$E$4),1,0)', 'CI Flags, Contraindications', 'Heart rate < threshold here threshold = 50', 'Flagged 1 if resting heart rate < 50 bpm (Contraindications!E4)'],
+    ['SBP < BB/ACEi/ARB threshold', 'IF(AND(ISNUMBER(B2),B2<Contraindications!$E$5),1,0)', 'CI Flags, Contraindications', 'Systolic BP < threshold here threshold = 90', 'Flagged 1 if sitting systolic BP < 90 mmHg (Contraindications!E5)'],
+    ['SBP < ARNI threshold', 'IF(AND(ISNUMBER(B2),B2<Contraindications!$E$16),1,0)', 'CI Flags, Contraindications', 'Systolic BP < threshold (stricter than ACEi/ARB) here threshold = 100', 'Flagged 1 if sitting systolic BP < 100 mmHg (Contraindications!E16)'],
+    ['Shock / inotropes', 'IF(OR(ISNUMBER(SEARCH("SHOCK",F2)),ISNUMBER(SEARCH("DOBUTAMINE",G2)),ISNUMBER(SEARCH("DOBU",G2)),ISNUMBER(SEARCH("NORAD",G2))),1,0)', 'CI Flags', 'Clinical text, Drug text', 'Flagged 1 if diagnosis mentions SHOCK or drugs include inotropes (DOBUTAMINE, NORAD)'],
+    ['Asthma / COPD', 'IF(OR(ISNUMBER(SEARCH("ASTHMA",F2)),ISNUMBER(SEARCH("COPD",F2)),ISNUMBER(SEARCH("BRONCH",F2))),1,0)', 'CI Flags', 'Clinical text', 'Flagged 1 if diagnosis or comorbidities mention ASTHMA, COPD, or BRONCHOSPASM'],
+    ['Hyperkalaemia (ACEi/ARB/ARNI)', 'IF(OR(AND(ISNUMBER(D2),D2>Contraindications!$E$10),ISNUMBER(SEARCH("HYPERKAL",F2))),1,0)', 'CI Flags, Contraindications', 'Potassium > threshold, or keyword HYPERKAL here threshold = 5.5', 'Flagged 1 if serum potassium > 5.5 mEq/L or clinical text contains HYPERKAL'],
+    ['Hyperkalaemia (MRA)', 'IF(OR(AND(ISNUMBER(D2),D2>Contraindications!$E$19),ISNUMBER(SEARCH("HYPERKAL",F2))),1,0)', 'CI Flags, Contraindications', 'Potassium > threshold, or keyword HYPERKAL here threshold = 5.0', 'Flagged 1 if serum potassium > 5.0 mEq/L or clinical text contains HYPERKAL'],
+    ['Renal impairment (creatinine)', 'IF(OR(AND(ISNUMBER(E2),E2>Contraindications!$E$11),ISNUMBER(SEARCH("RENAL",F2)),ISNUMBER(SEARCH("CKD",F2))),1,0)', 'CI Flags, Contraindications', 'Creatinine > threshold or keyword RENAL/CKD here threshold = 2.5', 'Flagged 1 if serum creatinine > 2.5 mg/dL or clinical text contains RENAL or CKD'],
+    ['AV block / sick sinus', 'IF(OR(ISNUMBER(SEARCH("AV BLOCK",F2)),ISNUMBER(SEARCH("HEART BLOCK",F2)),ISNUMBER(SEARCH("CHB",F2)),ISNUMBER(SEARCH("SICK SINUS",F2)),ISNUMBER(SEARCH("BRADY",F2))),1,0)', 'CI Flags', 'Clinical text', 'Flagged 1 if AV block, complete heart block (CHB), bradyarrhythmia, or sick sinus syndrome documented'],
+    ['DKA', 'IF(OR(ISNUMBER(SEARCH("DKA",F2)),ISNUMBER(SEARCH("KETOACID",F2))),1,0)', 'CI Flags', 'Clinical text', 'Flagged 1 if clinical text mentions DKA or KETOACIDOSIS'],
+    ['UTI / urosepsis', 'IF(OR(ISNUMBER(SEARCH("UTI",F2)),ISNUMBER(SEARCH("UROSEPSIS",F2))),1,0)', 'CI Flags', 'Clinical text', 'Flagged 1 if clinical text mentions UTI or UROSEPSIS'],
+    ['Severe renal (SGLT2)', 'IF(AND(ISNUMBER(E2),E2>Contraindications!$E$21),1,0)', 'CI Flags, Contraindications', 'Creatinine > threshold here threshold = 3.0', 'Flagged 1 if serum creatinine > 3.0 mg/dL (Contraindications!E21)']
+  ];
+
+  formulaRows.forEach((rVals, idx) => {
+    const row = ws.addRow(rVals);
+    row.eachCell(cell => (cell.border = BORDER_THIN));
+    if (idx % 2 === 1) {
+      row.eachCell(cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+      });
+    }
+  });
+
+  autoFitColumns(ws, 12, 55);
+}
+
+/**
+ * Build sheet 1 formula Sheet: Documentation showing how every Sheet1 CI & Deviation formula is calculated
+ */
+function buildSheet1FormulaeSheet(workbook) {
+  const ws = workbook.addWorksheet('sheet 1 formula');
+
+  const headers = ['Columns', 'formula', 'Sheet', 'Columns', 'Explanation'];
+  const headerRow = ws.addRow(headers);
+  headerRow.eachCell(cell => {
+    cell.fill = HEADER_FILL_TEAL;
+    cell.font = HEADER_FONT;
+    cell.border = BORDER_THIN;
+  });
+
+  const formulaRows = [
+    ['Known Contraindication for Beta blocker', "IF(OR('CI Flags'!H2=1, 'CI Flags'!I2=1, 'CI Flags'!K2=1, 'CI Flags'!L2=1, 'CI Flags'!P2=1), 1, 0)", 'CI Flags', 'Bradycardia, SBP < BB threshold, Shock, Asthma/COPD, AV block', '1 if any of the 5 Beta blocker contraindications in CI Flags is active, else 0'],
+    ['Known Contraindication for ACE inhibitor', "IF(OR('CI Flags'!I2=1,'CI Flags'!M2=1,'CI Flags'!O2=1),1,0)", 'CI Flags', 'SBP < ACE threshold, Hyperkalaemia (>5.5), Renal impairment (>2.5/keyword)', '1 if hypotension, hyperkalemia, or renal impairment is active in CI Flags, else 0'],
+    ['Known Contraindication for ARB', "IF(OR('CI Flags'!I2=1,'CI Flags'!M2=1,'CI Flags'!O2=1),1,0)", 'CI Flags', 'SBP < ARB threshold, Hyperkalaemia (>5.5), Renal impairment (>2.5/keyword)', '1 if hypotension, hyperkalemia, or renal impairment is active in CI Flags, else 0'],
+    ['Known Contraindication for ARNI', "IF(OR('CI Flags'!J2=1,'CI Flags'!M2=1,'CI Flags'!O2=1),1,0)", 'CI Flags', 'SBP < ARNI threshold (<100), Hyperkalaemia (>5.5), Renal impairment (>2.5/keyword)', '1 if stricter hypotension (<100), hyperkalemia, or renal impairment is active in CI Flags, else 0'],
+    ['Known Contraindication for MRA', "IF(OR('CI Flags'!N2=1,'CI Flags'!O2=1),1,0)", 'CI Flags', 'Hyperkalaemia MRA (>5.0), Renal impairment (>2.5/keyword)', '1 if stricter hyperkalemia (>5.0) or renal impairment is active in CI Flags, else 0'],
+    ['Known Contraindication for SGLT2 inhibitor', "IF(OR('CI Flags'!Q2=1,'CI Flags'!R2=1,'CI Flags'!S2=1),1,0)", 'CI Flags', 'DKA, UTI / urosepsis, Severe renal SGLT2 (>3.0)', '1 if DKA, UTI/urosepsis, or severe renal impairment (>3.0) is active in CI Flags, else 0'],
+    ['Deviation for Beta blocker2', 'IF(BX2=CE2,1,0)', 'Sheet1', 'Beta blocker (Col BX), Known Contraindication for Beta blocker (Col CE)', '1 if prescribed with CI (1=1) or omitted without CI (0=0); 0 if guideline adherent'],
+    ['Deviation for ACE inhibitor3', 'IF(BY2=CF2,1,0)', 'Sheet1', 'ACE inhibitor (Col BY), Known Contraindication for ACE inhibitor (Col CF)', '1 if prescribed with CI (1=1) or omitted without CI (0=0); 0 if guideline adherent'],
+    ['Deviation for ARB4', 'IF(BZ2=CG2,1,0)', 'Sheet1', 'ARB (Col BZ), Known Contraindication for ARB (Col CG)', '1 if prescribed with CI (1=1) or omitted without CI (0=0); 0 if guideline adherent'],
+    ['Deviation for ARNI5', 'IF(CA2=CH2,1,0)', 'Sheet1', 'ARNI (Col CA), Known Contraindication for ARNI (Col CH)', '1 if prescribed with CI (1=1) or omitted without CI (0=0); 0 if guideline adherent'],
+    ['Deviation for MRA6', 'IF(CB2=CI2,1,0)', 'Sheet1', 'MRA (Col CB), Known Contraindication for MRA (Col CI)', '1 if prescribed with CI (1=1) or omitted without CI (0=0); 0 if guideline adherent'],
+    ['Deviation for SGLT2 inhibitor7', 'IF(CC2=CJ2,1,0)', 'Sheet1', 'SGLT2 inhibitor (Col CC), Known Contraindication for SGLT2 inhibitor (Col CJ)', '1 if prescribed with CI (1=1) or omitted without CI (0=0); 0 if guideline adherent'],
+    ['Total Deviations present', 'SUM(CK2:CP2)', 'Sheet1', 'Deviation columns CK through CP', 'Sum of all deviation flags across the 6 guideline drug classes'],
+    ['Total Variables', '6', 'Sheet1', 'Standard guideline pillars count', 'Standard 6 evaluable GDMT drug classes'],
+    ['% of GDMT adhered to', '(CR2-CQ2)/CR2', 'Sheet1', 'Total Variables (Col CR), Total Deviations present (Col CQ)', 'Adherence formula: 1 - (Total Deviations / 6), formatted as percentage (0.0%)']
+  ];
+
+  formulaRows.forEach((rVals, idx) => {
+    const row = ws.addRow(rVals);
+    row.eachCell(cell => (cell.border = BORDER_THIN));
+    if (idx % 2 === 1) {
+      row.eachCell(cell => {
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+      });
+    }
+  });
+
+  autoFitColumns(ws, 12, 55);
+}
+
 
 /**
  * Build Key Points Sheet matching HF_GDMT_160926_updated_as_per_calculations.xlsx format
@@ -1287,13 +1451,10 @@ export async function exportCohortExcel(patients, analytics = {}) {
   // 3. Sheet1 (Master Cohort Dataset mapped up to Current device therapy + GDMT columns)
   buildSheet1(workbook, patients, sheet1Data);
 
-  // 4. Notes
-  buildNotesSheet(workbook);
-
-  // 5. Contraindications
+  // 4. Contraindications
   buildContraindicationsSheet(workbook);
 
-  // 6. CI Flags
+  // 5. CI Flags
   buildCiFlagsSheet(workbook, patients);
 
   // Generate buffer and trigger browser download

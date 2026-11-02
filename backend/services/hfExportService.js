@@ -372,6 +372,27 @@ function evaluatePositiveColName(row, colNames) {
  * Fetches all HF patient records joined with their clinical child tables,
  * and formats them strictly following the mapping in mapping.xlsx up to "Current device therapy".
  */
+function formatReasonsForAdmissions(row) {
+  const reasons = [];
+  if (isYes(row.myocardial_ischemia)) reasons.push('Myocardial ischemia');
+  if (isYes(row.atrial_fibrillation)) reasons.push('Atrial fibrillation');
+  if (isYes(row.bradyarrhythmia)) reasons.push('Bradyarrhythmia');
+  if (isYes(row.ventricular_tachycardia)) reasons.push('Ventricular tachycardia');
+  if (isYes(row.uncontrolled_hypertension)) reasons.push('Uncontrolled hypertension');
+  if (isYes(row.infection)) reasons.push('Infection');
+  if (isYes(row.renal_failure)) reasons.push('Renal failure');
+  if (isYes(row.anaemia)) reasons.push('Anaemia');
+  if (isYes(row.medication_non_adherence)) reasons.push('Medication non adherence');
+  if (isYes(row.excessive_salt_intake)) reasons.push('Excessive salt intake');
+  if (isYes(row.excessive_water_ingestion)) reasons.push('Excessive water ingestion');
+  if (isYes(row.progressive_worsening)) reasons.push('Progressive worsening');
+  if (row.precipitating_other && String(row.precipitating_other).trim() !== '' && !/^(no|0|false)$/i.test(String(row.precipitating_other).trim())) {
+    const o = String(row.precipitating_other).trim();
+    reasons.push(o.toLowerCase() === 'yes' ? 'Other' : o);
+  }
+  return reasons.join(', ');
+}
+
 async function getHfSheet1ExportData(options = {}) {
   const whereConditions = [
     '(hr.is_deleted = 0 OR hr.is_deleted IS NULL)'
@@ -418,6 +439,18 @@ async function getHfSheet1ExportData(options = {}) {
       ha.admission_reason,
       ha.other_admission_reason,
       ha.admission_type,
+      ha.myocardial_ischemia,
+      ha.atrial_fibrillation,
+      ha.bradyarrhythmia,
+      ha.ventricular_tachycardia,
+      ha.uncontrolled_hypertension,
+      ha.infection,
+      ha.renal_failure,
+      ha.anaemia,
+      ha.medication_non_adherence,
+      ha.excessive_salt_intake,
+      ha.excessive_water_ingestion,
+      ha.progressive_worsening,
       ha.precipitating_other,
       ia.previous_diagnosis,
       ia.history_cabg,
@@ -724,6 +757,7 @@ async function getHfSheet1ExportData(options = {}) {
     'Reasons for Admission2',
     'Reasons for admission3',
     'Reasons other than HF',
+    'reasons for admissions',
     'Previous Diagnosis',
     'Medical History',
     'Recent hospitalization date',
@@ -1071,7 +1105,8 @@ async function getHfSheet1ExportData(options = {}) {
       row.other_admission_reason || '',              // 19. Reasons for Admission2
       row.admission_type || '',                      // 20. Reasons for admission3
       row.precipitating_other || '',                 // 21. Reasons other than HF
-      row.previous_diagnosis || '',                  // 22. Previous Diagnosis
+      formatReasonsForAdmissions(row),               // 22. reasons for admissions
+      row.previous_diagnosis || '',                  // 23. Previous Diagnosis
       medHistoryVal,                                 // 23. Medical History
       formatDate(row.recent_hospitalization_dates),  // 24. Recent hospitalization date
       row.recent_hospitalization_reasons || '',      // 25. Reason for hospitalization
