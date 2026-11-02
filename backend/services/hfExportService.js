@@ -1164,7 +1164,7 @@ async function getHfSheet1ExportData(options = {}) {
       row.ecg_qt != null ? row.ecg_qt : '',          // 59. QT
       row.ecg_qtc != null ? row.ecg_qtc : '',        // 60. QTC
       echoRwmiVal,                                   // 61. ECHO(RWMI) (literal column names)
-      row.echo_ef != null ? row.echo_ef : '',        // 62. EF%
+      toNumericOrEmpty(row.echo_ef),                 // 62. EF%
       formatDate(row.holter_test_date),              // 63. Holter/Event Recorder
       toNumericOrEmpty(row.potassium_result),         // 64. Lab tests Potassium
       toNumericOrEmpty(row.creatinine_result),        // 65. Creatinine
