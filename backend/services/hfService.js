@@ -712,6 +712,10 @@ async function saveHfAssessment(data, userId = 1) {
                 const auditNewData = sanitizeAuditPayload(data);
                 const auditOldData = sanitizeAuditPayload(previousAssessment);
 
+                // Strip synthetic frontend helper objects to avoid ghost diffs
+                if (auditOldData) delete auditOldData.vtvfRiskAssessment;
+                if (auditNewData) delete auditNewData.vtvfRiskAssessment;
+
                 await logAudit(hf_id, activeUserId, actionType, auditOldData, auditNewData);
 
                 if (auditReq) {

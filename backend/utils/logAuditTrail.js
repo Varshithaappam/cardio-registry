@@ -170,7 +170,16 @@ const FIELD_LABEL_MAP = {
   discharge_gp2b3a: 'Gp2b3a',
   discharge_bivaluridin: 'Bivaluridin',
   gp2b3a: 'Gp2b3a',
-  bivaluridin: 'Bivaluridin'
+  bivaluridin: 'Bivaluridin',
+  documented_vt_vf: 'Documented VT/VF',
+  documented_pvcs: 'Documented PVCs',
+  documented_nsvt: 'Documented NSVT',
+  pvc_count: 'PVC Count',
+  pvc_frequency: 'PVC Frequency',
+  nsvt_frequency: 'NSVT Frequency',
+  complaints_syncope_presyncope: 'Complaints of Syncope / Pre-syncope',
+  complaints_syncope: 'Complaints of Syncope / Pre-syncope',
+  syncope_frequency: 'Syncope Frequency'
 };
 
 function formatFieldLabel(key) {
@@ -436,7 +445,7 @@ function getChangedFields(oldObj, newObj) {
     'patient_name', 'patientname', 'name', 'age', 'gender', 'phone', 'email',
     'date_1m', 'date_3m', 'date_6m', 'date_12m', 'date_1month', 'date_3month', 'date_6month', 'date_12month',
     'target_date', 'timeframe', 'followup_date', 'followup_month', 'followup_id', 'task_id',
-    'source_record_id', 'source_registry', 'clinic_location', 'address', 'patient',
+    'source_record_id', 'source_registry', 'clinic_location', 'address', 'patient', 'vtvfriskassessment',
     // Followup form-default fields (sent with defaults like 'None'/'In-Person' even when DB has null)
     'func_1m', 'func_3m', 'func_6m', 'func_12m',
     'visit_mode', 'visitmode', 'special_instructions',
@@ -493,6 +502,9 @@ function getChangedFields(oldObj, newObj) {
     if (
       excludedKeys.has(lowerLeaf) ||
       excludedKeys.has(lowerFullKey) ||
+      lowerFullKey.startsWith('vtvfriskassessment.') ||
+      lowerFullKey.startsWith('vtvfriskassessment') ||
+      lowerLeaf.startsWith('vtvfriskassessment') ||
       lowerFullKey.startsWith('enabled_') ||
       lowerFullKey.startsWith('enabled') ||
       lowerFullKey.startsWith('custom_date_') ||

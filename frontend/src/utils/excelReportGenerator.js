@@ -1141,7 +1141,7 @@ function buildKeyPointsSheet(workbook, analytics, patients, wsKeyPoints = null, 
 
   // Rows 5 to 19: Cohort metrics
   const metricSpecs = [
-    { r: 5, label: 'Patients (UHIDs) in dataset', formula: `COUNTA('Sheet1'!B2:B${total + 1})`, result: total, src: 'Sheet1 col B', numFmt: undefined },
+    { r: 5, label: 'HF records (UHIDs) in dataset', formula: `COUNTA('Sheet1'!B2:B${total + 1})`, result: total, src: 'Sheet1 col B', numFmt: undefined },
     { r: 6, label: 'Male', formula: `COUNTIF('Sheet1'!I2:I${total + 1},"Male")`, result: males, src: 'Sheet1 col I', numFmt: undefined },
     { r: 7, label: 'Female', formula: `COUNTIF('Sheet1'!I2:I${total + 1},"Female")`, result: females, src: 'Sheet1 col I', numFmt: undefined },
     { r: 8, label: 'Mean age (years)', formula: `AVERAGE('Sheet1'!H2:H${total + 1})`, result: meanAge, src: 'Sheet1 col H', numFmt: '0.0' },

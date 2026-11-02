@@ -302,7 +302,7 @@ const computeObjectDiff = (oldObj, newObj) => {
     'patient_name', 'patientname', 'name', 'age', 'gender', 'phone', 'email',
     'date_1m', 'date_3m', 'date_6m', 'date_12m', 'date_1month', 'date_3month', 'date_6month', 'date_12month',
     'target_date', 'timeframe', 'followup_date', 'followup_month', 'followup_id', 'task_id',
-    'source_record_id', 'source_registry', 'clinic_location', 'address', 'patient',
+    'source_record_id', 'source_registry', 'clinic_location', 'address', 'patient', 'vtvfriskassessment',
     // Followup form-default fields
     'func_1m', 'func_3m', 'func_6m', 'func_12m',
     'visit_mode', 'visitmode', 'special_instructions',
@@ -352,6 +352,9 @@ const computeObjectDiff = (oldObj, newObj) => {
     if (
       excludedKeys.has(lowerLeaf) ||
       excludedKeys.has(lowerFullKey) ||
+      lowerFullKey.startsWith('vtvfriskassessment.') ||
+      lowerFullKey.startsWith('vtvfriskassessment') ||
+      lowerLeaf.startsWith('vtvfriskassessment') ||
       leaf.startsWith('appr_') ||
       lowerLeaf.endsWith('_id') ||
       (lowerLeaf.endsWith('id') && lowerLeaf !== 'visitid')
