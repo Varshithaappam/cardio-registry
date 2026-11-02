@@ -91,8 +91,9 @@ function autoFitColumns(worksheet, minWidth = 10, maxWidth = 45) {
 /**
  * Build Sheet1: Scoped exactly up to "Current device therapy" following mapping.xlsx rules
  */
-function buildSheet1(workbook, patients, sheet1Data = null) {
-  const ws = workbook.addWorksheet('Sheet1');
+function buildSheet1(workbook, patients, sheet1Data = null, wsSheet1 = null) {
+  const ws = wsSheet1 || workbook.addWorksheet('Sheet1');
+  const finalExportRows = [];
 
   // If backend provided pre-processed sheet1Data adhering to literal column name mapping rules
   if (sheet1Data && Array.isArray(sheet1Data.headers) && Array.isArray(sheet1Data.rows)) {
@@ -152,6 +153,7 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
 
       // User requirement: what is in IP No(Prosoft) (index 3) have same in IP No(T3) (index 2)
       rowVals[2] = rowVals[3] || rowVals[2] || '';
+      finalExportRows.push(rowVals);
 
       const dataRow = ws.addRow(rowVals);
       const r = idx + 2;
@@ -198,7 +200,7 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
     });
 
     autoFitColumns(ws, 10, 45);
-    return;
+    return finalExportRows;
   }
 
   // Fallback: Default headers up to Current device therapy + GDMT columns 73-97
@@ -413,6 +415,7 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
       p.adherencePercent != null ? p.adherencePercent / 100 : 0
     ];
 
+    finalExportRows.push(rowValues);
     const dataRow = ws.addRow(rowValues);
     const r = idx + 2;
 
@@ -455,6 +458,7 @@ function buildSheet1(workbook, patients, sheet1Data = null) {
   });
 
   autoFitColumns(ws, 10, 40);
+  return finalExportRows;
 }
 
 /**
@@ -475,8 +479,8 @@ function buildNotesSheet(workbook) {
 /**
  * Build GDMT Summary Sheet matching HF_GDMT_160926_updated_as_per_calculations.xlsx format
  */
-function buildGdmtSummarySheet(workbook, analytics, patients) {
-  const ws = workbook.addWorksheet('GDMT Summary');
+function buildGdmtSummarySheet(workbook, analytics, patients, wsSummary = null) {
+  const ws = wsSummary || workbook.addWorksheet('GDMT Summary');
   const totalCount = patients.length || 1;
 
   const categories = [
@@ -749,8 +753,8 @@ function buildGdmtSummarySheet(workbook, analytics, patients) {
 /**
  * Build Contraindications Reference Sheet
  */
-function buildContraindicationsSheet(workbook) {
-  const ws = workbook.addWorksheet('Contraindications');
+function buildContraindicationsSheet(workbook, wsContra = null) {
+  const ws = wsContra || workbook.addWorksheet('Contraindications');
 
   const titleRow = ws.addRow(['GDMT contraindication criteria identifiable from Sheet1']);
   titleRow.getCell(1).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FF0D9488' } };
@@ -807,8 +811,8 @@ function buildContraindicationsSheet(workbook) {
 /**
  * Build CI Flags Sheet (Patient-Level Evaluated Matrix)
  */
-function buildCiFlagsSheet(workbook, patients) {
-  const ws = workbook.addWorksheet('CI Flags');
+function buildCiFlagsSheet(workbook, patients, wsFlags = null) {
+  const ws = wsFlags || workbook.addWorksheet('CI Flags');
 
   const headers = [
     'UHID',
@@ -839,12 +843,23 @@ function buildCiFlagsSheet(workbook, patients) {
     cell.border = BORDER_THIN;
   });
 
+  const finalCiRows = [];
+
   patients.forEach((p, idx) => {
     const r = idx + 2;
     const sbp = p.systolicBp || 120;
     const hr = p.heartRate || 72;
     const k = p.potassium || 4.2;
     const creat = p.creatinine || 1.1;
+
+    // Evaluate renal impairment flag from either creatinine > 2.5 OR documented renal failure/CKD in diagnoses/comorbidities
+    const hasRenalDiagnosis = Boolean(
+      p.renalFailure ||
+      (p.comorbidities || []).some(c => /renal|ckd/i.test(c)) ||
+      /renal|ckd/i.test(p.presentDiagnosis || '') ||
+      /renal|ckd/i.test(p.previousDiagnosis || '')
+    );
+    const renalFlag = (creat > 2.5 || hasRenalDiagnosis) ? 1 : 0;
 
     const row = [
       p.uhid,
@@ -861,13 +876,14 @@ function buildCiFlagsSheet(workbook, patients) {
       0,
       k > 5.5 ? 1 : 0,
       k > 5.0 ? 1 : 0,
-      creat > 2.5 ? 1 : 0,
+      renalFlag,
       0,
       0,
       0,
       creat > 3.0 ? 1 : 0
     ];
 
+    finalCiRows.push(row);
     const dataRow = ws.addRow(row);
 
     // Live Excel formulas extracting directly from Sheet1 & Contraindications
@@ -886,7 +902,8 @@ function buildCiFlagsSheet(workbook, patients) {
     dataRow.getCell(12).value = { formula: `IF(OR(ISNUMBER(SEARCH("ASTHMA",F${r})),ISNUMBER(SEARCH("COPD",F${r})),ISNUMBER(SEARCH("BRONCH",F${r}))),1,0)`, result: 0 };
     dataRow.getCell(13).value = { formula: `IF(OR(AND(ISNUMBER(D${r}),D${r}>Contraindications!$E$10),ISNUMBER(SEARCH("HYPERKAL",F${r}))),1,0)`, result: k > 5.5 ? 1 : 0 };
     dataRow.getCell(14).value = { formula: `IF(OR(AND(ISNUMBER(D${r}),D${r}>Contraindications!$E$19),ISNUMBER(SEARCH("HYPERKAL",F${r}))),1,0)`, result: k > 5.0 ? 1 : 0 };
-    dataRow.getCell(15).value = { formula: `IF(AND(ISNUMBER(E${r}),E${r}>Contraindications!$E$11),1,0)`, result: creat > 2.5 ? 1 : 0 };
+    // Synchronized live formula: evaluates 1 if creatinine > 2.5 OR clinical text contains RENAL or CKD
+    dataRow.getCell(15).value = { formula: `IF(OR(AND(ISNUMBER(E${r}),E${r}>Contraindications!$E$11),ISNUMBER(SEARCH("RENAL",F${r})),ISNUMBER(SEARCH("CKD",F${r}))),1,0)`, result: renalFlag };
     dataRow.getCell(16).value = { formula: `IF(OR(ISNUMBER(SEARCH("AV BLOCK",F${r})),ISNUMBER(SEARCH("HEART BLOCK",F${r})),ISNUMBER(SEARCH("CHB",F${r})),ISNUMBER(SEARCH("SICK SINUS",F${r})),ISNUMBER(SEARCH("BRADY",F${r}))),1,0)`, result: 0 };
     dataRow.getCell(17).value = { formula: `IF(OR(ISNUMBER(SEARCH("DKA",F${r})),ISNUMBER(SEARCH("KETOACID",F${r}))),1,0)`, result: 0 };
     dataRow.getCell(18).value = { formula: `IF(OR(ISNUMBER(SEARCH("UTI",F${r})),ISNUMBER(SEARCH("UROSEPSIS",F${r}))),1,0)`, result: 0 };
@@ -906,6 +923,7 @@ function buildCiFlagsSheet(workbook, patients) {
   });
 
   autoFitColumns(ws, 10, 45);
+  return finalCiRows;
 }
 
 /**
@@ -1006,9 +1024,9 @@ function buildSheet1FormulaeSheet(workbook) {
 /**
  * Build Key Points Sheet matching HF_GDMT_160926_updated_as_per_calculations.xlsx format
  */
-function buildKeyPointsSheet(workbook, analytics, patients) {
-  const ws = workbook.addWorksheet('Key Points');
-  const total = patients.length || 0;
+function buildKeyPointsSheet(workbook, analytics, patients, wsKeyPoints = null, sheet1Rows = null, ciFlagsRows = null) {
+  const ws = wsKeyPoints || workbook.addWorksheet('Key Points');
+  const total = (sheet1Rows && sheet1Rows.length > 0) ? sheet1Rows.length : (patients.length || 0);
 
   // Row 1: Title
   const r1 = ws.getRow(1);
@@ -1030,30 +1048,96 @@ function buildKeyPointsSheet(workbook, analytics, patients) {
     cell.border = BORDER_THIN;
   });
 
-  // Calculate cohort values
-  const males = patients.filter(p => String(p.gender).toLowerCase() === 'male').length;
-  const females = patients.filter(p => String(p.gender).toLowerCase() === 'female').length;
-  const ages = patients.map(p => Number(p.age)).filter(a => !isNaN(a) && a > 0);
-  const meanAge = ages.length > 0 ? (ages.reduce((a, b) => a + b, 0) / ages.length) : 0;
+  // Calculate cohort values derived synchronously from the exact Sheet1 and CI Flags data
+  // Sheet1 Column indices: Col B (1): UHID, Col H (7): Age, Col I (8): Gender, Col AO (40): HF Type,
+  // Col AP:AS (41-44): Comorbidities 1-4, Col AV (47): Functional Status,
+  // Col BA (52): Death, Col BJ (61): EF%, Col CD (81): Drugs Count, Col CS (96): Adherence %
+  const males = (sheet1Rows && sheet1Rows.length > 0)
+    ? sheet1Rows.filter(r => String(r[8] || '').trim().toLowerCase() === 'male').length
+    : patients.filter(p => String(p.gender).toLowerCase() === 'male').length;
 
-  const hfref = patients.filter(p => String(p.hfType).toUpperCase() === 'HFREF').length;
-  const hfpef = patients.filter(p => String(p.hfType).toUpperCase() === 'HFPEF').length;
-  const efs = patients.map(p => Number(p.efPercent)).filter(e => !isNaN(e) && e > 0);
-  const meanEf = efs.length > 0 ? (efs.reduce((a, b) => a + b, 0) / efs.length) : 0;
+  const females = (sheet1Rows && sheet1Rows.length > 0)
+    ? sheet1Rows.filter(r => String(r[8] || '').trim().toLowerCase() === 'female').length
+    : patients.filter(p => String(p.gender).toLowerCase() === 'female').length;
 
-  const nyha3 = patients.filter(p => String(p.functionalStatus || '').includes('III')).length;
-  const nyha4 = patients.filter(p => String(p.functionalStatus || '').includes('IV')).length;
+  let meanAge = 0;
+  if (sheet1Rows && sheet1Rows.length > 0) {
+    const ages = sheet1Rows.map(r => Number(r[7])).filter(a => !isNaN(a) && a > 0);
+    meanAge = ages.length > 0 ? (ages.reduce((a, b) => a + b, 0) / ages.length) : (analytics?.meanAge || 0);
+  } else {
+    const ages = patients.map(p => Number(p.age)).filter(a => !isNaN(a) && a > 0);
+    meanAge = ages.length > 0 ? (ages.reduce((a, b) => a + b, 0) / ages.length) : (analytics?.meanAge || 0);
+  }
 
-  const dm = patients.filter(p => p.diabetes || (p.comorbidities || []).some(c => c.toLowerCase().includes('diabet'))).length;
-  const htn = patients.filter(p => p.hypertension || (p.comorbidities || []).some(c => c.toLowerCase().includes('hyperten'))).length;
-  const ckd = patients.filter(p => p.renalFailure || (p.comorbidities || []).some(c => c.toLowerCase().includes('renal') || c.toLowerCase().includes('ckd'))).length;
-  const deaths = patients.filter(p => p.death).length;
+  const hfref = (sheet1Rows && sheet1Rows.length > 0)
+    ? sheet1Rows.filter(r => String(r[40] || '').toUpperCase().includes('HFREF')).length
+    : patients.filter(p => String(p.hfType).toUpperCase() === 'HFREF').length;
 
-  const drugsCounts = patients.map(p => p.prescribedDrugsCount || 0);
-  const meanDrugs = drugsCounts.length > 0 ? (drugsCounts.reduce((a, b) => a + b, 0) / drugsCounts.length) : 0;
+  const hfpef = (sheet1Rows && sheet1Rows.length > 0)
+    ? sheet1Rows.filter(r => String(r[40] || '').toUpperCase().includes('HFPEF')).length
+    : patients.filter(p => String(p.hfType).toUpperCase() === 'HFPEF').length;
 
-  const adherences = patients.map(p => Number(p.adherencePercent) != null ? Number(p.adherencePercent) / 100 : 0);
-  const meanAdh = adherences.length > 0 ? (adherences.reduce((a, b) => a + b, 0) / adherences.length) : 0;
+  // Mean EF %: Must strictly match live Excel formula =AVERAGE('Sheet1'!BJ2:BJ...) which averages only non-blank numbers
+  let meanEf = 0;
+  if (sheet1Rows && sheet1Rows.length > 0) {
+    const sheet1Efs = sheet1Rows.map(r => Number(r[61])).filter(e => !isNaN(e) && e > 0);
+    meanEf = sheet1Efs.length > 0
+      ? Math.round((sheet1Efs.reduce((a, b) => a + b, 0) / sheet1Efs.length) * 10) / 10
+      : (analytics?.meanEf != null ? Number(analytics.meanEf) : 0);
+  } else if (analytics?.meanEf != null) {
+    meanEf = Number(analytics.meanEf);
+  } else {
+    const efs = patients.map(p => Number(p.efPercent)).filter(e => !isNaN(e) && e > 0);
+    meanEf = efs.length > 0 ? Math.round((efs.reduce((a, b) => a + b, 0) / efs.length) * 10) / 10 : 0;
+  }
+
+  // NYHA Functional Class: Must strictly match live Excel formulas =COUNTIF('Sheet1'!AV2:AV..., "*III*") and "*IV*"
+  const nyha3 = (sheet1Rows && sheet1Rows.length > 0)
+    ? sheet1Rows.filter(r => String(r[47] || '').toUpperCase().includes('III')).length
+    : (analytics?.nyha3Count != null ? analytics.nyha3Count : patients.filter(p => String(p.functionalStatus || '').includes('III')).length);
+
+  const nyha4 = (sheet1Rows && sheet1Rows.length > 0)
+    ? sheet1Rows.filter(r => String(r[47] || '').toUpperCase().includes('IV')).length
+    : (analytics?.nyha4Count != null ? analytics.nyha4Count : patients.filter(p => String(p.functionalStatus || '').includes('IV')).length);
+
+  // Diabetes & Hypertension (Sheet1 Columns AP:AS)
+  const dm = (sheet1Rows && sheet1Rows.length > 0)
+    ? sheet1Rows.filter(r => [r[41], r[42], r[43], r[44]].some(c => String(c || '').toLowerCase().includes('diabet'))).length
+    : patients.filter(p => p.diabetes || (p.comorbidities || []).some(c => c.toLowerCase().includes('diabet'))).length;
+
+  const htn = (sheet1Rows && sheet1Rows.length > 0)
+    ? sheet1Rows.filter(r => [r[41], r[42], r[43], r[44]].some(c => String(c || '').toLowerCase().includes('hyperten'))).length
+    : patients.filter(p => p.hypertension || (p.comorbidities || []).some(c => c.toLowerCase().includes('hyperten'))).length;
+
+  // Renal failure / CKD: Must strictly match live Excel formula =COUNTIF('CI Flags'!O2:O..., 1)
+  const ckd = (ciFlagsRows && ciFlagsRows.length > 0)
+    ? ciFlagsRows.filter(r => r[14] === 1).length
+    : patients.filter(p => p.renalFailure || (p.comorbidities || []).some(c => c.toLowerCase().includes('renal') || c.toLowerCase().includes('ckd'))).length;
+
+  // Deaths (Sheet1 Column BA)
+  const deaths = (sheet1Rows && sheet1Rows.length > 0)
+    ? sheet1Rows.filter(r => String(r[52] || '').trim().toLowerCase() === 'yes').length
+    : patients.filter(p => p.death).length;
+
+  // Mean GDMT drugs per patient (Sheet1 Column CD)
+  let meanDrugs = 0;
+  if (sheet1Rows && sheet1Rows.length > 0) {
+    const drugsCounts = sheet1Rows.map(r => Number(r[81])).filter(d => !isNaN(d));
+    meanDrugs = drugsCounts.length > 0 ? (drugsCounts.reduce((a, b) => a + b, 0) / drugsCounts.length) : (analytics?.meanGdmtDrugs || 0);
+  } else {
+    const drugsCounts = patients.map(p => p.prescribedDrugsCount || 0);
+    meanDrugs = drugsCounts.length > 0 ? (drugsCounts.reduce((a, b) => a + b, 0) / drugsCounts.length) : 0;
+  }
+
+  // Mean % GDMT adherence (Sheet1 Column CS)
+  let meanAdh = 0;
+  if (sheet1Rows && sheet1Rows.length > 0) {
+    const adherences = sheet1Rows.map(r => Number(r[96])).filter(a => !isNaN(a));
+    meanAdh = adherences.length > 0 ? (adherences.reduce((a, b) => a + b, 0) / adherences.length) : (analytics?.meanAdherencePercent != null ? analytics.meanAdherencePercent / 100 : 0);
+  } else {
+    const adherences = patients.map(p => Number(p.adherencePercent) != null ? Number(p.adherencePercent) / 100 : 0);
+    meanAdh = adherences.length > 0 ? (adherences.reduce((a, b) => a + b, 0) / adherences.length) : 0;
+  }
 
   // Rows 5 to 19: Cohort metrics
   const metricSpecs = [
@@ -1449,20 +1533,27 @@ export async function exportCohortExcel(patients, analytics = {}) {
   workbook.created = new Date();
   workbook.modified = new Date();
 
-  // 1. Key Points (Executive Audit & Clinical Insights)
-  buildKeyPointsSheet(workbook, analytics, patients);
+  // Create worksheets in exact visual order to keep Tab #1 as Key Points
+  const wsKeyPoints = workbook.addWorksheet('Key Points');
+  const wsGdmtSummary = workbook.addWorksheet('GDMT Summary');
+  const wsSheet1 = workbook.addWorksheet('Sheet1');
+  const wsContraindications = workbook.addWorksheet('Contraindications');
+  const wsCiFlags = workbook.addWorksheet('CI Flags');
 
-  // 2. GDMT Summary (Pillar Coverage, Deviation Counts, Adherence Distribution)
-  buildGdmtSummarySheet(workbook, analytics, patients);
+  // 1. Build Sheet1 first to obtain exact rendered rows and columns
+  const sheet1Rows = buildSheet1(workbook, patients, sheet1Data, wsSheet1);
 
-  // 3. Sheet1 (Master Cohort Dataset mapped up to Current device therapy + GDMT columns)
-  buildSheet1(workbook, patients, sheet1Data);
+  // 2. Build Contraindications reference rules
+  buildContraindicationsSheet(workbook, wsContraindications);
 
-  // 4. Contraindications
-  buildContraindicationsSheet(workbook);
+  // 3. Build CI Flags and obtain exact flag results
+  const ciFlagsRows = buildCiFlagsSheet(workbook, patients, wsCiFlags);
 
-  // 5. CI Flags
-  buildCiFlagsSheet(workbook, patients);
+  // 4. Build GDMT Summary
+  buildGdmtSummarySheet(workbook, analytics, patients, wsGdmtSummary);
+
+  // 5. Build Key Points using exact Sheet1 and CI Flags data so formula results match 100%
+  buildKeyPointsSheet(workbook, analytics, patients, wsKeyPoints, sheet1Rows, ciFlagsRows);
 
   // Generate buffer and trigger browser download
   const buffer = await workbook.xlsx.writeBuffer();

@@ -996,12 +996,12 @@ async function getHfSheet1ExportData(options = {}) {
     // Stage of HF (HF form clinical label)
     const stageVal = evaluatePositiveLabel(row, ['stage_a', 'stage_b', 'stage_c', 'stage_d']);
 
-    // Functional Status (HF form clinical label: NYHA Class I-IV)
+    // Functional Status (HF form clinical label: NYHA Class I-IV, ordered highest severity first)
     const functionalStatusVal = evaluatePositiveLabel(row, [
-      'nyha_class_1',
-      'nyha_class_2',
+      'nyha_class_4',
       'nyha_class_3',
-      'nyha_class_4'
+      'nyha_class_2',
+      'nyha_class_1'
     ]);
 
     // AF status (HF form clinical label)

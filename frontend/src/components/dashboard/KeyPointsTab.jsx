@@ -440,10 +440,25 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={tooltipStyle.content}
-                  labelStyle={tooltipStyle.label}
-                  itemStyle={tooltipStyle.item}
-                  formatter={(val, name) => [`${val} (${Math.round((val / (kpi.totalHfRecords || kpi.totalPatients)) * 1000) / 10}%)`, name]}
+                  wrapperStyle={{ zIndex: 50 }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const item = payload[0];
+                      const count = item.value;
+                      const total = kpi.totalHfRecords || kpi.totalPatients || 1;
+                      const pct = Math.round((count / total) * 1000) / 10;
+                      const titleColor = item.name === 'Female' ? 'text-pink-400' : 'text-sky-400';
+                      return (
+                        <div className="bg-slate-900/95 text-white px-3 py-2 rounded-xl shadow-xl border border-slate-700/60 backdrop-blur-xs text-xs pointer-events-none">
+                          <p className={`font-bold ${titleColor}`}>{item.name}</p>
+                          <p className="text-slate-200 mt-0.5 font-mono">
+                            {count} HF Records ({pct}%)
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -599,14 +614,17 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                   cornerRadius={6}
                 />
                 <Tooltip 
+                  wrapperStyle={{ zIndex: 50 }}
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const item = payload[0].payload;
+                      const total = kpi.totalHfRecords || kpi.totalPatients || 1;
+                      const pct = Math.round(((item.count || 0) / total) * 1000) / 10;
                       return (
-                        <div className="bg-white p-2.5 rounded-lg shadow-md border border-slate-200 text-xs">
-                          <p className="font-bold text-slate-800">{item.name}</p>
-                          <p className="text-slate-600 mt-0.5">
-                            count : <span className="font-semibold text-slate-900">{item.count} HF Records</span>
+                        <div className="bg-slate-900/95 text-white px-3 py-2 rounded-xl shadow-xl border border-slate-700/60 backdrop-blur-xs text-xs pointer-events-none">
+                          <p className="font-bold" style={{ color: item.fill || '#f59e0b' }}>{item.name}</p>
+                          <p className="text-slate-200 mt-0.5 font-mono">
+                            {item.count} HF Records ({pct}%)
                           </p>
                         </div>
                       );
