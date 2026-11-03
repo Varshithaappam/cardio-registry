@@ -361,6 +361,10 @@ async function getPatientsCohort(options = {}) {
           ha.treating_cardiologist,
           ha.present_diagnosis,
           ha.admission_reason,
+          ha.other_admission_reason,
+          ha.renal_failure AS admin_renal_failure,
+          fa.renal_failure AS clinical_renal_failure,
+          ia.previous_diagnosis,
           ia.systolic_bp_sitting,
           ia.diastolic_bp_sitting,
           ia.heart_rate,
@@ -385,10 +389,27 @@ async function getPatientsCohort(options = {}) {
           const visitId = String(row.visit_id || '').trim();
           const name = String(row.patient_name || `Patient ${uhid}`).trim();
 
+          const creatVal = (row.creatinine_result !== null && row.creatinine_result !== undefined && !isNaN(Number(row.creatinine_result))) ? Number(row.creatinine_result) : null;
+          const diagCombined = [
+            row.present_diagnosis,
+            row.admission_reason,
+            row.other_admission_reason,
+            row.previous_diagnosis
+          ].filter(Boolean).join(' ').toLowerCase();
+
+          const hasRenal = Boolean(
+            (creatVal !== null && creatVal > 2.5) ||
+            row.has_ckd === 1 ||
+            String(row.admin_renal_failure || '').trim().toLowerCase() === 'yes' ||
+            String(row.clinical_renal_failure || '').trim().toLowerCase() === 'yes' ||
+            diagCombined.includes('renal') ||
+            diagCombined.includes('ckd')
+          );
+
           const comorbidities = [];
           if (row.has_dm) comorbidities.push('Diabetes mellitus');
           if (row.has_htn) comorbidities.push('Hypertension');
-          if (row.has_ckd) comorbidities.push('Renal failure / CKD');
+          if (hasRenal) comorbidities.push('Renal failure / CKD');
           if (row.has_cad) comorbidities.push('Coronary Artery Disease (CAD)');
 
           const activeDrugs = [];
@@ -466,12 +487,16 @@ async function getPatientsCohort(options = {}) {
             mra: row.rx_mra,
             sglt2Inhibitor: row.rx_sglt2_inhibitor,
 
+            renalFailure: hasRenal,
+            otherAdmissionReason: row.other_admission_reason || '',
+            previousDiagnosis: row.previous_diagnosis || '',
+
             // 6 Contraindication flags (1 or 0)
             contraBetaBlocker: row.ci_beta_blocker,
-            contraAceInhibitor: row.ci_ace_inhibitor,
-            contraArb: row.ci_arb,
-            contraArni: row.ci_arni,
-            contraMra: row.ci_mra,
+            contraAceInhibitor: (row.ci_ace_inhibitor || (hasRenal ? 1 : 0)),
+            contraArb: (row.ci_arb || (hasRenal ? 1 : 0)),
+            contraArni: (row.ci_arni || (hasRenal ? 1 : 0)),
+            contraMra: (row.ci_mra || (hasRenal ? 1 : 0)),
             contraSglt2Inhibitor: row.ci_sglt2_inhibitor
           };
 
@@ -695,7 +720,18 @@ function calculateCohortAnalytics(patients) {
     const comorbStr = (p.comorbidities || []).join(' ').toLowerCase();
     if (comorbStr.includes('diabet') || comorbStr.includes('dm')) countDM++;
     if (comorbStr.includes('hyperten') || comorbStr.includes('htn')) countHTN++;
-    if (comorbStr.includes('renal') || comorbStr.includes('ckd')) countRenal++;
+    
+    const hasRenal = Boolean(
+      (p.creatinine !== null && p.creatinine !== undefined && Number(p.creatinine) > 2.5) ||
+      p.renalFailure ||
+      comorbStr.includes('renal') ||
+      comorbStr.includes('ckd') ||
+      /renal|ckd/i.test(p.presentDiagnosis || '') ||
+      /renal|ckd/i.test(p.admissionReason || '') ||
+      /renal|ckd/i.test(p.otherAdmissionReason || '') ||
+      /renal|ckd/i.test(p.previousDiagnosis || '')
+    );
+    if (hasRenal) countRenal++;
     if (comorbStr.includes('cad') || comorbStr.includes('cabg') || comorbStr.includes('ischemic')) countCAD++;
 
     sumAdherence += p.adherencePercent;
