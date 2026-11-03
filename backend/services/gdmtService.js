@@ -261,7 +261,7 @@ function mapDbRowToPatient(row) {
   const flagL = diagText.includes('asthma') || diagText.includes('copd') || diagText.includes('bronch');
   const flagM = (kVal !== null && kVal > 5.5) || diagText.includes('hyperkal');
   const flagN = (kVal !== null && kVal > 5.0) || diagText.includes('hyperkal');
-  const flagO = creatVal !== null && creatVal > 2.5;
+  const flagO = (creatVal !== null && creatVal > 2.5) || diagText.includes('renal') || diagText.includes('ckd');
   const flagP = diagText.includes('av block') || diagText.includes('heart block') || diagText.includes('chb') || diagText.includes('sick sinus') || diagText.includes('brady');
   const flagQ = diagText.includes('dka') || diagText.includes('ketoacid');
   const flagR = diagText.includes('uti') || diagText.includes('urosepsis');

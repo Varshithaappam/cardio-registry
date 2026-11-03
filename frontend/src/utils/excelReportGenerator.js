@@ -1159,18 +1159,33 @@ function buildKeyPointsSheet(workbook, analytics, patients, wsKeyPoints = null, 
   // Sheet1 Column indices: Col B (1): UHID, Col H (7): Age, Col I (8): Gender, Col AO (40): HF Type,
   // Col AP:AS (41-44): Comorbidities 1-4, Col AV (47): Functional Status,
   // Col BA (52): Death, Col BJ (61): EF%, Col CD (81): Drugs Count, Col CS (96): Adherence %
-  const males = (sheet1Rows && sheet1Rows.length > 0)
-    ? sheet1Rows.filter(r => String(r[8] || '').trim().toLowerCase() === 'male').length
-    : patients.filter(p => String(p.gender).toLowerCase() === 'male').length;
+  // Unique Patients Demographics (strictly deduplicated to unique humans, matching the Dashboard)
+  const uniquePatientsMap = new Map();
+  (patients || []).forEach(p => {
+    const key = p.regPatientId || p.uhid || p.mrNo;
+    if (key && !uniquePatientsMap.has(key)) {
+      uniquePatientsMap.set(key, p);
+    }
+  });
+  const uniquePatients = Array.from(uniquePatientsMap.values());
+  const uniqueTotal = uniquePatients.length > 0 ? uniquePatients.length : (analytics?.kpi?.uniquePatients || analytics?.kpi?.totalPatients || total);
 
-  const females = (sheet1Rows && sheet1Rows.length > 0)
-    ? sheet1Rows.filter(r => String(r[8] || '').trim().toLowerCase() === 'female').length
-    : patients.filter(p => String(p.gender).toLowerCase() === 'female').length;
+  // Unique Gender counts (strictly matching Dashboard's unique counts, e.g. 23 Male, 8 Female)
+  const males = uniquePatients.length > 0
+    ? uniquePatients.filter(p => String(p.gender || '').trim().toLowerCase() === 'male').length
+    : (analytics?.kpi?.males != null ? analytics.kpi.males : 0);
 
+  const females = uniquePatients.length > 0
+    ? uniquePatients.filter(p => String(p.gender || '').trim().toLowerCase() === 'female').length
+    : (analytics?.kpi?.females != null ? analytics.kpi.females : 0);
+
+  // Unique Mean Age (strictly matching Dashboard's unique patient mean age, e.g. 52.6 yrs)
   let meanAge = 0;
-  if (sheet1Rows && sheet1Rows.length > 0) {
-    const ages = sheet1Rows.map(r => Number(r[7])).filter(a => !isNaN(a) && a > 0);
-    meanAge = ages.length > 0 ? (ages.reduce((a, b) => a + b, 0) / ages.length) : (analytics?.meanAge || 0);
+  if (uniquePatients.length > 0) {
+    const uniqueAges = uniquePatients.map(p => Number(p.age)).filter(a => !isNaN(a) && a > 0);
+    meanAge = uniqueAges.length > 0 ? (Math.round((uniqueAges.reduce((a, b) => a + b, 0) / uniqueAges.length) * 10) / 10) : (analytics?.meanAge || 0);
+  } else if (analytics?.meanAge != null) {
+    meanAge = Number(analytics.meanAge);
   } else {
     const ages = patients.map(p => Number(p.age)).filter(a => !isNaN(a) && a > 0);
     meanAge = ages.length > 0 ? (ages.reduce((a, b) => a + b, 0) / ages.length) : (analytics?.meanAge || 0);
@@ -1252,9 +1267,9 @@ function buildKeyPointsSheet(workbook, analytics, patients, wsKeyPoints = null, 
   // Rows 5 to 19: Cohort metrics
   const metricSpecs = [
     { r: 5, label: 'HF records (UHIDs) in dataset', formula: `COUNTA('Sheet1'!B2:B${total + 1})`, result: total, src: 'Sheet1 col B', numFmt: undefined },
-    { r: 6, label: 'Male', formula: `COUNTIF('Sheet1'!I2:I${total + 1},"Male")`, result: males, src: 'Sheet1 col I', numFmt: undefined },
-    { r: 7, label: 'Female', formula: `COUNTIF('Sheet1'!I2:I${total + 1},"Female")`, result: females, src: 'Sheet1 col I', numFmt: undefined },
-    { r: 8, label: 'Mean age (years)', formula: `AVERAGE('Sheet1'!H2:H${total + 1})`, result: meanAge, src: 'Sheet1 col H', numFmt: '0.0' },
+    { r: 6, label: 'Male', formula: undefined, result: males, src: 'Unique Patients', numFmt: undefined },
+    { r: 7, label: 'Female', formula: undefined, result: females, src: 'Unique Patients', numFmt: undefined },
+    { r: 8, label: 'Mean age (years)', formula: undefined, result: meanAge, src: 'Unique Patients', numFmt: '0.0' },
     { r: 9, label: 'HFrEF', formula: `COUNTIF('Sheet1'!AO2:AO${total + 1},"*HFrEF*")`, result: hfref, src: 'Sheet1 col AO', numFmt: undefined },
     { r: 10, label: 'HFpEF', formula: `COUNTIF('Sheet1'!AO2:AO${total + 1},"*HFpEF*")`, result: hfpef, src: 'Sheet1 col AO', numFmt: undefined },
     { r: 11, label: 'Mean EF %', formula: `AVERAGE('Sheet1'!BJ2:BJ${total + 1})`, result: meanEf, src: 'Sheet1 col BJ', numFmt: '0.0' },
@@ -1411,7 +1426,7 @@ function buildKeyPointsSheet(workbook, analytics, patients, wsKeyPoints = null, 
   const bbWithheld = patients.filter(p => p.pillarEvaluations?.betaBlocker?.prescribed === 0 && p.pillarEvaluations?.betaBlocker?.contraindication === 0).length;
   const arniWithheld = patients.filter(p => p.pillarEvaluations?.arni?.prescribed === 0 && p.pillarEvaluations?.arni?.contraindication === 0).length;
 
-  const p47Res = `1. Cohort: ${total} heart-failure patients (${males} male, ${females} female), mean age ${Math.round(meanAge)} years; ${hfref} HFrEF and ${hfpef} HFpEF, mean EF ${Math.round(meanEf)}%. Most were NYHA class III (${nyha3}) or IV (${nyha4}).`;
+  const p47Res = `1. Cohort: ${total} HF records across ${uniqueTotal} unique patients (${males} male, ${females} female), mean age ${Math.round(meanAge)} years; ${hfref} HFrEF and ${hfpef} HFpEF, mean EF ${Math.round(meanEf)}%. Most were NYHA class III (${nyha3}) or IV (${nyha4}).`;
   const p48Res = `2. Comorbidity burden is high: diabetes in ${dm} (${toPctStr(dm)}), hypertension in ${htn} (${toPctStr(htn)}), and a renal impairment / AKI flag in ${ckd} (${toPctStr(ckd)}). ${deaths} deaths were recorded.`;
   const p49Res = `3. GDMT uptake is low: patients take on average ${meanDrugs.toFixed(1)} of 6 GDMT classes. MRA is the most used (${toPctStr(mraOn)}), followed by beta blocker (${toPctStr(bbOn)}) and ARNI (${toPctStr(arniOn)}). SGLT2 inhibitors (${toPctStr(sglt2On)}), ARB (${toPctStr(arbOn)}) and ACE inhibitors (${toPctStr(aceOn)}) are rarely used.`;
   const p50Res = `4. Contraindications identified from the data are common: RAAS agents (ACEi/ARB ${toPctStr(patients.filter(p => p.pillarEvaluations?.aceInhibitor?.contraindication || p.pillarEvaluations?.arb?.contraindication).length)}, ARNI ${toPctStr(patients.filter(p => p.pillarEvaluations?.arni?.contraindication).length)}) and MRA (${toPctStr(patients.filter(p => p.pillarEvaluations?.mra?.contraindication).length)}) are mainly limited by renal impairment / hyperkalaemia; beta blockers (${toPctStr(patients.filter(p => p.pillarEvaluations?.betaBlocker?.contraindication).length)}) by shock/inotropes, hypotension and airway disease; SGLT2i (${toPctStr(patients.filter(p => p.pillarEvaluations?.sglt2Inhibitor?.contraindication).length)}) by UTI and severe renal impairment.`;

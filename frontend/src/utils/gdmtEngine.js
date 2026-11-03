@@ -66,12 +66,30 @@ export function evaluatePatientAdherence(patient) {
   let deviationsCount = 0;
   const pillarEvaluations = {};
 
+  const comorbStr = (patient.comorbidities || []).join(' ').toLowerCase();
+  const hasRenalFlag = Boolean(
+    (patient.creatinine !== null && patient.creatinine !== undefined && Number(patient.creatinine) > 2.5) ||
+    patient.renalFailure ||
+    comorbStr.includes('renal') ||
+    comorbStr.includes('ckd') ||
+    /renal|ckd/i.test(patient.presentDiagnosis || '') ||
+    /renal|ckd/i.test(patient.admissionReason || '') ||
+    /renal|ckd/i.test(patient.otherAdmissionReason || '') ||
+    /renal|ckd/i.test(patient.previousDiagnosis || '')
+  );
+
+  const contraRenal = hasRenalFlag ? 1 : 0;
+  const contraAce = (Number(patient.contraAceInhibitor) || contraRenal) ? 1 : 0;
+  const contraArb = (Number(patient.contraArb) || contraRenal) ? 1 : 0;
+  const contraArni = (Number(patient.contraArni) || contraRenal) ? 1 : 0;
+  const contraMra = (Number(patient.contraMra) || contraRenal) ? 1 : 0;
+
   const drugFlags = {
     betaBlocker: { prescribed: Number(patient.betaBlocker) ? 1 : 0, contra: Number(patient.contraBetaBlocker) ? 1 : 0 },
-    aceInhibitor: { prescribed: Number(patient.aceInhibitor) ? 1 : 0, contra: Number(patient.contraAceInhibitor) ? 1 : 0 },
-    arb: { prescribed: Number(patient.arb) ? 1 : 0, contra: Number(patient.contraArb) ? 1 : 0 },
-    arni: { prescribed: Number(patient.arni) ? 1 : 0, contra: Number(patient.contraArni) ? 1 : 0 },
-    mra: { prescribed: Number(patient.mra) ? 1 : 0, contra: Number(patient.contraMra) ? 1 : 0 },
+    aceInhibitor: { prescribed: Number(patient.aceInhibitor) ? 1 : 0, contra: contraAce },
+    arb: { prescribed: Number(patient.arb) ? 1 : 0, contra: contraArb },
+    arni: { prescribed: Number(patient.arni) ? 1 : 0, contra: contraArni },
+    mra: { prescribed: Number(patient.mra) ? 1 : 0, contra: contraMra },
     sglt2Inhibitor: { prescribed: Number(patient.sglt2Inhibitor) ? 1 : 0, contra: Number(patient.contraSglt2Inhibitor) ? 1 : 0 }
   };
 
@@ -424,7 +442,18 @@ export function computeAnalytics(patients) {
     const comorbStr = (p.comorbidities || []).join(' ').toLowerCase();
     if (comorbStr.includes('diabet') || comorbStr.includes('dm')) countDM++;
     if (comorbStr.includes('hyperten') || comorbStr.includes('htn')) countHTN++;
-    if (comorbStr.includes('renal') || comorbStr.includes('ckd')) countRenal++;
+    
+    const hasRenal = Boolean(
+      (p.creatinine !== null && p.creatinine !== undefined && Number(p.creatinine) > 2.5) ||
+      p.renalFailure ||
+      comorbStr.includes('renal') ||
+      comorbStr.includes('ckd') ||
+      /renal|ckd/i.test(p.presentDiagnosis || '') ||
+      /renal|ckd/i.test(p.admissionReason || '') ||
+      /renal|ckd/i.test(p.otherAdmissionReason || '') ||
+      /renal|ckd/i.test(p.previousDiagnosis || '')
+    );
+    if (hasRenal) countRenal++;
     if (comorbStr.includes('cad') || comorbStr.includes('cabg') || comorbStr.includes('ischemic')) countCAD++;
 
     sumAdherence += p.adherencePercent;
