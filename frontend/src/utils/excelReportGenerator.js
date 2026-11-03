@@ -811,7 +811,7 @@ function buildContraindicationsSheet(workbook, wsContra = null) {
 /**
  * Build CI Flags Sheet (Patient-Level Evaluated Matrix)
  */
-function buildCiFlagsSheet(workbook, patients, wsFlags = null) {
+function buildCiFlagsSheet(workbook, patients, wsFlags = null, sheet1Rows = null) {
   const ws = wsFlags || workbook.addWorksheet('CI Flags');
 
   const headers = [
@@ -844,70 +844,102 @@ function buildCiFlagsSheet(workbook, patients, wsFlags = null) {
   });
 
   const finalCiRows = [];
+  const count = (sheet1Rows && sheet1Rows.length > 0) ? sheet1Rows.length : (patients || []).length;
 
-  patients.forEach((p, idx) => {
+  for (let idx = 0; idx < count; idx++) {
+    const p = (patients && patients[idx]) || {};
+    const s1 = (sheet1Rows && sheet1Rows[idx]) ? sheet1Rows[idx] : null;
     const r = idx + 2;
-    const sbp = p.systolicBp || 120;
-    const hr = p.heartRate || 72;
-    const k = p.potassium || 4.2;
-    const creat = p.creatinine || 1.1;
 
-    // Evaluate renal impairment flag from either creatinine > 2.5 OR documented renal failure/CKD in diagnoses/comorbidities
-    const hasRenalDiagnosis = Boolean(
-      p.renalFailure ||
-      (p.comorbidities || []).some(c => /renal|ckd/i.test(c)) ||
-      /renal|ckd/i.test(p.presentDiagnosis || '') ||
-      /renal|ckd/i.test(p.previousDiagnosis || '')
-    );
-    const renalFlag = (creat > 2.5 || hasRenalDiagnosis) ? 1 : 0;
+    const sbp = (s1 && s1[32] && String(s1[32]).includes('/'))
+      ? (parseInt(String(s1[32]).split('/')[0], 10) || null)
+      : (p.systolicBp || null);
+
+    const hr = (s1 && s1[28] !== '' && !isNaN(Number(s1[28])))
+      ? Number(s1[28])
+      : (p.heartRate || null);
+
+    const k = (s1 && s1[63] !== '' && !isNaN(Number(s1[63])))
+      ? Number(s1[63])
+      : (p.potassium || null);
+
+    const creat = (s1 && s1[64] !== '' && !isNaN(Number(s1[64])))
+      ? Number(s1[64])
+      : (p.creatinine || null);
+
+    // Clinical text: Present diagnosis (Q), reasons for admissions (U), Previous Diagnosis (V), Comorbidities1-4 (AP, AQ, AR, AS)
+    const clinCols = s1
+      ? [s1[16], s1[20], s1[21], s1[41], s1[42], s1[43], s1[44]]
+      : [p.presentDiagnosis, p.admissionReason, p.otherAdmissionReason, p.previousDiagnosis, ...(p.comorbidities || [])];
+    const clinicalText = clinCols.filter(Boolean).join(' | ').toUpperCase();
+
+    // Drug text: BU & BV
+    const drugCols = s1
+      ? [s1[72], s1[73]]
+      : [p.prescribedDrugsSummary || ''];
+    const drugText = drugCols.filter(Boolean).join(' | ').toUpperCase();
+
+    // Evaluated flags matching live formulas exactly:
+    const flagBrady = (hr != null && hr < 50) ? 1 : 0;
+    const flagSbp90 = (sbp != null && sbp < 90) ? 1 : 0;
+    const flagSbp100 = (sbp != null && sbp < 100) ? 1 : 0;
+    const flagShock = (clinicalText.includes('SHOCK') || drugText.includes('DOBUTAMINE') || drugText.includes('DOBU') || drugText.includes('NORAD')) ? 1 : 0;
+    const flagAsthma = (clinicalText.includes('ASTHMA') || clinicalText.includes('COPD') || clinicalText.includes('BRONCH')) ? 1 : 0;
+    const flagK55 = ((k != null && k > 5.5) || clinicalText.includes('HYPERKAL')) ? 1 : 0;
+    const flagK50 = ((k != null && k > 5.0) || clinicalText.includes('HYPERKAL')) ? 1 : 0;
+    const flagRenal = ((creat != null && creat > 2.5) || clinicalText.includes('RENAL') || clinicalText.includes('CKD')) ? 1 : 0;
+    const flagAvBlock = (clinicalText.includes('AV BLOCK') || clinicalText.includes('HEART BLOCK') || clinicalText.includes('CHB') || clinicalText.includes('SICK SINUS') || clinicalText.includes('BRADY')) ? 1 : 0;
+    const flagDka = (clinicalText.includes('DKA') || clinicalText.includes('KETOACID')) ? 1 : 0;
+    const flagUti = (clinicalText.includes('UTI') || clinicalText.includes('UROSEPSIS')) ? 1 : 0;
+    const flagCreat30 = (creat != null && creat > 3.0) ? 1 : 0;
+
+    const uhidVal = (s1 ? s1[1] : p.uhid) || '';
 
     const row = [
-      p.uhid,
-      sbp,
-      hr,
-      k,
-      creat,
-      p.presentDiagnosis || '',
-      p.prescribedDrugsSummary || '',
-      hr < 50 ? 1 : 0,
-      sbp < 90 ? 1 : 0,
-      sbp < 100 ? 1 : 0,
-      0,
-      0,
-      k > 5.5 ? 1 : 0,
-      k > 5.0 ? 1 : 0,
-      renalFlag,
-      0,
-      0,
-      0,
-      creat > 3.0 ? 1 : 0
+      uhidVal,
+      sbp ?? '',
+      hr ?? '',
+      k ?? '',
+      creat ?? '',
+      clinicalText,
+      drugText,
+      flagBrady,
+      flagSbp90,
+      flagSbp100,
+      flagShock,
+      flagAsthma,
+      flagK55,
+      flagK50,
+      flagRenal,
+      flagAvBlock,
+      flagDka,
+      flagUti,
+      flagCreat30
     ];
 
     finalCiRows.push(row);
     const dataRow = ws.addRow(row);
 
     // Live Excel formulas extracting directly from Sheet1 & Contraindications
-    dataRow.getCell(1).value = p.uhid;
-    dataRow.getCell(2).value = { formula: `IFERROR(VALUE(LEFT(Sheet1!AG${r},FIND("/",Sheet1!AG${r})-1)),"")`, result: sbp };
-    dataRow.getCell(3).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!AC${r}),Sheet1!AC${r},VALUE(Sheet1!AC${r})),"")`, result: hr };
-    dataRow.getCell(4).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!BL${r}),Sheet1!BL${r},VALUE(Sheet1!BL${r})),"")`, result: k };
-    dataRow.getCell(5).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!BM${r}),Sheet1!BM${r},VALUE(Sheet1!BM${r})),"")`, result: creat };
-    // Clinical text: Present diagnosis (Q), reasons for admissions (U), Previous Diagnosis (V), Comorbidities1-4 (AP, AQ, AR, AS)
-    dataRow.getCell(6).value = { formula: `UPPER(Sheet1!Q${r}&" | "&Sheet1!U${r}&" | "&Sheet1!V${r}&" | "&Sheet1!AP${r}&" | "&Sheet1!AQ${r}&" | "&Sheet1!AR${r}&" | "&Sheet1!AS${r})`, result: p.presentDiagnosis || '' };
-    dataRow.getCell(7).value = { formula: `UPPER(Sheet1!BU${r}&" | "&Sheet1!BV${r})`, result: p.prescribedDrugsSummary || '' };
-    dataRow.getCell(8).value = { formula: `IF(AND(ISNUMBER(C${r}),C${r}<Contraindications!$E$4),1,0)`, result: hr < 50 ? 1 : 0 };
-    dataRow.getCell(9).value = { formula: `IF(AND(ISNUMBER(B${r}),B${r}<Contraindications!$E$5),1,0)`, result: sbp < 90 ? 1 : 0 };
-    dataRow.getCell(10).value = { formula: `IF(AND(ISNUMBER(B${r}),B${r}<Contraindications!$E$16),1,0)`, result: sbp < 100 ? 1 : 0 };
-    dataRow.getCell(11).value = { formula: `IF(OR(ISNUMBER(SEARCH("SHOCK",F${r})),ISNUMBER(SEARCH("DOBUTAMINE",G${r})),ISNUMBER(SEARCH("DOBU",G${r})),ISNUMBER(SEARCH("NORAD",G${r}))),1,0)`, result: 0 };
-    dataRow.getCell(12).value = { formula: `IF(OR(ISNUMBER(SEARCH("ASTHMA",F${r})),ISNUMBER(SEARCH("COPD",F${r})),ISNUMBER(SEARCH("BRONCH",F${r}))),1,0)`, result: 0 };
-    dataRow.getCell(13).value = { formula: `IF(OR(AND(ISNUMBER(D${r}),D${r}>Contraindications!$E$10),ISNUMBER(SEARCH("HYPERKAL",F${r}))),1,0)`, result: k > 5.5 ? 1 : 0 };
-    dataRow.getCell(14).value = { formula: `IF(OR(AND(ISNUMBER(D${r}),D${r}>Contraindications!$E$19),ISNUMBER(SEARCH("HYPERKAL",F${r}))),1,0)`, result: k > 5.0 ? 1 : 0 };
-    // Synchronized live formula: evaluates 1 if creatinine > 2.5 OR clinical text contains RENAL or CKD
-    dataRow.getCell(15).value = { formula: `IF(OR(AND(ISNUMBER(E${r}),E${r}>Contraindications!$E$11),ISNUMBER(SEARCH("RENAL",F${r})),ISNUMBER(SEARCH("CKD",F${r}))),1,0)`, result: renalFlag };
-    dataRow.getCell(16).value = { formula: `IF(OR(ISNUMBER(SEARCH("AV BLOCK",F${r})),ISNUMBER(SEARCH("HEART BLOCK",F${r})),ISNUMBER(SEARCH("CHB",F${r})),ISNUMBER(SEARCH("SICK SINUS",F${r})),ISNUMBER(SEARCH("BRADY",F${r}))),1,0)`, result: 0 };
-    dataRow.getCell(17).value = { formula: `IF(OR(ISNUMBER(SEARCH("DKA",F${r})),ISNUMBER(SEARCH("KETOACID",F${r}))),1,0)`, result: 0 };
-    dataRow.getCell(18).value = { formula: `IF(OR(ISNUMBER(SEARCH("UTI",F${r})),ISNUMBER(SEARCH("UROSEPSIS",F${r}))),1,0)`, result: 0 };
-    dataRow.getCell(19).value = { formula: `IF(AND(ISNUMBER(E${r}),E${r}>Contraindications!$E$21),1,0)`, result: creat > 3.0 ? 1 : 0 };
+    dataRow.getCell(1).value = uhidVal;
+    dataRow.getCell(2).value = { formula: `IFERROR(VALUE(LEFT(Sheet1!AG${r},FIND("/",Sheet1!AG${r})-1)),"")`, result: sbp ?? '' };
+    dataRow.getCell(3).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!AC${r}),Sheet1!AC${r},VALUE(Sheet1!AC${r})),"")`, result: hr ?? '' };
+    dataRow.getCell(4).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!BL${r}),Sheet1!BL${r},VALUE(Sheet1!BL${r})),"")`, result: k ?? '' };
+    dataRow.getCell(5).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!BM${r}),Sheet1!BM${r},VALUE(Sheet1!BM${r})),"")`, result: creat ?? '' };
+    dataRow.getCell(6).value = { formula: `UPPER(Sheet1!Q${r}&" | "&Sheet1!U${r}&" | "&Sheet1!V${r}&" | "&Sheet1!AP${r}&" | "&Sheet1!AQ${r}&" | "&Sheet1!AR${r}&" | "&Sheet1!AS${r})`, result: clinicalText };
+    dataRow.getCell(7).value = { formula: `UPPER(Sheet1!BU${r}&" | "&Sheet1!BV${r})`, result: drugText };
+    dataRow.getCell(8).value = { formula: `IF(AND(ISNUMBER(C${r}),C${r}<Contraindications!$E$4),1,0)`, result: flagBrady };
+    dataRow.getCell(9).value = { formula: `IF(AND(ISNUMBER(B${r}),B${r}<Contraindications!$E$5),1,0)`, result: flagSbp90 };
+    dataRow.getCell(10).value = { formula: `IF(AND(ISNUMBER(B${r}),B${r}<Contraindications!$E$16),1,0)`, result: flagSbp100 };
+    dataRow.getCell(11).value = { formula: `IF(OR(ISNUMBER(SEARCH("SHOCK",F${r})),ISNUMBER(SEARCH("DOBUTAMINE",G${r})),ISNUMBER(SEARCH("DOBU",G${r})),ISNUMBER(SEARCH("NORAD",G${r}))),1,0)`, result: flagShock };
+    dataRow.getCell(12).value = { formula: `IF(OR(ISNUMBER(SEARCH("ASTHMA",F${r})),ISNUMBER(SEARCH("COPD",F${r})),ISNUMBER(SEARCH("BRONCH",F${r}))),1,0)`, result: flagAsthma };
+    dataRow.getCell(13).value = { formula: `IF(OR(AND(ISNUMBER(D${r}),D${r}>Contraindications!$E$10),ISNUMBER(SEARCH("HYPERKAL",F${r}))),1,0)`, result: flagK55 };
+    dataRow.getCell(14).value = { formula: `IF(OR(AND(ISNUMBER(D${r}),D${r}>Contraindications!$E$19),ISNUMBER(SEARCH("HYPERKAL",F${r}))),1,0)`, result: flagK50 };
+    dataRow.getCell(15).value = { formula: `IF(OR(AND(ISNUMBER(E${r}),E${r}>Contraindications!$E$11),ISNUMBER(SEARCH("RENAL",F${r})),ISNUMBER(SEARCH("CKD",F${r}))),1,0)`, result: flagRenal };
+    dataRow.getCell(16).value = { formula: `IF(OR(ISNUMBER(SEARCH("AV BLOCK",F${r})),ISNUMBER(SEARCH("HEART BLOCK",F${r})),ISNUMBER(SEARCH("CHB",F${r})),ISNUMBER(SEARCH("SICK SINUS",F${r})),ISNUMBER(SEARCH("BRADY",F${r}))),1,0)`, result: flagAvBlock };
+    dataRow.getCell(17).value = { formula: `IF(OR(ISNUMBER(SEARCH("DKA",F${r})),ISNUMBER(SEARCH("KETOACID",F${r}))),1,0)`, result: flagDka };
+    dataRow.getCell(18).value = { formula: `IF(OR(ISNUMBER(SEARCH("UTI",F${r})),ISNUMBER(SEARCH("UROSEPSIS",F${r}))),1,0)`, result: flagUti };
+    dataRow.getCell(19).value = { formula: `IF(AND(ISNUMBER(E${r}),E${r}>Contraindications!$E$21),1,0)`, result: flagCreat30 };
 
     dataRow.eachCell(cell => (cell.border = BORDER_THIN));
 
@@ -920,10 +952,85 @@ function buildCiFlagsSheet(workbook, patients, wsFlags = null) {
         };
       });
     }
-  });
+  }
 
   autoFitColumns(ws, 10, 45);
   return finalCiRows;
+}
+
+/**
+ * Synchronize Sheet1 Contraindications, Deviations and Adherence columns with exact CI Flags matrix
+ */
+function syncSheet1Calculations(wsSheet1, sheet1Rows, ciFlagsRows) {
+  if (!wsSheet1 || !sheet1Rows || !ciFlagsRows) return;
+
+  sheet1Rows.forEach((s1, idx) => {
+    const r = idx + 2;
+    const ci = ciFlagsRows[idx];
+    if (!ci) return;
+
+    // CI flags: [uhid, sbp, hr, k, creat, clinText, drugText, brady, sbp90, sbp100, shock, asthma, k55, k50, renal, avBlock, dka, uti, creat30]
+    const ciBB = (ci[7] || ci[8] || ci[10] || ci[11] || ci[15]) ? 1 : 0;
+    const ciAce = (ci[8] || ci[12] || ci[14]) ? 1 : 0;
+    const ciArb = (ci[8] || ci[12] || ci[14]) ? 1 : 0;
+    const ciArni = (ci[9] || ci[12] || ci[14]) ? 1 : 0;
+    const ciMra = (ci[13] || ci[14]) ? 1 : 0;
+    const ciSglt2 = (ci[16] || ci[17] || ci[18]) ? 1 : 0;
+
+    const rxBB = Number(s1[75]) || 0;
+    const rxAce = Number(s1[76]) || 0;
+    const rxArb = Number(s1[77]) || 0;
+    const rxArni = Number(s1[78]) || 0;
+    const rxMra = Number(s1[79]) || 0;
+    const rxSglt2 = Number(s1[80]) || 0;
+
+    const devBB = (rxBB === ciBB) ? 1 : 0;
+    const devAce = (rxAce === ciAce) ? 1 : 0;
+    const devArb = (rxArb === ciArb) ? 1 : 0;
+    const devArni = (rxArni === ciArni) ? 1 : 0;
+    const devMra = (rxMra === ciMra) ? 1 : 0;
+    const devSglt2 = (rxSglt2 === ciSglt2) ? 1 : 0;
+
+    const totalDev = devBB + devAce + devArb + devArni + devMra + devSglt2;
+    const adherence = (6 - totalDev) / 6;
+
+    // Update in-memory array
+    s1[82] = ciBB;
+    s1[83] = ciAce;
+    s1[84] = ciArb;
+    s1[85] = ciArni;
+    s1[86] = ciMra;
+    s1[87] = ciSglt2;
+    s1[88] = devBB;
+    s1[89] = devAce;
+    s1[90] = devArb;
+    s1[91] = devArni;
+    s1[92] = devMra;
+    s1[93] = devSglt2;
+    s1[94] = totalDev;
+    s1[95] = 6;
+    s1[96] = adherence;
+
+    // Update Sheet1 worksheet cells
+    const s1Row = wsSheet1.getRow(r);
+    s1Row.getCell(83).value = { formula: `IF(OR('CI Flags'!H${r}=1,'CI Flags'!I${r}=1,'CI Flags'!K${r}=1,'CI Flags'!L${r}=1,'CI Flags'!P${r}=1),1,0)`, result: ciBB };
+    s1Row.getCell(84).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: ciAce };
+    s1Row.getCell(85).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: ciArb };
+    s1Row.getCell(86).value = { formula: `IF(OR('CI Flags'!J${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: ciArni };
+    s1Row.getCell(87).value = { formula: `IF(OR('CI Flags'!N${r}=1,'CI Flags'!O${r}=1),1,0)`, result: ciMra };
+    s1Row.getCell(88).value = { formula: `IF(OR('CI Flags'!Q${r}=1,'CI Flags'!R${r}=1,'CI Flags'!S${r}=1),1,0)`, result: ciSglt2 };
+
+    s1Row.getCell(89).value = { formula: `IF(BX${r}=CE${r},1,0)`, result: devBB };
+    s1Row.getCell(90).value = { formula: `IF(BY${r}=CF${r},1,0)`, result: devAce };
+    s1Row.getCell(91).value = { formula: `IF(BZ${r}=CG${r},1,0)`, result: devArb };
+    s1Row.getCell(92).value = { formula: `IF(CA${r}=CH${r},1,0)`, result: devArni };
+    s1Row.getCell(93).value = { formula: `IF(CB${r}=CI${r},1,0)`, result: devMra };
+    s1Row.getCell(94).value = { formula: `IF(CC${r}=CJ${r},1,0)`, result: devSglt2 };
+
+    s1Row.getCell(95).value = { formula: `SUM(CK${r}:CP${r})`, result: totalDev };
+    s1Row.getCell(96).value = 6;
+    s1Row.getCell(97).value = { formula: `(CR${r}-CQ${r})/CR${r}`, result: adherence };
+  });
 }
 
 /**
@@ -1080,7 +1187,10 @@ function buildKeyPointsSheet(workbook, analytics, patients, wsKeyPoints = null, 
   // Mean EF %: Must strictly match live Excel formula =AVERAGE('Sheet1'!BJ2:BJ...) which averages only non-blank numbers
   let meanEf = 0;
   if (sheet1Rows && sheet1Rows.length > 0) {
-    const sheet1Efs = sheet1Rows.map(r => Number(r[61])).filter(e => !isNaN(e) && e > 0);
+    const sheet1Efs = sheet1Rows
+      .map(r => r[61])
+      .filter(val => val !== null && val !== undefined && val !== '' && !isNaN(Number(val)))
+      .map(val => Number(val));
     meanEf = sheet1Efs.length > 0
       ? Math.round((sheet1Efs.reduce((a, b) => a + b, 0) / sheet1Efs.length) * 10) / 10
       : (analytics?.meanEf != null ? Number(analytics.meanEf) : 0);
@@ -1546,13 +1656,16 @@ export async function exportCohortExcel(patients, analytics = {}) {
   // 2. Build Contraindications reference rules
   buildContraindicationsSheet(workbook, wsContraindications);
 
-  // 3. Build CI Flags and obtain exact flag results
-  const ciFlagsRows = buildCiFlagsSheet(workbook, patients, wsCiFlags);
+  // 3. Build CI Flags using exact Sheet1 rows and obtain exact flag matrix
+  const ciFlagsRows = buildCiFlagsSheet(workbook, patients, wsCiFlags, sheet1Rows);
 
-  // 4. Build GDMT Summary
+  // 4. Synchronize Sheet1 contraindications, deviations and adherence with exact CI Flags
+  syncSheet1Calculations(wsSheet1, sheet1Rows, ciFlagsRows);
+
+  // 5. Build GDMT Summary
   buildGdmtSummarySheet(workbook, analytics, patients, wsGdmtSummary);
 
-  // 5. Build Key Points using exact Sheet1 and CI Flags data so formula results match 100%
+  // 6. Build Key Points using exact Sheet1 and CI Flags data so formula results match 100%
   buildKeyPointsSheet(workbook, analytics, patients, wsKeyPoints, sheet1Rows, ciFlagsRows);
 
   // Generate buffer and trigger browser download
