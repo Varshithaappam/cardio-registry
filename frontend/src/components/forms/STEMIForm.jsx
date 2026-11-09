@@ -2411,7 +2411,7 @@ const STEMIForm = forwardRef(function STEMIForm(
             </div>
 
             <div id="section-10" className="space-y-4 pt-2">
-              <div className="font-bold text-slate-800 border-t border-slate-200 pt-3 text-sm">Re              {/* ECG */}
+              <div className="font-bold text-slate-800 border-t border-slate-200 pt-3 text-sm">REPORTS              {/* ECG */}
               <div className="p-3.5 bg-white border border-slate-200 rounded-xl space-y-3">
                 <span className="font-bold text-slate-800 text-xs block border-b pb-1">ECG:</span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
