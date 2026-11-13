@@ -9,6 +9,17 @@ const {
   undeleteNstemiRecord
 } = require('../controllers/nstemiController');
 const { authenticateToken } = require('../middleware/authMiddleware');
+const { getNstemiCohortFromDb } = require('../services/acsService');
+
+// GET /api/nstemi/cohort - Retrieve full NSTEMI cohort analytics records
+router.get('/cohort', async (req, res) => {
+  try {
+    const data = await getNstemiCohortFromDb();
+    res.json({ success: true, count: data.length, activeCount: data.length, data });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 // POST /api/nstemi - Submit new NSTEMI registry record
 router.post('/', authenticateToken, createNstemiRecord);

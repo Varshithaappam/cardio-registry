@@ -1573,87 +1573,88 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
         </div>
       </SectionCard>
 
-      {/* Clinical Information - Background */}
+      {/* Clinical Information (Background, Presentation & Vitals) */}
       <SectionCard title="Clinical Information">
-        <div className="space-y-4 text-xs">
-          <div className="font-bold text-slate-800 border-b pb-1 text-sm">Background:</div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {renderRadio('hypertension', 'Hypertension', ['Yes', 'No', 'Unknown'])}
-            {renderRadio('diabetes', 'Diabetes', ['Yes', 'No', 'Unknown'])}
-            {renderRadio('smoking', 'Smoking', ['Yes', 'No', 'Unknown'])}
-            {renderRadio('renal_failure', 'Renal Failure', ['Yes', 'No', 'Unknown'])}
-            {renderRadio('copd', 'COPD', ['Yes', 'No', 'Unknown'])}
-            {renderRadio('cva', 'CVA', ['Yes', 'No', 'Unknown'])}
-            {renderRadio('prior_acs', 'Prior ACS', ['Yes', 'No', 'Unknown'])}
-            {renderRadio('prior_ptca', 'Prior PTCA', ['Yes', 'No', 'Unknown'])}
-            {renderRadio('prior_cabg', 'Prior CABG', ['Yes', 'No', 'Unknown'])}
-          </div>
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="form-field-label">Any other</label>
-              {!readOnly && (
-                <span className={`text-[10px] select-none ${
-                  Math.max(0, 255 - (formData.other_background || '').length) <= 5
-                    ? 'text-rose-500 font-bold animate-pulse'
-                    : 'text-slate-400 font-medium'
-                }`}>
-                  {Math.max(0, 255 - (formData.other_background || '').length)} left
-                </span>
-              )}
+        <div className="space-y-6 text-xs">
+          {/* Subsection 1: Background */}
+          <div className="space-y-4">
+            <div className="font-bold text-slate-800 border-b pb-1 text-sm">Background:</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {renderRadio('hypertension', 'Hypertension', ['Yes', 'No', 'Unknown'])}
+              {renderRadio('diabetes', 'Diabetes', ['Yes', 'No', 'Unknown'])}
+              {renderRadio('smoking', 'Smoking', ['Yes', 'No', 'Unknown'])}
+              {renderRadio('renal_failure', 'Renal Failure', ['Yes', 'No', 'Unknown'])}
+              {renderRadio('copd', 'COPD', ['Yes', 'No', 'Unknown'])}
+              {renderRadio('cva', 'CVA', ['Yes', 'No', 'Unknown'])}
+              {renderRadio('prior_acs', 'Prior ACS', ['Yes', 'No', 'Unknown'])}
+              {renderRadio('prior_ptca', 'Prior PTCA', ['Yes', 'No', 'Unknown'])}
+              {renderRadio('prior_cabg', 'Prior CABG', ['Yes', 'No', 'Unknown'])}
             </div>
-            <input
-              type="text"
-              disabled={readOnly}
-              value={formData.other_background || ''}
-              maxLength={255}
-              onChange={(e) => handleChange('other_background', e.target.value)}
-              className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
-              placeholder="Specify additional clinical history..."
-            />
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="form-field-label">Any other</label>
+                {!readOnly && (
+                  <span className={`text-[10px] select-none ${
+                    Math.max(0, 255 - (formData.other_background || '').length) <= 5
+                      ? 'text-rose-500 font-bold animate-pulse'
+                      : 'text-slate-400 font-medium'
+                  }`}>
+                    {Math.max(0, 255 - (formData.other_background || '').length)} left
+                  </span>
+                )}
+              </div>
+              <input
+                type="text"
+                disabled={readOnly}
+                value={formData.other_background || ''}
+                maxLength={255}
+                onChange={(e) => handleChange('other_background', e.target.value)}
+                className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
+                placeholder="Specify additional clinical history..."
+              />
+            </div>
           </div>
-        </div>
-      </SectionCard>
 
-      {/* Clinical Information - Presentation */}
-      <SectionCard title="Clinical Information">
-        <div className="space-y-4 text-xs">
-          <div className="font-bold text-slate-800 border-b pb-1 text-sm">Presentation:</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {renderRadio('typical_angina', 'Typical angina', ['Yes', 'No'])}
-            {renderRadio('atypical_chest_pain', 'Atypical chest pain', ['Yes', 'No'])}
-            {renderRadio('breathlessness', 'Breathlessness', ['Yes', 'No'])}
-            {renderRadio('syncope_presyncope', 'Syncope/ Pre-syncope', ['Yes', 'No'])}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div>
-              <label className="form-field-label">Pulse rate (bpm):</label>
-              <input
-                type="number"
-                value={formData.pulse_rate}
-                onChange={(e) => handleChange('pulse_rate', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
-              />
-              <ClinicalMetricBadge metricId="pulse_rate" value={formData.pulse_rate} />
+          {/* Subsection 2: Presentation & Vitals */}
+          <div className="space-y-4 pt-3 border-t border-slate-200">
+            <div className="font-bold text-slate-800 border-b pb-1 text-sm">Presentation:</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {renderRadio('typical_angina', 'Typical angina', ['Yes', 'No'])}
+              {renderRadio('atypical_chest_pain', 'Atypical chest pain', ['Yes', 'No'])}
+              {renderRadio('breathlessness', 'Breathlessness', ['Yes', 'No'])}
+              {renderRadio('syncope_presyncope', 'Syncope/ Pre-syncope', ['Yes', 'No'])}
             </div>
-            <div>
-              <label className="form-field-label">SBP (mmHg):</label>
-              <input
-                type="number"
-                value={formData.systolic_bp}
-                onChange={(e) => handleChange('systolic_bp', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
-              />
-              <ClinicalMetricBadge metricId="systolic_bp" value={formData.systolic_bp} />
-            </div>
-            <div>
-              <label className="form-field-label">DBP (mmHg):</label>
-              <input
-                type="number"
-                value={formData.diastolic_bp}
-                onChange={(e) => handleChange('diastolic_bp', e.target.value)}
-                className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
-              />
-              <ClinicalMetricBadge metricId="diastolic_bp" value={formData.diastolic_bp} />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div>
+                <label className="form-field-label">Pulse rate (bpm):</label>
+                <input
+                  type="number"
+                  value={formData.pulse_rate}
+                  onChange={(e) => handleChange('pulse_rate', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
+                />
+                <ClinicalMetricBadge metricId="pulse_rate" value={formData.pulse_rate} />
+              </div>
+              <div>
+                <label className="form-field-label">SBP (mmHg):</label>
+                <input
+                  type="number"
+                  value={formData.systolic_bp}
+                  onChange={(e) => handleChange('systolic_bp', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
+                />
+                <ClinicalMetricBadge metricId="systolic_bp" value={formData.systolic_bp} />
+              </div>
+              <div>
+                <label className="form-field-label">DBP (mmHg):</label>
+                <input
+                  type="number"
+                  value={formData.diastolic_bp}
+                  onChange={(e) => handleChange('diastolic_bp', e.target.value)}
+                  className="w-full p-2 border border-slate-300 rounded-md focus:border-orange-500 focus:ring-orange-500 focus:outline-none"
+                />
+                <ClinicalMetricBadge metricId="diastolic_bp" value={formData.diastolic_bp} />
+              </div>
             </div>
           </div>
         </div>

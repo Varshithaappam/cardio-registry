@@ -21,12 +21,16 @@ import UniversalFilterBar from './dashboard/UniversalFilterBar';
 import KeyPointsTab from './dashboard/KeyPointsTab';
 import PatientDossierModal from './dashboard/PatientDossierModal';
 import ContraindicationDrawer from './dashboard/ContraindicationDrawer';
+import StemiDashboard from './dashboard/StemiDashboard';
+import NstemiDashboard from './dashboard/NstemiDashboard';
+import { Flame, Stethoscope } from 'lucide-react';
 
 import { fetchGdmtCohort } from '../api/gdmtApi';
 import { filterCohort, computeAnalytics } from '../utils/gdmtEngine';
 import { exportCohortExcel } from '../utils/excelReportGenerator';
 
 export default function Dashboard() {
+  const [activeDashboardTab, setActiveDashboardTab] = useState('hf'); // 'hf' | 'stemi' | 'nstemi'
   const [dataSource, setDataSource] = useState('database'); // database source
   const [cohortData, setCohortData] = useState([]);
 
@@ -139,61 +143,111 @@ export default function Dashboard() {
 
         {/* Right Actions: Export Report */}
         <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto">
-          {/* Export Report Button */}
-          <button
-            id="btn-export-excel"
-            onClick={handleExportExcel}
-            disabled={filteredCohort.length === 0 || isExporting}
-            className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs hover:shadow-xs disabled:opacity-50 cursor-pointer"
-            title="Download multi-sheet Excel workbook (Sheet1, Notes, GDMT Summary, Contraindications, CI Flags, Key Points)"
-          >
-            {isExporting ? (
-              <Loader2 className="w-3.5 h-3.5 text-teal-600 animate-spin" />
-            ) : (
-              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-            )}
-            <span>{isExporting ? 'Generating Excel...' : 'Export Report (.xlsx)'}</span>
-          </button>
+          {/* Sub-Tab Navigation Switcher */}
+          <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
+            <button
+              onClick={() => setActiveDashboardTab('hf')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeDashboardTab === 'hf'
+                  ? 'bg-teal-700 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Heart className="w-3.5 h-3.5" />
+              <span>Heart Failure</span>
+            </button>
+
+            <button
+              onClick={() => setActiveDashboardTab('stemi')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeDashboardTab === 'stemi'
+                  ? 'bg-rose-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span>STEMI</span>
+            </button>
+
+            <button
+              onClick={() => setActiveDashboardTab('nstemi')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeDashboardTab === 'nstemi'
+                  ? 'bg-sky-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Stethoscope className="w-3.5 h-3.5" />
+              <span>NSTEMI</span>
+            </button>
+          </div>
+
+          {/* Export Report Button (Active in HF tab) */}
+          {activeDashboardTab === 'hf' && (
+            <button
+              id="btn-export-excel"
+              onClick={handleExportExcel}
+              disabled={filteredCohort.length === 0 || isExporting}
+              className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-2xs hover:shadow-xs disabled:opacity-50 cursor-pointer"
+              title="Download multi-sheet Excel workbook (Sheet1, Notes, GDMT Summary, Contraindications, CI Flags, Key Points)"
+            >
+              {isExporting ? (
+                <Loader2 className="w-3.5 h-3.5 text-teal-600 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              )}
+              <span>{isExporting ? 'Generating Excel...' : 'Export Report (.xlsx)'}</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Universal Multi-Parameter Filter Bar */}
-      <UniversalFilterBar
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onResetFilters={handleResetFilters}
-        totalCount={cohortData.length}
-        filteredCount={filteredCohort.length}
-        dataSource={dataSource}
-        onSourceChange={setDataSource}
-        isLoading={isLoading}
-      />
-
-      {/* Loading / Error States */}
-      {isLoading ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
-          <Loader2 className="w-8 h-8 text-teal-600 animate-spin mx-auto mb-3" />
-          <h3 className="text-sm font-bold text-slate-800">Processing Clinical Intelligence Pipeline...</h3>
-          <p className="text-xs text-slate-500 mt-1">
-            Evaluating 6 GDMT drug pillars, contraindication flags, and adherence brackets.
-          </p>
-        </div>
-      ) : error ? (
-        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-center text-rose-800 text-xs">
-          <p className="font-bold">Error loading cohort: {error}</p>
-          <button 
-            onClick={() => setDataSource('standardized')}
-            className="mt-3 px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold"
-          >
-            Switch to Standardized Cohort
-          </button>
-        </div>
+      {/* RENDER ACTIVE TAB */}
+      {activeDashboardTab === 'stemi' ? (
+        <StemiDashboard />
+      ) : activeDashboardTab === 'nstemi' ? (
+        <NstemiDashboard />
       ) : (
-        /* Unified Dashboard View */
-        <KeyPointsTab 
-          analytics={analytics} 
-          onOpenExclusionGuide={() => setIsDrawerOpen(true)}
-        />
+        <>
+          {/* Universal Multi-Parameter Filter Bar */}
+          <UniversalFilterBar
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onResetFilters={handleResetFilters}
+            totalCount={cohortData.length}
+            filteredCount={filteredCohort.length}
+            dataSource={dataSource}
+            onSourceChange={setDataSource}
+            isLoading={isLoading}
+          />
+
+          {/* Loading / Error States */}
+          {isLoading ? (
+            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
+              <Loader2 className="w-8 h-8 text-teal-600 animate-spin mx-auto mb-3" />
+              <h3 className="text-sm font-bold text-slate-800">Processing Clinical Intelligence Pipeline...</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Evaluating 6 GDMT drug pillars, contraindication flags, and adherence brackets.
+              </p>
+            </div>
+          ) : error ? (
+            <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-center text-rose-800 text-xs">
+              <p className="font-bold">Error loading cohort: {error}</p>
+              <button 
+                onClick={() => setDataSource('standardized')}
+                className="mt-3 px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold"
+              >
+                Switch to Standardized Cohort
+              </button>
+            </div>
+          ) : (
+            /* Unified Dashboard View */
+            <KeyPointsTab 
+              analytics={analytics} 
+              onOpenExclusionGuide={() => setIsDrawerOpen(true)}
+            />
+          )}
+        </>
       )}
 
       {/* Patient Detail Dossier Modal */}

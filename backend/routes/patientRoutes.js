@@ -34,10 +34,14 @@ router.get("/counts/:regPatientId", authenticateToken, patientController.getPati
 // GDMT Clinical Intelligence & Cohort Analytics Endpoint
 router.get("/gdmt-cohort", patientController.getGdmtCohort);
 router.get("/hf-export-sheet1", patientController.getHfSheet1Export);
+router.get("/stemi-cohort", patientController.getStemiCohort);
+router.get("/nstemi-cohort", patientController.getNstemiCohort);
 
 // Get All Patients
 router.get("/", authenticateToken, patientController.getAllPatients);
 
+// Get Comprehensive Longitudinal Clinical Dossier
+router.get("/:id/longitudinal-dossier", authenticateToken, patientController.getLongitudinalDossier);
 
 // Get Patient By ID
 router.get("/:id", authenticateToken, patientController.getPatientById);

@@ -9,6 +9,19 @@ const {
   undeleteStemiRecord
 } = require('../controllers/stemiController');
 const { authenticateToken } = require('../middleware/authMiddleware');
+const { getStemiCohortFromDb } = require('../services/acsService');
+
+// GET /api/stemi/cohort - Retrieve full STEMI cohort analytics records
+router.get('/cohort', async (req, res) => {
+  try {
+    const includeDeleted = req.query.includeDeleted !== 'false';
+    const data = await getStemiCohortFromDb(includeDeleted);
+    const activeCount = data.filter(p => !p.isDeleted).length;
+    res.json({ success: true, count: data.length, activeCount, data });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 // POST /api/stemi - Submit new STEMI registry record
 router.post('/', authenticateToken, createStemiRecord);

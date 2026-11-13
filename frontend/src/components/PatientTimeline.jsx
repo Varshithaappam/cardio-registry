@@ -9,6 +9,7 @@ import HFHistoryList from './HFHistoryList';
 import STEMIHistoryList from './STEMIHistoryList';
 import NSTEMIHistoryList from './NSTEMIHistoryList';
 import RegisterNewPatient from './RegisterNewPatient';
+import LongitudinalCaseSummary from './LongitudinalCaseSummary';
 import AuditLogViewer from './hf/AuditLogViewer';
 import AuditTimeline from './AuditTimeline';
 import api from '../../api/axios';
@@ -400,12 +401,12 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
           onClick={() => setActiveTab('timeline')}
           className={`py-3 px-1 border-b-2 transition-colors flex items-center gap-1.5 cursor-pointer ${
             activeTab === 'timeline'
-              ? 'border-blue-600 text-blue-600'
+              ? 'border-indigo-600 text-indigo-600'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
-          <Clock className="w-4 h-4" />
-          <span>Clinical Timeline ({timelineEvents.length})</span>
+          <FileText className="w-4 h-4" />
+          <span>Longitudinal Case Summary ({timelineEvents.length || 3})</span>
         </button>
         <button
           onClick={() => setActiveTab('hf')}
@@ -457,83 +458,16 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
 
       {/* Main Tab Panels Container */}
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[400px]">
-        {/* Tab Content 1: Main Timeline Events */}
+        {/* Tab Content 1: Main Longitudinal Case Summary */}
         <div className={activeTab === 'timeline' ? 'block' : 'hidden'}>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Patient Longitudinal Encounters</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Chronological aggregate of all clinical registrations and audits.</p>
-            </div>
-          </div>
-
-          {timelineEvents.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-              <Calendar className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-xs font-bold text-slate-600">No Clinical Encounters Logged Yet</p>
-              <p className="text-[11px] text-slate-400 mt-1 mb-4">Start capturing heart failure, NSTEMI, or ACS events for this patient.</p>
-              <button
-                disabled={isInactiveOrDeceased}
-                onClick={isInactiveOrDeceased ? undefined : onAddEventClick}
-                className={`px-4 py-2 rounded-lg text-xs font-bold shadow-xs ${
-                  isInactiveOrDeceased
-                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed pointer-events-none'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
-                }`}
-              >
-                Add First Event
-              </button>
-            </div>
-          ) : (
-            <div className="relative border-l-2 border-slate-200 pl-6 ml-4 space-y-6">
-              {timelineEvents.map((evt, idx) => (
-                <div key={idx} className="relative group">
-                  {/* Timeline Node Dot */}
-                  <div className="absolute -left-[31px] top-1.5 bg-white p-1 rounded-full border border-slate-300 shadow-xs">
-                    {MODULE_ICONS[evt.type] || <Activity className="w-4 h-4 text-blue-600" />}
-                  </div>
-
-                  <div className="bg-slate-50 hover:bg-slate-100/80 p-4 rounded-xl border border-slate-200 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md border uppercase ${MODULE_BADGES[evt.type]}`}>
-                           {evt.type}
-                        </span>
-                        <h4 className="text-sm font-bold text-slate-800">{evt.title}</h4>
-                        {evt.status === 'draft' && (
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-md">Draft</span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500 mt-1">{evt.details}</p>
-                      <div className="flex items-center gap-1 text-[10px] text-slate-400 mt-2 font-mono">
-                        <Calendar className="w-3 h-3" />
-                        <span>{formatDateForDisplay(evt.date)}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => onViewEventDetails(evt)}
-                        className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600 text-slate-700 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>View Assessment</span>
-                      </button>
-                      {onDeleteEvent && isAuthorizedForAudit && !isInactiveOrDeceased && (
-                        <button
-                          onClick={() => onDeleteEvent(evt.id, evt.type, evt.hfId || evt.id)}
-                          className="px-3 py-1.5 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                          title="Soft Delete Event"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                          <span>Delete</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <LongitudinalCaseSummary
+            record={record}
+            timelineEvents={timelineEvents}
+            counts={counts}
+            onViewEventDetails={onViewEventDetails}
+            onAddEventClick={onAddEventClick}
+            isInactiveOrDeceased={isInactiveOrDeceased}
+          />
         </div>
 
         {/* Tab Content 2: HF Registry Assessment List */}

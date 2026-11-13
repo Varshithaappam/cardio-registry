@@ -17,7 +17,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   Plus,
   Search,
-
   ChevronRight,
   ShieldAlert,
   Heart,
@@ -26,8 +25,10 @@ import {
   AlertCircle,
   Table,
   LayoutGrid,
-  Eye } from
-'lucide-react';
+  Eye,
+  FileText
+} from
+  'lucide-react';
 
 
 
@@ -184,7 +185,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
 
   return (
     <div className="space-y-6">
-      
+
       {/* Search & Top Action Bar */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -216,12 +217,12 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
 
         <div className="flex items-center gap-3 w-full md:w-auto justify-end flex-wrap sm:flex-nowrap">
           {/* Tabular/Card Switcher Button Group */}
-          
+
           <button
             id="btn-register-patient"
             onClick={() => setIsRegistering(!isRegistering)}
             className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer">
-            
+
             <Plus className="w-4 h-4" />
             <span>Register New Patient</span>
           </button>
@@ -262,7 +263,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
 
       {/* Dynamic Master Patient Registry Container */}
       {viewMode === 'table' ?
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-fadeIn">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-fadeIn">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[1050px]">
               <thead>
@@ -271,7 +272,7 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                   <th className="px-4 py-4">Registry Identifiers</th>
                   <th className="px-4 py-4">Latest Primary Consultant</th>
                   <th className="px-4 py-4">Co-morbidities</th>
-                                    <th className="px-4 py-4 text-center">HF</th>
+                  <th className="px-4 py-4 text-center">HF</th>
                   <th className="px-4 py-4 text-center">STEMI</th>
                   <th className="px-4 py-4 text-center">NSTEMI</th>
                   <th className="px-4 py-4 text-center">CABG</th>
@@ -280,12 +281,12 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                 {filteredPatients.map((record) => {
-                const dq = calculateDataQualityScore(record);
-                const patientStatus = (record.patient?.patient_status || record.patient?.status || 'ACTIVE').toUpperCase();
-                const isInactiveOrDeceased = ['INACTIVE', 'DECEASED'].includes(patientStatus);
+                  const dq = calculateDataQualityScore(record);
+                  const patientStatus = (record.patient?.patient_status || record.patient?.status || 'ACTIVE').toUpperCase();
+                  const isInactiveOrDeceased = ['INACTIVE', 'DECEASED'].includes(patientStatus);
 
-                return (
-                  <tr key={record.patient.id} className="hover:bg-slate-50/60 transition-colors group">
+                  return (
+                    <tr key={record.patient.id} className="hover:bg-slate-50/60 transition-colors group">
                       {/* Name & Demographics */}
                       <td className="px-5 py-4">
                         <div>
@@ -298,9 +299,8 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                               {record.patient.name}
                             </span>
                             {patientStatus !== 'ACTIVE' && (
-                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase border ${
-                                patientStatus === 'DECEASED' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-600 border-slate-300'
-                              }`}>
+                              <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase border ${patientStatus === 'DECEASED' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-600 border-slate-300'
+                                }`}>
                                 {patientStatus}{patientStatus === 'DECEASED' && (record.patient.date_of_death || record.patient.dateOfDeath) ? ` • DOD: ${formatDateForDisplay(record.patient.date_of_death || record.patient.dateOfDeath)}` : ''}
                               </span>
                             )}
@@ -310,11 +310,11 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                             <span>•</span>
                             <span>{calculateAge(record.patient.dob) ?? '—'} Yrs</span>
                             {record.patient.bloodGroup && record.patient.bloodGroup !== 'Unknown' &&
-                          <>
+                              <>
                                 <span>•</span>
                                 <span className="px-1.5 py-0.2 bg-red-50 text-red-600 rounded font-bold text-[9px] border border-red-100">Blood {record.patient.bloodGroup}</span>
                               </>
-                          }
+                            }
                           </div>
                         </div>
                       </td>
@@ -350,20 +350,20 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                       <td className="px-4 py-4">
                         <div className="flex flex-wrap gap-1 max-w-[210px]">
                           {record.comorbidities.hypertension === 'Yes' &&
-                        <span className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded text-[9px] font-bold border border-orange-100 uppercase tracking-wide">HTN</span>
-                        }
+                            <span className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded text-[9px] font-bold border border-orange-100 uppercase tracking-wide">HTN</span>
+                          }
                           {record.comorbidities.diabetes === 'Yes' &&
-                        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[9px] font-bold border border-indigo-100 uppercase tracking-wide" title={`Controlled via: ${record.comorbidities.diabetesControl}`}>DM ({record.comorbidities.diabetesControl})</span>
-                        }
+                            <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[9px] font-bold border border-indigo-100 uppercase tracking-wide" title={`Controlled via: ${record.comorbidities.diabetesControl}`}>DM ({record.comorbidities.diabetesControl})</span>
+                          }
                           {record.comorbidities.renalFailure === 'Yes' &&
-                        <span className="px-2 py-0.5 bg-pink-50 text-pink-700 rounded text-[9px] font-bold border border-pink-100 uppercase tracking-wide" title={record.comorbidities.dialysisStatus === 'Yes' ? 'Under active dialysis' : 'No active dialysis'}>CKD {record.comorbidities.dialysisStatus === 'Yes' ? '(Dialysis)' : ''}</span>
-                        }
+                            <span className="px-2 py-0.5 bg-pink-50 text-pink-700 rounded text-[9px] font-bold border border-pink-100 uppercase tracking-wide" title={record.comorbidities.dialysisStatus === 'Yes' ? 'Under active dialysis' : 'No active dialysis'}>CKD {record.comorbidities.dialysisStatus === 'Yes' ? '(Dialysis)' : ''}</span>
+                          }
                           {record.comorbidities.smoking === 'Yes' &&
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[9px] font-bold border border-slate-200 uppercase tracking-wide">Smoker</span>
-                        }
+                            <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[9px] font-bold border border-slate-200 uppercase tracking-wide">Smoker</span>
+                          }
                           {record.comorbidities.hypertension !== 'Yes' && record.comorbidities.diabetes !== 'Yes' && record.comorbidities.renalFailure !== 'Yes' && record.comorbidities.smoking !== 'Yes' &&
-                        <span className="text-slate-400 italic font-medium">None declared</span>
-                        }
+                            <span className="text-slate-400 italic font-medium">None declared</span>
+                          }
                         </div>
                       </td>
 
@@ -386,11 +386,10 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                               id={`tbl-add-hf-${record.patient.id}`}
                               disabled={isInactiveOrDeceased}
                               onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'HF')}
-                              className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-colors ${
-                                isInactiveOrDeceased
+                              className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-colors ${isInactiveOrDeceased
                                   ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
                                   : 'bg-teal-50 hover:bg-teal-100 text-teal-700 cursor-pointer'
-                              }`}
+                                }`}
                               title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add HF Assessment'}
                             >
                               + HF
@@ -399,11 +398,10 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                               id={`tbl-add-stemi-${record.patient.id}`}
                               disabled={isInactiveOrDeceased}
                               onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'STEMI')}
-                              className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-colors ${
-                                isInactiveOrDeceased
+                              className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-colors ${isInactiveOrDeceased
                                   ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
                                   : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer shadow-xs'
-                              }`}
+                                }`}
                               title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add STEMI Emergency Event'}
                             >
                               + STEMI
@@ -412,11 +410,10 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                               id={`tbl-add-nstemi-${record.patient.id}`}
                               disabled={isInactiveOrDeceased}
                               onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'NSTEMI')}
-                              className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-colors ${
-                                isInactiveOrDeceased
+                              className={`px-2 py-1.5 rounded-lg text-[10px] font-black transition-colors ${isInactiveOrDeceased
                                   ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
                                   : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 cursor-pointer shadow-xs'
-                              }`}
+                                }`}
                               title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add NSTEMI Registry Entry'}
                             >
                               + NSTEMI
@@ -432,207 +429,201 @@ export default function PatientList({ patients, onSelectPatient, onRegisterPatie
                           </div>
 
                           <button
-                          id={`tbl-view-timeline-${record.patient.id}`}
-                          onClick={() => onSelectPatient(record.patient.id)}
-                          className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black flex items-center gap-1 cursor-pointer transition-all shadow-sm">
-                          
+                            id={`tbl-view-timeline-${record.patient.id}`}
+                            onClick={() => onSelectPatient(record.patient.id)}
+                            className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-black flex items-center gap-1.5 cursor-pointer transition-all shadow-sm">
                             <Eye className="w-3.5 h-3.5" />
-                            <span>Timeline</span>
+                            <span>Portfolio</span>
                           </button>
                         </div>
                       </td>
                     </tr>);
 
-              })}
+                })}
 
                 {filteredPatients.length === 0 &&
-              <tr>
+                  <tr>
                     <td colSpan={7} className="text-center py-16 text-slate-400 font-semibold bg-white">
                       No registered patients found matching the search criteria. Click &quot;Register New Patient&quot; above to initialize a master record.
                     </td>
                   </tr>
-              }
+                }
               </tbody>
             </table>
           </div>
         </div> : (
 
-      /* Patients Grid / List View */
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
-          {filteredPatients.map((record) => {
-          const dq = calculateDataQualityScore(record);
-          const patientStatus = (record.patient?.patient_status || record.patient?.status || 'ACTIVE').toUpperCase();
-          const isInactiveOrDeceased = ['INACTIVE', 'DECEASED'].includes(patientStatus);
+          /* Patients Grid / List View */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn">
+            {filteredPatients.map((record) => {
+              const dq = calculateDataQualityScore(record);
+              const patientStatus = (record.patient?.patient_status || record.patient?.status || 'ACTIVE').toUpperCase();
+              const isInactiveOrDeceased = ['INACTIVE', 'DECEASED'].includes(patientStatus);
 
-          return (
-            <div
-              key={record.patient.id}
-              className="bg-white rounded-xl shadow-sm border border-slate-200 hover:border-slate-300 transition-all p-5 flex flex-col justify-between hover:shadow-md relative">
-              
-                {/* Patient Top Identifier */}
-                <div>
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="text-base font-bold text-slate-800 hover:text-blue-600 cursor-pointer" onClick={() => onSelectPatient(record.patient.id)}>
-                          {record.patient.name}
-                        </h4>
-                        {patientStatus !== 'ACTIVE' && (
-                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase border ${
-                            patientStatus === 'DECEASED' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-600 border-slate-300'
-                          }`}>
-                            {patientStatus}{patientStatus === 'DECEASED' && (record.patient.date_of_death || record.patient.dateOfDeath) ? ` • DOD: ${formatDateForDisplay(record.patient.date_of_death || record.patient.dateOfDeath)}` : ''}
+              return (
+                <div
+                  key={record.patient.id}
+                  className="bg-white rounded-xl shadow-sm border border-slate-200 hover:border-slate-300 transition-all p-5 flex flex-col justify-between hover:shadow-md relative">
+
+                  {/* Patient Top Identifier */}
+                  <div>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-base font-bold text-slate-800 hover:text-blue-600 cursor-pointer" onClick={() => onSelectPatient(record.patient.id)}>
+                            {record.patient.name}
+                          </h4>
+                          {patientStatus !== 'ACTIVE' && (
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase border ${patientStatus === 'DECEASED' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-600 border-slate-300'
+                              }`}>
+                              {patientStatus}{patientStatus === 'DECEASED' && (record.patient.date_of_death || record.patient.dateOfDeath) ? ` • DOD: ${formatDateForDisplay(record.patient.date_of_death || record.patient.dateOfDeath)}` : ''}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-semibold text-slate-600">
+                            {record.patient.gender} • {calculateAge(record.patient.dob) ?? '—'} Yrs
                           </span>
-                        )}
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs font-bold">
+                            MR: {record.patient.mrNo}
+                          </span>
+                          {record.patient.bloodGroup && record.patient.bloodGroup !== 'Unknown' &&
+                            <span className="px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-xs font-bold border border-red-100">
+                              Blood {record.patient.bloodGroup}
+                            </span>
+                          }
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                        <span className="px-2 py-0.5 bg-slate-100 rounded text-xs font-semibold text-slate-600">
-                          {record.patient.gender} • {calculateAge(record.patient.dob) ?? '—'} Yrs
+
+                      {/* Data Quality Indicator */}
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Data Quality</span>
+                        <span className={`inline-flex items-center gap-1 font-extrabold text-sm ${dq.score >= 85 ? 'text-emerald-600' : 'text-amber-600'}`
+                        }>
+                          <ShieldAlert className="w-3.5 h-3.5" />
+                          {dq.score}%
                         </span>
-                        <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs font-bold">
-                          MR: {record.patient.mrNo}
-                        </span>
-                        {record.patient.bloodGroup && record.patient.bloodGroup !== 'Unknown' &&
-                      <span className="px-1.5 py-0.5 bg-red-50 text-red-600 rounded text-xs font-bold border border-red-100">
-                            Blood {record.patient.bloodGroup}
-                          </span>
+                      </div>
+                    </div>
+
+                    {/* Comorbidity Badges */}
+                    <div className="mt-4 flex flex-wrap gap-1.5">
+                      {record.comorbidities.hypertension === 'Yes' &&
+                        <span className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded text-[10px] font-bold border border-orange-100">Hypertension</span>
                       }
+                      {record.comorbidities.diabetes === 'Yes' &&
+                        <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold border border-indigo-100">Diabetes ({record.comorbidities.diabetesControl})</span>
+                      }
+                      {record.comorbidities.renalFailure === 'Yes' &&
+                        <span className="px-2 py-0.5 bg-pink-50 text-pink-700 rounded text-[10px] font-bold border border-pink-100">Renal Failure {record.comorbidities.dialysisStatus === 'Yes' ? '(Dialysis)' : ''}</span>
+                      }
+                      {record.comorbidities.smoking === 'Yes' &&
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-bold border border-slate-200">Smoker</span>
+                      }
+                    </div>
+
+                    {/* Clinical History Summaries */}
+                    <div className="mt-4 py-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-xs text-slate-500">
+                      <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                        <Heart className="w-4 h-4 mx-auto mb-1 text-teal-600" />
+                        <span className="font-bold text-slate-700 block">{record.hfAssessments.length}</span>
+                        <span className="text-[10px] text-slate-400 block uppercase">HF Assessments</span>
+                      </div>
+                      <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                        <Activity className="w-4 h-4 mx-auto mb-1 text-red-500" />
+                        <span className="font-bold text-slate-700 block">{record.acsEvents.length}</span>
+                        <span className="text-[10px] text-slate-400 block uppercase">ACS Events</span>
+                      </div>
+                      <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100">
+                        <Award className="w-4 h-4 mx-auto mb-1 text-purple-500" />
+                        <span className="font-bold text-slate-700 block">{record.cabgProcedures.length}</span>
+                        <span className="text-[10px] text-slate-400 block uppercase">CABG Audits</span>
                       </div>
                     </div>
-  
-                    {/* Data Quality Indicator */}
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Data Quality</span>
-                      <span className={`inline-flex items-center gap-1 font-extrabold text-sm ${
-                    dq.score >= 85 ? 'text-emerald-600' : 'text-amber-600'}`
-                    }>
-                        <ShieldAlert className="w-3.5 h-3.5" />
-                        {dq.score}%
-                      </span>
-                    </div>
-                  </div>
-  
-                  {/* Comorbidity Badges */}
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {record.comorbidities.hypertension === 'Yes' &&
-                  <span className="px-2 py-0.5 bg-orange-50 text-orange-700 rounded text-[10px] font-bold border border-orange-100">Hypertension</span>
-                  }
-                    {record.comorbidities.diabetes === 'Yes' &&
-                  <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold border border-indigo-100">Diabetes ({record.comorbidities.diabetesControl})</span>
-                  }
-                    {record.comorbidities.renalFailure === 'Yes' &&
-                  <span className="px-2 py-0.5 bg-pink-50 text-pink-700 rounded text-[10px] font-bold border border-pink-100">Renal Failure {record.comorbidities.dialysisStatus === 'Yes' ? '(Dialysis)' : ''}</span>
-                  }
-                    {record.comorbidities.smoking === 'Yes' &&
-                  <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-bold border border-slate-200">Smoker</span>
-                  }
-                  </div>
-  
-                  {/* Clinical History Summaries */}
-                  <div className="mt-4 py-3 border-t border-slate-100 grid grid-cols-3 gap-2 text-center text-xs text-slate-500">
-                    <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100">
-                      <Heart className="w-4 h-4 mx-auto mb-1 text-teal-600" />
-                      <span className="font-bold text-slate-700 block">{record.hfAssessments.length}</span>
-                      <span className="text-[10px] text-slate-400 block uppercase">HF Assessments</span>
-                    </div>
-                    <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100">
-                      <Activity className="w-4 h-4 mx-auto mb-1 text-red-500" />
-                      <span className="font-bold text-slate-700 block">{record.acsEvents.length}</span>
-                      <span className="text-[10px] text-slate-400 block uppercase">ACS Events</span>
-                    </div>
-                    <div className="bg-slate-50/50 p-2 rounded-lg border border-slate-100">
-                      <Award className="w-4 h-4 mx-auto mb-1 text-purple-500" />
-                      <span className="font-bold text-slate-700 block">{record.cabgProcedures.length}</span>
-                      <span className="text-[10px] text-slate-400 block uppercase">CABG Audits</span>
-                    </div>
-                  </div>
-  
-                  {/* Direct Consistency Alert warning inside patient card */}
-                  {dq.alerts.length > 0 &&
-                <div className="mt-3 bg-amber-50/50 border border-amber-200 p-2 rounded-lg text-[11px] text-amber-800 flex gap-1.5 items-center">
-                      <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                      <span className="truncate"><strong>Quality Check:</strong> {dq.alerts[0]}</span>
-                      {dq.alerts.length > 1 &&
-                  <span className="bg-amber-100 px-1 py-0.2 rounded text-[9px] font-extrabold shrink-0">+{dq.alerts.length - 1} more</span>
-                  }
-                    </div>
-                }
-                </div>
-  
-                {/* Patient Footer Action Triggers */}
-                <div className="mt-5 pt-3 border-t border-slate-100 flex flex-col sm:flex-row gap-2 justify-between items-center">
-                  {/* Rapid Record Add Button Select */}
-                  <div className="flex gap-1 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-                    <button
-                      id={`btn-add-hf-${record.patient.id}`}
-                      disabled={isInactiveOrDeceased}
-                      onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'HF')}
-                      className={`px-2 py-1.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${
-                        isInactiveOrDeceased
-                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
-                          : 'bg-teal-50 hover:bg-teal-100 text-teal-700 cursor-pointer'
-                      }`}
-                      title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add HF Assessment'}
-                    >
-                      + HF Assess
-                    </button>
-                    <button
-                      id={`btn-add-stemi-${record.patient.id}`}
-                      disabled={isInactiveOrDeceased}
-                      onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'STEMI')}
-                      className={`px-2 py-1.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${
-                        isInactiveOrDeceased
-                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
-                          : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer shadow-xs'
-                      }`}
-                      title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add STEMI Emergency Event'}
-                    >
-                      + STEMI
-                    </button>
-                    <button
-                      id={`btn-add-nstemi-${record.patient.id}`}
-                      disabled={isInactiveOrDeceased}
-                      onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'NSTEMI')}
-                      className={`px-2 py-1.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${
-                        isInactiveOrDeceased
-                          ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
-                          : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 cursor-pointer shadow-xs'
-                      }`}
-                      title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add NSTEMI Registry Entry'}
-                    >
-                      + NSTEMI
-                    </button>
-                    <button
-                      disabled={true}
-                      id={`btn-add-cabg-${record.patient.id}`}
-                      className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[10px] font-bold shrink-0 cursor-not-allowed opacity-50 pointer-events-none transition-colors"
-                      title="CABG registry under development"
-                    >
-                      + CABG
-                    </button>
-                  </div>
-  
-                  <button
-                  id={`btn-view-timeline-${record.patient.id}`}
-                  onClick={() => onSelectPatient(record.patient.id)}
-                  className="w-full sm:w-auto px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1 transition-colors mt-2 sm:mt-0 cursor-pointer">
-                  
-                    <span>Clinical Timeline</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>);
 
-        })}
-  
-          {filteredPatients.length === 0 &&
-        <div className="col-span-2 text-center py-12 bg-white rounded-xl border border-slate-200 text-slate-400 font-medium">
-              No registered patient found matching the search criteria. Click &quot;Register New Patient&quot; above to initialize a master record.
-            </div>
-        }
-        </div>)
+                    {/* Direct Consistency Alert warning inside patient card */}
+                    {dq.alerts.length > 0 &&
+                      <div className="mt-3 bg-amber-50/50 border border-amber-200 p-2 rounded-lg text-[11px] text-amber-800 flex gap-1.5 items-center">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span className="truncate"><strong>Quality Check:</strong> {dq.alerts[0]}</span>
+                        {dq.alerts.length > 1 &&
+                          <span className="bg-amber-100 px-1 py-0.2 rounded text-[9px] font-extrabold shrink-0">+{dq.alerts.length - 1} more</span>
+                        }
+                      </div>
+                    }
+                  </div>
+
+                  {/* Patient Footer Action Triggers */}
+                  <div className="mt-5 pt-3 border-t border-slate-100 flex flex-col sm:flex-row gap-2 justify-between items-center">
+                    {/* Rapid Record Add Button Select */}
+                    <div className="flex gap-1 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+                      <button
+                        id={`btn-add-hf-${record.patient.id}`}
+                        disabled={isInactiveOrDeceased}
+                        onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'HF')}
+                        className={`px-2 py-1.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${isInactiveOrDeceased
+                            ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
+                            : 'bg-teal-50 hover:bg-teal-100 text-teal-700 cursor-pointer'
+                          }`}
+                        title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add HF Assessment'}
+                      >
+                        + HF Assess
+                      </button>
+                      <button
+                        id={`btn-add-stemi-${record.patient.id}`}
+                        disabled={isInactiveOrDeceased}
+                        onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'STEMI')}
+                        className={`px-2 py-1.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${isInactiveOrDeceased
+                            ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
+                            : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer shadow-xs'
+                          }`}
+                        title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add STEMI Emergency Event'}
+                      >
+                        + STEMI
+                      </button>
+                      <button
+                        id={`btn-add-nstemi-${record.patient.id}`}
+                        disabled={isInactiveOrDeceased}
+                        onClick={isInactiveOrDeceased ? undefined : () => onAddEventClick(record.patient.id, 'NSTEMI')}
+                        className={`px-2 py-1.5 rounded-md text-[10px] font-bold shrink-0 transition-colors ${isInactiveOrDeceased
+                            ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-50 pointer-events-none'
+                            : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 cursor-pointer shadow-xs'
+                          }`}
+                        title={isInactiveOrDeceased ? `Patient is ${patientStatus}. Adding forms is disabled.` : 'Add NSTEMI Registry Entry'}
+                      >
+                        + NSTEMI
+                      </button>
+                      <button
+                        disabled={true}
+                        id={`btn-add-cabg-${record.patient.id}`}
+                        className="px-2 py-1.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-md text-[10px] font-bold shrink-0 cursor-not-allowed opacity-50 pointer-events-none transition-colors"
+                        title="CABG registry under development"
+                      >
+                        + CABG
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
+                      <button
+                        id={`btn-view-timeline-${record.patient.id}`}
+                        onClick={() => onSelectPatient(record.patient.id)}
+                        className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer">
+                        <span>Timeline</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>);
+
+            })}
+
+            {filteredPatients.length === 0 &&
+              <div className="col-span-2 text-center py-12 bg-white rounded-xl border border-slate-200 text-slate-400 font-medium">
+                No registered patient found matching the search criteria. Click &quot;Register New Patient&quot; above to initialize a master record.
+              </div>
+            }
+          </div>)
       }
-
     </div>);
 
 }

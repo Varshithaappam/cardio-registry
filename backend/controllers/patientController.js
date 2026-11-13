@@ -388,6 +388,64 @@ async function getHfSheet1Export(req, res) {
     }
 }
 
+/**
+ * Get STEMI Cohort Analytics Data from DB
+ */
+async function getStemiCohort(req, res) {
+    try {
+        const acsService = require("../services/acsService");
+        const data = await acsService.getStemiCohortFromDb();
+        return res.status(200).json({
+            success: true,
+            source: 'database',
+            count: data.length,
+            data
+        });
+    } catch (error) {
+        return handlePatientError(res, error, "Get STEMI Cohort");
+    }
+}
+
+/**
+ * Get NSTEMI Cohort Analytics Data from DB
+ */
+async function getNstemiCohort(req, res) {
+    try {
+        const acsService = require("../services/acsService");
+        const data = await acsService.getNstemiCohortFromDb();
+        return res.status(200).json({
+            success: true,
+            source: 'database',
+            count: data.length,
+            data
+        });
+    } catch (error) {
+        return handlePatientError(res, error, "Get NSTEMI Cohort");
+    }
+}
+
+/**
+ * GET /api/patients/:id/longitudinal-dossier - Comprehensive 100% dynamic clinical summary
+ */
+async function getLongitudinalDossier(req, res) {
+    try {
+        const regPatientId = req.params.id;
+        const dossier = await patientService.getLongitudinalDossier(regPatientId);
+        if (!dossier) {
+            return res.status(404).json({
+                success: false,
+                message: "Patient record not found."
+            });
+        }
+        return res.status(200).json({
+            success: true,
+            data: dossier
+        });
+    } catch (error) {
+        return handlePatientError(res, error, "Get Longitudinal Dossier");
+    }
+}
+
 module.exports = {
     registerPatient,
     resolveStaging,
@@ -402,6 +460,9 @@ module.exports = {
     getPatientCounts,
     getAllPatientCounts,
     getGdmtCohort,
-    getHfSheet1Export
+    getHfSheet1Export,
+    getStemiCohort,
+    getNstemiCohort,
+    getLongitudinalDossier
 };
 
