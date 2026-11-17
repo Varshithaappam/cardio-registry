@@ -235,11 +235,12 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     elevated_bnp: editingRecord?.elevated_bnp || null,
     elevated_crp: editingRecord?.elevated_crp || null,
 
-    // Treatment Strategy: PAMI / Thrombolysis / Conservative
-    treatment_strategy: editingRecord?.pami === 'Yes' ? 'PAMI' : (editingRecord?.thrombolysis === 'Yes' ? 'Thrombolysis' : (editingRecord?.conservative === 'Yes' ? 'Conservative' : (editingRecord?.treatment_strategy ?? null))),
+    // Treatment Strategy: PAMI / Thrombolysis / Conservative / None
+    treatment_strategy: editingRecord?.pami === 'Yes' ? 'PAMI' : (editingRecord?.thrombolysis === 'Yes' ? 'Thrombolysis' : (editingRecord?.conservative === 'Yes' ? 'Conservative' : (editingRecord?.none === 'Yes' ? 'None' : (editingRecord?.treatment_strategy ?? null)))),
     pami: editingRecord?.pami || null,
     thrombolysis: editingRecord?.thrombolysis || null,
     conservative: editingRecord?.conservative || null,
+    none: editingRecord?.none || null,
 
     // PAMI details, if done:
     door_to_balloon_time: editingRecord?.door_to_balloon_time || '',
@@ -370,6 +371,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     cva_thrombotic: editingRecord?.cva_thrombotic || null,
     cva_hemorrhagic: editingRecord?.cva_hemorrhagic || null,
     major_bleeding: editingRecord?.major_bleeding || null,
+    outcome_none: editingRecord?.outcome_none || null,
     outcome_other: editingRecord?.outcome_other || '',
 
     // Out-comes -> Discharge Medications: Yes/No
@@ -524,6 +526,13 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
         updated.admission_reason = '';
       }
 
+      if (field === 'treatment_strategy') {
+        updated.pami = sanitizedVal ? (sanitizedVal === 'PAMI' ? 'Yes' : 'No') : null;
+        updated.thrombolysis = sanitizedVal ? (sanitizedVal === 'Thrombolysis' ? 'Yes' : 'No') : null;
+        updated.conservative = sanitizedVal ? (sanitizedVal === 'Conservative' ? 'Yes' : 'No') : null;
+        updated.none = sanitizedVal ? (sanitizedVal === 'None' ? 'Yes' : 'No') : null;
+      }
+
       // Recompute TIMI Risk Score dynamically
       updated.timi_total_score = calculateTimiScore(updated);
 
@@ -630,6 +639,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
     payload.pami = formData.treatment_strategy ? (formData.treatment_strategy === 'PAMI' ? 'Yes' : 'No') : null;
     payload.thrombolysis = formData.treatment_strategy ? (formData.treatment_strategy === 'Thrombolysis' ? 'Yes' : 'No') : null;
     payload.conservative = formData.treatment_strategy ? (formData.treatment_strategy === 'Conservative' ? 'Yes' : 'No') : null;
+    payload.none = formData.treatment_strategy ? (formData.treatment_strategy === 'None' ? 'Yes' : 'No') : null;
 
     // Map thrombosuction
     payload.thrombosuction_done = formData.thrombosuction_done ? (formData.thrombosuction_done === 'Done' ? 'Yes' : 'No') : null;
@@ -846,6 +856,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       pami: 'Yes',
       thrombolysis: 'No',
       conservative: 'No',
+      none: 'No',
 
       door_to_balloon_time: 45,
       vessel_lmca: false,
@@ -966,6 +977,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
       cva_thrombotic: 'No',
       cva_hemorrhagic: 'No',
       major_bleeding: 'No',
+      outcome_none: 'No',
       outcome_other: '',
 
       discharge_beta_blocker: 'Yes',
@@ -1707,7 +1719,8 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             {[
               { key: 'PAMI', label: 'PAMI' },
               { key: 'Thrombolysis', label: 'Thrombolysis' },
-              { key: 'Conservative', label: 'Conservative' }
+              { key: 'Conservative', label: 'Conservative' },
+              { key: 'None', label: 'None' }
             ].map(op => {
               const isSelected = formData.treatment_strategy === op.key;
               return (
@@ -2714,6 +2727,7 @@ const NSTEMIForm = forwardRef(function NSTEMIForm(
             {renderRadio('cva_thrombotic', 'CVA-thrombotic')}
             {renderRadio('cva_hemorrhagic', 'CVA-hemorrhagic')}
             {renderRadio('major_bleeding', 'Major Bleeding')}
+            {renderRadio('outcome_none', 'None')}
           </div>
           <div>
             <div className="flex justify-between items-center mb-1">

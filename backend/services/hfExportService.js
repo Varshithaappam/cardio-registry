@@ -437,6 +437,7 @@ async function getHfSheet1ExportData(options = {}) {
       END AS calculated_age,
       p.gender,
       p.phone_no,
+      p.secondary_contact_phone,
       p.pincode,
       ha.visit_id,
       ha.caregiver_name,
@@ -444,6 +445,12 @@ async function getHfSheet1ExportData(options = {}) {
       ha.caregiver_phone,
       ha.insurance_mode,
       ha.treating_cardiologist,
+      COALESCE(
+        ha.treating_cardiologist,
+        (SELECT TOP 1 s.primary_consultant FROM dbo.stemi_registry s WHERE s.reg_patient_id = hr.reg_patient_id AND s.primary_consultant IS NOT NULL AND LTRIM(RTRIM(s.primary_consultant)) <> '' ORDER BY s.stemi_id DESC),
+        (SELECT TOP 1 ns.primary_consultant FROM dbo.nstemi_registry ns WHERE ns.reg_patient_id = hr.reg_patient_id AND ns.primary_consultant IS NOT NULL AND LTRIM(RTRIM(ns.primary_consultant)) <> '' ORDER BY ns.nstemi_id DESC),
+        'Dr. K. Sridhar'
+      ) AS consultant_name,
       ha.visit_date,
       ha.discharge_date,
       ha.present_diagnosis,
@@ -761,6 +768,7 @@ async function getHfSheet1ExportData(options = {}) {
     'Contact no 2',
     'Payment',
     'Caregiver Name&Relationship to patient',
+    'Consultant\'s Name',
     'Treating Cardiologist',
     'Date of visit/hospitalization',
     'Discharge Date',
@@ -1065,7 +1073,8 @@ async function getHfSheet1ExportData(options = {}) {
       ? vtvfRisks.join(', ')
       : (!row.documented_vt_vf && !row.complaints_syncope_presyncope && !row.documented_pvcs && !row.documented_nsvt ? '' : 'No');
 
-    const hfRegistryNo = row.hf_registry_no || `HF${String(row.hf_id).padStart(5, '0')}`;
+    const baseHfNo = row.hf_registry_no || `hf${String(row.hf_id).padStart(5, '0')}`;
+    const hfRegistryNo = /^HF-/i.test(baseHfNo) ? baseHfNo : `HF-${baseHfNo}`;
 
     // 73-97: GDMT Drug & Adherence columns evaluated directly from active generic medications
     const gdmtPillars = getGdmtPillarsFromRow(row);
@@ -1112,11 +1121,12 @@ async function getHfSheet1ExportData(options = {}) {
       row.calculated_age != null ? row.calculated_age : '', // 8. Age
       row.gender || '',                              // 9. Gender
       row.phone_no || '',                            // 10. Contact no 1
-      row.caregiver_phone || '',                     // 11. Contact no 2
+      row.secondary_contact_phone || row.caregiver_phone || '', // 11. Contact no 2
       row.insurance_mode || '',                      // 12. Payment
       caregiver,                                     // 13. Caregiver Name&Relationship to patient
-      row.treating_cardiologist || '',               // 14. Treating Cardiologist
-      formatDate(row.visit_date),                    // 15. Date of visit/hospitalization
+      row.consultant_name || row.treating_cardiologist || 'Dr. K. Sridhar', // 14. Consultant's Name
+      row.treating_cardiologist || '',               // 15. Treating Cardiologist
+      formatDate(row.visit_date),                    // 16. Date of visit/hospitalization
       formatDate(row.discharge_date),                // 16. Discharge Date
       row.present_diagnosis || '',                   // 17. Present diagnosis
       row.admission_reason || '',                    // 18. Reasons for Admission1

@@ -178,11 +178,11 @@ export default function STEMIHistoryList({ regPatientId, patientName, onEditEven
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-mono uppercase block">
-                    {record.created_at ? formatDateTimeForDisplay(record.created_at) : (record.admission_date ? formatDateForDisplay(record.admission_date) : 'N/A')}
+                    {record.admission_date ? `Admitted: ${formatDateForDisplay(record.admission_date)}` : (record.created_at ? formatDateTimeForDisplay(record.created_at) : 'N/A')}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-800">
-                      {record.acs_no || record.ip_no || `ID: ${record.stemi_id}`}
+                    <span className="text-xs font-bold text-slate-800 font-mono">
+                      {record.acs_no ? (/^STEMI-/i.test(record.acs_no) ? record.acs_no : `STEMI-${record.acs_no}`) : `STEMI-ACS.${String(record.stemi_id).padStart(4, '0')}`}
                     </span>
                     {(record.patient_name || patientName) && (
                       <span className="text-xs font-semibold text-slate-600">

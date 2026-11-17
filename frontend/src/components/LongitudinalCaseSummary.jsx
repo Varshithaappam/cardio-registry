@@ -211,11 +211,30 @@ export default function LongitudinalCaseSummary({
         const dbp = raw.diastolic_bp || raw.presentation?.dbp || raw.vitals?.diastolicBp || null;
         const hr = raw.pulse_rate || raw.presentation?.pulseRate || raw.vitals?.heartRate || null;
 
+        const formattedRecordId = (() => {
+          if (evt.type === 'HF') {
+            const base = evt.formattedRecordId || evt.registryNo || raw.hf_registry_no || `hf${String(evt.id || idx + 1).padStart(5, '0')}`;
+            return /^HF-/i.test(base) ? base : `HF-${base}`;
+          }
+          if (evt.type === 'STEMI') {
+            const base = evt.formattedRecordId || evt.registryNo || raw.acs_no || `ACS.${String(evt.id || idx + 1).padStart(4, '0')}`;
+            return /^STEMI-/i.test(base) ? base : `STEMI-${base}`;
+          }
+          if (evt.type === 'NSTEMI') {
+            const base = evt.formattedRecordId || evt.registryNo || raw.acs_no || `ACS.${String(evt.id || idx + 1).padStart(4, '0')}`;
+            return /^NSTEMI-/i.test(base) ? base : `NSTEMI-${base}`;
+          }
+          return evt.formattedRecordId || evt.registryNo || `${evt.type}.${evt.id || idx + 1}`;
+        })();
+        const admissionDate = formatDateForDisplay(raw.admission_date || raw.date_of_admission || raw.date_of_visit_hospitalization || raw.assessment_date || evt.admissionDate || evt.date);
+
         return {
           episodeNumber: epNum,
           type: evt.type,
-          recordId: evt.registryNo || `${evt.type}.${evt.id || idx + 1}`,
-          ipNo: evt.ipNo || 'N/A',
+          recordId: formattedRecordId,
+          formattedRecordId,
+          admissionDate,
+          ipNo: evt.ipNo || raw.ip_no || raw.patient_ip_no || 'N/A',
           date: d,
           stayDays: raw.stayDays || raw.total_stay_days || null,
           lvef,
@@ -438,7 +457,7 @@ PRIMARY DIAGNOSIS: ${hfType}${nyhaClass ? ` (${nyhaClass})` : ''} s/p ${stemiCou
                 1. Echo / LVEF
               </span>
               <span className="text-[10px] font-black text-amber-900 bg-orange-100/90 px-1.5 py-0.5 rounded border border-orange-300">
-                {lvefDelta !== null ? `${lvefDelta >= 0 ? `+${lvefDelta}%` : `${lvefDelta}%`} Trend` : (latestLvef !== null ? 'Current' : '—')}
+                {lvefDelta !== null ? `${lvefDelta >= 0 ? `+${lvefDelta}%` : `${lvefDelta}%`} Trend` : (latestLvef !== null ? 'Current' : 'No Echo On File')}
               </span>
             </div>
             <div className="space-y-1 text-xs text-slate-700">
@@ -540,7 +559,7 @@ PRIMARY DIAGNOSIS: ${hfType}${nyhaClass ? ` (${nyhaClass})` : ''} s/p ${stemiCou
             </div>
           </div>
           <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-100 text-orange-900 border border-orange-300 shrink-0 self-start sm:self-auto">
-            {hfType} · High Acuity
+            {latestLvef !== null ? `${hfType} · High Acuity` : `${hfType || 'Heart Failure'} · LVEF Not Documented`}
           </span>
         </div>
 
@@ -577,7 +596,7 @@ PRIMARY DIAGNOSIS: ${hfType}${nyhaClass ? ` (${nyhaClass})` : ''} s/p ${stemiCou
             </span>
             <ul className="space-y-1.5 text-xs text-slate-800 leading-snug">
               <li>
-                <strong className="text-amber-950">• 2D Echo (Pump):</strong> {latestLvef !== null ? `LVEF ${baselineLvef !== null && baselineLvef !== latestLvef ? `${baselineLvef}% → ${latestLvef}% (${lvefDelta >= 0 ? '+' : ''}${lvefDelta}% trend)` : `${latestLvef}%`}, ${dossierData?.triad?.wallMotion || 'RWMA evaluated'}, ${dossierData?.triad?.valves || 'Valves evaluated'}.` : '2D Echo not recorded in recent encounters.'}
+                <strong className="text-amber-950">• 2D Echo (Pump):</strong> {latestLvef !== null ? `LVEF ${baselineLvef !== null && baselineLvef !== latestLvef ? `${baselineLvef}% → ${latestLvef}% (${lvefDelta >= 0 ? '+' : ''}${lvefDelta}% trend)` : `${latestLvef}%`}, ${dossierData?.triad?.wallMotion || 'RWMA evaluated'}, ${dossierData?.triad?.valves || 'Valves evaluated'}.` : '2D Echo not recorded in clinical encounters (Echo required to determine HF phenotype).'}
               </li>
               <li>
                 <strong className="text-amber-950">• Angio &amp; Stents (Pipes):</strong> {culpritVessel ? `${culpritVessel} disease, ${stentSpecs}${timiFlow ? `, TIMI ${timiFlow}` : ''}.` : (stentSpecs && stentSpecs !== 'No Stent Deployed' ? `${stentSpecs} deployed.` : 'No coronary intervention on file.')}
@@ -630,7 +649,7 @@ PRIMARY DIAGNOSIS: ${hfType}${nyhaClass ? ` (${nyhaClass})` : ''} s/p ${stemiCou
                 <strong className="text-slate-900">• Device Window:</strong> {deviceCandidacy}.
               </li>
               <li>
-                <strong className="text-amber-900">• Overdue / Pending Tests:</strong> {[serumK === null ? 'Serum Potassium' : null, serumCr === null ? 'Serum Creatinine' : null, latestLvef === null ? '2D Echocardiogram (LVEF)' : null].filter(Boolean).join(', ') || 'All core telemetry parameters current.'}
+                <strong className="text-amber-900">• Overdue / Pending Tests:</strong> {[serumK === null ? 'Serum Potassium' : null, serumCr === null ? 'Serum Creatinine' : null, latestLvef === null ? '2D Echocardiogram (LVEF assessment required)' : null].filter(Boolean).join(', ') || 'All core telemetry parameters current.'}
               </li>
             </ul>
           </div>
@@ -722,6 +741,7 @@ PRIMARY DIAGNOSIS: ${hfType}${nyhaClass ? ` (${nyhaClass})` : ''} s/p ${stemiCou
               <YAxis yAxisId="left" domain={[0, 180]} tick={{ fontSize: 11, fill: '#64748b' }} />
               <YAxis yAxisId="right" orientation="right" domain={[0, 15]} tick={{ fontSize: 11, fill: '#64748b' }} />
               <Tooltip
+                formatter={(value, name) => [value !== null && value !== undefined ? value : 'Not Recorded', name]}
                 contentStyle={{
                   backgroundColor: '#ffffff',
                   borderColor: '#cbd5e1',
@@ -876,11 +896,20 @@ PRIMARY DIAGNOSIS: ${hfType}${nyhaClass ? ` (${nyhaClass})` : ''} s/p ${stemiCou
                       {ep.type}
                     </span>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900">
-                        Episode #{ep.episodeNumber} · {ep.recordId} (IP: {ep.ipNo})
-                      </h4>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {ep.date} · LOS: {ep.stayDays !== null ? `${ep.stayDays}d` : "N/A"} · LVEF: {ep.lvef !== null ? `${ep.lvef}%` : "Not Recorded"} · {ep.diagnosis}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-xs font-bold text-slate-900">
+                          Episode #{ep.episodeNumber} · <span className="font-mono text-slate-950 font-black">{ep.formattedRecordId || ep.recordId}</span>
+                        </h4>
+                        <span className="text-slate-300">|</span>
+                        <span className="text-[11px] font-bold text-slate-700 bg-slate-200/70 px-1.5 py-0.5 rounded border border-slate-300/60">
+                          Admission Date: {ep.admissionDate || ep.date}
+                        </span>
+                        <span className="text-[11px] text-slate-500">
+                          (IP: {ep.ipNo})
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        LOS: {ep.stayDays !== null ? `${ep.stayDays}d` : "N/A"} · LVEF: {ep.lvef !== null ? `${ep.lvef}%` : "Not Recorded"} · {ep.diagnosis}
                       </p>
                     </div>
                   </div>
@@ -897,6 +926,8 @@ PRIMARY DIAGNOSIS: ${hfType}${nyhaClass ? ` (${nyhaClass})` : ''} s/p ${stemiCou
                       <div className="bg-slate-50/70 p-3.5 rounded-lg border border-slate-200/80 space-y-1.5">
                         <span className="font-extrabold text-slate-900 block text-xs">Presentation &amp; Clinical Vitals:</span>
                         <ul className="space-y-1 text-slate-700 leading-relaxed text-[11px]">
+                          <li>• <strong className="text-slate-800">Record ID:</strong> <span className="font-mono font-bold text-slate-900">{ep.formattedRecordId || ep.recordId}</span>.</li>
+                          <li>• <strong className="text-slate-800">Admission Date:</strong> {ep.admissionDate || ep.date}.</li>
                           <li>• <strong className="text-slate-800">Symptoms:</strong> {ep.presentationSymptoms}.</li>
                           <li>• <strong className="text-slate-800">Admission Vitals:</strong> {ep.admissionVitals}.</li>
                           {ep.type !== 'HF' ? <li>• <strong className="text-slate-800">TIMI Risk Score:</strong> {ep.timiScoreText || 'Not assessed'}.</li> : null}

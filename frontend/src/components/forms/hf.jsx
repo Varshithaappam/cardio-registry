@@ -3938,6 +3938,7 @@ const hf = forwardRef(function hf(
             options={CARDIOLOGISTS}
             error={formErrors.treatingCardiologist}
           />
+          {/* Referring Doctor - Temporarily hidden
           <Select readOnly={readOnly}
             id="hf-referring-doctor"
             label="Referring Doctor"
@@ -3945,8 +3946,10 @@ const hf = forwardRef(function hf(
             onChange={setReferringDoctor}
             options={REFERRING_DOCTORS}
           />
+          */}
         </div>
 
+        {/* Referred From – Temporarily hidden
         <div className="grid grid-cols-1 gap-4 mb-4">
           <TextInput readOnly={readOnly}
             id="hf-referred-from"
@@ -3956,6 +3959,7 @@ const hf = forwardRef(function hf(
             placeholder=""
           />
         </div>
+        */}
 
         <div className="grid grid-cols-1 gap-4 mb-4">
           <TextArea readOnly={readOnly}
@@ -5243,7 +5247,8 @@ const hf = forwardRef(function hf(
             </div>
           </div>
 
-          {/* Chest X-ray Block */}
+          {/* Chest X-ray Block - Temporarily hidden */}
+          {/*
           <div className="border-b border-slate-300 bg-white" id="cxrBlock">
             <div className="px-3 py-1.5 bg-slate-100 font-bold border-b border-slate-300 text-slate-700 text-xs uppercase tracking-wider">
               Chest X-ray
@@ -5312,6 +5317,7 @@ const hf = forwardRef(function hf(
               </div>
             </div>
           </div>
+          */}
 
           {/* ECHO Block */}
           <div className="border-b border-slate-300 bg-white" id="echoBlock">
@@ -5785,7 +5791,8 @@ const hf = forwardRef(function hf(
             </div>
           </div>
 
-          {/* MRI Block */}
+          {/* MRI Block - Temporarily hidden */}
+          {/*
           <div className="border-b border-slate-300 bg-white">
             <div className="px-3 py-1.5 bg-slate-100 font-bold border-b border-slate-300 text-slate-700 text-xs uppercase tracking-wider">
               MRI
@@ -5830,8 +5837,10 @@ const hf = forwardRef(function hf(
               </div>
             </div>
           </div>
+          */}
 
-          {/* PET Block */}
+          {/* PET Block - Temporarily hidden */}
+          {/*
           <div className="border-b border-slate-300 bg-white">
             <div className="px-3 py-1.5 bg-slate-100 font-bold border-b border-slate-300 text-slate-700 text-xs uppercase tracking-wider">
               PET
@@ -5841,6 +5850,7 @@ const hf = forwardRef(function hf(
               {renderInlineDate(petDate, setPetDate, "border-b border-slate-300 p-0 text-xs focus:ring-0")}
             </div>
           </div>
+          */}
 
           {/* 6-Minute Walk Test Block */}
           <div className="border-b border-slate-300 bg-white" id="sixMwtBlock">
@@ -5924,7 +5934,8 @@ const hf = forwardRef(function hf(
             </div>
           </div>
 
-          {/* Anaerobic Threshold Block */}
+          {/* Anaerobic Threshold Block - Temporarily hidden */}
+          {/*
           <div className="border-b border-slate-300 bg-white" id="anaerobicBlock">
             <div className="px-3 py-1.5 bg-slate-100 font-bold border-b border-slate-300 text-slate-700 text-xs uppercase tracking-wider">
               Anaerobic Threshold
@@ -5934,6 +5945,7 @@ const hf = forwardRef(function hf(
               {renderInlineDate(anaerobicDate, setAnaerobicDate, "border-b border-slate-300 p-0 text-xs focus:ring-0 bg-transparent", formErrors.anaerobicDate)}
             </div>
           </div>
+          */}
 
           {/* Angiogram Block */}
           <div className="border-b border-slate-300 bg-white" id="angioBlock">
@@ -6028,7 +6040,8 @@ const hf = forwardRef(function hf(
             </div>
           </div>
 
-          {/* Endomyocardial biopsy Block */}
+          {/* Endomyocardial biopsy Block - Temporarily hidden */}
+          {/*
           <div className="bg-white">
             <div className="px-3 py-1.5 bg-slate-100 font-bold border-b border-slate-300 text-slate-700 text-xs uppercase tracking-wider">
               Endomyocardial Biopsy
@@ -6070,6 +6083,7 @@ const hf = forwardRef(function hf(
               )}
             </div>
           </div>
+          */}
 
           {/* Vaccinations Row */}
           <div className={`border-b border-slate-300 bg-white ${formErrors.vacPneumococcalDate || formErrors.vacInfluenzaDate ? 'border-red-500 bg-red-50/20' : ''}`} id="vaccinationsBlock">

@@ -631,6 +631,22 @@ async function getAuditHistory(params) {
 /**
  * Helper to format date into DD-MM-YYYY
  */
+function formatRegistryId(type, regNo, fallbackId) {
+    if (type === 'HF') {
+        const base = regNo ? String(regNo).trim() : `hf${String(fallbackId).padStart(5, '0')}`;
+        return /^HF-/i.test(base) ? base : `HF-${base}`;
+    }
+    if (type === 'STEMI') {
+        const base = regNo ? String(regNo).trim() : `ACS.${String(fallbackId).padStart(4, '0')}`;
+        return /^STEMI-/i.test(base) ? base : `STEMI-${base}`;
+    }
+    if (type === 'NSTEMI') {
+        const base = regNo ? String(regNo).trim() : `ACS.${String(fallbackId).padStart(4, '0')}`;
+        return /^NSTEMI-/i.test(base) ? base : `NSTEMI-${base}`;
+    }
+    return regNo || `${type}-${fallbackId}`;
+}
+
 function formatDossierDate(d) {
     if (!d) return null;
     try {
@@ -984,11 +1000,17 @@ async function getLongitudinalDossier(regPatientId) {
         const precip = hfa.inpatientDetails?.precipitatingFactors || [];
         const symptoms = precip.length > 0 ? precip.join(', ') : (hfa.patient?.presentDiagnosis || 'Dyspnea / Decompensation');
 
+        const baseHf = hfa.hf_registry_no ? String(hfa.hf_registry_no).trim() : `hf${String(hfa.hf_id).padStart(5, '0')}`;
+        const formattedRecordId = /^HF-/i.test(baseHf) ? baseHf : `HF-${baseHf}`;
+        const admissionDate = formatDossierDate(hfa.date_of_admission || hfa.inpatientDetails?.dateOfAdmission || hfa.date_of_visit_hospitalization || encDate);
+
         encounters.push({
             type: 'HF',
             registryType: 'HF',
             id: hfa.hf_id,
             registryNo: hfa.hf_registry_no || `HF${String(hfa.hf_id).padStart(5, '0')}`,
+            formattedRecordId,
+            admissionDate,
             ipNo: hfa.care_mr_no || hfa.ip_no || 'IP-HF',
             date: encDate,
             formattedDate: formatDossierDate(encDate),
@@ -1147,11 +1169,17 @@ async function getLongitudinalDossier(regPatientId) {
             cathText = `Coronary Angiography (${vessel || 'Vessel unrecorded'})` + (stent ? ` + ${stent}` : '');
         }
 
+        const baseStemi = st.acs_no ? String(st.acs_no).trim() : `ACS.${String(st.stemi_id).padStart(4, '0')}`;
+        const formattedRecordId = /^STEMI-/i.test(baseStemi) ? baseStemi : `STEMI-${baseStemi}`;
+        const admissionDate = formatDossierDate(st.admission_date || encDate);
+
         encounters.push({
             type: 'STEMI',
             registryType: 'STEMI',
             id: st.stemi_id,
             registryNo: st.acs_no || `ACS.${String(st.stemi_id).padStart(4, '0')}`,
+            formattedRecordId,
+            admissionDate,
             ipNo: st.ip_no || 'IP-STEMI',
             date: encDate,
             formattedDate: formatDossierDate(encDate),
@@ -1301,11 +1329,17 @@ async function getLongitudinalDossier(regPatientId) {
             cathText = `Coronary Angiography (${vessel || 'Vessel unrecorded'})` + (stent ? ` + ${stent}` : '');
         }
 
+        const baseNstemi = ns.acs_no ? String(ns.acs_no).trim() : `ACS.${String(ns.nstemi_id).padStart(4, '0')}`;
+        const formattedRecordId = /^NSTEMI-/i.test(baseNstemi) ? baseNstemi : `NSTEMI-${baseNstemi}`;
+        const admissionDate = formatDossierDate(ns.admission_date || encDate);
+
         encounters.push({
             type: 'NSTEMI',
             registryType: 'NSTEMI',
             id: ns.nstemi_id,
             registryNo: ns.acs_no || `ACS.${String(ns.nstemi_id).padStart(4, '0')}`,
+            formattedRecordId,
+            admissionDate,
             ipNo: ns.ip_no || 'IP-NSTEMI',
             date: encDate,
             formattedDate: formatDossierDate(encDate),
@@ -1491,7 +1525,8 @@ async function getLongitudinalDossier(regPatientId) {
         const encDate = st.date || st.admission_date || st.event_date || st.created_at;
         return {
             date: formatDossierDate(encDate),
-            recordId: st.registryNo || st.acs_no || `ACS.${st.id || st.stemi_id || st.nstemi_id}`,
+            admissionDate: st.admissionDate || formatDossierDate(st.admission_date || encDate),
+            recordId: st.formattedRecordId || (st.type === 'STEMI' ? `STEMI-${st.acs_no || st.registryNo || st.stemi_id}` : `NSTEMI-${st.acs_no || st.registryNo || st.nstemi_id}`),
             type: st.type,
             targetVessel: st.vessel || 'Not specified',
             strategy: st.strategy || (st.pami === 'Yes' ? 'Primary PCI' : (st.thrombolysis === 'Yes' ? 'Thrombolysis' : 'Conservative')),
@@ -1509,9 +1544,12 @@ async function getLongitudinalDossier(regPatientId) {
         return {
             episodeNumber: epNum,
             type: enc.type,
-            recordId: enc.registryNo,
+            recordId: enc.formattedRecordId || enc.registryNo,
+            formattedRecordId: enc.formattedRecordId || enc.registryNo,
+            registryNo: enc.registryNo,
             ipNo: enc.ipNo,
             date: enc.formattedDate,
+            admissionDate: enc.admissionDate || enc.formattedDate,
             stayDays: enc.stayDays,
             lvef: enc.lvef,
             diagnosis: enc.diagnosis,

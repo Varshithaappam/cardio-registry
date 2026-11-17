@@ -64,11 +64,13 @@ export default function RegisterNewPatient({
   const [name, setName] = useState('');
   const [nameError, setNameError] = useState(null);
   const [phoneError, setPhoneError] = useState(null);
+  const [secondaryPhoneError, setSecondaryPhoneError] = useState(null);
   const [mrNo, setMrNo] = useState('DDH.');
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
   const [bloodGroup, setBloodGroup] = useState('');
   const [phone, setPhone] = useState('');
+  const [secondaryContactPhone, setSecondaryContactPhone] = useState('');
   const [email, setEmail] = useState('');
   const [uhid, setUhid] = useState('DDCH.');
   const [nationalIdType, setNationalIdType] = useState('ABHA');
@@ -134,6 +136,7 @@ export default function RegisterNewPatient({
       setDateOfDeath(formatDateForInput(p.date_of_death || p.dateOfDeath));
       setBloodGroup(p.bloodGroup || p.blood_group || '');
       setPhone(p.phone || p.phone_no || '');
+      setSecondaryContactPhone(p.secondary_contact_phone || p.secondaryContactPhone || '');
       setEmail(p.email || '');
       const rawUhid = p.uhi || p.uhid || '';
       if (!rawUhid || rawUhid === 'DDCH.00000' || rawUhid === '00000' || !rawUhid.toUpperCase().startsWith('DDCH.')) {
@@ -201,6 +204,7 @@ export default function RegisterNewPatient({
     setGender('Male');
     setBloodGroup('A+');
     setPhone('9878950020');
+    setSecondaryContactPhone('9878950021');
     setEmail('PatientXYZ@gmail.com');
     setUhid('DDCH.14250');
     setNationalIdType('ABHA');
@@ -455,6 +459,19 @@ export default function RegisterNewPatient({
       return;
     }
 
+    if (secondaryContactPhone && secondaryContactPhone.trim()) {
+      const secPhoneValRes = validateField('phone', secondaryContactPhone);
+      if (!secPhoneValRes.isValid) {
+        await showAlert({
+          type: 'warning',
+          title: 'Invalid Secondary Phone Number',
+          message: secPhoneValRes.error,
+          targetField: 'secondary_contact_phone'
+        });
+        return;
+      }
+    }
+
     if (email && email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email.trim())) {
@@ -609,6 +626,8 @@ export default function RegisterNewPatient({
       gender,
       bloodGroup: bloodGroup || 'Unknown',
       phone,
+      secondaryContactPhone,
+      secondary_contact_phone: secondaryContactPhone || null,
       email,
       address: fullAddressCombined || address,
       houseFlatNo,
@@ -739,7 +758,7 @@ export default function RegisterNewPatient({
 
       {/* Main 3-Column Content Body (Balanced, No scrolling required for core fields) */}
       <div className="flex-1 overflow-y-auto py-2.5 px-3.5 grid grid-cols-1 md:grid-cols-3 gap-3.5 items-start">
-        
+
         {/* COLUMN 1: Demographics & Profile (Primary Core Demographics first) */}
         <div className="space-y-2.5 bg-slate-50/70 py-2.5 px-3 rounded-xl border border-slate-200/80">
           <div className="flex items-center justify-between border-b border-slate-200/80 pb-1.5">
@@ -855,11 +874,10 @@ export default function RegisterNewPatient({
                 <label htmlFor="reg-patient-status" className="form-field-label">
                   Patient Status <span className="text-red-500 font-bold">*</span>
                 </label>
-                <span className={`px-1.5 py-0.2 text-[9px] font-extrabold rounded uppercase tracking-wider ${
-                  patientStatus === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' :
-                  patientStatus === 'DECEASED' ? 'bg-rose-100 text-rose-800' :
-                  'bg-slate-100 text-slate-700'
-                }`}>
+                <span className={`px-1.5 py-0.2 text-[9px] font-extrabold rounded uppercase tracking-wider ${patientStatus === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' :
+                    patientStatus === 'DECEASED' ? 'bg-rose-100 text-rose-800' :
+                      'bg-slate-100 text-slate-700'
+                  }`}>
                   {patientStatus}
                 </span>
               </div>
@@ -907,7 +925,7 @@ export default function RegisterNewPatient({
             </div>
           )}
 
-          {/* 4. Contact Phone & Email Address */}
+          {/* 4. Contact Phone & Secondary Contact Phone */}
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="form-field-label">
@@ -937,19 +955,55 @@ export default function RegisterNewPatient({
               )}
             </div>
             <div>
-              <label className="form-field-label">Email Address</label>
+              <label className="form-field-label">
+                Secondary Contact Phone <span className="text-slate-400 font-normal ml-0.5">(Optional)</span>
+              </label>
               <input
-                id="reg-email"
-                type="email"
-                placeholder="patient@example.com"
-                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="reg-secondary-phone"
+                type="text"
+                maxLength={10}
+                placeholder="9848054321"
+                className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-mono"
+                value={secondaryContactPhone}
+                onChange={(e) => {
+                  const cleanPhone = sanitizePhone(e.target.value);
+                  if (cleanPhone) {
+                    const res = validateField('phone', cleanPhone);
+                    setSecondaryPhoneError(res.isValid ? null : res.error);
+                  } else {
+                    setSecondaryPhoneError(null);
+                  }
+                  setSecondaryContactPhone(cleanPhone);
+                }}
+                onBlur={(e) => {
+                  if (e.target.value && e.target.value.trim()) {
+                    const res = validateField('phone', e.target.value);
+                    setSecondaryPhoneError(res.isValid ? null : res.error);
+                  } else {
+                    setSecondaryPhoneError(null);
+                  }
+                }}
               />
+              {secondaryPhoneError && (
+                <span className="text-red-500 text-[10px] block mt-0.5 font-bold">{secondaryPhoneError}</span>
+              )}
             </div>
           </div>
 
-          {/* 5. Occupation & Higher Education */}
+          {/* 5. Email Address */}
+          <div>
+            <label className="form-field-label">Email Address</label>
+            <input
+              id="reg-email"
+              type="email"
+              placeholder="patient@example.com"
+              className="w-full p-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          {/* 6. Occupation & Higher Education */}
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="form-field-label">Occupation</label>
@@ -1006,11 +1060,10 @@ export default function RegisterNewPatient({
                     type="text"
                     required
                     maxLength={8}
-                    className={`w-full p-1.5 text-xs bg-white border rounded-lg focus:outline-none focus:ring-2 font-mono text-slate-900 pr-7 ${
-                      uniqueErrors.mr_no
+                    className={`w-full p-1.5 text-xs bg-white border rounded-lg focus:outline-none focus:ring-2 font-mono text-slate-900 pr-7 ${uniqueErrors.mr_no
                         ? 'border-red-500 bg-red-50/50 focus:ring-red-400'
                         : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-500'
-                    }`}
+                      }`}
                     value={mrNo}
                     onChange={(e) => {
                       setMrNo(sanitizeMRNo(e.target.value));
@@ -1060,11 +1113,10 @@ export default function RegisterNewPatient({
                     required
                     maxLength={10}
                     placeholder="DDCH.14250"
-                    className={`w-full p-1.5 text-xs bg-white border rounded-lg focus:outline-none focus:ring-2 font-mono pr-7 ${
-                      uniqueErrors.uhid
+                    className={`w-full p-1.5 text-xs bg-white border rounded-lg focus:outline-none focus:ring-2 font-mono pr-7 ${uniqueErrors.uhid
                         ? 'border-red-500 bg-red-50/50 focus:ring-red-400'
                         : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-500'
-                    }`}
+                      }`}
                     value={uhid}
                     onChange={(e) => {
                       setUhid(sanitizeUHID(e.target.value));
@@ -1140,13 +1192,12 @@ export default function RegisterNewPatient({
                       <label className="form-field-label">
                         ABHA Number
                       </label>
-                      <span className={`text-[9px] font-mono px-1 py-0.2 rounded font-semibold ${
-                        abhaNumber.replace(/\D/g, '').length === 14
+                      <span className={`text-[9px] font-mono px-1 py-0.2 rounded font-semibold ${abhaNumber.replace(/\D/g, '').length === 14
                           ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
                           : abhaNumber.replace(/\D/g, '').length > 0
                             ? 'bg-amber-100 text-amber-700 border border-amber-300'
                             : 'bg-slate-100 text-slate-500 border border-slate-200'
-                      }`}>
+                        }`}>
                         {abhaNumber.replace(/\D/g, '').length}/14{abhaNumber.replace(/\D/g, '').length === 14 ? ' ✓' : ''}
                       </span>
                     </div>
@@ -1158,11 +1209,10 @@ export default function RegisterNewPatient({
                         type="text"
                         maxLength={25}
                         placeholder="XX-XXXX-XXXX-XXXX"
-                        className={`w-full p-1.5 text-xs bg-white border rounded-lg focus:outline-none focus:ring-2 font-mono pr-7 ${
-                          uniqueErrors.abha_number
+                        className={`w-full p-1.5 text-xs bg-white border rounded-lg focus:outline-none focus:ring-2 font-mono pr-7 ${uniqueErrors.abha_number
                             ? 'border-red-500 bg-red-50/50 focus:ring-red-400'
                             : 'border-slate-300 focus:ring-blue-500/20 focus:border-blue-500'
-                        }`}
+                          }`}
                         value={abhaNumber}
                         onChange={(e) => {
                           setAbhaNumber(sanitizeABHA(e.target.value, abhaNumber));
@@ -1216,13 +1266,12 @@ export default function RegisterNewPatient({
                     <label className="form-field-label">
                       Aadhaar Number
                     </label>
-                    <span className={`text-[9px] font-mono px-1 py-0.2 rounded font-semibold ${
-                      aadhaarNumber.replace(/\D/g, '').length === 12
+                    <span className={`text-[9px] font-mono px-1 py-0.2 rounded font-semibold ${aadhaarNumber.replace(/\D/g, '').length === 12
                         ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
                         : aadhaarNumber.replace(/\D/g, '').length > 0
                           ? 'bg-amber-100 text-amber-700 border border-amber-300'
                           : 'bg-slate-100 text-slate-500 border border-slate-200'
-                    }`}>
+                      }`}>
                       {aadhaarNumber.replace(/\D/g, '').length}/12{aadhaarNumber.replace(/\D/g, '').length === 12 ? ' ✓' : ''}
                     </span>
                   </div>
@@ -1362,11 +1411,10 @@ export default function RegisterNewPatient({
                   type="button"
                   key={opt}
                   onClick={() => setHypertension(opt)}
-                  className={`flex-1 py-1 text-xs rounded-md border text-center transition-all ${
-                    hypertension === opt
+                  className={`flex-1 py-1 text-xs rounded-md border text-center transition-all ${hypertension === opt
                       ? 'bg-blue-50/50 border-blue-500 text-blue-900 font-semibold shadow-sm'
                       : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 font-medium'
-                  }`}
+                    }`}
                 >
                   {opt}
                 </button>
@@ -1383,11 +1431,10 @@ export default function RegisterNewPatient({
                   type="button"
                   key={opt}
                   onClick={() => setSmoking(opt)}
-                  className={`flex-1 py-1 text-xs rounded-md border text-center transition-all ${
-                    smoking === opt
+                  className={`flex-1 py-1 text-xs rounded-md border text-center transition-all ${smoking === opt
                       ? 'bg-blue-50/50 border-blue-500 text-blue-900 font-semibold shadow-sm'
                       : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 font-medium'
-                  }`}
+                    }`}
                 >
                   {opt}
                 </button>
@@ -1404,11 +1451,10 @@ export default function RegisterNewPatient({
                   type="button"
                   key={opt}
                   onClick={() => setDiabetes(opt)}
-                  className={`flex-1 py-1 text-xs rounded-md border text-center transition-all ${
-                    diabetes === opt
+                  className={`flex-1 py-1 text-xs rounded-md border text-center transition-all ${diabetes === opt
                       ? 'bg-blue-50/50 border-blue-500 text-blue-900 font-semibold shadow-sm'
                       : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 font-medium'
-                  }`}
+                    }`}
                 >
                   {opt}
                 </button>
@@ -1442,11 +1488,10 @@ export default function RegisterNewPatient({
                   type="button"
                   key={opt}
                   onClick={() => setRenalFailure(opt)}
-                  className={`flex-1 py-1 text-xs rounded-md border text-center transition-all ${
-                    renalFailure === opt
+                  className={`flex-1 py-1 text-xs rounded-md border text-center transition-all ${renalFailure === opt
                       ? 'bg-blue-50/50 border-blue-500 text-blue-900 font-semibold shadow-sm'
                       : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 font-medium'
-                  }`}
+                    }`}
                 >
                   {opt}
                 </button>
@@ -1499,11 +1544,10 @@ export default function RegisterNewPatient({
           type="submit"
           disabled={loading || isUniqueChecking || hasUniquenessErrors}
           title={hasUniquenessErrors ? 'Cannot submit with duplicate identifiers' : ''}
-          className={`px-6 py-2 rounded-lg transition-all shadow-md flex items-center gap-2 ${
- loading || isUniqueChecking || hasUniquenessErrors
- ? 'bg-slate-400 text-white cursor-not-allowed opacity-60'
- : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer active:scale-95'
- }`}
+          className={`px-6 py-2 rounded-lg transition-all shadow-md flex items-center gap-2 ${loading || isUniqueChecking || hasUniquenessErrors
+              ? 'bg-slate-400 text-white cursor-not-allowed opacity-60'
+              : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer active:scale-95'
+            }`}
         >
           {isUniqueChecking ? (
             <>

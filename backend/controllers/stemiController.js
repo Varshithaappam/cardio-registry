@@ -328,6 +328,7 @@ async function createStemiRecord(req, res) {
     reqClinical.input('anterior_mi_or_lbbb', sql.NVarChar(3), getStr('anterior_mi_or_lbbb'));
     reqClinical.input('weight_lt_67kg', sql.NVarChar(3), getStr('weight_lt_67kg'));
     reqClinical.input('reperfusion_gt_4hrs', sql.NVarChar(3), getStr('reperfusion_gt_4hrs'));
+    reqClinical.input('st_deviation_at_admission', sql.NVarChar(10), getStr('st_deviation_at_admission'));
     reqClinical.input('lvf', sql.NVarChar(3), getStr('lvf'));
     reqClinical.input('vt_vf', sql.NVarChar(3), getStr('vt_vf'));
     reqClinical.input('bbb_chb', sql.NVarChar(3), getStr('bbb_chb'));
@@ -340,13 +341,13 @@ async function createStemiRecord(req, res) {
         [stemi_id], [typical_angina], [atypical_chest_pain], [breathlessness], [syncope_presyncope],
         [pulse_rate], [systolic_bp], [diastolic_bp], [age_gt_75], [age_65_to_74], [history_dm_htn_angina],
         [sbp_lt_100], [heart_rate_gt_100], [killip_class_ii_to_iv], [anterior_mi_or_lbbb], [weight_lt_67kg],
-        [reperfusion_gt_4hrs], [lvf], [vt_vf], [bbb_chb], [elevated_bnp], [elevated_crp], [timi_total_score],
+        [reperfusion_gt_4hrs], [st_deviation_at_admission], [lvf], [vt_vf], [bbb_chb], [elevated_bnp], [elevated_crp], [timi_total_score],
         [created_at], [updated_at]
       ) VALUES (
         @stemi_id, @typical_angina, @atypical_chest_pain, @breathlessness, @syncope_presyncope,
         @pulse_rate, @systolic_bp, @diastolic_bp, @age_gt_75, @age_65_to_74, @history_dm_htn_angina,
         @sbp_lt_100, @heart_rate_gt_100, @killip_class_ii_to_iv, @anterior_mi_or_lbbb, @weight_lt_67kg,
-        @reperfusion_gt_4hrs, @lvf, @vt_vf, @bbb_chb, @elevated_bnp, @elevated_crp, @timi_total_score,
+        @reperfusion_gt_4hrs, @st_deviation_at_admission, @lvf, @vt_vf, @bbb_chb, @elevated_bnp, @elevated_crp, @timi_total_score,
         GETDATE(), GETDATE()
       );
     `);
@@ -359,6 +360,7 @@ async function createStemiRecord(req, res) {
     reqTx.input('pami', sql.NVarChar(3), getStr('pami'));
     reqTx.input('thrombolysis', sql.NVarChar(3), getStr('thrombolysis'));
     reqTx.input('conservative', sql.NVarChar(3), getStr('conservative'));
+    reqTx.input('none', sql.NVarChar(10), getStr('none'));
     reqTx.input('door_to_balloon_time', sql.Int, getVal('door_to_balloon_time') ? parseInt(getVal('door_to_balloon_time'), 10) : null);
     reqTx.input('vessel_lmca', sql.NVarChar(3), getStr('vessel_lmca'));
     reqTx.input('vessel_lad', sql.NVarChar(3), getStr('vessel_lad'));
@@ -411,7 +413,7 @@ async function createStemiRecord(req, res) {
 
     await reqTx.query(`
       INSERT INTO [stemi_treatment_strategy] (
-        [stemi_id], [pami], [thrombolysis], [conservative], [door_to_balloon_time],
+        [stemi_id], [pami], [thrombolysis], [conservative], [none], [door_to_balloon_time],
         [vessel_lmca], [vessel_lad], [vessel_diagonal], [vessel_lcx], [vessel_ramus], [vessel_om],
         [vessel_rca], [vessel_pda], [vessel_segment], [thrombosuction_done], [thrombosuction_not_done],
         [stent_bms], [stent_des], [stent_diameter], [stent_length], [procedural_success], [timi_flow],
@@ -422,7 +424,7 @@ async function createStemiRecord(req, res) {
         [statin], [statin_10mg], [statin_20mg], [statin_40mg], [statin_80mg], [other_drugs],
         [cag], [iabp], [invasive_ventilation], [ptca], [cabg], [other_procedure], [created_at], [updated_at]
       ) VALUES (
-        @stemi_id, @pami, @thrombolysis, @conservative, @door_to_balloon_time,
+        @stemi_id, @pami, @thrombolysis, @conservative, @none, @door_to_balloon_time,
         @vessel_lmca, @vessel_lad, @vessel_diagonal, @vessel_lcx, @vessel_ramus, @vessel_om,
         @vessel_rca, @vessel_pda, @vessel_segment, @thrombosuction_done, @thrombosuction_not_done,
         @stent_bms, @stent_des, @stent_diameter, @stent_length, @procedural_success, @timi_flow,
@@ -568,6 +570,7 @@ async function createStemiRecord(req, res) {
     reqOutcomes.input('cva_thrombotic', sql.NVarChar(3), getStr('cva_thrombotic'));
     reqOutcomes.input('cva_hemorrhagic', sql.NVarChar(3), getStr('cva_hemorrhagic'));
     reqOutcomes.input('major_bleeding', sql.NVarChar(3), getStr('major_bleeding'));
+    reqOutcomes.input('outcome_none', sql.NVarChar(10), getStr('outcome_none'));
     reqOutcomes.input('outcome_other', sql.VarChar(255), getVal('outcome_other'));
     reqOutcomes.input('beta_blocker', sql.NVarChar(3), getStr('discharge_beta_blocker'));
     reqOutcomes.input('calcium_channel_blocker', sql.NVarChar(3), getStr('discharge_calcium_channel_blocker'));
@@ -590,14 +593,14 @@ async function createStemiRecord(req, res) {
     await reqOutcomes.query(`
       INSERT INTO [stemi_outcomes] (
         [stemi_id], [death], [stemi_for_nonstemi], [remi_for_stemi],
-        [revascularization_recurrent_ischemia], [cva_thrombotic], [cva_hemorrhagic], [major_bleeding],
+        [revascularization_recurrent_ischemia], [cva_thrombotic], [cva_hemorrhagic], [major_bleeding], [outcome_none],
         [outcome_other], [beta_blocker], [calcium_channel_blocker], [nitrate], [nicorandil], [ivabradine],
         [ranolazine], [trimetazidine], [aspirin], [clopidogrel], [prasugrel], [ticagrelor], [statin],
         [statin_10mg], [statin_20mg], [statin_40mg], [statin_80mg], [discharge_other_medication],
         [created_at], [updated_at]
       ) VALUES (
         @stemi_id, @death, @stemi_for_nonstemi, @remi_for_stemi,
-        @revascularization_recurrent_ischemia, @cva_thrombotic, @cva_hemorrhagic, @major_bleeding,
+        @revascularization_recurrent_ischemia, @cva_thrombotic, @cva_hemorrhagic, @major_bleeding, @outcome_none,
         @outcome_other, @beta_blocker, @calcium_channel_blocker, @nitrate, @nicorandil, @ivabradine,
         @ranolazine, @trimetazidine, @aspirin, @clopidogrel, @prasugrel, @ticagrelor, @statin,
         @statin_10mg, @statin_20mg, @statin_40mg, @statin_80mg, @discharge_other_medication,
@@ -1249,6 +1252,7 @@ async function updateStemiRecord(req, res) {
     reqClinical.input('anterior_mi_or_lbbb', sql.NVarChar(3), getStr('anterior_mi_or_lbbb'));
     reqClinical.input('weight_lt_67kg', sql.NVarChar(3), getStr('weight_lt_67kg'));
     reqClinical.input('reperfusion_gt_4hrs', sql.NVarChar(3), getStr('reperfusion_gt_4hrs'));
+    reqClinical.input('st_deviation_at_admission', sql.NVarChar(10), getStr('st_deviation_at_admission'));
     reqClinical.input('lvf', sql.NVarChar(3), getStr('lvf'));
     reqClinical.input('vt_vf', sql.NVarChar(3), getStr('vt_vf'));
     reqClinical.input('bbb_chb', sql.NVarChar(3), getStr('bbb_chb'));
@@ -1265,6 +1269,7 @@ async function updateStemiRecord(req, res) {
           [sbp_lt_100] = @sbp_lt_100, [heart_rate_gt_100] = @heart_rate_gt_100,
           [killip_class_ii_to_iv] = @killip_class_ii_to_iv, [anterior_mi_or_lbbb] = @anterior_mi_or_lbbb,
           [weight_lt_67kg] = @weight_lt_67kg, [reperfusion_gt_4hrs] = @reperfusion_gt_4hrs,
+          [st_deviation_at_admission] = @st_deviation_at_admission,
           [lvf] = @lvf, [vt_vf] = @vt_vf, [bbb_chb] = @bbb_chb, [elevated_bnp] = @elevated_bnp,
           [elevated_crp] = @elevated_crp, [timi_total_score] = @timi_total_score, [updated_at] = GETDATE()
       WHERE [stemi_id] = @stemi_id;
@@ -1276,6 +1281,7 @@ async function updateStemiRecord(req, res) {
     reqTx.input('pami', sql.NVarChar(3), getStr('pami'));
     reqTx.input('thrombolysis', sql.NVarChar(3), getStr('thrombolysis'));
     reqTx.input('conservative', sql.NVarChar(3), getStr('conservative'));
+    reqTx.input('none', sql.NVarChar(10), getStr('none'));
     reqTx.input('door_to_balloon_time', sql.Int, getVal('door_to_balloon_time') ? parseInt(getVal('door_to_balloon_time'), 10) : null);
     reqTx.input('vessel_lmca', sql.NVarChar(3), getStr('vessel_lmca'));
     reqTx.input('vessel_lad', sql.NVarChar(3), getStr('vessel_lad'));
@@ -1328,7 +1334,7 @@ async function updateStemiRecord(req, res) {
 
     await reqTx.query(`
       UPDATE [stemi_treatment_strategy]
-      SET [pami] = @pami, [thrombolysis] = @thrombolysis, [conservative] = @conservative,
+      SET [pami] = @pami, [thrombolysis] = @thrombolysis, [conservative] = @conservative, [none] = @none,
           [door_to_balloon_time] = @door_to_balloon_time, [vessel_lmca] = @vessel_lmca,
           [vessel_lad] = @vessel_lad, [vessel_diagonal] = @vessel_diagonal, [vessel_lcx] = @vessel_lcx,
           [vessel_ramus] = @vessel_ramus, [vessel_om] = @vessel_om, [vessel_rca] = @vessel_rca,
@@ -1479,6 +1485,7 @@ async function updateStemiRecord(req, res) {
     reqOutcomes.input('cva_thrombotic', sql.NVarChar(3), getStr('cva_thrombotic'));
     reqOutcomes.input('cva_hemorrhagic', sql.NVarChar(3), getStr('cva_hemorrhagic'));
     reqOutcomes.input('major_bleeding', sql.NVarChar(3), getStr('major_bleeding'));
+    reqOutcomes.input('outcome_none', sql.NVarChar(10), getStr('outcome_none'));
     reqOutcomes.input('outcome_other', sql.VarChar(255), getVal('outcome_other'));
     reqOutcomes.input('beta_blocker', sql.NVarChar(3), getStr('discharge_beta_blocker') || getStr('beta_blocker'));
     reqOutcomes.input('calcium_channel_blocker', sql.NVarChar(3), getStr('discharge_calcium_channel_blocker') || getStr('calcium_channel_blocker'));
@@ -1503,6 +1510,7 @@ async function updateStemiRecord(req, res) {
       SET [death] = @death, [stemi_for_nonstemi] = @stemi_for_nonstemi, [remi_for_stemi] = @remi_for_stemi,
           [revascularization_recurrent_ischemia] = @revascularization_recurrent_ischemia,
           [cva_thrombotic] = @cva_thrombotic, [cva_hemorrhagic] = @cva_hemorrhagic, [major_bleeding] = @major_bleeding,
+          [outcome_none] = @outcome_none,
           [outcome_other] = @outcome_other, [beta_blocker] = @beta_blocker,
           [calcium_channel_blocker] = @calcium_channel_blocker, [nitrate] = @nitrate, [nicorandil] = @nicorandil,
           [ivabradine] = @ivabradine, [ranolazine] = @ranolazine, [trimetazidine] = @trimetazidine,

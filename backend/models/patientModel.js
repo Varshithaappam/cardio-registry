@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 const patientFields = [
   'mr_no', 'ip_no', 'patient_name', 'date_of_birth', 'gender', 'blood_group',
-  'insurance_mode', 'phone_no', 'email', 'hypertension', 'smoking', 'diabetes',
+  'insurance_mode', 'phone_no', 'secondary_contact_phone', 'email', 'hypertension', 'smoking', 'diabetes',
   'diabetes_control_type', 'renal_failure', 'active_dialysis_status', 'address',
   'house_flat_no', 'street_locality', 'village_town', 'mandal', 'district', 'state', 'pincode',
   'higher_education', 'occupation', 'uhid', 'abha_number',
@@ -22,6 +22,7 @@ async function createPatient(patientData) {
   request.input('blood_group', db.sql.NVarChar(7), patientData.blood_group || 'Unknown');
   request.input('insurance_mode', db.sql.NVarChar(24), patientData.insurance_mode || 'Unknown');
   request.input('phone_no', db.sql.VarChar(15), patientData.phone_no || null);
+  request.input('secondary_contact_phone', db.sql.VarChar(20), patientData.secondary_contact_phone || null);
   request.input('email', db.sql.VarChar(100), patientData.email || null);
   request.input('hypertension', db.sql.NVarChar(7), patientData.hypertension || 'No');
   request.input('smoking', db.sql.NVarChar(7), patientData.smoking || 'No');
@@ -64,7 +65,7 @@ async function createPatient(patientData) {
     const directInsertQuery = `
       INSERT INTO dbo.patient_demographics (
         mr_no, ip_no, patient_name, date_of_birth, gender, blood_group,
-        insurance_mode, phone_no, email, hypertension, smoking, diabetes,
+        insurance_mode, phone_no, secondary_contact_phone, email, hypertension, smoking, diabetes,
         diabetes_control_type, renal_failure, active_dialysis_status, address,
         house_flat_no, street_locality, village_town, mandal, district, state, pincode,
         higher_education, occupation, uhid, abha_number,
@@ -74,7 +75,7 @@ async function createPatient(patientData) {
       )
       VALUES (
         @mr_no, @ip_no, @patient_name, @date_of_birth, @gender, @blood_group,
-        @insurance_mode, @phone_no, @email, @hypertension, @smoking, @diabetes,
+        @insurance_mode, @phone_no, @secondary_contact_phone, @email, @hypertension, @smoking, @diabetes,
         @diabetes_control_type, @renal_failure, @active_dialysis_status, @address,
         @house_flat_no, @street_locality, @village_town, @mandal, @district, @state, @pincode,
         @higher_education, @occupation, @uhid, @abha_number,
@@ -189,6 +190,7 @@ async function updatePatient(regPatientId, patientData) {
   request.input('blood_group', db.sql.NVarChar(7), patientData.blood_group || 'Unknown');
   request.input('insurance_mode', db.sql.NVarChar(24), patientData.insurance_mode || 'Unknown');
   request.input('phone_no', db.sql.VarChar(15), patientData.phone_no || null);
+  request.input('secondary_contact_phone', db.sql.VarChar(20), patientData.secondary_contact_phone || null);
   request.input('email', db.sql.VarChar(100), patientData.email || null);
   request.input('hypertension', db.sql.NVarChar(7), patientData.hypertension || 'No');
   request.input('smoking', db.sql.NVarChar(7), patientData.smoking || 'No');
@@ -224,6 +226,7 @@ async function updatePatient(regPatientId, patientData) {
         [blood_group] = @blood_group,
         [insurance_mode] = @insurance_mode,
         [phone_no] = @phone_no,
+        [secondary_contact_phone] = @secondary_contact_phone,
         [email] = @email,
         [hypertension] = @hypertension,
         [smoking] = @smoking,

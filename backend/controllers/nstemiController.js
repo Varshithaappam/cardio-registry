@@ -461,6 +461,7 @@ async function createNstemiRecord(req, res) {
     reqTx.input('pami', sql.NVarChar(3), strVal('pami'));
     reqTx.input('thrombolysis', sql.NVarChar(3), strVal('thrombolysis'));
     reqTx.input('conservative', sql.NVarChar(3), strVal('conservative'));
+    reqTx.input('none', sql.NVarChar(10), strVal('none'));
     reqTx.input('door_to_balloon_time', sql.Int, val('door_to_balloon_time') ? parseInt(val('door_to_balloon_time')) : null);
     
     // Vessels
@@ -525,7 +526,7 @@ async function createNstemiRecord(req, res) {
 
     await reqTx.query(`
       INSERT INTO [nstemi_treatment_strategy] (
-        [nstemi_id], [pami], [thrombolysis], [conservative], [door_to_balloon_time],
+        [nstemi_id], [pami], [thrombolysis], [conservative], [none], [door_to_balloon_time],
         [vessel_lmca], [vessel_lad], [vessel_diagonal], [vessel_lcx], [vessel_ramus], [vessel_om],
         [vessel_rca], [vessel_pda], [vessel_segment], [thrombosuction_done], [thrombosuction_not_done],
         [stent_bms], [stent_des], [stent_diameter], [stent_length], [procedural_success], [timi_flow],
@@ -536,7 +537,7 @@ async function createNstemiRecord(req, res) {
         [statin], [statin_10mg], [statin_20mg], [statin_40mg], [statin_80mg], [other_drugs],
         [cag], [iabp], [invasive_ventilation], [ptca], [cabg], [other_procedure]
       ) VALUES (
-        @nstemi_id, @pami, @thrombolysis, @conservative, @door_to_balloon_time,
+        @nstemi_id, @pami, @thrombolysis, @conservative, @none, @door_to_balloon_time,
         @vessel_lmca, @vessel_lad, @vessel_diagonal, @vessel_lcx, @vessel_ramus, @vessel_om,
         @vessel_rca, @vessel_pda, @vessel_segment, @thrombosuction_done, @thrombosuction_not_done,
         @stent_bms, @stent_des, @stent_diameter, @stent_length, @procedural_success, @timi_flow,
@@ -594,6 +595,7 @@ async function createNstemiRecord(req, res) {
     reqOutcomes.input('cva_thrombotic', sql.NVarChar(3), strVal('cva_thrombotic'));
     reqOutcomes.input('cva_hemorrhagic', sql.NVarChar(3), strVal('cva_hemorrhagic'));
     reqOutcomes.input('major_bleeding', sql.NVarChar(3), strVal('major_bleeding'));
+    reqOutcomes.input('outcome_none', sql.NVarChar(10), strVal('outcome_none'));
     reqOutcomes.input('outcome_other', sql.VarChar(255), val('outcome_other'));
 
     // Discharge Medications
@@ -618,13 +620,13 @@ async function createNstemiRecord(req, res) {
     await reqOutcomes.query(`
       INSERT INTO [nstemi_outcomes] (
         [nstemi_id], [death], [stemi_for_nonstemi], [remi_for_nstemi],
-        [revascularization_recurrent_ischemia], [cva_thrombotic], [cva_hemorrhagic], [major_bleeding],
+        [revascularization_recurrent_ischemia], [cva_thrombotic], [cva_hemorrhagic], [major_bleeding], [outcome_none],
         [outcome_other], [beta_blocker], [calcium_channel_blocker], [nitrate], [nicorandil], [ivabradine],
         [ranolazine], [trimetazidine], [aspirin], [clopidogrel], [prasugrel], [ticagrelor], [statin],
         [statin_10mg], [statin_20mg], [statin_40mg], [statin_80mg], [discharge_other_medication]
       ) VALUES (
         @nstemi_id, @death, @stemi_for_nonstemi, @remi_for_nstemi,
-        @revascularization_recurrent_ischemia, @cva_thrombotic, @cva_hemorrhagic, @major_bleeding,
+        @revascularization_recurrent_ischemia, @cva_thrombotic, @cva_hemorrhagic, @major_bleeding, @outcome_none,
         @outcome_other, @beta_blocker, @calcium_channel_blocker, @nitrate, @nicorandil, @ivabradine,
         @ranolazine, @trimetazidine, @aspirin, @clopidogrel, @prasugrel, @ticagrelor, @statin,
         @statin_10mg, @statin_20mg, @statin_40mg, @statin_80mg, @discharge_other_medication
@@ -1483,6 +1485,7 @@ async function updateNstemiRecord(req, res) {
     reqTx.input('pami', sql.NVarChar(3), strVal('pami'));
     reqTx.input('thrombolysis', sql.NVarChar(3), strVal('thrombolysis'));
     reqTx.input('conservative', sql.NVarChar(3), strVal('conservative'));
+    reqTx.input('none', sql.NVarChar(10), strVal('none'));
     reqTx.input('door_to_balloon_time', sql.Int, val('door_to_balloon_time') ? parseInt(val('door_to_balloon_time')) : null);
     reqTx.input('vessel_lmca', sql.NVarChar(3), strVal('vessel_lmca'));
     reqTx.input('vessel_lad', sql.NVarChar(3), strVal('vessel_lad'));
@@ -1534,7 +1537,7 @@ async function updateNstemiRecord(req, res) {
     reqTx.input('other_procedure', sql.VarChar(255), val('other_procedure'));
     await reqTx.query(`
       UPDATE [nstemi_treatment_strategy]
-      SET [pami] = @pami, [thrombolysis] = @thrombolysis, [conservative] = @conservative,
+      SET [pami] = @pami, [thrombolysis] = @thrombolysis, [conservative] = @conservative, [none] = @none,
           [door_to_balloon_time] = @door_to_balloon_time, [vessel_lmca] = @vessel_lmca,
           [vessel_lad] = @vessel_lad, [vessel_diagonal] = @vessel_diagonal, [vessel_lcx] = @vessel_lcx,
           [vessel_ramus] = @vessel_ramus, [vessel_om] = @vessel_om, [vessel_rca] = @vessel_rca,
@@ -1594,6 +1597,7 @@ async function updateNstemiRecord(req, res) {
     reqOutcomes.input('cva_thrombotic', sql.NVarChar(3), strVal('cva_thrombotic'));
     reqOutcomes.input('cva_hemorrhagic', sql.NVarChar(3), strVal('cva_hemorrhagic'));
     reqOutcomes.input('major_bleeding', sql.NVarChar(3), strVal('major_bleeding'));
+    reqOutcomes.input('outcome_none', sql.NVarChar(10), strVal('outcome_none'));
     reqOutcomes.input('outcome_other', sql.VarChar(255), val('outcome_other'));
     reqOutcomes.input('beta_blocker', sql.NVarChar(3), strVal('discharge_beta_blocker') || strVal('beta_blocker'));
     reqOutcomes.input('calcium_channel_blocker', sql.NVarChar(3), strVal('discharge_calcium_channel_blocker') || strVal('calcium_channel_blocker'));
@@ -1617,6 +1621,7 @@ async function updateNstemiRecord(req, res) {
       SET [death] = @death, [stemi_for_nonstemi] = @stemi_for_nonstemi, [remi_for_nstemi] = @remi_for_nstemi,
           [revascularization_recurrent_ischemia] = @revascularization_recurrent_ischemia,
           [cva_thrombotic] = @cva_thrombotic, [cva_hemorrhagic] = @cva_hemorrhagic, [major_bleeding] = @major_bleeding,
+          [outcome_none] = @outcome_none,
           [outcome_other] = @outcome_other, [beta_blocker] = @beta_blocker,
           [calcium_channel_blocker] = @calcium_channel_blocker, [nitrate] = @nitrate, [nicorandil] = @nicorandil,
           [ivabradine] = @ivabradine, [ranolazine] = @ranolazine, [trimetazidine] = @trimetazidine,

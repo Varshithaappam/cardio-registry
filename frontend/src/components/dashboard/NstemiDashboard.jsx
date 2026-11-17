@@ -21,7 +21,8 @@ import {
   ShieldAlert,
   Stethoscope,
   Database,
-  RefreshCw
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -130,6 +131,7 @@ export default function NstemiDashboard() {
   const [dbCohort, setDbCohort] = useState([]);
   const [isLoadingDb, setIsLoadingDb] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [chartFilters, setChartFilters] = useState({});
 
   // Load from live database
   const loadData = useCallback(async () => {
@@ -150,8 +152,28 @@ export default function NstemiDashboard() {
     loadData();
   }, [loadData]);
 
-  // Active live cohort directly from database
-  const activeCohort = dbCohort;
+  // Toggle chart-level cross filters (clicking an element toggles it on; clicking again toggles it off)
+  const handleChartFilterToggle = useCallback((dimension, value) => {
+    setChartFilters(prev => {
+      const next = { ...prev };
+      if (next[dimension] === value) {
+        delete next[dimension];
+      } else {
+        next[dimension] = value;
+      }
+      return next;
+    });
+  }, []);
+
+  // Clear all chart-level cross filters
+  const handleClearChartFilters = useCallback(() => {
+    setChartFilters({});
+  }, []);
+
+  // Active live cohort dynamically filtered based on interactive chart cross-filters
+  const activeCohort = useMemo(() => {
+    return filterAcsCohort(dbCohort, {}, 'NSTEMI', chartFilters);
+  }, [dbCohort, chartFilters]);
 
   // Compute analytics dynamically
   const analytics = useMemo(() => {
@@ -176,7 +198,7 @@ export default function NstemiDashboard() {
 
   // Custom Donut Center Helpers & Summaries
   const typicalItem = presentation.find(p => p.name === 'Typical angina') || presentation[0] || { percent: 0 };
-  const earlyInvItem = treatmentStrategy.find(s => s.name === 'Early Invasive') || treatmentStrategy[0] || { percent: 0 };
+  const pamiItem = treatmentStrategy.find(s => s.name === 'PAMI') || treatmentStrategy[0] || { percent: 0 };
   const dominantAge = [...ageDistribution].sort((a, b) => b.count - a.count)[0] || { bracket: '55-64y', percent: 0 };
   const dominantLytic = [...thrombolysisAgents].sort((a, b) => b.count - a.count)[0] || { name: 'TNK', percent: 0 };
   const htnVal = comorbidities.find(c => c.name === 'Hypertension')?.percent ?? 0;
@@ -234,6 +256,48 @@ export default function NstemiDashboard() {
       </div>
 
       {/* =========================================================================
+          INTERACTIVE CHART CROSS-FILTER PILLS & RESET BANNER
+         ========================================================================= */}
+      {Object.keys(chartFilters).length > 0 && (
+        <div className="bg-white border border-amber-200 rounded-2xl p-3 shadow-xs flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-200">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+              <Sparkles className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+              <span>Active Chart Filters:</span>
+            </div>
+            {Object.entries(chartFilters).map(([dim, val]) => (
+              <span
+                key={dim}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-900 text-white shadow-xs group"
+              >
+                <span className="capitalize text-amber-300 font-medium">{dim}:</span>
+                <span>{val}</span>
+                <button
+                  type="button"
+                  onClick={() => handleChartFilterToggle(dim, val)}
+                  className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
+                  title={`Remove ${val} filter`}
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+            <span className="text-xs text-slate-500 font-mono font-medium">
+              ({activeCohort.length} of {dbCohort.length} records matching)
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleClearChartFilters}
+            className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span>Clear All Filters</span>
+          </button>
+        </div>
+      )}
+
+      {/* =========================================================================
           ROW 1: TOP-LEVEL KPI STAT CARDS (5 Cards in 5-Column Grid)
          ========================================================================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -250,7 +314,7 @@ export default function NstemiDashboard() {
             </div>
           </div>
           <div className="mt-2 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
-            <span className="text-slate-600 font-bold">Live Database Cohort</span>
+            <span className="text-slate-600 font-bold">{Object.keys(chartFilters).length > 0 ? 'Filtered Cohort' : 'Live Database Cohort'}</span>
             <span className="text-slate-400">100% Audited</span>
           </div>
         </div>
@@ -267,9 +331,33 @@ export default function NstemiDashboard() {
               <span className="text-xs font-bold text-slate-500">Years</span>
             </div>
           </div>
-          <div className="mt-2 text-[11px] font-bold flex items-center justify-between">
-            <span className="text-slate-600">&#9794; {kpi.malePercent}% ({kpi.males})</span>
-            <span className="text-pink-600">&#9792; {kpi.femalePercent}% ({kpi.females})</span>
+          <div className="mt-2 text-[11px] font-bold flex items-center justify-between gap-1">
+            <button
+              type="button"
+              onClick={() => handleChartFilterToggle('gender', 'Male')}
+              className={`px-2 py-0.5 rounded-lg border text-xs transition cursor-pointer flex items-center gap-1 ${
+                chartFilters.gender === 'Male'
+                  ? 'bg-sky-100 border-sky-400 text-sky-900 font-black ring-2 ring-sky-300'
+                  : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+              title="Click to filter by Male"
+            >
+              <span>&#9794; {kpi.malePercent}%</span>
+              <span className="text-[10px] text-slate-400">({kpi.males})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleChartFilterToggle('gender', 'Female')}
+              className={`px-2 py-0.5 rounded-lg border text-xs transition cursor-pointer flex items-center gap-1 ${
+                chartFilters.gender === 'Female'
+                  ? 'bg-pink-100 border-pink-400 text-pink-900 font-black ring-2 ring-pink-300'
+                  : 'border-slate-200 text-pink-600 hover:bg-pink-50'
+              }`}
+              title="Click to filter by Female"
+            >
+              <span>&#9792; {kpi.femalePercent}%</span>
+              <span className="text-[10px] text-pink-400">({kpi.females})</span>
+            </button>
           </div>
         </div>
 
@@ -297,13 +385,17 @@ export default function NstemiDashboard() {
             <Clock className="w-4 h-4 text-amber-500" />
           </div>
           <div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-black text-slate-900">{kpi.meanTimeToCath || 19.6}</span>
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-2xl font-black text-slate-900">{kpi.meanTimeToCath ?? 0}</span>
               <span className="text-xs font-bold text-slate-500">hrs</span>
+              <span className="text-xs font-semibold text-slate-400 ml-1">(N = {kpi.cathCount ?? kpi.d2bCount ?? 0})</span>
             </div>
           </div>
           <div className="mt-2 text-[11px] flex items-center justify-between">
             <span className="text-slate-500 text-[10px]">Target: &lt; 24 hrs</span>
+            <span className="text-amber-700 font-bold text-[10px] bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+              N = {kpi.cathCount ?? kpi.d2bCount ?? 0}
+            </span>
           </div>
         </div>
 
@@ -314,14 +406,17 @@ export default function NstemiDashboard() {
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
           </div>
           <div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-black text-slate-900">0.0</span>
-              <span className="text-xs font-bold text-slate-500">mins (0% TLT)</span>
+            <div className="flex items-baseline gap-1.5 flex-wrap">
+              <span className="text-2xl font-black text-slate-900">{kpi.meanDoorToNeedle ?? 0}</span>
+              <span className="text-xs font-bold text-slate-500">mins ({kpi.d2nCount > 0 ? `${kpi.d2nCount} TLT` : '0% TLT'})</span>
+              <span className="text-xs font-semibold text-slate-400 ml-1">(N = {kpi.d2nCount ?? 0})</span>
             </div>
           </div>
           <div className="mt-2 text-[11px] flex items-center justify-between">
             <span className="text-slate-500 text-[10px]">Target: Contraindicated</span>
-
+            <span className="text-slate-600 font-bold text-[10px] bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+              N = {kpi.d2nCount ?? 0}
+            </span>
           </div>
         </div>
       </div>
@@ -331,12 +426,20 @@ export default function NstemiDashboard() {
          ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
         {/* Col 1: Age Distribution Spectrum */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+        <div className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between transition ${
+          chartFilters.ageGroup ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200/90'
+        }`}>
           <div>
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h2 className="text-xs font-bold text-slate-900">Age Distribution Spectrum</h2>
-                <p className="text-[10px] text-slate-500">Stratification across all NSTEMI records</p>
+                <p className="text-[10px] text-slate-500">
+                  {chartFilters.ageGroup ? (
+                    <span className="text-amber-600 font-bold">Filtered: {chartFilters.ageGroup} (Click bar to reset)</span>
+                  ) : (
+                    'Stratification across all NSTEMI records'
+                  )}
+                </p>
               </div>
               <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 text-[10px] font-bold border border-amber-200">
                 Mean: {Math.round(kpi.meanAge)}y
@@ -350,10 +453,21 @@ export default function NstemiDashboard() {
                   <XAxis dataKey="bracket" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {ageDistribution.map((entry, index) => (
-                      <Cell key={`age-${index}`} fill={entry.fill} />
-                    ))}
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]} cursor="pointer">
+                    {ageDistribution.map((entry, index) => {
+                      const isSelected = chartFilters.ageGroup === entry.bracket;
+                      const isDimmed = chartFilters.ageGroup && !isSelected;
+                      return (
+                        <Cell
+                          key={`age-${index}`}
+                          fill={entry.fill}
+                          opacity={isDimmed ? 0.35 : 1.0}
+                          stroke={isSelected ? '#0f172a' : 'transparent'}
+                          strokeWidth={isSelected ? 2.5 : 0}
+                          onClick={() => handleChartFilterToggle('ageGroup', entry.bracket)}
+                        />
+                      );
+                    })}
                     <LabelList dataKey="percent" position="top" formatter={(val) => `${val}%`} style={{ fontSize: '9px', fill: '#475569', fontWeight: 'bold' }} />
                   </Bar>
                 </BarChart>
@@ -368,12 +482,20 @@ export default function NstemiDashboard() {
         </div>
 
         {/* Col 2: Background Comorbidities Profile */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+        <div className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between transition ${
+          chartFilters.comorbidity ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200/90'
+        }`}>
           <div>
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h2 className="text-xs font-bold text-slate-900">Background Comorbidities</h2>
-                <p className="text-[10px] text-slate-500">All 9 Clinical Information background fields</p>
+                <p className="text-[10px] text-slate-500">
+                  {chartFilters.comorbidity ? (
+                    <span className="text-amber-600 font-bold">Filtered: {chartFilters.comorbidity} (Click bar to reset)</span>
+                  ) : (
+                    'All 9 Clinical Information background fields'
+                  )}
+                </p>
               </div>
               <span className="px-2 py-0.5 rounded bg-amber-50 text-amber-800 text-[10px] font-bold border border-amber-200">
                 9 Risk Factors
@@ -387,10 +509,21 @@ export default function NstemiDashboard() {
                   <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <YAxis type="category" dataKey="name" interval={0} tick={{ fontSize: 9, fill: '#334155', fontWeight: 600 }} axisLine={false} tickLine={false} width={92} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="percent" radius={[0, 3, 3, 0]}>
-                    {comorbidities.map((entry, index) => (
-                      <Cell key={`como-${index}`} fill={entry.fill} />
-                    ))}
+                  <Bar dataKey="percent" radius={[0, 3, 3, 0]} cursor="pointer">
+                    {comorbidities.map((entry, index) => {
+                      const isSelected = chartFilters.comorbidity === entry.name;
+                      const isDimmed = chartFilters.comorbidity && !isSelected;
+                      return (
+                        <Cell
+                          key={`como-${index}`}
+                          fill={entry.fill}
+                          opacity={isDimmed ? 0.35 : 1.0}
+                          stroke={isSelected ? '#0f172a' : 'transparent'}
+                          strokeWidth={isSelected ? 2.5 : 0}
+                          onClick={() => handleChartFilterToggle('comorbidity', entry.name)}
+                        />
+                      );
+                    })}
                     <LabelList dataKey="percent" position="right" formatter={(v) => `${v}%`} style={{ fontSize: '9px', fill: '#475569', fontWeight: 'bold' }} />
                   </Bar>
                 </BarChart>
@@ -405,12 +538,20 @@ export default function NstemiDashboard() {
         </div>
 
         {/* Col 3: Presentation Profile with Center Text */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+        <div className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between transition ${
+          chartFilters.presentation ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200/90'
+        }`}>
           <div>
             <div className="flex items-center justify-between mb-1">
               <div>
                 <h2 className="text-xs font-bold text-slate-900">Presentation Profile</h2>
-                <p className="text-[10px] text-slate-500">All 4 Clinical Information symptom fields</p>
+                <p className="text-[10px] text-slate-500">
+                  {chartFilters.presentation ? (
+                    <span className="text-amber-600 font-bold">Filtered: {chartFilters.presentation} (Click to reset)</span>
+                  ) : (
+                    'All 4 Clinical Information symptom fields'
+                  )}
+                </p>
               </div>
               <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-200">
                 Typical: {typicalItem.percent}%
@@ -431,10 +572,22 @@ export default function NstemiDashboard() {
                     dataKey="count"
                     label={renderDonutSliceLabel}
                     labelLine={false}
+                    cursor="pointer"
                   >
-                    {presentation.map((entry, index) => (
-                      <Cell key={`pres-${index}`} fill={entry.fill} />
-                    ))}
+                    {presentation.map((entry, index) => {
+                      const isSelected = chartFilters.presentation === entry.name;
+                      const isDimmed = chartFilters.presentation && !isSelected;
+                      return (
+                        <Cell
+                          key={`pres-${index}`}
+                          fill={entry.fill}
+                          opacity={isDimmed ? 0.35 : 1.0}
+                          stroke={isSelected ? '#0f172a' : 'none'}
+                          strokeWidth={isSelected ? 3 : 0}
+                          onClick={() => handleChartFilterToggle('presentation', entry.name)}
+                        />
+                      );
+                    })}
                   </Pie>
                   <Tooltip content={<ChartTooltip />} />
                 </PieChart>
@@ -447,13 +600,24 @@ export default function NstemiDashboard() {
           </div>
 
           <div className="grid grid-cols-2 gap-1.5 pt-2 border-t border-slate-100 text-[10px]">
-            {presentation.map((item, idx) => (
-              <div key={idx} className="flex items-center gap-1.5 truncate">
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }}></span>
-                <span className="text-slate-600 truncate">{item.name}</span>
-                <span className="font-bold text-slate-900 ml-auto">{item.percent}%</span>
-              </div>
-            ))}
+            {presentation.map((item, idx) => {
+              const isSelected = chartFilters.presentation === item.name;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleChartFilterToggle('presentation', item.name)}
+                  className={`flex items-center gap-1.5 p-1 rounded-md transition cursor-pointer truncate text-left ${
+                    isSelected ? 'bg-slate-100 ring-1 ring-slate-400 font-bold' : 'hover:bg-slate-50'
+                  }`}
+                  title={`Click to filter by ${item.name}`}
+                >
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }}></span>
+                  <span className="text-slate-600 truncate">{item.name}</span>
+                  <span className="font-bold text-slate-900 ml-auto">{item.percent}%</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -463,12 +627,20 @@ export default function NstemiDashboard() {
          ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
         {/* Col 1: Thrombolytic Agents */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+        <div className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between transition ${
+          chartFilters.thrombolyticDrug ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200/90'
+        }`}>
           <div>
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h2 className="text-xs font-bold text-slate-900">Thrombolytic Agents</h2>
-                <p className="text-[10px] text-slate-500">All 4 drugs from thrombolysis form</p>
+                <p className="text-[10px] text-slate-500">
+                  {chartFilters.thrombolyticDrug ? (
+                    <span className="text-amber-600 font-bold">Filtered: {chartFilters.thrombolyticDrug} (Click bar to reset)</span>
+                  ) : (
+                    'All 4 drugs from thrombolysis form'
+                  )}
+                </p>
               </div>
             </div>
 
@@ -479,10 +651,21 @@ export default function NstemiDashboard() {
                   <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#475569', fontWeight: 600 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="percent" radius={[4, 4, 0, 0]}>
-                    {thrombolysisAgents.map((entry, index) => (
-                      <Cell key={`tlt-${index}`} fill={entry.fill} />
-                    ))}
+                  <Bar dataKey="percent" radius={[4, 4, 0, 0]} cursor="pointer">
+                    {thrombolysisAgents.map((entry, index) => {
+                      const isSelected = chartFilters.thrombolyticDrug === entry.name;
+                      const isDimmed = chartFilters.thrombolyticDrug && !isSelected;
+                      return (
+                        <Cell
+                          key={`tlt-${index}`}
+                          fill={entry.fill}
+                          opacity={isDimmed ? 0.35 : 1.0}
+                          stroke={isSelected ? '#0f172a' : 'transparent'}
+                          strokeWidth={isSelected ? 2.5 : 0}
+                          onClick={() => handleChartFilterToggle('thrombolyticDrug', entry.name)}
+                        />
+                      );
+                    })}
                     <LabelList dataKey="percent" position="top" formatter={(val) => `${val}%`} style={{ fontSize: '9px', fill: '#475569', fontWeight: 'bold' }} />
                   </Bar>
                 </BarChart>
@@ -496,15 +679,21 @@ export default function NstemiDashboard() {
           </div>
         </div>
 
-        
-
-        {/* Col 2: Primary Management Strategy */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+        {/* Col 2: Primary Reperfusion Strategy */}
+        <div className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between transition ${
+          chartFilters.strategy ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200/90'
+        }`}>
           <div>
             <div className="flex items-center justify-between mb-1">
               <div>
-                <h2 className="text-xs font-bold text-slate-900">Primary Management Strategy</h2>
-                <p className="text-[10px] text-slate-500">Early vs Selective vs Medical</p>
+                <h2 className="text-xs font-bold text-slate-900">Primary Reperfusion Strategy</h2>
+                <p className="text-[10px] text-slate-500">
+                  {chartFilters.strategy ? (
+                    <span className="text-amber-600 font-bold">Filtered: {chartFilters.strategy} (Click to reset)</span>
+                  ) : (
+                    'PAMI vs TLT vs Conservative'
+                  )}
+                </p>
               </div>
             </div>
 
@@ -522,41 +711,73 @@ export default function NstemiDashboard() {
                     dataKey="count"
                     label={renderDonutSliceLabel}
                     labelLine={false}
+                    cursor="pointer"
                   >
-                    {treatmentStrategy.map((entry, index) => (
-                      <Cell key={`strat-${index}`} fill={entry.fill} />
-                    ))}
+                    {treatmentStrategy.map((entry, index) => {
+                      const isSelected = chartFilters.strategy === entry.name;
+                      const isDimmed = chartFilters.strategy && !isSelected;
+                      return (
+                        <Cell
+                          key={`strat-${index}`}
+                          fill={entry.fill}
+                          opacity={isDimmed ? 0.35 : 1.0}
+                          stroke={isSelected ? '#0f172a' : 'none'}
+                          strokeWidth={isSelected ? 3 : 0}
+                          onClick={() => handleChartFilterToggle('strategy', entry.name)}
+                        />
+                      );
+                    })}
                   </Pie>
                   <Tooltip content={<ChartTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-2xl font-black text-slate-900 leading-none">{earlyInvItem.percent}%</span>
-                <span className="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase mt-1">&lt;24H CATH</span>
+                <span className="text-2xl font-black text-slate-900 leading-none">{pamiItem.percent}%</span>
+                <span className="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase mt-1">PAMI</span>
               </div>
             </div>
           </div>
 
           <div className="space-y-1.5 pt-2 border-t border-slate-100 text-[10px]">
-            {treatmentStrategy.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }}></span>
-                  <span className="text-slate-700 font-semibold">{item.name}</span>
-                </div>
-                <span className="font-bold text-slate-900">{item.percent}% ({item.count})</span>
-              </div>
-            ))}
+            {treatmentStrategy.map((item, idx) => {
+              const isSelected = chartFilters.strategy === item.name;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleChartFilterToggle('strategy', item.name)}
+                  className={`w-full flex items-center justify-between p-1 rounded-md transition cursor-pointer text-left ${
+                    isSelected ? 'bg-slate-100 ring-1 ring-slate-400 font-bold' : 'hover:bg-slate-50'
+                  }`}
+                  title={`Click to filter by ${item.name}`}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: item.fill }}></span>
+                    <span className="text-slate-700 font-semibold">{item.name}</span>
+                    {isSelected && <span className="text-[9px] px-1 bg-slate-900 text-white rounded font-mono font-bold">ACTIVE</span>}
+                  </div>
+                  <span className="font-bold text-slate-900">{item.percent}% ({item.count})</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Col 3: Discharge Medications Adherence - FULL UTILIZATION, NO SCROLLING, ALL 12 HEADINGS */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+        {/* Col 3: Discharge Medications Adherence */}
+        <div className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between transition ${
+          chartFilters.dischargeMed ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200/90'
+        }`}>
           <div>
             <div className="flex items-center justify-between mb-1">
               <div>
                 <h2 className="text-xs font-bold text-slate-900">Discharge Medications</h2>
-                <p className="text-[10px] text-slate-500">All 12 medications from registry form</p>
+                <p className="text-[10px] text-slate-500">
+                  {chartFilters.dischargeMed ? (
+                    <span className="text-amber-600 font-bold">Filtered: {chartFilters.dischargeMed} (Click bar to reset)</span>
+                  ) : (
+                    'All 12 medications from registry form'
+                  )}
+                </p>
               </div>
               <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 text-[10px] font-bold border border-emerald-200">
                 12 Pharmacotherapies
@@ -570,10 +791,21 @@ export default function NstemiDashboard() {
                   <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 8.5, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <YAxis type="category" dataKey="drug" interval={0} tick={{ fontSize: 8.5, fill: '#334155', fontWeight: 600 }} axisLine={false} tickLine={false} width={122} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="prescribedRate" radius={[0, 3, 3, 0]}>
-                    {gdmtMeds.map((entry, index) => (
-                      <Cell key={`med-${index}`} fill={entry.fill} />
-                    ))}
+                  <Bar dataKey="prescribedRate" radius={[0, 3, 3, 0]} cursor="pointer">
+                    {gdmtMeds.map((entry, index) => {
+                      const isSelected = chartFilters.dischargeMed === entry.drug;
+                      const isDimmed = chartFilters.dischargeMed && !isSelected;
+                      return (
+                        <Cell
+                          key={`med-${index}`}
+                          fill={entry.fill}
+                          opacity={isDimmed ? 0.35 : 1.0}
+                          stroke={isSelected ? '#0f172a' : 'transparent'}
+                          strokeWidth={isSelected ? 2.5 : 0}
+                          onClick={() => handleChartFilterToggle('dischargeMed', entry.drug)}
+                        />
+                      );
+                    })}
                     <LabelList dataKey="prescribedRate" position="right" formatter={(v) => `${v}%`} style={{ fontSize: '8.5px', fill: '#475569', fontWeight: 'bold' }} />
                   </Bar>
                 </BarChart>
@@ -593,17 +825,60 @@ export default function NstemiDashboard() {
          ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5">
         {/* Col 1: TIMI Risk Score Distribution (0-21 Points for NSTEMI, 2 pts as 1 unit) */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+        <div className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between transition ${
+          chartFilters.timiTier || chartFilters.timiScoreBin ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200/90'
+        }`}>
           <div>
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h2 className="text-xs font-bold text-slate-900">TIMI Risk Score Distribution</h2>
-                <p className="text-[10px] text-slate-500">Scores 0-21 (2 pts / unit)</p>
+                <p className="text-[10px] text-slate-500">
+                  {chartFilters.timiTier ? (
+                    <span className="text-amber-600 font-bold">Filtered: {chartFilters.timiTier} Risk (Click badge to reset)</span>
+                  ) : chartFilters.timiScoreBin ? (
+                    <span className="text-amber-600 font-bold">Filtered Score: {chartFilters.timiScoreBin} (Click bar to reset)</span>
+                  ) : (
+                    'Scores 0-21 (2 pts / unit)'
+                  )}
+                </p>
               </div>
               <div className="flex items-center gap-1">
-                <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[9px] font-bold border border-blue-200">0-5 Low</span>
-                <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 text-[9px] font-bold border border-amber-200">6-11 Int</span>
-                <span className="px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 text-[9px] font-bold border border-rose-200">12-21 High</span>
+                <button
+                  type="button"
+                  onClick={() => handleChartFilterToggle('timiTier', 'Low')}
+                  className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer ${
+                    chartFilters.timiTier === 'Low'
+                      ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
+                      : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                  }`}
+                  title="Filter by Low Risk (0-5)"
+                >
+                  0-5 Low
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChartFilterToggle('timiTier', 'Intermediate')}
+                  className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer ${
+                    chartFilters.timiTier === 'Intermediate'
+                      ? 'bg-amber-600 text-white border-amber-700 shadow-xs'
+                      : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                  }`}
+                  title="Filter by Intermediate Risk (6-11)"
+                >
+                  6-11 Int
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChartFilterToggle('timiTier', 'High')}
+                  className={`px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer ${
+                    chartFilters.timiTier === 'High'
+                      ? 'bg-rose-600 text-white border-rose-700 shadow-xs'
+                      : 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100'
+                  }`}
+                  title="Filter by High Risk (12-21)"
+                >
+                  12-21 High
+                </button>
               </div>
             </div>
 
@@ -614,10 +889,23 @@ export default function NstemiDashboard() {
                   <XAxis dataKey="score" tick={{ fontSize: 8.5, fill: '#64748b', fontWeight: 600 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="count" radius={[3, 3, 0, 0]}>
-                    {timiScoreDistribution.map((entry, index) => (
-                      <Cell key={`timi-${index}`} fill={entry.fill} />
-                    ))}
+                  <Bar dataKey="count" radius={[3, 3, 0, 0]} cursor="pointer">
+                    {timiScoreDistribution.map((entry, index) => {
+                      const isSelected = chartFilters.timiTier
+                        ? entry.riskTier?.toLowerCase().includes(chartFilters.timiTier.toLowerCase())
+                        : chartFilters.timiScoreBin === entry.score;
+                      const isDimmed = (chartFilters.timiTier || chartFilters.timiScoreBin) && !isSelected;
+                      return (
+                        <Cell
+                          key={`timi-${index}`}
+                          fill={entry.fill}
+                          opacity={isDimmed ? 0.35 : 1.0}
+                          stroke={isSelected ? '#0f172a' : 'transparent'}
+                          strokeWidth={isSelected ? 2 : 0}
+                          onClick={() => handleChartFilterToggle('timiScoreBin', entry.score)}
+                        />
+                      );
+                    })}
                     <LabelList dataKey="count" position="top" style={{ fontSize: '8.5px', fill: '#475569', fontWeight: 'bold' }} />
                   </Bar>
                 </BarChart>
@@ -630,13 +918,22 @@ export default function NstemiDashboard() {
             <span>2 pts as 1 unit</span>
           </div>
         </div>
-        {/* Col 2: Culprit Vessel Breakdown - ALL 8 VESSELS DISPLAYED */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+
+        {/* Col 2: Culprit Vessel Breakdown */}
+        <div className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between transition ${
+          chartFilters.culpritVessel ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200/90'
+        }`}>
           <div>
             <div className="flex items-center justify-between mb-2">
               <div>
                 <h2 className="text-xs font-bold text-slate-900">Culprit Vessel Breakdown</h2>
-                <p className="text-[10px] text-slate-500">All 8 vessels from angiogram form</p>
+                <p className="text-[10px] text-slate-500">
+                  {chartFilters.culpritVessel ? (
+                    <span className="text-amber-600 font-bold">Filtered: {chartFilters.culpritVessel} (Click bar to reset)</span>
+                  ) : (
+                    'All 8 vessels from angiogram form'
+                  )}
+                </p>
               </div>
             </div>
 
@@ -647,10 +944,21 @@ export default function NstemiDashboard() {
                   <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <YAxis type="category" dataKey="name" interval={0} tick={{ fontSize: 9, fill: '#334155', fontWeight: 600 }} axisLine={false} tickLine={false} width={78} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="percent" radius={[0, 3, 3, 0]}>
-                    {vessels.map((entry, index) => (
-                      <Cell key={`ves-${index}`} fill={entry.fill} />
-                    ))}
+                  <Bar dataKey="percent" radius={[0, 3, 3, 0]} cursor="pointer">
+                    {vessels.map((entry, index) => {
+                      const isSelected = chartFilters.culpritVessel === entry.name;
+                      const isDimmed = chartFilters.culpritVessel && !isSelected;
+                      return (
+                        <Cell
+                          key={`ves-${index}`}
+                          fill={entry.fill}
+                          opacity={isDimmed ? 0.35 : 1.0}
+                          stroke={isSelected ? '#0f172a' : 'transparent'}
+                          strokeWidth={isSelected ? 2.5 : 0}
+                          onClick={() => handleChartFilterToggle('culpritVessel', entry.name)}
+                        />
+                      );
+                    })}
                     <LabelList dataKey="percent" position="right" formatter={(v) => `${v}%`} style={{ fontSize: '8.5px', fill: '#475569', fontWeight: 'bold' }} />
                   </Bar>
                 </BarChart>
@@ -666,12 +974,20 @@ export default function NstemiDashboard() {
         </div>
 
         {/* Col 3: Procedural Success Rate */}
-        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between">
+        <div className={`bg-white border rounded-2xl p-4 sm:p-5 shadow-2xs flex flex-col justify-between transition ${
+          chartFilters.timiFlow ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-200/90'
+        }`}>
           <div>
             <div className="flex items-center justify-between mb-1">
               <div>
                 <h2 className="text-xs font-bold text-slate-900">Procedural Success Rate</h2>
-                <p className="text-[10px] text-slate-500">Post-procedure coronary TIMI flow</p>
+                <p className="text-[10px] text-slate-500">
+                  {chartFilters.timiFlow ? (
+                    <span className="text-amber-600 font-bold">Filtered: {chartFilters.timiFlow} (Click to reset)</span>
+                  ) : (
+                    'Post-procedure coronary TIMI flow'
+                  )}
+                </p>
               </div>
             </div>
 
@@ -690,10 +1006,22 @@ export default function NstemiDashboard() {
                     dataKey="count"
                     label={renderDonutSliceLabel}
                     labelLine={false}
+                    cursor="pointer"
                   >
-                    {proceduralSuccess.map((entry, index) => (
-                      <Cell key={`proc-${index}`} fill={entry.fill} />
-                    ))}
+                    {proceduralSuccess.map((entry, index) => {
+                      const isSelected = chartFilters.timiFlow === entry.name;
+                      const isDimmed = chartFilters.timiFlow && !isSelected;
+                      return (
+                        <Cell
+                          key={`proc-${index}`}
+                          fill={entry.fill}
+                          opacity={isDimmed ? 0.35 : 1.0}
+                          stroke={isSelected ? '#0f172a' : 'none'}
+                          strokeWidth={isSelected ? 3 : 0}
+                          onClick={() => handleChartFilterToggle('timiFlow', entry.name)}
+                        />
+                      );
+                    })}
                   </Pie>
                   <Tooltip content={<ChartTooltip />} />
                 </PieChart>
@@ -706,15 +1034,27 @@ export default function NstemiDashboard() {
           </div>
 
           <div className="space-y-1 pt-2 border-t border-slate-100 text-[10px]">
-            {proceduralSuccess.map((flow, idx) => (
-              <div key={idx} className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: flow.fill }}></span>
-                  <span className="text-slate-700 font-semibold">{flow.name}</span>
-                </div>
-                <span className="font-bold text-slate-900">{flow.percent}%</span>
-              </div>
-            ))}
+            {proceduralSuccess.map((flow, idx) => {
+              const isSelected = chartFilters.timiFlow === flow.name;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleChartFilterToggle('timiFlow', flow.name)}
+                  className={`w-full flex items-center justify-between p-1 rounded-md transition cursor-pointer text-left ${
+                    isSelected ? 'bg-slate-100 ring-1 ring-slate-400 font-bold' : 'hover:bg-slate-50'
+                  }`}
+                  title={`Click to filter by ${flow.name}`}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: flow.fill }}></span>
+                    <span className="text-slate-700 font-semibold">{flow.name}</span>
+                    {isSelected && <span className="text-[9px] px-1 bg-slate-900 text-white rounded font-mono font-bold">ACTIVE</span>}
+                  </div>
+                  <span className="font-bold text-slate-900">{flow.percent}%</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

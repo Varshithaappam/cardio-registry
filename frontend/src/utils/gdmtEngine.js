@@ -265,12 +265,18 @@ export function computeAnalytics(patients) {
         hfmrEFPercent: 0,
         hfpEFCount: 0,
         hfpEFPercent: 0,
+        unspecifiedPhenotypeCount: 0,
+        unspecifiedPhenotypePercent: 0,
         nyha1Count: 0,
+        nyha1Percent: 0,
         nyha2Count: 0,
+        nyha2Percent: 0,
         nyha3Count: 0,
         nyha3Percent: 0,
         nyha4Count: 0,
         nyha4Percent: 0,
+        unspecifiedNyhaCount: 0,
+        unspecifiedNyhaPercent: 0,
         severeNyhaCount: 0,
         severeNyhaPercent: 0,
         deathsRecorded: 0,
@@ -359,10 +365,12 @@ export function computeAnalytics(patients) {
   let countEf = 0;
   let countHFrEF = 0;
   let countHFpEF = 0;
+  let countUnspecifiedPhenotype = 0;
   let countNYHA1 = 0;
   let countNYHA2 = 0;
   let countNYHA3 = 0;
   let countNYHA4 = 0;
+  let countUnspecifiedNYHA = 0;
   let countDeath = 0;
   let countDeathHospital = 0;
   let countDeathHome = 0;
@@ -409,6 +417,7 @@ export function computeAnalytics(patients) {
     // Phenotype: strictly from hfref and hfpef
     if (p.hfType === 'HFrEF') countHFrEF++;
     else if (p.hfType === 'HFpEF') countHFpEF++;
+    else countUnspecifiedPhenotype++;
 
     // NYHA: strictly from nyha_class_1..4
     const nyha = String(p.functionalStatus || '').toLowerCase();
@@ -416,6 +425,7 @@ export function computeAnalytics(patients) {
     else if (nyha.includes('class iii') || nyha.includes('class 3')) countNYHA3++;
     else if (nyha.includes('class ii') || nyha.includes('class 2')) countNYHA2++;
     else if (nyha.includes('class i') || nyha.includes('class 1')) countNYHA1++;
+    else countUnspecifiedNYHA++;
 
     if (p.death) {
       countDeath++;
@@ -521,14 +531,20 @@ export function computeAnalytics(patients) {
       meanEf: Math.round(meanEf * 10) / 10,
       hfrEFCount: countHFrEF,
       hfrEFPercent: Math.round((countHFrEF / total) * 1000) / 10,
-            hfpEFCount: countHFpEF,
+      hfpEFCount: countHFpEF,
       hfpEFPercent: Math.round((countHFpEF / total) * 1000) / 10,
+      unspecifiedPhenotypeCount: countUnspecifiedPhenotype,
+      unspecifiedPhenotypePercent: total > 0 ? Math.round((countUnspecifiedPhenotype / total) * 1000) / 10 : 0,
       nyha1Count: countNYHA1,
+      nyha1Percent: total > 0 ? Math.round((countNYHA1 / total) * 1000) / 10 : 0,
       nyha2Count: countNYHA2,
+      nyha2Percent: total > 0 ? Math.round((countNYHA2 / total) * 1000) / 10 : 0,
       nyha3Count: countNYHA3,
       nyha3Percent: Math.round((countNYHA3 / total) * 1000) / 10,
       nyha4Count: countNYHA4,
       nyha4Percent: Math.round((countNYHA4 / total) * 1000) / 10,
+      unspecifiedNyhaCount: countUnspecifiedNYHA,
+      unspecifiedNyhaPercent: total > 0 ? Math.round((countUnspecifiedNYHA / total) * 1000) / 10 : 0,
       severeNyhaCount: countNYHA3 + countNYHA4,
       severeNyhaPercent: Math.round(((countNYHA3 + countNYHA4) / total) * 1000) / 10,
       deathsRecorded: countDeath,

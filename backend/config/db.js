@@ -335,6 +335,7 @@ async function ensureRegisterPatientSP() {
           @blood_group           NVARCHAR(7)   = 'Unknown',
           @insurance_mode        NVARCHAR(24)  = 'Unknown',
           @phone_no              VARCHAR(15)   = NULL,
+          @secondary_contact_phone VARCHAR(20) = NULL,
           @email                 VARCHAR(100)  = NULL,
           @hypertension          NVARCHAR(7)   = 'No',
           @smoking               NVARCHAR(7)   = 'No',
@@ -367,7 +368,7 @@ async function ensureRegisterPatientSP() {
 
           INSERT INTO dbo.patient_demographics (
               mr_no, ip_no, patient_name, date_of_birth, gender, blood_group,
-              insurance_mode, phone_no, email, hypertension, smoking, diabetes,
+              insurance_mode, phone_no, secondary_contact_phone, email, hypertension, smoking, diabetes,
               diabetes_control_type, renal_failure, active_dialysis_status, address,
               house_flat_no, street_locality, village_town, mandal, district, state, pincode,
               higher_education, occupation, uhid, abha_number,
@@ -377,7 +378,7 @@ async function ensureRegisterPatientSP() {
           )
           VALUES (
               @mr_no, @ip_no, @patient_name, @date_of_birth, @gender, @blood_group,
-              @insurance_mode, @phone_no, @email, @hypertension, @smoking, @diabetes,
+              @insurance_mode, @phone_no, @secondary_contact_phone, @email, @hypertension, @smoking, @diabetes,
               @diabetes_control_type, @renal_failure, @active_dialysis_status, @address,
               @house_flat_no, @street_locality, @village_town, @mandal, @district, @state, @pincode,
               @higher_education, @occupation, @uhid, @abha_number,

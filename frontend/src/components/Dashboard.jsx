@@ -50,6 +50,9 @@ export default function Dashboard() {
     search: ''
   });
 
+  // Interactive Chart Cross-Filtering State (Brushing / Linked Charts)
+  const [chartFilters, setChartFilters] = useState({});
+
   // Modal / Drawer State
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -91,12 +94,125 @@ export default function Dashboard() {
       endDate: '',
       search: ''
     });
+    setChartFilters({});
   }
 
-  // Filter cohort dynamically in real time
+  // Toggle chart-level cross filters (clicking a slice toggles it on; clicking again toggles it off)
+  function handleChartFilterToggle(dimension, value) {
+    setChartFilters(prev => {
+      const next = { ...prev };
+      if (next[dimension] === value) {
+        delete next[dimension];
+      } else {
+        next[dimension] = value;
+      }
+      return next;
+    });
+  }
+
+  // Clear all chart-level cross filters
+  function handleClearChartFilters() {
+    setChartFilters({});
+  }
+
+  // Filter cohort dynamically in real time (universal filters + linked chart cross-filters)
   const filteredCohort = useMemo(() => {
-    return filterCohort(cohortData, filters);
-  }, [cohortData, filters]);
+    let result = filterCohort(cohortData, filters);
+
+    // Apply interactive chart cross-filters
+    const activeKeys = Object.keys(chartFilters);
+    if (activeKeys.length > 0) {
+      result = result.filter(patient => {
+        for (const dim of activeKeys) {
+          const val = chartFilters[dim];
+          if (!val) continue;
+
+          if (dim === 'gender') {
+            if (String(patient.gender || '').toLowerCase() !== String(val).toLowerCase()) {
+              return false;
+            }
+          } else if (dim === 'phenotype') {
+            const extractPhenotype = (str) => {
+              const s = String(str || '').toLowerCase();
+              if (s.includes('hfref')) return 'HFrEF';
+              if (s.includes('hfpef')) return 'HFpEF';
+              return 'Unspecified';
+            };
+            if (extractPhenotype(patient.hfType) !== extractPhenotype(val)) {
+              return false;
+            }
+          } else if (dim === 'nyha' || dim === 'nyhaClass') {
+            const extractNyha = (str) => {
+              const s = String(str || '').toLowerCase();
+              if (s.includes('class iv') || s.includes('class 4') || /\b(iv|4)\b/.test(s)) return 'IV';
+              if (s.includes('class iii') || s.includes('class 3') || /\b(iii|3)\b/.test(s)) return 'III';
+              if (s.includes('class ii') || s.includes('class 2') || /\b(ii|2)\b/.test(s)) return 'II';
+              if (s.includes('class i') || s.includes('class 1') || /\b(i|1)\b/.test(s)) return 'I';
+              return 'Unspecified';
+            };
+            if (extractNyha(patient.functionalStatus) !== extractNyha(val)) {
+              return false;
+            }
+          } else if (dim === 'ageGroup') {
+            const age = Number(patient.age);
+            if (isNaN(age)) return false;
+            const target = String(val).toLowerCase();
+            if (target.includes('<50') || target.includes('under 50')) {
+              if (age >= 50) return false;
+            } else if (target.includes('50-60')) {
+              if (age < 50 || age > 60) return false;
+            } else if (target.includes('61-70')) {
+              if (age < 61 || age > 70) return false;
+            } else if (target.includes('>70') || target.includes('over 70')) {
+              if (age <= 70) return false;
+            }
+          } else if (dim === 'comorbidity') {
+            const comorbStr = (patient.comorbidities || []).join(' ').toLowerCase();
+            const target = String(val).toLowerCase();
+            if (target.includes('diabet') || target.includes('dm')) {
+              if (!(comorbStr.includes('diabet') || comorbStr.includes('dm') || patient.hasDiabetes || patient.diabetes)) return false;
+            } else if (target.includes('hyperten') || target.includes('htn')) {
+              if (!(comorbStr.includes('hyperten') || comorbStr.includes('htn') || patient.hasHypertension || patient.hypertension)) return false;
+            } else if (target.includes('renal') || target.includes('ckd')) {
+              const hasRenal = Boolean(
+                (patient.creatinine !== null && patient.creatinine !== undefined && Number(patient.creatinine) > 2.5) ||
+                patient.renalFailure ||
+                comorbStr.includes('renal') ||
+                comorbStr.includes('ckd') ||
+                /renal|ckd/i.test(patient.presentDiagnosis || '') ||
+                /renal|ckd/i.test(patient.admissionReason || '') ||
+                /renal|ckd/i.test(patient.otherAdmissionReason || '') ||
+                /renal|ckd/i.test(patient.previousDiagnosis || '')
+              );
+              if (!hasRenal) return false;
+            }
+          } else if (dim === 'drugPrescribed') {
+            const drug = String(val).toLowerCase();
+            let pillarKey = null;
+            if (drug.includes('beta')) pillarKey = 'betaBlocker';
+            else if (drug.includes('arni')) pillarKey = 'arni';
+            else if (drug.includes('ace')) pillarKey = 'aceInhibitor';
+            else if (drug.includes('arb')) pillarKey = 'arb';
+            else if (drug.includes('mra') || drug.includes('aldosterone') || drug.includes('spirono') || drug.includes('eplerenone')) pillarKey = 'mra';
+            else if (drug.includes('sglt2') || drug.includes('dapa') || drug.includes('empa')) pillarKey = 'sglt2Inhibitor';
+
+            if (pillarKey) {
+              const evalStat = patient.pillarEvaluations?.[pillarKey];
+              if (!evalStat?.prescribed && !patient[pillarKey]) {
+                return false;
+              }
+            } else {
+              const summary = String(patient.prescribedDrugsSummary || '').toLowerCase();
+              if (!summary.includes(drug)) return false;
+            }
+          }
+        }
+        return true;
+      });
+    }
+
+    return result;
+  }, [cohortData, filters, chartFilters]);
 
   // Re-compute all analytics dynamically on any filter change
   const analytics = useMemo(() => {
@@ -221,6 +337,44 @@ export default function Dashboard() {
             isLoading={isLoading}
           />
 
+          {/* Interactive Chart Cross-Filter Pills & Reset Bar */}
+          {Object.keys(chartFilters).length > 0 && (
+            <div className="bg-white border border-teal-200 rounded-2xl p-3 shadow-xs flex flex-wrap items-center justify-between gap-3 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                  <Sparkles className="w-3.5 h-3.5 text-teal-600 animate-pulse" />
+                  <span>Active Chart Filters:</span>
+                </div>
+                {Object.entries(chartFilters).map(([dim, val]) => (
+                  <span 
+                    key={dim}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-900 text-white shadow-xs group"
+                  >
+                    <span className="capitalize text-teal-300 font-medium">{dim}:</span>
+                    <span>{val}</span>
+                    <button
+                      onClick={() => handleChartFilterToggle(dim, val)}
+                      className="w-4 h-4 rounded-full flex items-center justify-center hover:bg-slate-700 text-slate-400 hover:text-white transition cursor-pointer"
+                      title={`Remove ${val} filter`}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+                <span className="text-xs text-slate-500 font-mono">
+                  ({filteredCohort.length} of {cohortData.length} records matching)
+                </span>
+              </div>
+              <button
+                onClick={handleClearChartFilters}
+                className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200 transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              >
+                <RefreshCw className="w-3 h-3" />
+                <span>Clear All Filters</span>
+              </button>
+            </div>
+          )}
+
           {/* Loading / Error States */}
           {isLoading ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
@@ -244,6 +398,8 @@ export default function Dashboard() {
             /* Unified Dashboard View */
             <KeyPointsTab 
               analytics={analytics} 
+              chartFilters={chartFilters}
+              onChartFilterToggle={handleChartFilterToggle}
               onOpenExclusionGuide={() => setIsDrawerOpen(true)}
             />
           )}

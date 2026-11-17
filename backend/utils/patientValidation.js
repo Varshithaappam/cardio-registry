@@ -69,6 +69,16 @@ function normalizePatientInput(body = {}) {
     const blood_group = body.blood_group || "Unknown";
     const insurance_mode = normalizeInsuranceMode(body.insurance_mode);
     const phone_no = body.phone_no ? String(body.phone_no).trim() : null;
+    const secondary_contact_phone = (body.secondary_contact_phone || body.secondaryContactPhone)
+        ? String(body.secondary_contact_phone || body.secondaryContactPhone).trim()
+        : null;
+
+    if (secondary_contact_phone) {
+        const cleanSecPhone = secondary_contact_phone.replace(/\D/g, '');
+        if (!/^\d{10}$/.test(cleanSecPhone)) {
+            throw new Error("Secondary contact phone must be a valid 10-digit number.");
+        }
+    }
     const email = body.email ? String(body.email).trim() : null;
     const hypertension = body.hypertension || "Unknown";
     const smoking = body.smoking || "Unknown";
@@ -186,6 +196,7 @@ function normalizePatientInput(body = {}) {
         blood_group,
         insurance_mode,
         phone_no,
+        secondary_contact_phone,
         email,
         hypertension,
         smoking,

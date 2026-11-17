@@ -561,11 +561,81 @@ export const SIMULATED_ACS_COHORT = [
   })
 ];
 
+// Helper to match string/array/comma-separated multi-options
+export const matchOption = (val, target) => {
+  if (!val || !target) return false;
+  const targetLower = String(target).trim().toLowerCase();
+  if (Array.isArray(val)) {
+    return val.some(item => String(item).trim().toLowerCase() === targetLower);
+  }
+  if (typeof val === 'string') {
+    return val.split(',').some(item => item.trim().toLowerCase() === targetLower);
+  }
+  return false;
+};
+
+export const hasHtn = p => Boolean(p.hypertension === true || p.hypertension === 'Yes' || p.hypertension === 1);
+export const hasDm = p => Boolean(p.diabetes === true || p.diabetes === 'Yes' || p.diabetes === 1);
+export const hasSmoke = p => Boolean(p.smoking === true || p.smoking === 'Yes' || p.smoking === 1);
+export const hasRf = p => Boolean(p.renalFailure === true || p.renal_failure === 'Yes' || p.renal_failure === true);
+export const hasCopd = p => Boolean(p.copd === true || p.copd === 'Yes');
+export const hasCva = p => Boolean(p.cva === true || p.cva === 'Yes');
+export const hasPriorAcs = p => Boolean(p.priorAcs === true || p.prior_acs === 'Yes' || p.prior_acs === true);
+export const hasPriorPtca = p => Boolean(p.priorPtca === true || p.prior_ptca === 'Yes' || p.prior_ptca === true);
+export const hasPriorCabg = p => Boolean(p.priorCabg === true || p.prior_cabg === 'Yes' || p.prior_cabg === true);
+
+export const isTypical = p => Boolean(p.typical_angina === true || p.typical_angina === 'Yes' || matchOption(p.presentation, 'Typical angina') || matchOption(p.presentations, 'Typical angina'));
+export const isAtypical = p => Boolean(p.atypical_chest_pain === true || p.atypical_chest_pain === 'Yes' || matchOption(p.presentation, 'Atypical chest pain') || matchOption(p.presentations, 'Atypical chest pain'));
+export const isBreathless = p => Boolean(p.breathlessness === true || p.breathlessness === 'Yes' || matchOption(p.presentation, 'Breathlessness') || matchOption(p.presentations, 'Breathlessness'));
+export const isSyncope = p => Boolean(p.syncope_presyncope === true || p.syncope_presyncope === 'Yes' || matchOption(p.presentation, 'Syncope/ Pre-syncope') || matchOption(p.presentations, 'Syncope/ Pre-syncope'));
+
+export const ACS_VESSELS = [
+  { key: 'LAD', formKey: 'vessel_lad', label: 'LAD', color: '#1d4ed8' },
+  { key: 'RCA', formKey: 'vessel_rca', label: 'RCA', color: '#2563eb' },
+  { key: 'LCX', formKey: 'vessel_lcx', label: 'LCX', color: '#3b82f6' },
+  { key: 'Diagonal', formKey: 'vessel_diagonal', label: 'Diagonal', color: '#60a5fa' },
+  { key: 'LMCA', formKey: 'vessel_lmca', label: 'LMCA', color: '#0284c7' },
+  { key: 'OM', formKey: 'vessel_om', label: 'OM', color: '#0369a1' },
+  { key: 'PDA', formKey: 'vessel_pda', label: 'PDA', color: '#38bdf8' },
+  { key: 'Ramus', formKey: 'vessel_ramus', label: 'Ramus', color: '#93c5fd' }
+];
+
+export const ACS_MEDS = [
+  { drug: 'Aspirin', formKey: 'discharge_aspirin', category: 'Antiplatelet', fill: '#1d4ed8' },
+  { drug: 'Statin', formKey: 'discharge_statin', category: 'Lipid Lowering', fill: '#2563eb' },
+  { drug: 'Beta-blocker', formKey: 'discharge_beta_blocker', category: 'Hemodynamic', fill: '#3b82f6' },
+  { drug: 'Clopidogrel', formKey: 'discharge_clopidogrel', category: 'Antiplatelet (P2Y12)', fill: '#0284c7' },
+  { drug: 'Ticagrelor', formKey: 'discharge_ticagrelor', category: 'Antiplatelet (P2Y12)', fill: '#1e40af' },
+  { drug: 'Nitrate', formKey: 'discharge_nitrate', category: 'Anti-anginal', fill: '#0369a1' },
+  { drug: 'Nicorandil', formKey: 'discharge_nicorandil', category: 'Anti-anginal', fill: '#38bdf8' },
+  { drug: 'Calcium-channel blocker', formKey: 'discharge_calcium_channel_blocker', category: 'Hemodynamic', fill: '#60a5fa' },
+  { drug: 'Prasugrel', formKey: 'discharge_prasugrel', category: 'Antiplatelet (P2Y12)', fill: '#1e3a8a' },
+  { drug: 'Ranozolidine', formKey: 'discharge_ranolazine', category: 'Anti-anginal', fill: '#93c5fd' },
+  { drug: 'Trimetazidine', formKey: 'discharge_trimetazidine', category: 'Metabolic Anti-anginal', fill: '#2563eb' },
+  { drug: 'Ivabradine', formKey: 'discharge_ivabradine', category: 'If Channel Inhibitor', fill: '#3b82f6' }
+];
+
+export const checkTltAgent = (p, agentKey, formKey) => {
+  return Boolean(
+    p[formKey] === true ||
+    p[formKey] === 'Yes' ||
+    matchOption(p.thrombolysisAgent, agentKey) ||
+    matchOption(p.thrombolyticAgent, agentKey) ||
+    matchOption(p.thrombolysisAgents, agentKey) ||
+    matchOption(p.thrombolyticAgents, agentKey) ||
+    (agentKey === 'STK' && (matchOption(p.thrombolysisAgent, 'Streptokinase') || matchOption(p.thrombolyticAgent, 'Streptokinase'))) ||
+    (agentKey === 'UK' && (matchOption(p.thrombolysisAgent, 'Urokinase') || matchOption(p.thrombolyticAgent, 'Urokinase')))
+  );
+};
+
 /**
- * Filter ACS Cohort by registry type and global filters
+ * Filter ACS Cohort by registry type, global filters, and interactive chart cross-filters
  */
-export function filterAcsCohort(cohort, filters = {}, registryType = 'ALL') {
+export function filterAcsCohort(cohort, filters = {}, registryType = 'ALL', chartFilters = {}) {
   if (!Array.isArray(cohort)) return [];
+
+  const activeFilters = { ...filters };
+  const crossFilters = { ...chartFilters };
 
   return cohort.filter(patient => {
     // Registry Type
@@ -574,33 +644,170 @@ export function filterAcsCohort(cohort, filters = {}, registryType = 'ALL') {
     }
 
     // Date Range Filter
-    if (filters.startDate && patient.admissionDate < filters.startDate) return false;
-    if (filters.endDate && patient.admissionDate > filters.endDate) return false;
+    if (activeFilters.startDate && patient.admissionDate < activeFilters.startDate) return false;
+    if (activeFilters.endDate && patient.admissionDate > activeFilters.endDate) return false;
 
     // Gender Filter
-    if (filters.gender && filters.gender !== 'ALL' && patient.gender !== filters.gender) {
+    if (activeFilters.gender && activeFilters.gender !== 'ALL' && patient.gender !== activeFilters.gender) {
       return false;
     }
 
     // Search query (UHID or Patient Name)
-    if (filters.search) {
-      const q = filters.search.toLowerCase().trim();
+    if (activeFilters.search) {
+      const q = activeFilters.search.toLowerCase().trim();
       const matchUhid = patient.uhid?.toLowerCase().includes(q);
       const matchName = patient.patientName?.toLowerCase().includes(q);
       if (!matchUhid && !matchName) return false;
     }
 
-    // Treatment Strategy Filter
-    if (filters.strategy && filters.strategy !== 'ALL' && patient.treatmentStrategy !== filters.strategy) {
+    // Global Treatment Strategy Filter
+    if (activeFilters.strategy && activeFilters.strategy !== 'ALL' && patient.treatmentStrategy !== activeFilters.strategy) {
       return false;
     }
 
-    // TIMI Risk Score Bucket Filter
-    if (filters.timiTier && filters.timiTier !== 'ALL') {
+    // Global TIMI Risk Score Bucket Filter
+    if (activeFilters.timiTier && activeFilters.timiTier !== 'ALL') {
       const score = patient.timiScore || 0;
-      if (filters.timiTier === 'LOW' && score > 4) return false;
-      if (filters.timiTier === 'INTERMEDIATE' && (score < 5 || score > 7)) return false;
-      if (filters.timiTier === 'HIGH' && score < 8) return false;
+      if (activeFilters.timiTier === 'LOW' && score > 4) return false;
+      if (activeFilters.timiTier === 'INTERMEDIATE' && (score < 5 || score > 7)) return false;
+      if (activeFilters.timiTier === 'HIGH' && score < 8) return false;
+    }
+
+    // -------------------------------------------------------------
+    // Interactive Chart Cross-Filters (Linked Chart Brushing)
+    // -------------------------------------------------------------
+    const crossKeys = Object.keys(crossFilters);
+    if (crossKeys.length > 0) {
+      for (const dim of crossKeys) {
+        const val = crossFilters[dim];
+        if (!val) continue;
+
+        if (dim === 'gender') {
+          if (String(patient.gender || '').toLowerCase() !== String(val).toLowerCase()) {
+            return false;
+          }
+        } else if (dim === 'ageGroup') {
+          const age = Number(patient.age);
+          if (isNaN(age)) return false;
+          const v = String(val).trim();
+          if (v === '< 45y' && age >= 45) return false;
+          else if (v === '45-54y' && (age < 45 || age > 54)) return false;
+          else if (v === '55-64y' && (age < 55 || age > 64)) return false;
+          else if (v === '65-74y' && (age < 65 || age > 74)) return false;
+          else if (v === '>= 75y' && age < 75) return false;
+        } else if (dim === 'comorbidity') {
+          const v = String(val).toLowerCase();
+          if (v.includes('hypertens') || v === 'htn') {
+            if (!hasHtn(patient)) return false;
+          } else if (v.includes('diabet') || v === 'dm') {
+            if (!hasDm(patient)) return false;
+          } else if (v.includes('smok')) {
+            if (!hasSmoke(patient)) return false;
+          } else if (v.includes('prior acs')) {
+            if (!hasPriorAcs(patient)) return false;
+          } else if (v.includes('prior ptca') || v.includes('ptca')) {
+            if (!hasPriorPtca(patient)) return false;
+          } else if (v.includes('prior cabg') || v.includes('cabg')) {
+            if (!hasPriorCabg(patient)) return false;
+          } else if (v.includes('renal') || v.includes('ckd')) {
+            if (!hasRf(patient)) return false;
+          } else if (v.includes('copd')) {
+            if (!hasCopd(patient)) return false;
+          } else if (v.includes('cva') || v.includes('stroke')) {
+            if (!hasCva(patient)) return false;
+          }
+        } else if (dim === 'presentation') {
+          const v = String(val).toLowerCase();
+          if (v.includes('typical') && !v.includes('atypical')) {
+            if (!isTypical(patient)) return false;
+          } else if (v.includes('atypical')) {
+            if (!isAtypical(patient)) return false;
+          } else if (v.includes('breath')) {
+            if (!isBreathless(patient)) return false;
+          } else if (v.includes('sync') || v.includes('presyncope')) {
+            if (!isSyncope(patient)) return false;
+          }
+        } else if (dim === 'strategy') {
+          let s = patient.treatmentStrategy || 'Conservative';
+          if (s === 'Early Invasive') s = 'PAMI';
+          else if (s === 'Selective Invasive') s = 'Conservative';
+          else if (s === 'Unspecified / Deferred' || s === 'Unspecified') {
+            s = 'Conservative';
+          }
+          if (s.toLowerCase() !== String(val).toLowerCase()) {
+            return false;
+          }
+        } else if (dim === 'thrombolyticDrug') {
+          const v = String(val).trim();
+          let match = false;
+          if (v === 'Tenecteplase') match = checkTltAgent(patient, 'Tenecteplase', 'drug_tenecteplase');
+          else if (v === 'STK') match = checkTltAgent(patient, 'STK', 'drug_stk') || checkTltAgent(patient, 'Streptokinase', 'drug_stk');
+          else if (v === 'Reteplase') match = checkTltAgent(patient, 'Reteplase', 'drug_reteplase');
+          else if (v === 'UK') match = checkTltAgent(patient, 'UK', 'drug_uk') || checkTltAgent(patient, 'Urokinase', 'drug_uk');
+          if (!match) return false;
+        } else if (dim === 'culpritVessel') {
+          const v = String(val).trim();
+          if (v === 'None / Unspecified' || v.includes('None') || v.includes('Unspecified')) {
+            const hasAny = ACS_VESSELS.some(item =>
+              patient[item.formKey] === true ||
+              patient[item.formKey] === 'Yes' ||
+              matchOption(patient.culpritVessels, item.key) ||
+              matchOption(patient.culpritVessel, item.key)
+            );
+            if (hasAny) return false;
+          } else {
+            const vesselDef = ACS_VESSELS.find(item => item.key.toLowerCase() === v.toLowerCase() || item.label.toLowerCase() === v.toLowerCase());
+            const formKey = vesselDef ? vesselDef.formKey : `vessel_${v.toLowerCase()}`;
+            const match = patient[formKey] === true ||
+              patient[formKey] === 'Yes' ||
+              matchOption(patient.culpritVessels, v) ||
+              matchOption(patient.culpritVessel, v);
+            if (!match) return false;
+          }
+        } else if (dim === 'timiFlow') {
+          const flow = patient.postProcTimiFlow;
+          const v = String(val).toLowerCase();
+          if (v.includes('grade 3')) {
+            if (flow !== 3) return false;
+          } else if (v.includes('grade 2')) {
+            if (flow !== 2) return false;
+          } else if (v.includes('0/1') || v.includes('grade 0') || v.includes('grade 1')) {
+            if (flow === null || flow === undefined || flow >= 2) return false;
+          } else if (v.includes('no cath') || v.includes('unrecorded')) {
+            if (flow !== null && flow !== undefined) return false;
+          }
+        } else if (dim === 'timiTier') {
+          const score = Number(patient.timiScore || 0);
+          const v = String(val).toLowerCase();
+          if (v.includes('low')) {
+            if (score > 3) return false;
+          } else if (v.includes('int')) {
+            if (score < 4 || score > 7) return false;
+          } else if (v.includes('high')) {
+            if (score < 8) return false;
+          }
+        } else if (dim === 'timiScoreBin') {
+          const score = Number(patient.timiScore || 0);
+          const [minStr, maxStr] = String(val).split('-');
+          const min = Number(minStr);
+          const max = Number(maxStr);
+          if (!isNaN(min) && !isNaN(max)) {
+            if (score < min || score > max) return false;
+          }
+        } else if (dim === 'dischargeMed') {
+          const v = String(val).toLowerCase();
+          const medDef = ACS_MEDS.find(m => m.drug.toLowerCase() === v);
+          const formKey = medDef ? medDef.formKey : `discharge_${v.replace(/[^a-z0-9]/g, '_')}`;
+          const isPrescribed = Boolean(
+            patient[formKey] === true ||
+            patient[formKey] === 'Yes' ||
+            (v === 'aspirin' && patient.discharge_aspirin) ||
+            (v === 'statin' && (patient.discharge_statin || patient.dischargeStatin)) ||
+            (v.includes('beta') && (patient.discharge_beta_blocker || patient.dischargeBetaBlocker))
+          );
+          if (!isPrescribed) return false;
+        }
+      }
     }
 
     return true;
@@ -631,10 +838,13 @@ export function computeAcsAnalytics(cohort = [], registryType = 'STEMI') {
         avgTimiScore: 0,
         meanDoorToBalloon: 0,
         d2bComplianceRate: 0,
+        d2bCount: 0,
         meanDoorToNeedle: 0,
         d2nComplianceRate: 0,
+        d2nCount: 0,
         meanTimeToCath: 0,
         cathComplianceRate: 0,
+        cathCount: 0,
         proceduralSuccessRate: 0
       },
       ageDistribution: [],
@@ -669,24 +879,42 @@ export function computeAcsAnalytics(cohort = [], registryType = 'STEMI') {
   const avgTimiScore = Number((totalTimi / total).toFixed(1));
 
   // Door to Balloon (STEMI Primary PCI)
-  const pamiCohort = cohort.filter(p => p.doorToBalloonTime !== null && p.doorToBalloonTime !== undefined);
-  const totalD2b = pamiCohort.reduce((acc, p) => acc + Number(p.doorToBalloonTime || 0), 0);
+  // Only records that actually contain a valid non-null, non-empty, positive numeric door-to-balloon time
+  const pamiCohort = cohort.filter(p => {
+    const val = p.doorToBalloonTime ?? p.door_to_balloon_time;
+    return val !== null && val !== undefined && val !== '' && !isNaN(Number(val)) && Number(val) > 0;
+  });
+  const totalD2b = pamiCohort.reduce((acc, p) => acc + Number(p.doorToBalloonTime ?? p.door_to_balloon_time), 0);
   const meanDoorToBalloon = pamiCohort.length > 0 ? Number((totalD2b / pamiCohort.length).toFixed(1)) : 0;
-  const d2bCompliant = pamiCohort.filter(p => p.doorToBalloonTime <= 90).length;
+  const d2bCompliant = pamiCohort.filter(p => Number(p.doorToBalloonTime ?? p.door_to_balloon_time) <= 90).length;
   const d2bComplianceRate = pamiCohort.length > 0 ? Number(((d2bCompliant / pamiCohort.length) * 100).toFixed(1)) : 0;
 
   // Door to Needle (STEMI Thrombolysis)
-  const tltCohortTiming = cohort.filter(p => p.doorToNeedleTime !== null && p.doorToNeedleTime !== undefined);
-  const totalD2n = tltCohortTiming.reduce((acc, p) => acc + Number(p.doorToNeedleTime || 0), 0);
+  // Only records that actually contain a valid non-null, non-empty, positive numeric door-to-needle time
+  const tltCohortTiming = cohort.filter(p => {
+    const val = p.doorToNeedleTime ?? p.door_to_needle_time;
+    return val !== null && val !== undefined && val !== '' && !isNaN(Number(val)) && Number(val) > 0;
+  });
+  const totalD2n = tltCohortTiming.reduce((acc, p) => acc + Number(p.doorToNeedleTime ?? p.door_to_needle_time), 0);
   const meanDoorToNeedle = tltCohortTiming.length > 0 ? Number((totalD2n / tltCohortTiming.length).toFixed(1)) : 0;
-  const d2nCompliant = tltCohortTiming.filter(p => p.doorToNeedleTime <= 30).length;
+  const d2nCompliant = tltCohortTiming.filter(p => Number(p.doorToNeedleTime ?? p.door_to_needle_time) <= 30).length;
   const d2nComplianceRate = tltCohortTiming.length > 0 ? Number(((d2nCompliant / tltCohortTiming.length) * 100).toFixed(1)) : 0;
 
   // Time to Cath (NSTEMI)
-  const cathCohort = cohort.filter(p => p.timeToCathHours !== null && p.timeToCathHours !== undefined);
-  const totalCathTime = cathCohort.reduce((acc, p) => acc + Number(p.timeToCathHours || 0), 0);
+  // Only records that actually contain a valid non-null, non-empty, positive numeric time-to-cath (or door_to_balloon_time / 60)
+  const cathCohort = cohort.filter(p => {
+    const rawVal = p.timeToCathHours ?? (p.doorToBalloonTime ? Number(p.doorToBalloonTime) / 60 : null) ?? (p.door_to_balloon_time ? Number(p.door_to_balloon_time) / 60 : null);
+    return rawVal !== null && rawVal !== undefined && rawVal !== '' && !isNaN(Number(rawVal)) && Number(rawVal) > 0;
+  });
+  const totalCathTime = cathCohort.reduce((acc, p) => {
+    const rawVal = p.timeToCathHours ?? (p.doorToBalloonTime ? Number(p.doorToBalloonTime) / 60 : null) ?? (p.door_to_balloon_time ? Number(p.door_to_balloon_time) / 60 : null);
+    return acc + Number(rawVal);
+  }, 0);
   const meanTimeToCath = cathCohort.length > 0 ? Number((totalCathTime / cathCohort.length).toFixed(1)) : 0;
-  const cathCompliant = cathCohort.filter(p => p.timeToCathHours < 24).length;
+  const cathCompliant = cathCohort.filter(p => {
+    const rawVal = p.timeToCathHours ?? (p.doorToBalloonTime ? Number(p.doorToBalloonTime) / 60 : null) ?? (p.door_to_balloon_time ? Number(p.door_to_balloon_time) / 60 : null);
+    return Number(rawVal) < 24;
+  }).length;
   const cathComplianceRate = cathCohort.length > 0 ? Number(((cathCompliant / cathCohort.length) * 100).toFixed(1)) : 0;
 
   // Procedural Success (TIMI Flow Grade 3)
@@ -822,26 +1050,38 @@ export function computeAcsAnalytics(cohort = [], registryType = 'STEMI') {
     };
   });
 
-  // 5. Treatment Strategy - Blue Palette
-  const strategyCounts = cohort.reduce((acc, p) => {
-    const s = p.treatmentStrategy || 'Conservative';
-    acc[s] = (acc[s] || 0) + 1;
-    return acc;
-  }, {});
+  // 5. Treatment Strategy - Blue Palette (Primary Reperfusion Strategy: PAMI vs TLT vs Conservative)
+  const defaultStrategies = ['PAMI', 'Thrombolysis', 'Conservative'];
 
-  const treatmentStrategy = Object.entries(strategyCounts).map(([name, count]) => {
-    let fill = '#2563eb';
-    if (name === 'PAMI' || name === 'Early Invasive' || name === 'Invasive') fill = '#1d4ed8';
-    else if (name === 'Thrombolysis' || name === 'Selective Invasive') fill = '#3b82f6';
-    else fill = '#60a5fa';
+  const strategyCounts = {};
+  defaultStrategies.forEach(k => { strategyCounts[k] = 0; });
 
-    return {
-      name,
-      count,
-      percent: Number(((count / total) * 100).toFixed(1)),
-      fill
-    };
+  cohort.forEach(p => {
+    let s = p.treatmentStrategy || 'Conservative';
+    if (s === 'Early Invasive') s = 'PAMI';
+    else if (s === 'Selective Invasive') s = 'Conservative';
+    else if (s === 'Unspecified / Deferred' || s === 'Unspecified') {
+      s = 'Conservative';
+    }
+    strategyCounts[s] = (strategyCounts[s] || 0) + 1;
   });
+
+  const treatmentStrategy = Object.entries(strategyCounts)
+    .filter(([name, count]) => defaultStrategies.includes(name) || count > 0)
+    .map(([name, count]) => {
+      let fill = '#2563eb';
+      if (name === 'PAMI' || name === 'Early Invasive' || name === 'Invasive') fill = '#1d4ed8';
+      else if (name === 'Thrombolysis' || name === 'Selective Invasive') fill = '#3b82f6';
+      else if (name === 'Conservative') fill = '#60a5fa';
+      else fill = '#94a3b8';
+
+      return {
+        name,
+        count,
+        percent: total > 0 ? Number(((count / total) * 100).toFixed(1)) : 0,
+        fill
+      };
+    });
 
   // 6. Thrombolysis Details -> Drug (All 4 Form Options) - Blue Palette
   const tltCohort = cohort.filter(p => p.thrombolysisAgent || p.drug_stk || p.drug_tenecteplase || p.drug_uk || p.drug_reteplase);
@@ -899,16 +1139,45 @@ export function computeAcsAnalytics(cohort = [], registryType = 'STEMI') {
     };
   });
 
+  const noCulpritCount = cohort.filter(p => {
+    const hasAnyVessel = allVesselKeys.some(v =>
+      p[v.formKey] === true ||
+      p[v.formKey] === 'Yes' ||
+      matchOption(p.culpritVessels, v.key) ||
+      matchOption(p.culpritVessel, v.key)
+    );
+    return !hasAnyVessel;
+  }).length;
+
+  if (noCulpritCount > 0) {
+    vessels.push({
+      name: 'None / Unspecified',
+      count: noCulpritCount,
+      percent: Number(((noCulpritCount / total) * 100).toFixed(1)),
+      fill: '#94a3b8'
+    });
+  }
+
   // 8. Procedural Success (TIMI Flow Grade) - Blue Palette
   const timi3 = cohort.filter(p => p.postProcTimiFlow === 3).length;
   const timi2 = cohort.filter(p => p.postProcTimiFlow === 2).length;
   const timi01 = cohort.filter(p => p.postProcTimiFlow !== null && p.postProcTimiFlow !== undefined && p.postProcTimiFlow < 2).length;
+  const unrecordedTimi = total - (timi3 + timi2 + timi01);
 
   const proceduralSuccess = [
     { name: 'TIMI Flow Grade 3', count: timi3, percent: Number(((timi3 / total) * 100).toFixed(1)), fill: '#1d4ed8' },
     { name: 'TIMI Flow Grade 2', count: timi2, percent: Number(((timi2 / total) * 100).toFixed(1)), fill: '#3b82f6' },
-    { name: 'TIMI Flow Grade 0/1', count: timi01, percent: Number(((timi01 / total) * 100).toFixed(1)), fill: '#93c5fd' }
+    { name: 'TIMI Flow Grade 0/1', count: timi01, percent: Number(((timi01 / total) * 100).toFixed(1)), fill: '#60a5fa' }
   ];
+
+  if (unrecordedTimi > 0) {
+    proceduralSuccess.push({
+      name: 'No Cath / Unrecorded',
+      count: unrecordedTimi,
+      percent: Number(((unrecordedTimi / total) * 100).toFixed(1)),
+      fill: '#94a3b8'
+    });
+  }
 
   // 9. Discharge Medications (All 12 Form Options) - Blue Palette
   const allMedKeys = [
@@ -998,10 +1267,13 @@ export function computeAcsAnalytics(cohort = [], registryType = 'STEMI') {
       avgTimiScore,
       meanDoorToBalloon,
       d2bComplianceRate,
+      d2bCount: pamiCohort.length,
       meanDoorToNeedle,
       d2nComplianceRate,
+      d2nCount: tltCohortTiming.length,
       meanTimeToCath,
       cathComplianceRate,
+      cathCount: cathCohort.length,
       proceduralSuccessRate
     },
     ageDistribution,
@@ -1061,8 +1333,8 @@ export async function generateAcsAuditExcel(cohort, filters = {}, registryType =
     ['Demographics', 'Gender Distribution', `Male: ${analytics.kpi.malePercent}% | Female: ${analytics.kpi.femalePercent}%`, 'ACC-NCDR Standard'],
     ['Clinical Acuity', 'In-Hospital Mortality', `${analytics.kpi.totalDeaths} (${analytics.kpi.mortalityRate}%)`, 'Target < 6.0% in STEMI'],
     ['Clinical Acuity', 'Mean Admission TIMI Risk Score', `${analytics.kpi.avgTimiScore} Points`, 'Risk Stratification Score'],
-    ['Reperfusion Timings', 'Mean Door-to-Balloon (D2B) Time', `${analytics.kpi.meanDoorToBalloon} mins (${analytics.kpi.d2bComplianceRate}% compliant)`, 'Guideline Target <= 90 mins'],
-    ['Reperfusion Timings', 'Mean Door-to-Needle (D2N) Time', `${analytics.kpi.meanDoorToNeedle} mins (${analytics.kpi.d2nComplianceRate}% compliant)`, 'Guideline Target <= 30 mins'],
+    ['Reperfusion Timings', 'Mean Door-to-Balloon (D2B) Time', `${analytics.kpi.meanDoorToBalloon} mins (N = ${analytics.kpi.d2bCount}, ${analytics.kpi.d2bComplianceRate}% compliant)`, 'Guideline Target <= 90 mins'],
+    ['Reperfusion Timings', 'Mean Door-to-Needle (D2N) Time', `${analytics.kpi.meanDoorToNeedle} mins (N = ${analytics.kpi.d2nCount}, ${analytics.kpi.d2nComplianceRate}% compliant)`, 'Guideline Target <= 30 mins'],
     ['Procedural Outcomes', 'Procedural Success (TIMI Flow 3)', `${analytics.kpi.proceduralSuccessRate}%`, 'Target >= 90% Flow Restoration'],
     ['Discharge GDMT', 'Aspirin Therapy', `${analytics.gdmtMeds.find(m => m.drug === 'Aspirin')?.prescribedRate || 95}% Prescribed`, 'Class I Indication (>=90%)'],
     ['Discharge GDMT', 'Statin Therapy', `${analytics.gdmtMeds.find(m => m.drug === 'Statin')?.prescribedRate || 92}% Prescribed`, 'Class I Indication (>=90%)'],
@@ -1187,7 +1459,14 @@ export async function generateAcsAuditExcel(cohort, filters = {}, registryType =
     const ipNo = p.ipNo || p.ip_no || p.patient_ip_no || 'N/A';
 
     // 4. ACS No / Registry No
-    const acsNo = p.acsNo || p.acs_no || (p.stemiId ? `ACS.${String(p.stemiId).padStart(4, '0')}` : (p.nstemiId ? `ACS.${String(p.nstemiId).padStart(4, '0')}` : (p.id ? `ACS.${String(p.id).replace(/\D/g, '').padStart(4, '0')}` : 'N/A')));
+    const rawAcsNo = p.acsNo || p.acs_no || (p.stemiId ? `ACS.${String(p.stemiId).padStart(4, '0')}` : (p.nstemiId ? `ACS.${String(p.nstemiId).padStart(4, '0')}` : (p.id ? `ACS.${String(p.id).replace(/\D/g, '').padStart(4, '0')}` : 'N/A')));
+    const acsNo = typeStr === 'STEMI'
+      ? (/^STEMI-/i.test(rawAcsNo) ? rawAcsNo : `STEMI-${rawAcsNo}`)
+      : (typeStr === 'NSTEMI'
+        ? (/^NSTEMI-/i.test(rawAcsNo) ? rawAcsNo : `NSTEMI-${rawAcsNo}`)
+        : (typeStr === 'HF'
+          ? (/^HF-/i.test(rawAcsNo) ? rawAcsNo : `HF-${rawAcsNo}`)
+          : rawAcsNo));
 
     // 5. Patient ID
     const patientId = p.uhid || (p.regPatientId ? `PAT-${p.regPatientId}` : (p.reg_patient_id ? `PAT-${p.reg_patient_id}` : (p.id || 'N/A')));

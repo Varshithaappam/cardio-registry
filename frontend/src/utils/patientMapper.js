@@ -53,6 +53,8 @@ export function buildPatientPayload({
   bloodGroup,
   insuranceMode,
   phone,
+  secondaryContactPhone,
+  secondary_contact_phone,
   email,
   hypertension,
   smoking,
@@ -107,6 +109,7 @@ export function buildPatientPayload({
     blood_group: bloodGroup,
     insurance_mode: insuranceMode || "Unknown",
     phone_no: phone,
+    secondary_contact_phone: secondaryContactPhone ? String(secondaryContactPhone).trim() : (secondary_contact_phone ? String(secondary_contact_phone).trim() : null),
     email,
     hypertension: hypertension || null,
     smoking: smoking || null,
@@ -145,6 +148,7 @@ const normalizeRecord = (dbPatient) => {
   const bloodGroup = patient.blood_group || patient.bloodGroup || "Unknown";
   const insuranceMode = patient.insurance_mode || patient.insuranceMode || "Unknown";
   const phone = patient.phone_no || patient.phone || "";
+  const secondaryContactPhone = patient.secondary_contact_phone || patient.secondaryContactPhone || dbPatient?.secondary_contact_phone || "";
   const email = patient.email || "";
   const gender = patient.gender || "Unknown";
   const hypertension = patient.hypertension ?? patient.comorbidities?.hypertension ?? "";
@@ -187,6 +191,8 @@ const normalizeRecord = (dbPatient) => {
       mrNo,
       ipNo,
       phone,
+      secondaryContactPhone,
+      secondary_contact_phone: secondaryContactPhone,
       email,
       bloodGroup,
       insuranceMode,

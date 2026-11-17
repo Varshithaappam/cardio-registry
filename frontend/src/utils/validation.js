@@ -156,7 +156,7 @@ export const validateField = (fieldName, value) => {
     return { isValid: false, error: 'Max 30 characters allowed.', warning: null, status: 'Invalid', color: 'text-red-500 font-bold' };
   }
 
-  if (fieldName === 'phone' || fieldName === 'caregiverPhone') {
+  if (fieldName === 'phone' || fieldName === 'caregiverPhone' || fieldName === 'secondaryContactPhone' || fieldName === 'secondary_contact_phone') {
     const phoneRegex = /^\d{10}$/;
     if (!phoneRegex.test(strVal)) {
       return { isValid: false, error: 'Please enter a valid 10-digit phone number.', warning: null, status: 'Invalid', color: 'text-red-500 font-bold' };

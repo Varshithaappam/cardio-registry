@@ -126,24 +126,45 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
 
   // Flatten timeline events chronologically
   const timelineEvents = [
-    ...(record.hfAssessments || []).map(a => ({
-      type: 'HF',
-      title: `Heart Failure Assessment (${a.status === 'draft' ? 'Draft' : 'Final'})`,
-      date: a.assessment_date || a.createdAt,
-      status: a.status || 'final',
-      details: `NYHA Class: ${a.nyhaClass || a.initial_nyha_class || 'N/A'} • LVEF: ${a.lvef || 'N/A'}% • Weight: ${a.weight || 'N/A'} kg`,
-      raw: a,
-      id: a.hf_id || a.id
-    })),
-    ...(record.acsEvents || []).map(e => ({
-      type: e.type || 'STEMI',
-      title: `${e.type || 'ACS'} Event (${e.status || 'final'})`,
-      date: e.event_date || e.admission_date || e.createdAt,
-      status: e.status || 'final',
-      details: `Killip Class: ${e.killipClass || 'I'} • Door to Balloon: ${e.doorToBalloonTime || 'N/A'} mins`,
-      raw: e,
-      id: e.id
-    })),
+    ...(record.hfAssessments || []).map(a => {
+      const baseHf = a.hf_registry_no ? String(a.hf_registry_no).trim() : `hf${String(a.hf_id || a.id).padStart(5, '0')}`;
+      const formattedRecordId = /^HF-/i.test(baseHf) ? baseHf : `HF-${baseHf}`;
+      const admDate = a.date_of_admission || a.date_of_visit_hospitalization || a.assessment_date || a.createdAt;
+      return {
+        type: 'HF',
+        title: `Heart Failure Assessment (${a.status === 'draft' ? 'Draft' : 'Final'}) · ${formattedRecordId}`,
+        recordId: formattedRecordId,
+        formattedRecordId,
+        registryNo: a.hf_registry_no,
+        date: a.assessment_date || a.createdAt,
+        admissionDate: admDate,
+        status: a.status || 'final',
+        details: `NYHA Class: ${a.nyhaClass || a.initial_nyha_class || 'N/A'} • LVEF: ${a.lvef || 'N/A'}% • Weight: ${a.weight || 'N/A'} kg`,
+        raw: a,
+        id: a.hf_id || a.id
+      };
+    }),
+    ...(record.acsEvents || []).map(e => {
+      const type = e.type || 'STEMI';
+      const baseAcs = e.acs_no ? String(e.acs_no).trim() : `ACS.${String(e.id).padStart(4, '0')}`;
+      const formattedRecordId = type === 'STEMI' 
+        ? (/^STEMI-/i.test(baseAcs) ? baseAcs : `STEMI-${baseAcs}`)
+        : (/^NSTEMI-/i.test(baseAcs) ? baseAcs : `NSTEMI-${baseAcs}`);
+      const admDate = e.admission_date || e.event_date || e.createdAt;
+      return {
+        type,
+        title: `${type} Event (${e.status || 'final'}) · ${formattedRecordId}`,
+        recordId: formattedRecordId,
+        formattedRecordId,
+        registryNo: e.acs_no,
+        date: e.event_date || e.admission_date || e.createdAt,
+        admissionDate: admDate,
+        status: e.status || 'final',
+        details: `Killip Class: ${e.killipClass || 'I'} • Door to Balloon: ${e.doorToBalloonTime || 'N/A'} mins`,
+        raw: e,
+        id: e.id
+      };
+    }),
     ...(record.cabgProcedures || []).map(c => ({
       type: 'CABG',
       title: 'CABG Surgical Intervention',

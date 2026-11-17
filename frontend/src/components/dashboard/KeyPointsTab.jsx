@@ -126,7 +126,7 @@ function renderDonutSegmentLabel({
   }
 }
 
-export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
+export default function KeyPointsTab({ analytics, chartFilters = {}, onChartFilterToggle, onOpenExclusionGuide }) {
   const [adherenceViewMode, setAdherenceViewMode] = useState('bar'); // 'bar' | 'curve'
 
   // Flag to temporarily hide detail cards underneath all graphs
@@ -142,18 +142,20 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
     { name: 'Female', value: kpi.females, color: '#ec4899' } // pink-500
   ];
 
-  // Phenotype Donut Data (strictly HFrEF & HFpEF from hf_final_clinical_assessment)
+  // Phenotype Donut Data (HFrEF, HFpEF, and Unspecified from hf_final_clinical_assessment)
   const phenotypeData = [
     { name: 'HFrEF (Reduced)', value: kpi.hfrEFCount || 0, color: '#0d9488' },
-    { name: 'HFpEF (Preserved)', value: kpi.hfpEFCount || 0, color: '#0284c7' }
+    { name: 'HFpEF (Preserved)', value: kpi.hfpEFCount || 0, color: '#0284c7' },
+    { name: 'Unspecified', value: kpi.unspecifiedPhenotypeCount || 0, color: '#94a3b8' }
   ].filter(d => d.value > 0);
 
-  // NYHA Radial Data
+  // NYHA Radial Data (Classes I-IV and Unspecified)
   const nyhaData = [
-    { name: 'Class I', count: kpi.nyha1Count, fill: '#10b981' },
-    { name: 'Class II', count: kpi.nyha2Count, fill: '#06b6d4' },
-    { name: 'Class III', count: kpi.nyha3Count, fill: '#f59e0b' },
-    { name: 'Class IV', count: kpi.nyha4Count, fill: '#ef4444' }
+    { name: 'Class I', count: kpi.nyha1Count || 0, fill: '#10b981' },
+    { name: 'Class II', count: kpi.nyha2Count || 0, fill: '#06b6d4' },
+    { name: 'Class III', count: kpi.nyha3Count || 0, fill: '#f59e0b' },
+    { name: 'Class IV', count: kpi.nyha4Count || 0, fill: '#ef4444' },
+    { name: 'Unspecified', count: kpi.unspecifiedNyhaCount || 0, fill: '#94a3b8' }
   ];
 
   const UNIFIED_BAR_COLOR = '#0d9488'; // Signature Teal-600 across all primary distribution graphs
@@ -217,7 +219,7 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
   }));
 
   // Safety & Compliance Data (Appropriate Care vs Deviations)
-  const totalHfCount = kpi.totalHfRecords || kpi.totalPatients || 123;
+  const totalHfCount = kpi.totalHfRecords || kpi.totalPatients || 1;
   const complianceData = (performanceMatrix || []).map(p => ({
     name: p.drugName,
     appropCare: p.appropriatenessScore,
@@ -413,9 +415,14 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
         {/* Panel 1: Gender Distribution */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between h-auto min-h-full">
           <div className="flex items-start justify-between gap-2 min-h-[38px]">
-            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide leading-snug break-words">
-              Gender Distribution
-            </h3>
+            <div>
+              <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide leading-snug break-words">
+                Gender Distribution
+              </h3>
+              <p className="text-[10px] text-teal-600 font-semibold mt-0.5">
+                {chartFilters?.gender ? `Filtered: ${chartFilters.gender} (Click to reset)` : 'Click slice or button to filter'}
+              </p>
+            </div>
             <span className="text-[10.5px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200 shrink-0 whitespace-nowrap">
               Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
             </span>
@@ -434,10 +441,23 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                   dataKey="value"
                   label={renderDonutSegmentLabel}
                   labelLine={false}
+                  onClick={(entry) => onChartFilterToggle?.('gender', entry?.name)}
+                  cursor="pointer"
                 >
-                  {genderData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
+                  {genderData.map((entry, index) => {
+                    const isSelected = chartFilters?.gender === entry.name;
+                    const isDimmed = chartFilters?.gender && !isSelected;
+                    return (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.color}
+                        opacity={isDimmed ? 0.35 : 1}
+                        stroke={isSelected ? '#0f172a' : '#ffffff'}
+                        strokeWidth={isSelected ? 3 : 1}
+                        style={{ cursor: 'pointer', transition: 'all 0.2s ease-in-out' }}
+                      />
+                    );
+                  })}
                 </Pie>
                 <Tooltip 
                   wrapperStyle={{ zIndex: 50 }}
@@ -454,6 +474,7 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                           <p className="text-slate-200 mt-0.5 font-mono">
                             {count} HF Records ({pct}%)
                           </p>
+                          <p className="text-[10px] text-teal-300 mt-1 italic font-medium">Click to cross-filter dashboard</p>
                         </div>
                       );
                     }
@@ -474,35 +495,62 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
           </div>
 
           <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-100">
-            <div className="bg-sky-50/70 border border-sky-200/80 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px]">
+            <button
+              onClick={() => onChartFilterToggle?.('gender', 'Male')}
+              className={`p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px] transition cursor-pointer text-left ${
+                chartFilters?.gender === 'Male'
+                  ? 'bg-sky-100 border-2 border-sky-600 ring-2 ring-sky-200'
+                  : 'bg-sky-50/70 border border-sky-200/80 hover:bg-sky-100/80'
+              }`}
+              title="Click to cross-filter by Male"
+            >
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-sky-600 shrink-0"></span>
                 <span className="text-xs font-bold text-sky-950 whitespace-normal leading-tight">Male</span>
+                {chartFilters?.gender === 'Male' && (
+                  <span className="ml-auto text-[9px] bg-sky-600 text-white font-bold px-1 rounded-sm">ACTIVE</span>
+                )}
               </div>
               <div className="text-right font-mono flex items-baseline justify-end gap-1">
                 <span className="text-xs font-black text-slate-900">{kpi.males}</span>
                 <span className="text-[10.5px] font-bold text-sky-700">({kpi.malePercent}%)</span>
               </div>
-            </div>
-            <div className="bg-pink-50/70 border border-pink-200/80 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px]">
+            </button>
+            <button
+              onClick={() => onChartFilterToggle?.('gender', 'Female')}
+              className={`p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px] transition cursor-pointer text-left ${
+                chartFilters?.gender === 'Female'
+                  ? 'bg-pink-100 border-2 border-pink-600 ring-2 ring-pink-200'
+                  : 'bg-pink-50/70 border border-pink-200/80 hover:bg-pink-100/80'
+              }`}
+              title="Click to cross-filter by Female"
+            >
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-pink-500 shrink-0"></span>
                 <span className="text-xs font-bold text-pink-950 whitespace-normal leading-tight">Female</span>
+                {chartFilters?.gender === 'Female' && (
+                  <span className="ml-auto text-[9px] bg-pink-600 text-white font-bold px-1 rounded-sm">ACTIVE</span>
+                )}
               </div>
               <div className="text-right font-mono flex items-baseline justify-end gap-1">
                 <span className="text-xs font-black text-slate-900">{kpi.females}</span>
                 <span className="text-[10.5px] font-bold text-pink-700">({kpi.femalePercent}%)</span>
               </div>
-            </div>
+            </button>
           </div>
         </div>
 
         {/* Panel 2: HF Phenotype Classification */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between h-auto min-h-full">
           <div className="flex items-start justify-between gap-2 min-h-[38px]">
-            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide leading-snug break-words">
-              HF Phenotype Classification
-            </h3>
+            <div>
+              <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide leading-snug break-words">
+                HF Phenotype Classification
+              </h3>
+              <p className="text-[10px] text-teal-600 font-semibold mt-0.5">
+                {chartFilters?.phenotype ? `Filtered: ${chartFilters.phenotype} (Click to reset)` : 'Click slice or button to filter'}
+              </p>
+            </div>
             <span className="text-[10.5px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200 shrink-0 whitespace-nowrap">
               Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
             </span>
@@ -521,10 +569,23 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                   dataKey="value"
                   label={renderDonutSegmentLabel}
                   labelLine={false}
+                  onClick={(entry) => onChartFilterToggle?.('phenotype', entry?.name)}
+                  cursor="pointer"
                 >
-                  {phenotypeData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
+                  {phenotypeData.map((entry, index) => {
+                    const isSelected = chartFilters?.phenotype === entry.name;
+                    const isDimmed = chartFilters?.phenotype && !isSelected;
+                    return (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={entry.color} 
+                        opacity={isDimmed ? 0.35 : 1}
+                        stroke={isSelected ? '#0f172a' : '#ffffff'}
+                        strokeWidth={isSelected ? 3 : 1}
+                        style={{ cursor: 'pointer', transition: 'all 0.2s ease-in-out' }}
+                      />
+                    );
+                  })}
                 </Pie>
                 <Tooltip 
                   wrapperStyle={{ zIndex: 50 }}
@@ -532,7 +593,7 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                     if (active && payload && payload.length) {
                       const item = payload[0];
                       const count = item.value;
-                      const total = kpi.totalHfRecords || kpi.totalPatients || 123;
+                      const total = kpi.totalHfRecords || kpi.totalPatients || 1;
                       const pct = Math.round((count / total) * 1000) / 10;
                       return (
                         <div className="bg-slate-900/95 text-white px-3 py-2 rounded-xl shadow-xl border border-slate-700/60 backdrop-blur-xs text-xs pointer-events-none">
@@ -540,6 +601,7 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                           <p className="text-slate-200 mt-0.5 font-mono">
                             {count} HF Records ({pct}%)
                           </p>
+                          <p className="text-[10px] text-teal-300 mt-1 italic font-medium">Click to cross-filter dashboard</p>
                         </div>
                       );
                     }
@@ -559,36 +621,84 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-100">
-            <div className="bg-teal-50/70 border border-teal-200/80 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px]">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="w-2.5 h-2.5 rounded-full bg-teal-600 shrink-0"></span>
-                <span className="text-xs font-bold text-teal-950 whitespace-normal leading-tight">HFrEF</span>
+          <div className="grid grid-cols-3 gap-1.5 pt-2.5 border-t border-slate-100">
+            <button
+              onClick={() => onChartFilterToggle?.('phenotype', 'HFrEF (Reduced)')}
+              className={`p-2 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px] transition cursor-pointer text-left ${
+                chartFilters?.phenotype === 'HFrEF (Reduced)'
+                  ? 'bg-teal-100 border-2 border-teal-600 ring-2 ring-teal-200'
+                  : 'bg-teal-50/70 border border-teal-200/80 hover:bg-teal-100/80'
+              }`}
+              title="Click to cross-filter by HFrEF"
+            >
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="w-2 h-2 rounded-full bg-teal-600 shrink-0"></span>
+                <span className="text-[11px] font-bold text-teal-950 whitespace-normal leading-tight">HFrEF</span>
+                {chartFilters?.phenotype === 'HFrEF (Reduced)' && (
+                  <span className="ml-auto text-[8px] bg-teal-600 text-white font-bold px-1 rounded-xs">ACTIVE</span>
+                )}
               </div>
-              <div className="text-right font-mono flex items-baseline justify-end gap-1">
+              <div className="text-right font-mono flex items-baseline justify-end gap-0.5">
                 <span className="text-xs font-black text-slate-900">{kpi.hfrEFCount}</span>
-                <span className="text-[10.5px] font-bold text-teal-700">({kpi.hfrEFPercent}%)</span>
+                <span className="text-[10px] font-bold text-teal-700">({kpi.hfrEFPercent}%)</span>
               </div>
-            </div>
-            <div className="bg-sky-50/70 border border-sky-200/80 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px]">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="w-2.5 h-2.5 rounded-full bg-sky-600 shrink-0"></span>
-                <span className="text-xs font-bold text-sky-950 whitespace-normal leading-tight">HFpEF</span>
+            </button>
+            <button
+              onClick={() => onChartFilterToggle?.('phenotype', 'HFpEF (Preserved)')}
+              className={`p-2 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px] transition cursor-pointer text-left ${
+                chartFilters?.phenotype === 'HFpEF (Preserved)'
+                  ? 'bg-sky-100 border-2 border-sky-600 ring-2 ring-sky-200'
+                  : 'bg-sky-50/70 border border-sky-200/80 hover:bg-sky-100/80'
+              }`}
+              title="Click to cross-filter by HFpEF"
+            >
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="w-2 h-2 rounded-full bg-sky-600 shrink-0"></span>
+                <span className="text-[11px] font-bold text-sky-950 whitespace-normal leading-tight">HFpEF</span>
+                {chartFilters?.phenotype === 'HFpEF (Preserved)' && (
+                  <span className="ml-auto text-[8px] bg-sky-600 text-white font-bold px-1 rounded-xs">ACTIVE</span>
+                )}
               </div>
-              <div className="text-right font-mono flex items-baseline justify-end gap-1">
+              <div className="text-right font-mono flex items-baseline justify-end gap-0.5">
                 <span className="text-xs font-black text-slate-900">{kpi.hfpEFCount}</span>
-                <span className="text-[10.5px] font-bold text-sky-700">({kpi.hfpEFPercent}%)</span>
+                <span className="text-[10px] font-bold text-sky-700">({kpi.hfpEFPercent}%)</span>
               </div>
-            </div>
+            </button>
+            <button
+              onClick={() => onChartFilterToggle?.('phenotype', 'Unspecified')}
+              className={`p-2 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px] transition cursor-pointer text-left ${
+                chartFilters?.phenotype === 'Unspecified'
+                  ? 'bg-slate-200 border-2 border-slate-600 ring-2 ring-slate-300'
+                  : 'bg-slate-50 border border-slate-200/90 hover:bg-slate-100/80'
+              }`}
+              title="Click to cross-filter by Unspecified"
+            >
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
+                <span className="text-[11px] font-bold text-slate-700 whitespace-normal leading-tight">Unspecified</span>
+                {chartFilters?.phenotype === 'Unspecified' && (
+                  <span className="ml-auto text-[8px] bg-slate-700 text-white font-bold px-1 rounded-xs">ACTIVE</span>
+                )}
+              </div>
+              <div className="text-right font-mono flex items-baseline justify-end gap-0.5">
+                <span className="text-xs font-black text-slate-900">{kpi.unspecifiedPhenotypeCount || 0}</span>
+                <span className="text-[10px] font-bold text-slate-500">({kpi.unspecifiedPhenotypePercent || 0}%)</span>
+              </div>
+            </button>
           </div>
         </div>
 
         {/* Panel 3: NYHA Functional Classification */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between h-auto min-h-full">
           <div className="flex items-start justify-between gap-2 min-h-[38px]">
-            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide leading-snug break-words">
-              NYHA Functional Class
-            </h3>
+            <div>
+              <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide leading-snug break-words">
+                NYHA Functional Class
+              </h3>
+              <p className="text-[10px] text-teal-600 font-semibold mt-0.5">
+                {chartFilters?.nyha ? `Filtered: ${chartFilters.nyha} (Click to reset)` : 'Click slice or button to filter'}
+              </p>
+            </div>
             <span className="text-[10.5px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200 shrink-0 whitespace-nowrap">
               Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
             </span>
@@ -612,7 +722,22 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                   clockWise
                   dataKey="count"
                   cornerRadius={6}
-                />
+                  onClick={(entry) => onChartFilterToggle?.('nyha', entry?.name)}
+                  cursor="pointer"
+                >
+                  {nyhaData.map((entry, index) => {
+                    const isSelected = chartFilters?.nyha === entry.name;
+                    const isDimmed = chartFilters?.nyha && !isSelected;
+                    return (
+                      <Cell
+                        key={`cell-nyha-${index}`}
+                        fill={entry.fill}
+                        opacity={isDimmed ? 0.35 : 1}
+                        style={{ cursor: 'pointer', transition: 'all 0.2s ease-in-out' }}
+                      />
+                    );
+                  })}
+                </RadialBar>
                 <Tooltip 
                   wrapperStyle={{ zIndex: 50 }}
                   content={({ active, payload }) => {
@@ -626,6 +751,7 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                           <p className="text-slate-200 mt-0.5 font-mono">
                             {item.count} HF Records ({pct}%)
                           </p>
+                          <p className="text-[10px] text-teal-300 mt-1 italic font-medium">Click to cross-filter dashboard</p>
                         </div>
                       );
                     }
@@ -636,36 +762,84 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
             </ResponsiveContainer>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-2.5 border-t border-slate-100">
-            <div className="bg-amber-50/70 border border-amber-200/80 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px]">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
-                <span className="text-xs font-bold text-amber-950 whitespace-normal leading-tight">Class III</span>
+          <div className="grid grid-cols-3 gap-1.5 pt-2.5 border-t border-slate-100">
+            <button
+              onClick={() => onChartFilterToggle?.('nyha', 'Class III')}
+              className={`p-2 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px] transition cursor-pointer text-left ${
+                chartFilters?.nyha === 'Class III'
+                  ? 'bg-amber-100 border-2 border-amber-600 ring-2 ring-amber-200'
+                  : 'bg-amber-50/70 border border-amber-200/80 hover:bg-amber-100/80'
+              }`}
+              title="Click to cross-filter by NYHA Class III"
+            >
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                <span className="text-[11px] font-bold text-amber-950 whitespace-normal leading-tight">Class III</span>
+                {chartFilters?.nyha === 'Class III' && (
+                  <span className="ml-auto text-[8px] bg-amber-600 text-white font-bold px-1 rounded-xs">ACTIVE</span>
+                )}
               </div>
-              <div className="text-right font-mono flex items-baseline justify-end gap-1">
+              <div className="text-right font-mono flex items-baseline justify-end gap-0.5">
                 <span className="text-xs font-black text-slate-900">{kpi.nyha3Count}</span>
-                <span className="text-[10.5px] font-bold text-amber-700">({kpi.nyha3Percent}%)</span>
+                <span className="text-[10px] font-bold text-amber-700">({kpi.nyha3Percent}%)</span>
               </div>
-            </div>
-            <div className="bg-rose-50/70 border border-rose-200/80 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px]">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
-                <span className="text-xs font-bold text-rose-950 whitespace-normal leading-tight">Class IV</span>
+            </button>
+            <button
+              onClick={() => onChartFilterToggle?.('nyha', 'Class IV')}
+              className={`p-2 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px] transition cursor-pointer text-left ${
+                chartFilters?.nyha === 'Class IV'
+                  ? 'bg-rose-100 border-2 border-rose-600 ring-2 ring-rose-200'
+                  : 'bg-rose-50/70 border border-rose-200/80 hover:bg-rose-100/80'
+              }`}
+              title="Click to cross-filter by NYHA Class IV"
+            >
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                <span className="text-[11px] font-bold text-rose-950 whitespace-normal leading-tight">Class IV</span>
+                {chartFilters?.nyha === 'Class IV' && (
+                  <span className="ml-auto text-[8px] bg-rose-600 text-white font-bold px-1 rounded-xs">ACTIVE</span>
+                )}
               </div>
-              <div className="text-right font-mono flex items-baseline justify-end gap-1">
+              <div className="text-right font-mono flex items-baseline justify-end gap-0.5">
                 <span className="text-xs font-black text-slate-900">{kpi.nyha4Count}</span>
-                <span className="text-[10.5px] font-bold text-rose-700">({kpi.nyha4Percent}%)</span>
+                <span className="text-[10px] font-bold text-rose-700">({kpi.nyha4Percent}%)</span>
               </div>
-            </div>
+            </button>
+            <button
+              onClick={() => onChartFilterToggle?.('nyha', 'Unspecified')}
+              className={`p-2 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px] transition cursor-pointer text-left ${
+                chartFilters?.nyha === 'Unspecified'
+                  ? 'bg-slate-200 border-2 border-slate-600 ring-2 ring-slate-300'
+                  : 'bg-slate-50 border border-slate-200/90 hover:bg-slate-100/80'
+              }`}
+              title="Click to cross-filter by Unspecified NYHA"
+            >
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0"></span>
+                <span className="text-[11px] font-bold text-slate-700 whitespace-normal leading-tight">Unspecified</span>
+                {chartFilters?.nyha === 'Unspecified' && (
+                  <span className="ml-auto text-[8px] bg-slate-700 text-white font-bold px-1 rounded-xs">ACTIVE</span>
+                )}
+              </div>
+              <div className="text-right font-mono flex items-baseline justify-end gap-0.5">
+                <span className="text-xs font-black text-slate-900">{kpi.unspecifiedNyhaCount || 0}</span>
+                <span className="text-[10px] font-bold text-slate-500">({kpi.unspecifiedNyhaPercent || 0}%)</span>
+              </div>
+            </button>
           </div>
         </div>
 
         {/* Panel 4: Age Distribution Spectrum */}
         <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between h-auto min-h-full">
           <div className="flex items-start justify-between gap-2 min-h-[38px]">
-            <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide leading-snug break-words">
-              Age Distribution Spectrum
-            </h3>
+            <div>
+              <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wide leading-snug break-words">
+                Age Distribution Spectrum
+              </h3>
+              <p className="text-[10px] text-teal-600 font-semibold mt-0.5">
+                {chartFilters?.ageGroup ? `Filtered: ${chartFilters.ageGroup} (Click to reset)` : 'Click curve or peak to filter'}
+              </p>
+            </div>
             <span className="text-[10.5px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full border border-slate-200 shrink-0 whitespace-nowrap">
               Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
             </span>
@@ -673,7 +847,15 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
 
           <div className="h-48 my-1 flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={ageDistribution || []} margin={{ top: 22, right: 15, left: -25, bottom: 0 }}>
+              <AreaChart 
+                data={ageDistribution || []} 
+                margin={{ top: 22, right: 15, left: -25, bottom: 0 }}
+                onClick={(entry) => {
+                  const bracket = entry?.activeLabel || entry?.activePayload?.[0]?.payload?.bracket;
+                  if (bracket) onChartFilterToggle?.('ageGroup', bracket);
+                }}
+                cursor="pointer"
+              >
                 <defs>
                   <linearGradient id="ageGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#0d9488" stopOpacity={0.5} />
@@ -711,16 +893,27 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
           </div>
 
           <div className="pt-2.5 border-t border-slate-100">
-            <div className="bg-teal-50/70 border border-teal-200/70 p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px] text-xs">
+            <button
+              onClick={() => onChartFilterToggle?.('ageGroup', peakAge?.bracket)}
+              className={`w-full p-2.5 rounded-xl flex flex-col justify-between gap-1 h-auto min-h-[58px] text-xs transition cursor-pointer text-left ${
+                chartFilters?.ageGroup === peakAge?.bracket
+                  ? 'bg-teal-100 border-2 border-teal-600 ring-2 ring-teal-200'
+                  : 'bg-teal-50/70 border border-teal-200/70 hover:bg-teal-100/80'
+              }`}
+              title={`Click to filter by ${peakAge?.bracket}`}
+            >
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-teal-600 shrink-0"></span>
                 <span className="font-bold text-teal-950 whitespace-normal leading-tight">Peak Density</span>
+                {chartFilters?.ageGroup === peakAge?.bracket && (
+                  <span className="ml-auto text-[9px] bg-teal-600 text-white font-bold px-1 rounded-sm">ACTIVE</span>
+                )}
               </div>
               <div className="font-mono font-bold text-teal-800 text-right flex items-baseline justify-end gap-1">
                 <span>{peakAge?.bracket}</span>
                 <span className="text-[10.5px] font-medium text-slate-600 font-sans">({peakAge?.count} Records, {peakAge?.percent}%)</span>
               </div>
-            </div>
+            </button>
           </div>
         </div>
       </div>
@@ -735,8 +928,8 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                 <h3 className="text-sm font-bold text-slate-900">
                   Diabetes Mellitus, Hypertension & Renal Impairment
                 </h3>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Evaluated directly from final clinical assessment records
+                <p className="text-[11px] text-teal-600 font-semibold mt-0.5">
+                  {chartFilters?.comorbidity ? `Co-prevalence among ${chartFilters.comorbidity} cohort (${kpi.totalHfRecords || 0} Records) • Click to reset` : 'Independent comorbidity prevalence (co-occurring conditions) • Click bar to filter'}
                 </p>
               </div>
               <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 self-start sm:self-auto">
@@ -763,10 +956,23 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                     name="% HF Records" 
                     fill={UNIFIED_BAR_COLOR}
                     radius={[6, 6, 0, 0]}
+                    onClick={(entry) => onChartFilterToggle?.('comorbidity', entry?.name)}
+                    cursor="pointer"
                   >
-                    {comorbidityData.map((entry, index) => (
-                      <Cell key={`bar-${index}`} fill={entry.fill} />
-                    ))}
+                    {comorbidityData.map((entry, index) => {
+                      const isSelected = chartFilters?.comorbidity === entry.name;
+                      const isDimmed = chartFilters?.comorbidity && !isSelected;
+                      return (
+                        <Cell 
+                          key={`bar-${index}`} 
+                          fill={entry.fill}
+                          opacity={isDimmed ? 0.35 : 1}
+                          stroke={isSelected ? '#0f172a' : 'transparent'}
+                          strokeWidth={isSelected ? 2 : 0}
+                          style={{ cursor: 'pointer', transition: 'all 0.2s ease-in-out' }}
+                        />
+                      );
+                    })}
                     <LabelList 
                       dataKey="percent" 
                       position="top" 
@@ -973,9 +1179,14 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-slate-100 pb-2.5">
-              <h3 className="text-sm font-bold text-slate-900">
-                GDMT Prescription vs. Contraindications (278 Patients Full Registry)
-              </h3>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">
+                  GDMT Prescription vs. Contraindications
+                </h3>
+                <p className="text-[11px] text-teal-600 font-semibold mt-0.5">
+                  {chartFilters?.drugPrescribed ? `Filtered: ${chartFilters.drugPrescribed} (Click to reset)` : 'Click any pillar bar to filter registry cohort'}
+                </p>
+              </div>
               <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 self-start sm:self-auto">
                 Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records
               </span>
@@ -984,7 +1195,16 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
             {/* Clustered Column Chart */}
             <div className="h-64 my-2">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={coverageData} margin={{ top: 22, right: 15, left: -20, bottom: 5 }} barGap={4}>
+                <BarChart 
+                  data={coverageData} 
+                  margin={{ top: 22, right: 15, left: -20, bottom: 5 }} 
+                  barGap={4}
+                  onClick={(entry) => {
+                    const drug = entry?.activeLabel || entry?.name;
+                    if (drug) onChartFilterToggle?.('drugPrescribed', drug);
+                  }}
+                  cursor="pointer"
+                >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis 
                     dataKey="name" 
@@ -1006,6 +1226,20 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }} />
                   <Bar dataKey="onDrug" name="% on Drug" fill="#0284c7" radius={[4, 4, 0, 0]}>
+                    {coverageData.map((entry, index) => {
+                      const isSelected = chartFilters?.drugPrescribed === entry.name;
+                      const isDimmed = chartFilters?.drugPrescribed && !isSelected;
+                      return (
+                        <Cell 
+                          key={`bar-ondrug-${index}`} 
+                          fill="#0284c7"
+                          opacity={isDimmed ? 0.35 : 1}
+                          stroke={isSelected ? '#0f172a' : 'transparent'}
+                          strokeWidth={isSelected ? 2 : 0}
+                          style={{ cursor: 'pointer', transition: 'all 0.2s ease-in-out' }}
+                        />
+                      );
+                    })}
                     <LabelList 
                       dataKey="onDrug" 
                       position="top" 
@@ -1014,6 +1248,20 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
                     />
                   </Bar>
                   <Bar dataKey="withCI" name="% with Contraindication" fill="#ea580c" radius={[4, 4, 0, 0]}>
+                    {coverageData.map((entry, index) => {
+                      const isSelected = chartFilters?.drugPrescribed === entry.name;
+                      const isDimmed = chartFilters?.drugPrescribed && !isSelected;
+                      return (
+                        <Cell 
+                          key={`bar-withci-${index}`} 
+                          fill="#ea580c"
+                          opacity={isDimmed ? 0.35 : 1}
+                          stroke={isSelected ? '#0f172a' : 'transparent'}
+                          strokeWidth={isSelected ? 2 : 0}
+                          style={{ cursor: 'pointer', transition: 'all 0.2s ease-in-out' }}
+                        />
+                      );
+                    })}
                     <LabelList 
                       dataKey="withCI" 
                       position="top" 
@@ -1144,7 +1392,7 @@ export default function KeyPointsTab({ analytics, onOpenExclusionGuide }) {
           <div>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 border-b border-slate-100 pb-2.5">
               <h3 className="text-sm font-bold text-slate-900">
-                GDMT Category Prescription Profile ({kpi.totalHfRecords || 123} Records)
+                GDMT Category Prescription Profile
               </h3>
               <span className="text-[11px] font-mono font-bold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-200 self-start sm:self-auto">
                 Cohort: {kpi.totalHfRecords || kpi.totalPatients} Records

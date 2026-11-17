@@ -178,11 +178,11 @@ export default function HFHistoryList({ regPatientId, patientName, onEditEventCl
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-mono uppercase block">
-                    {record.created_at ? formatDateTimeForDisplay(record.created_at) : (record.assessment_date ? formatDateForDisplay(record.assessment_date) : 'N/A')}
+                    {record.date_of_admission ? `Admitted: ${formatDateForDisplay(record.date_of_admission)}` : (record.created_at ? formatDateTimeForDisplay(record.created_at) : (record.assessment_date ? formatDateForDisplay(record.assessment_date) : 'N/A'))}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-800">
-                      {record.hf_registry_no}
+                    <span className="text-xs font-bold text-slate-800 font-mono">
+                      {record.hf_registry_no ? (/^HF-/i.test(record.hf_registry_no) ? record.hf_registry_no : `HF-${record.hf_registry_no}`) : `HF-hf${String(record.hf_id).padStart(5, '0')}`}
                     </span>
                     {(record.patient_name || patientName) && (
                       <span className="text-xs font-semibold text-slate-600">

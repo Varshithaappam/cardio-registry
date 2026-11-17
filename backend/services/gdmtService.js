@@ -353,12 +353,14 @@ async function getPatientsCohort(options = {}) {
           p.mr_no,
           p.ip_no,
           p.phone_no,
+          p.secondary_contact_phone,
           p.pincode,
           fa.death_reason,
           fa.death_note,
           ha.visit_id,
           ha.visit_date,
           ha.treating_cardiologist,
+          COALESCE(ha.treating_cardiologist, 'Dr. K. Sridhar') AS consultant_name,
           ha.present_diagnosis,
           ha.admission_reason,
           ha.other_admission_reason,
@@ -472,10 +474,13 @@ async function getPatientsCohort(options = {}) {
             potassium: row.potassium_result ? Number(row.potassium_result) : 4.2,
             creatinine: row.creatinine_result ? Number(row.creatinine_result) : 1.1,
             hemoglobin: row.hb_result ? Number(row.hb_result) : 13.0,
+            consultantName: row.consultant_name || row.treating_cardiologist || 'Dr. K. Sridhar',
             treatingCardiologist: row.treating_cardiologist || '',
             presentDiagnosis: row.present_diagnosis || '',
             admissionReason: row.admission_reason || '',
             phoneNo: row.phone_no || '',
+            secondaryContactPhone: row.secondary_contact_phone || '',
+            secondary_contact_phone: row.secondary_contact_phone || '',
             pincode: row.pincode || '',
             prescribedDrugsSummary: activeDrugs.join(', ') || 'No GDMT Recorded on Ingest',
 
@@ -636,10 +641,12 @@ function calculateCohortAnalytics(patients) {
   let countEf = 0;
   let countHFrEF = 0;
   let countHFpEF = 0;
+  let countUnspecifiedPhenotype = 0;
   let countNYHA1 = 0;
   let countNYHA2 = 0;
   let countNYHA3 = 0;
   let countNYHA4 = 0;
+  let countUnspecifiedNYHA = 0;
   let countDeath = 0;
   let countDeathHospital = 0;
   let countDeathHome = 0;
@@ -687,6 +694,7 @@ function calculateCohortAnalytics(patients) {
     // Phenotype: strictly from hfref and hfpef
     if (p.hfType === 'HFrEF') countHFrEF++;
     else if (p.hfType === 'HFpEF') countHFpEF++;
+    else countUnspecifiedPhenotype++;
 
     // NYHA: strictly from nyha_class_1..4
     const nyha = String(p.functionalStatus || '').toLowerCase();
@@ -694,6 +702,7 @@ function calculateCohortAnalytics(patients) {
     else if (nyha.includes('class iii') || nyha.includes('class 3')) countNYHA3++;
     else if (nyha.includes('class ii') || nyha.includes('class 2')) countNYHA2++;
     else if (nyha.includes('class i') || nyha.includes('class 1')) countNYHA1++;
+    else countUnspecifiedNYHA++;
 
     if (p.death) {
       countDeath++;
@@ -801,12 +810,18 @@ function calculateCohortAnalytics(patients) {
       hfrEFPercent: total > 0 ? Math.round((countHFrEF / total) * 1000) / 10 : 0,
       hfpEFCount: countHFpEF,
       hfpEFPercent: total > 0 ? Math.round((countHFpEF / total) * 1000) / 10 : 0,
+      unspecifiedPhenotypeCount: countUnspecifiedPhenotype,
+      unspecifiedPhenotypePercent: total > 0 ? Math.round((countUnspecifiedPhenotype / total) * 1000) / 10 : 0,
       nyha1Count: countNYHA1,
+      nyha1Percent: total > 0 ? Math.round((countNYHA1 / total) * 1000) / 10 : 0,
       nyha2Count: countNYHA2,
+      nyha2Percent: total > 0 ? Math.round((countNYHA2 / total) * 1000) / 10 : 0,
       nyha3Count: countNYHA3,
       nyha3Percent: total > 0 ? Math.round((countNYHA3 / total) * 1000) / 10 : 0,
       nyha4Count: countNYHA4,
       nyha4Percent: total > 0 ? Math.round((countNYHA4 / total) * 1000) / 10 : 0,
+      unspecifiedNyhaCount: countUnspecifiedNYHA,
+      unspecifiedNyhaPercent: total > 0 ? Math.round((countUnspecifiedNYHA / total) * 1000) / 10 : 0,
       severeNyhaCount: countNYHA3 + countNYHA4,
       severeNyhaPercent: total > 0 ? Math.round(((countNYHA3 + countNYHA4) / total) * 1000) / 10 : 0,
       deathsRecorded: countDeath,

@@ -14,12 +14,12 @@ async function getStemiCohortFromDb(includeDeleted = true) {
       adm.hypertension, adm.diabetes, adm.smoking, adm.renal_failure, adm.copd, adm.cva, adm.prior_acs, adm.prior_ptca, adm.prior_cabg, adm.other_background,
       clin.typical_angina, clin.atypical_chest_pain, clin.breathlessness, clin.syncope_presyncope, clin.timi_total_score,
       clin.age_gt_75, clin.age_65_to_74, clin.history_dm_htn_angina, clin.sbp_lt_100, clin.heart_rate_gt_100,
-      clin.killip_class_ii_to_iv, clin.anterior_mi_or_lbbb, clin.weight_lt_67kg, clin.reperfusion_gt_4hrs,
-      treat.pami, treat.thrombolysis, treat.conservative, treat.door_to_balloon_time, treat.door_to_needle_time,
+      clin.killip_class_ii_to_iv, clin.anterior_mi_or_lbbb, clin.weight_lt_67kg, clin.reperfusion_gt_4hrs, clin.st_deviation_at_admission,
+      treat.pami, treat.thrombolysis, treat.conservative, treat.none, treat.door_to_balloon_time, treat.door_to_needle_time,
       treat.drug_tenecteplase, treat.drug_stk, treat.drug_reteplase, treat.drug_uk,
       treat.vessel_lad, treat.vessel_rca, treat.vessel_lcx, treat.vessel_diagonal, treat.vessel_lmca, treat.vessel_om, treat.vessel_pda, treat.vessel_ramus,
       treat.procedural_success, treat.timi_flow,
-      outc.death, outc.remi_for_stemi, outc.cva_thrombotic, outc.cva_hemorrhagic, outc.major_bleeding, outc.discharge_other_medication,
+      outc.death, outc.remi_for_stemi, outc.cva_thrombotic, outc.cva_hemorrhagic, outc.major_bleeding, outc.outcome_none, outc.discharge_other_medication,
       outc.aspirin, outc.statin, outc.beta_blocker, outc.clopidogrel, outc.ticagrelor, outc.nitrate, outc.nicorandil, outc.calcium_channel_blocker, outc.prasugrel, outc.ranolazine, outc.trimetazidine, outc.ivabradine
     FROM stemi_registry s
     LEFT JOIN patient_demographics p ON s.reg_patient_id = p.reg_patient_id
@@ -39,6 +39,7 @@ async function getStemiCohortFromDb(includeDeleted = true) {
     if (isPami) stratList.push('PAMI');
     if (isTlt) stratList.push('Thrombolysis');
     if (p.conservative === 'Yes') stratList.push('Conservative');
+    if (p.none === 'Yes') stratList.push('None');
     const strategy = stratList.length > 0 ? stratList.join(', ') : 'Conservative';
 
     // Vessels
@@ -145,6 +146,7 @@ async function getStemiCohortFromDb(includeDeleted = true) {
       mrNo: p.mr_no || 'N/A',
       ipNo: p.ip_no || p.patient_ip_no || 'N/A',
       acsNo: p.acs_no || `ACS.${String(p.stemi_id).padStart(4, '0')}`,
+      formattedRecordId: 'STEMI-' + (p.acs_no ? p.acs_no.replace(/^STEMI-/i, '') : `ACS.${String(p.stemi_id).padStart(4, '0')}`),
       patientName: p.patient_name || `Patient ST-${p.stemi_id}`,
       primaryConsultant: p.primary_consultant || 'Dr. K. Sridhar (Cardiologist)',
       phone: p.phone_no || 'N/A',
@@ -194,6 +196,8 @@ async function getStemiCohortFromDb(includeDeleted = true) {
       pami: isPami,
       thrombolysis: isTlt,
       conservative: p.conservative === 'Yes',
+      none: p.none === 'Yes',
+      outcome_none: p.outcome_none === 'Yes',
       doorToBalloonTime: d2b,
       doorToNeedleTime: d2n,
       thrombolysisAgent,
@@ -260,11 +264,11 @@ async function getNstemiCohortFromDb() {
       clin.killip_class_ii_to_iv, clin.anterior_mi_or_lbbb, clin.weight_lt_67kg, clin.reperfusion_gt_4hrs,
       clin.chd_risk_factors_ge_3, clin.prior_coronary_stenosis_gt_50, clin.st_deviation_at_admission,
       clin.anginal_episodes_ge_2_last_24hrs, clin.elevated_serum_cardiac_markers,
-      treat.pami, treat.thrombolysis, treat.conservative, treat.door_to_balloon_time, treat.door_to_needle_time,
+      treat.pami, treat.thrombolysis, treat.conservative, treat.none, treat.door_to_balloon_time, treat.door_to_needle_time,
       treat.drug_tenecteplase, treat.drug_stk, treat.drug_reteplase, treat.drug_uk,
       treat.vessel_lad, treat.vessel_rca, treat.vessel_lcx, treat.vessel_diagonal, treat.vessel_lmca, treat.vessel_om, treat.vessel_pda, treat.vessel_ramus,
       treat.procedural_success, treat.timi_flow,
-      outc.death, outc.stemi_for_nonstemi, outc.remi_for_nstemi, outc.revascularization_recurrent_ischemia, outc.cva_thrombotic, outc.cva_hemorrhagic, outc.major_bleeding, outc.discharge_other_medication,
+      outc.death, outc.stemi_for_nonstemi, outc.remi_for_nstemi, outc.revascularization_recurrent_ischemia, outc.cva_thrombotic, outc.cva_hemorrhagic, outc.major_bleeding, outc.outcome_none, outc.discharge_other_medication,
       outc.aspirin, outc.statin, outc.beta_blocker, outc.clopidogrel, outc.ticagrelor, outc.nitrate, outc.nicorandil, outc.calcium_channel_blocker, outc.prasugrel, outc.ranolazine, outc.trimetazidine, outc.ivabradine
     FROM nstemi_registry n
     LEFT JOIN patient_demographics p ON n.reg_patient_id = p.reg_patient_id
@@ -278,11 +282,15 @@ async function getNstemiCohortFromDb() {
 
   const result = await pool.request().query(query);
   return result.recordset.map(p => {
-    // In NSTEMI, strategy is Early Invasive (<24h), Selective Invasive, or Conservative
-    let strategy = 'Early Invasive';
-    if (p.conservative === 'Yes') strategy = 'Conservative';
-    else if (p.pami === 'Yes') strategy = 'Early Invasive';
-    else strategy = 'Selective Invasive';
+    // In NSTEMI, primary reperfusion strategy is PAMI, Thrombolysis, or Conservative (like in STEMI)
+    const isPami = p.pami === 'Yes';
+    const isTlt = p.thrombolysis === 'Yes';
+    const stratList = [];
+    if (isPami) stratList.push('PAMI');
+    if (isTlt) stratList.push('Thrombolysis');
+    if (p.conservative === 'Yes') stratList.push('Conservative');
+    if (p.none === 'Yes') stratList.push('None');
+    const strategy = stratList.length > 0 ? stratList.join(', ') : 'Conservative';
 
     // Vessels (show all selected by comma separation)
     const isLad = p.vessel_lad === 'Yes' || p.vessel_lad === true;
@@ -392,6 +400,7 @@ async function getNstemiCohortFromDb() {
       mrNo: p.mr_no || 'N/A',
       ipNo: p.ip_no || p.patient_ip_no || 'N/A',
       acsNo: p.acs_no || `ACS.${String(p.nstemi_id).padStart(4, '0')}`,
+      formattedRecordId: 'NSTEMI-' + (p.acs_no ? p.acs_no.replace(/^NSTEMI-/i, '') : `ACS.${String(p.nstemi_id).padStart(4, '0')}`),
       patientName: p.patient_name || `Patient NST-${p.nstemi_id}`,
       primaryConsultant: p.primary_consultant || 'Dr. K. Sridhar (Cardiologist)',
       phone: p.phone_no || 'N/A',
@@ -441,8 +450,10 @@ async function getNstemiCohortFromDb() {
       pami: p.pami === 'Yes',
       thrombolysis: p.thrombolysis === 'Yes',
       conservative: p.conservative === 'Yes',
-      doorToBalloonTime: null,
-      doorToNeedleTime: null,
+      none: p.none === 'Yes',
+      outcome_none: p.outcome_none === 'Yes',
+      doorToBalloonTime: p.door_to_balloon_time != null ? Number(p.door_to_balloon_time) : null,
+      doorToNeedleTime: p.door_to_needle_time != null ? Number(p.door_to_needle_time) : null,
       timeToCathHours: timeToCath,
       thrombolysisAgent,
       drug_tenecteplase: isTnk,

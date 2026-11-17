@@ -615,6 +615,7 @@ const HFForm = forwardRef(function HFForm(
             onChange={setTreatingCardiologist}
             options={CARDIOLOGISTS}
           />
+          {/* Referring Doctor - Temporarily hidden
           <Select
             id="hf-referring-doctor"
             label="Referring Doctor"
@@ -622,6 +623,7 @@ const HFForm = forwardRef(function HFForm(
             onChange={setReferringDoctor}
             options={REFERRING_DOCTORS}
           />
+          */}
         </div>
         <RadioGroup
           label="Visit Type"

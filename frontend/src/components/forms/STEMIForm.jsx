@@ -235,6 +235,7 @@ const STEMIForm = forwardRef(function STEMIForm(
     anterior_mi_or_lbbb: editingRecord?.anterior_mi_or_lbbb || null,
     weight_lt_67kg: editingRecord?.weight_lt_67kg || null,
     reperfusion_gt_4hrs: editingRecord?.reperfusion_gt_4hrs || null,
+    st_deviation_at_admission: editingRecord?.st_deviation_at_admission || null,
     timi_total_score: editingRecord?.timi_total_score !== undefined && editingRecord?.timi_total_score !== null ? editingRecord.timi_total_score : '',
 
     // Section 4: Other Risk Factors
@@ -245,10 +246,11 @@ const STEMIForm = forwardRef(function STEMIForm(
     elevated_crp: editingRecord?.elevated_crp || null,
 
     // Section 5: Treatment Strategy
-    treatment_strategy: editingRecord?.pami === 'Yes' ? 'PAMI' : (editingRecord?.thrombolysis === 'Yes' ? 'Thrombolysis' : (editingRecord?.conservative === 'Yes' ? 'Conservative' : (editingRecord?.treatment_strategy ?? null))),
+    treatment_strategy: editingRecord?.pami === 'Yes' ? 'PAMI' : (editingRecord?.thrombolysis === 'Yes' ? 'Thrombolysis' : (editingRecord?.conservative === 'Yes' ? 'Conservative' : (editingRecord?.none === 'Yes' ? 'None' : (editingRecord?.treatment_strategy ?? null)))),
     pami: editingRecord?.pami || null,
     thrombolysis: editingRecord?.thrombolysis || null,
     conservative: editingRecord?.conservative || null,
+    none: editingRecord?.none || null,
 
     // Section 6: PAMI details
     door_to_balloon_time: editingRecord?.door_to_balloon_time || '',
@@ -375,6 +377,7 @@ const STEMIForm = forwardRef(function STEMIForm(
     cva_thrombotic: editingRecord?.cva_thrombotic || null,
     cva_hemorrhagic: editingRecord?.cva_hemorrhagic || null,
     major_bleeding: editingRecord?.major_bleeding || null,
+    outcome_none: editingRecord?.outcome_none || null,
     outcome_other: editingRecord?.outcome_other || '',
 
     // Section 13: Discharge Medications
@@ -535,6 +538,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       anterior_mi_or_lbbb: 'Yes',
       weight_lt_67kg: 'No',
       reperfusion_gt_4hrs: 'No',
+      st_deviation_at_admission: 'No',
       timi_total_score: 4,
 
       lvf: 'Yes',
@@ -547,6 +551,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       pami: 'Yes',
       thrombolysis: 'No',
       conservative: 'No',
+      none: 'No',
 
       door_to_balloon_time: 55,
       vessel_lmca: false,
@@ -663,6 +668,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       cva_thrombotic: 'No',
       cva_hemorrhagic: 'No',
       major_bleeding: 'No',
+      outcome_none: 'No',
       outcome_other: 'Hemodynamically stable at discharge, Killip Class I',
 
       discharge_beta_blocker: 'Yes',
@@ -813,6 +819,7 @@ const STEMIForm = forwardRef(function STEMIForm(
         updated.pami = value ? (value === 'PAMI' ? 'Yes' : 'No') : null;
         updated.thrombolysis = value ? (value === 'Thrombolysis' ? 'Yes' : 'No') : null;
         updated.conservative = value ? (value === 'Conservative' ? 'Yes' : 'No') : null;
+        updated.none = value ? (value === 'None' ? 'Yes' : 'No') : null;
       }
 
       if (field === 'admission_date' || field === 'discharge_date') {
@@ -919,6 +926,7 @@ const STEMIForm = forwardRef(function STEMIForm(
     if (formData.anterior_mi_or_lbbb === 'Yes') score += 1;
     if (formData.weight_lt_67kg === 'Yes') score += 1;
     if (formData.reperfusion_gt_4hrs === 'Yes') score += 1;
+    if (formData.st_deviation_at_admission === 'Yes') score += 1;
     return score;
   }, [
     formData.age_gt_75,
@@ -929,7 +937,8 @@ const STEMIForm = forwardRef(function STEMIForm(
     formData.killip_class_ii_to_iv,
     formData.anterior_mi_or_lbbb,
     formData.weight_lt_67kg,
-    formData.reperfusion_gt_4hrs
+    formData.reperfusion_gt_4hrs,
+    formData.st_deviation_at_admission
   ]);
 
   const autoSumCost = useMemo(() => {
@@ -1034,6 +1043,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       anterior_mi_or_lbbb: formData.anterior_mi_or_lbbb,
       weight_lt_67kg: formData.weight_lt_67kg,
       reperfusion_gt_4hrs: formData.reperfusion_gt_4hrs,
+      st_deviation_at_admission: formData.st_deviation_at_admission,
       timi_total_score: timiCalculatedScore,
 
       lvf: formData.lvf,
@@ -1046,6 +1056,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       pami: formData.treatment_strategy ? (formData.treatment_strategy === 'PAMI' ? 'Yes' : 'No') : null,
       thrombolysis: formData.treatment_strategy ? (formData.treatment_strategy === 'Thrombolysis' ? 'Yes' : 'No') : null,
       conservative: formData.treatment_strategy ? (formData.treatment_strategy === 'Conservative' ? 'Yes' : 'No') : null,
+      none: formData.treatment_strategy ? (formData.treatment_strategy === 'None' ? 'Yes' : 'No') : null,
 
       door_to_balloon_time: formData.door_to_balloon_time ? parseInt(formData.door_to_balloon_time, 10) : null,
       vessel_lmca: formData.vessel_lmca ? 'Yes' : null,
@@ -1196,6 +1207,7 @@ const STEMIForm = forwardRef(function STEMIForm(
       cva_thrombotic: formData.cva_thrombotic,
       cva_hemorrhagic: formData.cva_hemorrhagic,
       major_bleeding: formData.major_bleeding,
+      outcome_none: formData.outcome_none,
       outcome_other: formData.outcome_other || null,
 
       discharge_beta_blocker: formData.discharge_beta_blocker,
@@ -1940,6 +1952,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               {renderRadio('anterior_mi_or_lbbb', 'Ant MI/ LBBB (+1)', ['Yes', 'No'])}
               {renderRadio('weight_lt_67kg', 'Weight < 67 kg (+1)', ['Yes', 'No'])}
               {renderRadio('reperfusion_gt_4hrs', 'Time to reperfusion > 4 hrs (+1)', ['Yes', 'No'])}
+              {renderRadio('st_deviation_at_admission', 'Presence of ST deviation at admission (+1)', ['Yes', 'No'])}
             </div>
 
             <div id="section-4" className="font-bold text-slate-800 border-t border-slate-200 pt-3 text-sm">Other Risk Factors:</div>
@@ -1963,7 +1976,8 @@ const STEMIForm = forwardRef(function STEMIForm(
               {[
                 { key: 'PAMI', label: 'PAMI' },
                 { key: 'Thrombolysis', label: 'Thrombolysis' },
-                { key: 'Conservative', label: 'Conservative' }
+                { key: 'Conservative', label: 'Conservative' },
+                { key: 'None', label: 'None' }
               ].map(op => {
                 const isSelected = formData.treatment_strategy === op.key;
                 return (
@@ -3035,6 +3049,7 @@ const STEMIForm = forwardRef(function STEMIForm(
               {renderRadio('cva_thrombotic', 'CVA-thrombotic', ['Yes', 'No'])}
               {renderRadio('cva_hemorrhagic', 'CVA-hemorrhagic', ['Yes', 'No'])}
               {renderRadio('major_bleeding', 'Major Bleeding', ['Yes', 'No'])}
+              {renderRadio('outcome_none', 'None', ['Yes', 'No'])}
             </div>
             <div>
               <div className="flex justify-between items-center mb-1">

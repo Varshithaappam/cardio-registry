@@ -158,26 +158,26 @@ function buildSheet1(workbook, patients, sheet1Data = null, wsSheet1 = null) {
       const dataRow = ws.addRow(rowVals);
       const r = idx + 2;
 
-      // Known Contraindications (cells 83 to 88)
-      dataRow.getCell(83).value = { formula: `IF(OR('CI Flags'!H${r}=1,'CI Flags'!I${r}=1,'CI Flags'!K${r}=1,'CI Flags'!L${r}=1,'CI Flags'!P${r}=1),1,0)`, result: rowVals[82] };
-      dataRow.getCell(84).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowVals[83] };
+      // Known Contraindications (cells 84 to 89)
+      dataRow.getCell(84).value = { formula: `IF(OR('CI Flags'!H${r}=1,'CI Flags'!I${r}=1,'CI Flags'!K${r}=1,'CI Flags'!L${r}=1,'CI Flags'!P${r}=1),1,0)`, result: rowVals[83] };
       dataRow.getCell(85).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowVals[84] };
-      dataRow.getCell(86).value = { formula: `IF(OR('CI Flags'!J${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowVals[85] };
-      dataRow.getCell(87).value = { formula: `IF(OR('CI Flags'!N${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowVals[86] };
-      dataRow.getCell(88).value = { formula: `IF(OR('CI Flags'!Q${r}=1,'CI Flags'!R${r}=1,'CI Flags'!S${r}=1),1,0)`, result: rowVals[87] };
+      dataRow.getCell(86).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowVals[85] };
+      dataRow.getCell(87).value = { formula: `IF(OR('CI Flags'!J${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowVals[86] };
+      dataRow.getCell(88).value = { formula: `IF(OR('CI Flags'!N${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowVals[87] };
+      dataRow.getCell(89).value = { formula: `IF(OR('CI Flags'!Q${r}=1,'CI Flags'!R${r}=1,'CI Flags'!S${r}=1),1,0)`, result: rowVals[88] };
 
-      // Guideline Deviations (cells 89 to 94)
-      dataRow.getCell(89).value = { formula: `IF(BX${r}=CE${r},1,0)`, result: rowVals[88] };
+      // Guideline Deviations (cells 90 to 95)
       dataRow.getCell(90).value = { formula: `IF(BY${r}=CF${r},1,0)`, result: rowVals[89] };
       dataRow.getCell(91).value = { formula: `IF(BZ${r}=CG${r},1,0)`, result: rowVals[90] };
       dataRow.getCell(92).value = { formula: `IF(CA${r}=CH${r},1,0)`, result: rowVals[91] };
       dataRow.getCell(93).value = { formula: `IF(CB${r}=CI${r},1,0)`, result: rowVals[92] };
       dataRow.getCell(94).value = { formula: `IF(CC${r}=CJ${r},1,0)`, result: rowVals[93] };
+      dataRow.getCell(95).value = { formula: `IF(CD${r}=CK${r},1,0)`, result: rowVals[94] };
 
-      // Total Deviations, Variables & Adherence (cells 95 to 97)
-      dataRow.getCell(95).value = { formula: `SUM(CK${r}:CP${r})`, result: rowVals[94] };
-      dataRow.getCell(96).value = 6;
-      dataRow.getCell(97).value = { formula: `(CR${r}-CQ${r})/CR${r}`, result: rowVals[96] };
+      // Total Deviations, Variables & Adherence (cells 96 to 98)
+      dataRow.getCell(96).value = { formula: `SUM(CL${r}:CQ${r})`, result: rowVals[95] };
+      dataRow.getCell(97).value = 6;
+      dataRow.getCell(98).value = { formula: `(CS${r}-CR${r})/CS${r}`, result: rowVals[97] };
 
       dataRow.eachCell((cell, colNum) => {
         cell.border = BORDER_THIN;
@@ -218,6 +218,7 @@ function buildSheet1(workbook, patients, sheet1Data = null, wsSheet1 = null) {
     'Contact no 2',
     'Payment',
     'Caregiver Name&Relationship to patient',
+    'Consultant\'s Name',
     'Treating Cardiologist',
     'Date of visit/hospitalization',
     'Discharge Date',
@@ -326,9 +327,10 @@ function buildSheet1(workbook, patients, sheet1Data = null, wsSheet1 = null) {
       p.age || '',
       p.gender || '',
       p.phoneNo || '',
-      p.caregiverPhone || '',
+      p.secondaryContactPhone || p.secondary_contact_phone || p.caregiverPhone || '',
       p.insuranceMode || '',
       p.caregiverName || '',
+      p.consultantName || p.primaryConsultant || p.primary_consultant || p.treatingCardiologist || 'Dr. K. Sridhar',
       p.treatingCardiologist || '',
       p.admissionDate || p.visitDate || '',
       p.dischargeDate || '',
@@ -419,28 +421,28 @@ function buildSheet1(workbook, patients, sheet1Data = null, wsSheet1 = null) {
     const dataRow = ws.addRow(rowValues);
     const r = idx + 2;
 
-    dataRow.getCell(83).value = { formula: `IF(OR('CI Flags'!H${r}=1,'CI Flags'!I${r}=1,'CI Flags'!K${r}=1,'CI Flags'!L${r}=1,'CI Flags'!P${r}=1),1,0)`, result: rowValues[82] };
-    dataRow.getCell(84).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowValues[83] };
+    dataRow.getCell(84).value = { formula: `IF(OR('CI Flags'!H${r}=1,'CI Flags'!I${r}=1,'CI Flags'!K${r}=1,'CI Flags'!L${r}=1,'CI Flags'!P${r}=1),1,0)`, result: rowValues[83] };
     dataRow.getCell(85).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowValues[84] };
-    dataRow.getCell(86).value = { formula: `IF(OR('CI Flags'!J${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowValues[85] };
-    dataRow.getCell(87).value = { formula: `IF(OR('CI Flags'!N${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowValues[86] };
-    dataRow.getCell(88).value = { formula: `IF(OR('CI Flags'!Q${r}=1,'CI Flags'!R${r}=1,'CI Flags'!S${r}=1),1,0)`, result: rowValues[87] };
+    dataRow.getCell(86).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowValues[85] };
+    dataRow.getCell(87).value = { formula: `IF(OR('CI Flags'!J${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowValues[86] };
+    dataRow.getCell(88).value = { formula: `IF(OR('CI Flags'!N${r}=1,'CI Flags'!O${r}=1),1,0)`, result: rowValues[87] };
+    dataRow.getCell(89).value = { formula: `IF(OR('CI Flags'!Q${r}=1,'CI Flags'!R${r}=1,'CI Flags'!S${r}=1),1,0)`, result: rowValues[88] };
 
-    dataRow.getCell(89).value = { formula: `IF(BX${r}=CE${r},1,0)`, result: rowValues[88] };
     dataRow.getCell(90).value = { formula: `IF(BY${r}=CF${r},1,0)`, result: rowValues[89] };
     dataRow.getCell(91).value = { formula: `IF(BZ${r}=CG${r},1,0)`, result: rowValues[90] };
     dataRow.getCell(92).value = { formula: `IF(CA${r}=CH${r},1,0)`, result: rowValues[91] };
     dataRow.getCell(93).value = { formula: `IF(CB${r}=CI${r},1,0)`, result: rowValues[92] };
     dataRow.getCell(94).value = { formula: `IF(CC${r}=CJ${r},1,0)`, result: rowValues[93] };
+    dataRow.getCell(95).value = { formula: `IF(CD${r}=CK${r},1,0)`, result: rowValues[94] };
 
-    dataRow.getCell(95).value = { formula: `SUM(CK${r}:CP${r})`, result: rowValues[94] };
-    dataRow.getCell(96).value = 6;
-    dataRow.getCell(97).value = { formula: `(CR${r}-CQ${r})/CR${r}`, result: rowValues[96] };
+    dataRow.getCell(96).value = { formula: `SUM(CL${r}:CQ${r})`, result: rowValues[95] };
+    dataRow.getCell(97).value = 6;
+    dataRow.getCell(98).value = { formula: `(CS${r}-CR${r})/CS${r}`, result: rowValues[97] };
 
     dataRow.eachCell((cell, colNum) => {
       cell.border = BORDER_THIN;
       cell.font = { name: 'Calibri', size: 10 };
-      if (colNum === 97) {
+      if (colNum === 98) {
         cell.numFmt = '0.0%';
         cell.alignment = { horizontal: 'right', vertical: 'middle' };
       }
@@ -851,31 +853,31 @@ function buildCiFlagsSheet(workbook, patients, wsFlags = null, sheet1Rows = null
     const s1 = (sheet1Rows && sheet1Rows[idx]) ? sheet1Rows[idx] : null;
     const r = idx + 2;
 
-    const sbp = (s1 && s1[32] && String(s1[32]).includes('/'))
-      ? (parseInt(String(s1[32]).split('/')[0], 10) || null)
+    const sbp = (s1 && s1[33] && String(s1[33]).includes('/'))
+      ? (parseInt(String(s1[33]).split('/')[0], 10) || null)
       : (p.systolicBp || null);
 
-    const hr = (s1 && s1[28] !== '' && !isNaN(Number(s1[28])))
-      ? Number(s1[28])
+    const hr = (s1 && s1[29] !== '' && !isNaN(Number(s1[29])))
+      ? Number(s1[29])
       : (p.heartRate || null);
 
-    const k = (s1 && s1[63] !== '' && !isNaN(Number(s1[63])))
-      ? Number(s1[63])
+    const k = (s1 && s1[64] !== '' && !isNaN(Number(s1[64])))
+      ? Number(s1[64])
       : (p.potassium || null);
 
-    const creat = (s1 && s1[64] !== '' && !isNaN(Number(s1[64])))
-      ? Number(s1[64])
+    const creat = (s1 && s1[65] !== '' && !isNaN(Number(s1[65])))
+      ? Number(s1[65])
       : (p.creatinine || null);
 
-    // Clinical text: Present diagnosis (Q), reasons for admissions (U), Previous Diagnosis (V), Comorbidities1-4 (AP, AQ, AR, AS)
+    // Clinical text: Present diagnosis (R), reasons for admissions (V), Previous Diagnosis (W), Comorbidities1-4 (AQ, AR, AS, AT)
     const clinCols = s1
-      ? [s1[16], s1[20], s1[21], s1[41], s1[42], s1[43], s1[44]]
+      ? [s1[17], s1[21], s1[22], s1[42], s1[43], s1[44], s1[45]]
       : [p.presentDiagnosis, p.admissionReason, p.otherAdmissionReason, p.previousDiagnosis, ...(p.comorbidities || [])];
     const clinicalText = clinCols.filter(Boolean).join(' | ').toUpperCase();
 
-    // Drug text: BU & BV
+    // Drug text: BV & BW
     const drugCols = s1
-      ? [s1[72], s1[73]]
+      ? [s1[73], s1[74]]
       : [p.prescribedDrugsSummary || ''];
     const drugText = drugCols.filter(Boolean).join(' | ').toUpperCase();
 
@@ -922,12 +924,12 @@ function buildCiFlagsSheet(workbook, patients, wsFlags = null, sheet1Rows = null
 
     // Live Excel formulas extracting directly from Sheet1 & Contraindications
     dataRow.getCell(1).value = uhidVal;
-    dataRow.getCell(2).value = { formula: `IFERROR(VALUE(LEFT(Sheet1!AG${r},FIND("/",Sheet1!AG${r})-1)),"")`, result: sbp ?? '' };
-    dataRow.getCell(3).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!AC${r}),Sheet1!AC${r},VALUE(Sheet1!AC${r})),"")`, result: hr ?? '' };
-    dataRow.getCell(4).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!BL${r}),Sheet1!BL${r},VALUE(Sheet1!BL${r})),"")`, result: k ?? '' };
-    dataRow.getCell(5).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!BM${r}),Sheet1!BM${r},VALUE(Sheet1!BM${r})),"")`, result: creat ?? '' };
-    dataRow.getCell(6).value = { formula: `UPPER(Sheet1!Q${r}&" | "&Sheet1!U${r}&" | "&Sheet1!V${r}&" | "&Sheet1!AP${r}&" | "&Sheet1!AQ${r}&" | "&Sheet1!AR${r}&" | "&Sheet1!AS${r})`, result: clinicalText };
-    dataRow.getCell(7).value = { formula: `UPPER(Sheet1!BU${r}&" | "&Sheet1!BV${r})`, result: drugText };
+    dataRow.getCell(2).value = { formula: `IFERROR(VALUE(LEFT(Sheet1!AH${r},FIND("/",Sheet1!AH${r})-1)),"")`, result: sbp ?? '' };
+    dataRow.getCell(3).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!AD${r}),Sheet1!AD${r},VALUE(Sheet1!AD${r})),"")`, result: hr ?? '' };
+    dataRow.getCell(4).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!BM${r}),Sheet1!BM${r},VALUE(Sheet1!BM${r})),"")`, result: k ?? '' };
+    dataRow.getCell(5).value = { formula: `IFERROR(IF(ISNUMBER(Sheet1!BN${r}),Sheet1!BN${r},VALUE(Sheet1!BN${r})),"")`, result: creat ?? '' };
+    dataRow.getCell(6).value = { formula: `UPPER(Sheet1!R${r}&" | "&Sheet1!V${r}&" | "&Sheet1!W${r}&" | "&Sheet1!AQ${r}&" | "&Sheet1!AR${r}&" | "&Sheet1!AS${r}&" | "&Sheet1!AT${r})`, result: clinicalText };
+    dataRow.getCell(7).value = { formula: `UPPER(Sheet1!BV${r}&" | "&Sheet1!BW${r})`, result: drugText };
     dataRow.getCell(8).value = { formula: `IF(AND(ISNUMBER(C${r}),C${r}<Contraindications!$E$4),1,0)`, result: flagBrady };
     dataRow.getCell(9).value = { formula: `IF(AND(ISNUMBER(B${r}),B${r}<Contraindications!$E$5),1,0)`, result: flagSbp90 };
     dataRow.getCell(10).value = { formula: `IF(AND(ISNUMBER(B${r}),B${r}<Contraindications!$E$16),1,0)`, result: flagSbp100 };
@@ -977,12 +979,12 @@ function syncSheet1Calculations(wsSheet1, sheet1Rows, ciFlagsRows) {
     const ciMra = (ci[13] || ci[14]) ? 1 : 0;
     const ciSglt2 = (ci[16] || ci[17] || ci[18]) ? 1 : 0;
 
-    const rxBB = Number(s1[75]) || 0;
-    const rxAce = Number(s1[76]) || 0;
-    const rxArb = Number(s1[77]) || 0;
-    const rxArni = Number(s1[78]) || 0;
-    const rxMra = Number(s1[79]) || 0;
-    const rxSglt2 = Number(s1[80]) || 0;
+    const rxBB = Number(s1[76]) || 0;
+    const rxAce = Number(s1[77]) || 0;
+    const rxArb = Number(s1[78]) || 0;
+    const rxArni = Number(s1[79]) || 0;
+    const rxMra = Number(s1[80]) || 0;
+    const rxSglt2 = Number(s1[81]) || 0;
 
     const devBB = (rxBB === ciBB) ? 1 : 0;
     const devAce = (rxAce === ciAce) ? 1 : 0;
@@ -995,41 +997,41 @@ function syncSheet1Calculations(wsSheet1, sheet1Rows, ciFlagsRows) {
     const adherence = (6 - totalDev) / 6;
 
     // Update in-memory array
-    s1[82] = ciBB;
-    s1[83] = ciAce;
-    s1[84] = ciArb;
-    s1[85] = ciArni;
-    s1[86] = ciMra;
-    s1[87] = ciSglt2;
-    s1[88] = devBB;
-    s1[89] = devAce;
-    s1[90] = devArb;
-    s1[91] = devArni;
-    s1[92] = devMra;
-    s1[93] = devSglt2;
-    s1[94] = totalDev;
-    s1[95] = 6;
-    s1[96] = adherence;
+    s1[83] = ciBB;
+    s1[84] = ciAce;
+    s1[85] = ciArb;
+    s1[86] = ciArni;
+    s1[87] = ciMra;
+    s1[88] = ciSglt2;
+    s1[89] = devBB;
+    s1[90] = devAce;
+    s1[91] = devArb;
+    s1[92] = devArni;
+    s1[93] = devMra;
+    s1[94] = devSglt2;
+    s1[95] = totalDev;
+    s1[96] = 6;
+    s1[97] = adherence;
 
     // Update Sheet1 worksheet cells
     const s1Row = wsSheet1.getRow(r);
-    s1Row.getCell(83).value = { formula: `IF(OR('CI Flags'!H${r}=1,'CI Flags'!I${r}=1,'CI Flags'!K${r}=1,'CI Flags'!L${r}=1,'CI Flags'!P${r}=1),1,0)`, result: ciBB };
-    s1Row.getCell(84).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: ciAce };
-    s1Row.getCell(85).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: ciArb };
-    s1Row.getCell(86).value = { formula: `IF(OR('CI Flags'!J${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: ciArni };
-    s1Row.getCell(87).value = { formula: `IF(OR('CI Flags'!N${r}=1,'CI Flags'!O${r}=1),1,0)`, result: ciMra };
-    s1Row.getCell(88).value = { formula: `IF(OR('CI Flags'!Q${r}=1,'CI Flags'!R${r}=1,'CI Flags'!S${r}=1),1,0)`, result: ciSglt2 };
+    s1Row.getCell(84).value = { formula: `IF(OR('CI Flags'!H${r}=1,'CI Flags'!I${r}=1,'CI Flags'!K${r}=1,'CI Flags'!L${r}=1,'CI Flags'!P${r}=1),1,0)`, result: ciBB };
+    s1Row.getCell(85).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: ciAce };
+    s1Row.getCell(86).value = { formula: `IF(OR('CI Flags'!I${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: ciArb };
+    s1Row.getCell(87).value = { formula: `IF(OR('CI Flags'!J${r}=1,'CI Flags'!M${r}=1,'CI Flags'!O${r}=1),1,0)`, result: ciArni };
+    s1Row.getCell(88).value = { formula: `IF(OR('CI Flags'!N${r}=1,'CI Flags'!O${r}=1),1,0)`, result: ciMra };
+    s1Row.getCell(89).value = { formula: `IF(OR('CI Flags'!Q${r}=1,'CI Flags'!R${r}=1,'CI Flags'!S${r}=1),1,0)`, result: ciSglt2 };
 
-    s1Row.getCell(89).value = { formula: `IF(BX${r}=CE${r},1,0)`, result: devBB };
-    s1Row.getCell(90).value = { formula: `IF(BY${r}=CF${r},1,0)`, result: devAce };
-    s1Row.getCell(91).value = { formula: `IF(BZ${r}=CG${r},1,0)`, result: devArb };
-    s1Row.getCell(92).value = { formula: `IF(CA${r}=CH${r},1,0)`, result: devArni };
-    s1Row.getCell(93).value = { formula: `IF(CB${r}=CI${r},1,0)`, result: devMra };
-    s1Row.getCell(94).value = { formula: `IF(CC${r}=CJ${r},1,0)`, result: devSglt2 };
+    s1Row.getCell(90).value = { formula: `IF(BY${r}=CF${r},1,0)`, result: devBB };
+    s1Row.getCell(91).value = { formula: `IF(BZ${r}=CG${r},1,0)`, result: devAce };
+    s1Row.getCell(92).value = { formula: `IF(CA${r}=CH${r},1,0)`, result: devArb };
+    s1Row.getCell(93).value = { formula: `IF(CB${r}=CI${r},1,0)`, result: devArni };
+    s1Row.getCell(94).value = { formula: `IF(CC${r}=CJ${r},1,0)`, result: devMra };
+    s1Row.getCell(95).value = { formula: `IF(CD${r}=CK${r},1,0)`, result: devSglt2 };
 
-    s1Row.getCell(95).value = { formula: `SUM(CK${r}:CP${r})`, result: totalDev };
-    s1Row.getCell(96).value = 6;
-    s1Row.getCell(97).value = { formula: `(CR${r}-CQ${r})/CR${r}`, result: adherence };
+    s1Row.getCell(96).value = { formula: `SUM(CL${r}:CQ${r})`, result: totalDev };
+    s1Row.getCell(97).value = 6;
+    s1Row.getCell(98).value = { formula: `(CS${r}-CR${r})/CS${r}`, result: adherence };
   });
 }
 
@@ -1049,12 +1051,12 @@ function buildCiFlagsFormulaeSheet(workbook) {
 
   const formulaRows = [
     ['UHID', '', 'Sheet1', 'UHID(T3)', 'Unique Hospital Identifier from Sheet1 Col B'],
-    ['Systolic BP', 'IFERROR(VALUE(LEFT(Sheet1!AG2,FIND("/",Sheet1!AG2)-1)),"")', 'Sheet1', 'Blood pressure sitting', 'Till slash e.g. 110/80 so value of Systolic BP=110'],
-    ['Heart rate', 'IFERROR(IF(ISNUMBER(Sheet1!AC2),Sheet1!AC2,VALUE(Sheet1!AC2)),"")', 'Sheet1', 'Heart rate', 'Numeric heart rate (bpm) extracted from Sheet1 Col AC'],
-    ['Potassium', 'IFERROR(IF(ISNUMBER(Sheet1!BL2),Sheet1!BL2,VALUE(Sheet1!BL2)),"")', 'Sheet1', 'Potassium', 'Exact serum potassium value (mEq/L) extracted from Sheet1 Col BL'],
-    ['Creatinine', 'IFERROR(IF(ISNUMBER(Sheet1!BM2),Sheet1!BM2,VALUE(Sheet1!BM2)),"")', 'Sheet1', 'Creatinine', 'Exact serum creatinine value (mg/dL) extracted from Sheet1 Col BM'],
-    ['Clinical text (Q,U,V,AP,AQ,AR,AS)', 'UPPER(Sheet1!Q2&" | "&Sheet1!U2&" | "&Sheet1!V2&" | "&Sheet1!AP2&" | "&Sheet1!AQ2&" | "&Sheet1!AR2&" | "&Sheet1!AS2)', 'Sheet1', 'Present diagnosis, reasons for admissions, previous diagnosis, comorbidities', 'Concatenated uppercase string of clinical diagnoses, admissions, and comorbidities'],
-    ['Drug text (BU,BV)', 'UPPER(Sheet1!BU2&" | "&Sheet1!BV2)', 'Sheet1', 'Drugs, Generic Names', 'Concatenated uppercase string of active generic medications and drug names'],
+    ['Systolic BP', 'IFERROR(VALUE(LEFT(Sheet1!AH2,FIND("/",Sheet1!AH2)-1)),"")', 'Sheet1', 'Blood pressure sitting', 'Till slash e.g. 110/80 so value of Systolic BP=110'],
+    ['Heart rate', 'IFERROR(IF(ISNUMBER(Sheet1!AD2),Sheet1!AD2,VALUE(Sheet1!AD2)),"")', 'Sheet1', 'Heart rate', 'Numeric heart rate (bpm) extracted from Sheet1 Col AD'],
+    ['Potassium', 'IFERROR(IF(ISNUMBER(Sheet1!BM2),Sheet1!BM2,VALUE(Sheet1!BM2)),"")', 'Sheet1', 'Potassium', 'Exact serum potassium value (mEq/L) extracted from Sheet1 Col BM'],
+    ['Creatinine', 'IFERROR(IF(ISNUMBER(Sheet1!BN2),Sheet1!BN2,VALUE(Sheet1!BN2)),"")', 'Sheet1', 'Creatinine', 'Exact serum creatinine value (mg/dL) extracted from Sheet1 Col BN'],
+    ['Clinical text (R,V,W,AQ,AR,AS,AT)', 'UPPER(Sheet1!R2&" | "&Sheet1!V2&" | "&Sheet1!W2&" | "&Sheet1!AQ2&" | "&Sheet1!AR2&" | "&Sheet1!AS2&" | "&Sheet1!AT2)', 'Sheet1', 'Present diagnosis, reasons for admissions, previous diagnosis, comorbidities', 'Concatenated uppercase string of clinical diagnoses, admissions, and comorbidities'],
+    ['Drug text (BV,BW)', 'UPPER(Sheet1!BV2&" | "&Sheet1!BW2)', 'Sheet1', 'Drugs, Generic Names', 'Concatenated uppercase string of active generic medications and drug names'],
     ['Bradycardia', 'IF(AND(ISNUMBER(C2),C2<Contraindications!$E$4),1,0)', 'CI Flags, Contraindications', 'Heart rate < threshold here threshold = 50', 'Flagged 1 if resting heart rate < 50 bpm (Contraindications!E4)'],
     ['SBP < BB/ACEi/ARB threshold', 'IF(AND(ISNUMBER(B2),B2<Contraindications!$E$5),1,0)', 'CI Flags, Contraindications', 'Systolic BP < threshold here threshold = 90', 'Flagged 1 if sitting systolic BP < 90 mmHg (Contraindications!E5)'],
     ['SBP < ARNI threshold', 'IF(AND(ISNUMBER(B2),B2<Contraindications!$E$16),1,0)', 'CI Flags, Contraindications', 'Systolic BP < threshold (stricter than ACEi/ARB) here threshold = 100', 'Flagged 1 if sitting systolic BP < 100 mmHg (Contraindications!E16)'],
@@ -1192,18 +1194,18 @@ function buildKeyPointsSheet(workbook, analytics, patients, wsKeyPoints = null, 
   }
 
   const hfref = (sheet1Rows && sheet1Rows.length > 0)
-    ? sheet1Rows.filter(r => String(r[40] || '').toUpperCase().includes('HFREF')).length
+    ? sheet1Rows.filter(r => String(r[41] || '').toUpperCase().includes('HFREF')).length
     : patients.filter(p => String(p.hfType).toUpperCase() === 'HFREF').length;
 
   const hfpef = (sheet1Rows && sheet1Rows.length > 0)
-    ? sheet1Rows.filter(r => String(r[40] || '').toUpperCase().includes('HFPEF')).length
+    ? sheet1Rows.filter(r => String(r[41] || '').toUpperCase().includes('HFPEF')).length
     : patients.filter(p => String(p.hfType).toUpperCase() === 'HFPEF').length;
 
-  // Mean EF %: Must strictly match live Excel formula =AVERAGE('Sheet1'!BJ2:BJ...) which averages only non-blank numbers
+  // Mean EF %: Must strictly match live Excel formula =AVERAGE('Sheet1'!BK2:BK...) which averages only non-blank numbers
   let meanEf = 0;
   if (sheet1Rows && sheet1Rows.length > 0) {
     const sheet1Efs = sheet1Rows
-      .map(r => r[61])
+      .map(r => r[62])
       .filter(val => val !== null && val !== undefined && val !== '' && !isNaN(Number(val)))
       .map(val => Number(val));
     meanEf = sheet1Efs.length > 0
@@ -1216,22 +1218,22 @@ function buildKeyPointsSheet(workbook, analytics, patients, wsKeyPoints = null, 
     meanEf = efs.length > 0 ? Math.round((efs.reduce((a, b) => a + b, 0) / efs.length) * 10) / 10 : 0;
   }
 
-  // NYHA Functional Class: Must strictly match live Excel formulas =COUNTIF('Sheet1'!AV2:AV..., "*III*") and "*IV*"
+  // NYHA Functional Class: Must strictly match live Excel formulas =COUNTIF('Sheet1'!AW2:AW..., "*III*") and "*IV*"
   const nyha3 = (sheet1Rows && sheet1Rows.length > 0)
-    ? sheet1Rows.filter(r => String(r[47] || '').toUpperCase().includes('III')).length
+    ? sheet1Rows.filter(r => String(r[48] || '').toUpperCase().includes('III')).length
     : (analytics?.nyha3Count != null ? analytics.nyha3Count : patients.filter(p => String(p.functionalStatus || '').includes('III')).length);
 
   const nyha4 = (sheet1Rows && sheet1Rows.length > 0)
-    ? sheet1Rows.filter(r => String(r[47] || '').toUpperCase().includes('IV')).length
+    ? sheet1Rows.filter(r => String(r[48] || '').toUpperCase().includes('IV')).length
     : (analytics?.nyha4Count != null ? analytics.nyha4Count : patients.filter(p => String(p.functionalStatus || '').includes('IV')).length);
 
-  // Diabetes & Hypertension (Sheet1 Columns AP:AS)
+  // Diabetes & Hypertension (Sheet1 Columns AQ:AT)
   const dm = (sheet1Rows && sheet1Rows.length > 0)
-    ? sheet1Rows.filter(r => [r[41], r[42], r[43], r[44]].some(c => String(c || '').toLowerCase().includes('diabet'))).length
+    ? sheet1Rows.filter(r => [r[42], r[43], r[44], r[45]].some(c => String(c || '').toLowerCase().includes('diabet'))).length
     : patients.filter(p => p.diabetes || (p.comorbidities || []).some(c => c.toLowerCase().includes('diabet'))).length;
 
   const htn = (sheet1Rows && sheet1Rows.length > 0)
-    ? sheet1Rows.filter(r => [r[41], r[42], r[43], r[44]].some(c => String(c || '').toLowerCase().includes('hyperten'))).length
+    ? sheet1Rows.filter(r => [r[42], r[43], r[44], r[45]].some(c => String(c || '').toLowerCase().includes('hyperten'))).length
     : patients.filter(p => p.hypertension || (p.comorbidities || []).some(c => c.toLowerCase().includes('hyperten'))).length;
 
   // Renal failure / CKD: Must strictly match live Excel formula =COUNTIF('CI Flags'!O2:O..., 1)
@@ -1239,25 +1241,25 @@ function buildKeyPointsSheet(workbook, analytics, patients, wsKeyPoints = null, 
     ? ciFlagsRows.filter(r => r[14] === 1).length
     : patients.filter(p => p.renalFailure || (p.comorbidities || []).some(c => c.toLowerCase().includes('renal') || c.toLowerCase().includes('ckd'))).length;
 
-  // Deaths (Sheet1 Column BA)
+  // Deaths (Sheet1 Column BB)
   const deaths = (sheet1Rows && sheet1Rows.length > 0)
-    ? sheet1Rows.filter(r => String(r[52] || '').trim().toLowerCase() === 'yes').length
+    ? sheet1Rows.filter(r => String(r[53] || '').trim().toLowerCase() === 'yes').length
     : patients.filter(p => p.death).length;
 
-  // Mean GDMT drugs per patient (Sheet1 Column CD)
+  // Mean GDMT drugs per patient (Sheet1 Column CE)
   let meanDrugs = 0;
   if (sheet1Rows && sheet1Rows.length > 0) {
-    const drugsCounts = sheet1Rows.map(r => Number(r[81])).filter(d => !isNaN(d));
+    const drugsCounts = sheet1Rows.map(r => Number(r[82])).filter(d => !isNaN(d));
     meanDrugs = drugsCounts.length > 0 ? (drugsCounts.reduce((a, b) => a + b, 0) / drugsCounts.length) : (analytics?.meanGdmtDrugs || 0);
   } else {
     const drugsCounts = patients.map(p => p.prescribedDrugsCount || 0);
     meanDrugs = drugsCounts.length > 0 ? (drugsCounts.reduce((a, b) => a + b, 0) / drugsCounts.length) : 0;
   }
 
-  // Mean % GDMT adherence (Sheet1 Column CS)
+  // Mean % GDMT adherence (Sheet1 Column CT)
   let meanAdh = 0;
   if (sheet1Rows && sheet1Rows.length > 0) {
-    const adherences = sheet1Rows.map(r => Number(r[96])).filter(a => !isNaN(a));
+    const adherences = sheet1Rows.map(r => Number(r[97])).filter(a => !isNaN(a));
     meanAdh = adherences.length > 0 ? (adherences.reduce((a, b) => a + b, 0) / adherences.length) : (analytics?.meanAdherencePercent != null ? analytics.meanAdherencePercent / 100 : 0);
   } else {
     const adherences = patients.map(p => Number(p.adherencePercent) != null ? Number(p.adherencePercent) / 100 : 0);
@@ -1270,17 +1272,17 @@ function buildKeyPointsSheet(workbook, analytics, patients, wsKeyPoints = null, 
     { r: 6, label: 'Male', formula: undefined, result: males, src: 'Unique Patients', numFmt: undefined },
     { r: 7, label: 'Female', formula: undefined, result: females, src: 'Unique Patients', numFmt: undefined },
     { r: 8, label: 'Mean age (years)', formula: undefined, result: meanAge, src: 'Unique Patients', numFmt: '0.0' },
-    { r: 9, label: 'HFrEF', formula: `COUNTIF('Sheet1'!AO2:AO${total + 1},"*HFrEF*")`, result: hfref, src: 'Sheet1 col AO', numFmt: undefined },
-    { r: 10, label: 'HFpEF', formula: `COUNTIF('Sheet1'!AO2:AO${total + 1},"*HFpEF*")`, result: hfpef, src: 'Sheet1 col AO', numFmt: undefined },
-    { r: 11, label: 'Mean EF %', formula: `AVERAGE('Sheet1'!BJ2:BJ${total + 1})`, result: meanEf, src: 'Sheet1 col BJ', numFmt: '0.0' },
-    { r: 12, label: 'NYHA class III', formula: `COUNTIF('Sheet1'!AV2:AV${total + 1},"*III*")`, result: nyha3, src: 'Sheet1 col AV', numFmt: undefined },
-    { r: 13, label: 'NYHA class IV', formula: `COUNTIF('Sheet1'!AV2:AV${total + 1},"*IV*")`, result: nyha4, src: 'Sheet1 col AV', numFmt: undefined },
-    { r: 14, label: 'Diabetes mellitus (any comorbidity column)', formula: `COUNTIF('Sheet1'!AP2:AS${total + 1},"*Diabet*")`, result: dm, src: 'Sheet1 col AP:AS', numFmt: undefined },
-    { r: 15, label: 'Hypertension', formula: `COUNTIF('Sheet1'!AP2:AS${total + 1},"*Hyperten*")`, result: htn, src: 'Sheet1 col AP:AS', numFmt: undefined },
+    { r: 9, label: 'HFrEF', formula: `COUNTIF('Sheet1'!AP2:AP${total + 1},"*HFrEF*")`, result: hfref, src: 'Sheet1 col AP', numFmt: undefined },
+    { r: 10, label: 'HFpEF', formula: `COUNTIF('Sheet1'!AP2:AP${total + 1},"*HFpEF*")`, result: hfpef, src: 'Sheet1 col AP', numFmt: undefined },
+    { r: 11, label: 'Mean EF %', formula: `AVERAGE('Sheet1'!BK2:BK${total + 1})`, result: meanEf, src: 'Sheet1 col BK', numFmt: '0.0' },
+    { r: 12, label: 'NYHA class III', formula: `COUNTIF('Sheet1'!AW2:AW${total + 1},"*III*")`, result: nyha3, src: 'Sheet1 col AW', numFmt: undefined },
+    { r: 13, label: 'NYHA class IV', formula: `COUNTIF('Sheet1'!AW2:AW${total + 1},"*IV*")`, result: nyha4, src: 'Sheet1 col AW', numFmt: undefined },
+    { r: 14, label: 'Diabetes mellitus (any comorbidity column)', formula: `COUNTIF('Sheet1'!AQ2:AT${total + 1},"*Diabet*")`, result: dm, src: 'Sheet1 col AQ:AT', numFmt: undefined },
+    { r: 15, label: 'Hypertension', formula: `COUNTIF('Sheet1'!AQ2:AT${total + 1},"*Hyperten*")`, result: htn, src: 'Sheet1 col AQ:AT', numFmt: undefined },
     { r: 16, label: 'Renal failure / CKD flagged (renal contraindication)', formula: `COUNTIF('CI Flags'!O2:O${total + 1},1)`, result: ckd, src: 'CI Flags col O', numFmt: undefined },
-    { r: 17, label: 'Deaths recorded', formula: `COUNTIF('Sheet1'!BA2:BA${total + 1},"Yes")`, result: deaths, src: 'Sheet1 col BA', numFmt: undefined },
-    { r: 18, label: 'Mean number of GDMT drugs per patient', formula: `AVERAGE('Sheet1'!CD2:CD${total + 1})`, result: meanDrugs, src: 'Sheet1 col CD', numFmt: '0.0' },
-    { r: 19, label: 'Mean % GDMT adherence (no deviation)', formula: `AVERAGE('Sheet1'!CS2:CS${total + 1})`, result: meanAdh, src: 'Sheet1 col CS', numFmt: '0.0%' }
+    { r: 17, label: 'Deaths recorded', formula: `COUNTIF('Sheet1'!BB2:BB${total + 1},"Yes")`, result: deaths, src: 'Sheet1 col BB', numFmt: undefined },
+    { r: 18, label: 'Mean number of GDMT drugs per patient', formula: `AVERAGE('Sheet1'!CE2:CE${total + 1})`, result: meanDrugs, src: 'Sheet1 col CE', numFmt: '0.0' },
+    { r: 19, label: 'Mean % GDMT adherence (no deviation)', formula: `AVERAGE('Sheet1'!CT2:CT${total + 1})`, result: meanAdh, src: 'Sheet1 col CT', numFmt: '0.0%' }
   ];
 
   metricSpecs.forEach(m => {
@@ -1507,9 +1509,10 @@ function buildExportToDbMappingSheet(workbook) {
     ['Age', 'age', 'hf_gdmt_evaluation'],
     ['Gender', 'gender', 'hf_gdmt_evaluation'],
     ['Contact no 1', 'phone_no', 'patient_demographics'],
-    ['Contact no 2', 'caregiver_phone', 'hf_administrative'],
+    ['Contact no 2', 'secondary_contact_phone', 'patient_demographics'],
     ['Payment', 'insurance_mode', 'hf_administrative'],
     ['Caregiver Name&Relationship to patient', 'caregiver_name', 'hf_administrative'],
+    ['Consultant\'s Name', 'primary_consultant', 'patient_demographics'],
     ['Treating Cardiologist', 'treating_cardiologist', 'hf_administrative'],
     ['Date of visit/hospitalization', 'visit_date', 'hf_administrative'],
     ['Discharge Date', 'discharge_date', 'hf_gdmt_evaluation'],
