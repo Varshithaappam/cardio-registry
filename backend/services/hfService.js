@@ -752,6 +752,16 @@ async function getHfHistory(regPatientId) {
                hf_registry.is_deleted, hf_registry.deleted_at, hf_registry.deleted_by,
                p.patient_name,
                COALESCE(
+                   (SELECT TOP 1 visit_date FROM hf_administrative WHERE hf_administrative.hf_id = hf_registry.hf_id AND visit_date IS NOT NULL),
+                   (SELECT TOP 1 assessment_date FROM hf_administrative WHERE hf_administrative.hf_id = hf_registry.hf_id AND assessment_date IS NOT NULL),
+                   (SELECT TOP 1 assessment_date FROM hf_initial_assessment WHERE hf_initial_assessment.hf_id = hf_registry.hf_id AND assessment_date IS NOT NULL)
+               ) as admission_date,
+               COALESCE(
+                   (SELECT TOP 1 visit_date FROM hf_administrative WHERE hf_administrative.hf_id = hf_registry.hf_id AND visit_date IS NOT NULL),
+                   (SELECT TOP 1 assessment_date FROM hf_administrative WHERE hf_administrative.hf_id = hf_registry.hf_id AND assessment_date IS NOT NULL),
+                   (SELECT TOP 1 assessment_date FROM hf_initial_assessment WHERE hf_initial_assessment.hf_id = hf_registry.hf_id AND assessment_date IS NOT NULL)
+               ) as date_of_admission,
+               COALESCE(
                    (SELECT TOP 1 assessment_date FROM hf_initial_assessment WHERE hf_initial_assessment.hf_id = hf_registry.hf_id),
                    (SELECT TOP 1 assessment_date FROM hf_administrative WHERE hf_administrative.hf_id = hf_registry.hf_id)
                ) as assessment_date

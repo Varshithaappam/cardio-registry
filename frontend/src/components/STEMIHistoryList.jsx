@@ -114,10 +114,19 @@ export default function STEMIHistoryList({ regPatientId, patientName, onEditEven
 
   const processedHistory = React.useMemo(() => {
     if (!history || history.length === 0) return [];
-    // 1. Sort ascending by creation timestamp / stemi_id to establish true creation sequence (#1 = oldest created)
+
+    const getRecordTime = (rec) => {
+      if (rec.admission_date) {
+        const t = new Date(rec.admission_date).getTime();
+        if (!isNaN(t) && t > 0) return t;
+      }
+      return rec.created_at ? new Date(rec.created_at).getTime() : 0;
+    };
+
+    // 1. Sort ascending by admission date / stemi_id to establish clinical sequence (#1 = earliest admission)
     const sortedAsc = [...history].sort((a, b) => {
-      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      const timeA = getRecordTime(a);
+      const timeB = getRecordTime(b);
       if (timeA !== timeB && timeA !== 0 && timeB !== 0) return timeA - timeB;
       return (a.stemi_id || 0) - (b.stemi_id || 0);
     });
@@ -128,10 +137,10 @@ export default function STEMIHistoryList({ regPatientId, patientName, onEditEven
       encounterNum: idx + 1
     }));
 
-    // 3. Return sorted descending by creation time for display (newest at top, oldest further down)
+    // 3. Return sorted descending by admission date for display (newest admission at top)
     return withEncounter.sort((a, b) => {
-      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      const timeA = getRecordTime(a);
+      const timeB = getRecordTime(b);
       if (timeA !== timeB && timeA !== 0 && timeB !== 0) return timeB - timeA;
       return (b.stemi_id || 0) - (a.stemi_id || 0);
     });
@@ -178,7 +187,7 @@ export default function STEMIHistoryList({ regPatientId, patientName, onEditEven
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-mono uppercase block">
-                    {record.admission_date ? `Admitted: ${formatDateForDisplay(record.admission_date)}` : (record.created_at ? formatDateTimeForDisplay(record.created_at) : 'N/A')}
+                    {record.admission_date ? `Admitted: ${formatDateForDisplay(record.admission_date)}` : (record.created_at ? `Admitted: ${formatDateForDisplay(record.created_at)}` : 'N/A')}
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-800 font-mono">

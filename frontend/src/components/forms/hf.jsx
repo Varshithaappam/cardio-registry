@@ -394,11 +394,13 @@ const hf = forwardRef(function hf(
   const readOnly = propsReadOnly || isDeleted;
 
   const getDocumentUrl = (filePath) => {
+    const token = sessionStorage.getItem('token');
+    const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
     try {
       const url = new URL(api.defaults.baseURL);
-      return `${url.protocol}//${url.host}/uploads/${filePath}`;
+      return `${url.protocol}//${url.host}/uploads/${filePath}${tokenParam}`;
     } catch (e) {
-      return `http://localhost:5000/uploads/${filePath}`;
+      return `http://localhost:5000/uploads/${filePath}${tokenParam}`;
     }
   };
 

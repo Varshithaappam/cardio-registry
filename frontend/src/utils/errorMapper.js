@@ -188,6 +188,14 @@ export function getFriendlyErrorMessage(error, fallbackAction = 'save changes') 
 
   // 4. Authorization / Permission Errors
   if (status === 401 || status === 403 || lower.includes('unauthorized') || lower.includes('forbidden')) {
+    if (lower.includes('credential') || lower.includes('password') || lower.includes('inactive account') || lower.includes('invalid clinical')) {
+      return {
+        title: 'Authentication Failed',
+        message: str || 'Invalid clinical credentials or inactive account. Please verify your credentials and try again.',
+        type: 'warning',
+        targetField: null
+      };
+    }
     return {
       title: 'Access Restricted',
       message: 'Your session has expired or you do not have permission for this operation. Please log in again.',

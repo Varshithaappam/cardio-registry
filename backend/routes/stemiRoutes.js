@@ -8,11 +8,11 @@ const {
   deleteStemiRecord,
   undeleteStemiRecord
 } = require('../controllers/stemiController');
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { authenticateToken, requireRole } = require('../middleware/authMiddleware');
 const { getStemiCohortFromDb } = require('../services/acsService');
 
-// GET /api/stemi/cohort - Retrieve full STEMI cohort analytics records
-router.get('/cohort', async (req, res) => {
+// GET /api/stemi/cohort - Retrieve full STEMI cohort analytics records (Protected by authenticateToken)
+router.get('/cohort', authenticateToken, async (req, res) => {
   try {
     const includeDeleted = req.query.includeDeleted !== 'false';
     const data = await getStemiCohortFromDb(includeDeleted);
@@ -35,11 +35,11 @@ router.get('/:id', authenticateToken, getStemiRecord);
 // PUT /api/stemi/:id - Update existing STEMI record
 router.put('/:id', authenticateToken, updateStemiRecord);
 
-// DELETE /api/stemi/:id - Soft delete STEMI record
-router.delete('/:id', authenticateToken, deleteStemiRecord);
+// DELETE /api/stemi/:id - Soft delete STEMI record (Restricted to ADMIN, CLINICIAN)
+router.delete('/:id', authenticateToken, requireRole('ADMIN', 'CLINICIAN'), deleteStemiRecord);
 
-// PATCH / PUT /api/stemi/:id/undelete - Restore / Undelete STEMI record
-router.patch('/:id/undelete', authenticateToken, undeleteStemiRecord);
-router.put('/:id/undelete', authenticateToken, undeleteStemiRecord);
+// PATCH / PUT /api/stemi/:id/undelete - Restore / Undelete STEMI record (Restricted to ADMIN, CLINICIAN)
+router.patch('/:id/undelete', authenticateToken, requireRole('ADMIN', 'CLINICIAN'), undeleteStemiRecord);
+router.put('/:id/undelete', authenticateToken, requireRole('ADMIN', 'CLINICIAN'), undeleteStemiRecord);
 
 module.exports = router;

@@ -236,6 +236,22 @@ export function filterCohort(cohort, filters = {}) {
       }
     }
 
+    // Vital Status Filter: 'All Records' vs 'Exclude Death Records' vs 'Deceased Only'
+    if (filters.vitalStatus && filters.vitalStatus !== 'All Records') {
+      const isDead = Boolean(
+        p.death === true || p.death === 'Yes' || p.death === 'yes' || p.death === 1 || p.death === '1' ||
+        p.isDeath === true || p.isDeath === 1 || p.is_death === 1 || p.is_death === true ||
+        p.deathHospital === true || p.deathHospital === 1 || p.death_hospital === 1 || p.death_hospital === 'yes' ||
+        p.in_hospital_death === 1 || p.in_hospital_death === '1'
+      );
+      if ((filters.vitalStatus === 'Exclude Death Records' || filters.vitalStatus === 'Living Only') && isDead) {
+        return false;
+      }
+      if (filters.vitalStatus === 'Deceased Only' && !isDead) {
+        return false;
+      }
+    }
+
     return true;
   });
 }

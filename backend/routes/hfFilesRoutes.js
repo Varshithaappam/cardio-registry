@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
-const { authenticateToken } = require("../middleware/authMiddleware");
+const { authenticateToken, requireRole } = require("../middleware/authMiddleware");
 
 router.use(authenticateToken);
 
-// PUT Endpoint: Edit Health Facility
-router.put("/:id", async (req, res) => {
+// PUT Endpoint: Edit Health Facility (Restricted to ADMIN, CLINICIAN)
+router.put("/:id", requireRole('ADMIN', 'CLINICIAN'), async (req, res) => {
     const id = req.params.id;
     const { facility_code, facility_name } = req.body;
 

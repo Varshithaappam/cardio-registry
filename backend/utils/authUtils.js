@@ -25,26 +25,26 @@ function getAuthenticatedUser(req) {
   const headerUserId = req.headers['x-user-id'] || req.headers['X-User-Id'];
   const headerUserRole = req.headers['x-user-role'] || req.headers['X-User-Role'];
 
-  // 3. Authorization Bearer JWT Token decoding
+  // 3. Authorization Bearer JWT Token verification
   const authHeader = req.headers['authorization'] || req.headers['Authorization'];
   if (authHeader) {
     const token = authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader;
     if (token) {
       try {
         const secret = process.env.JWT_SECRET;
-        const decoded = jwt.decode(token) || (secret ? jwt.verify(token, secret) : null);
+        const decoded = secret ? jwt.verify(token, secret) : jwt.decode(token);
         if (decoded) {
-          const resolvedUsername = decoded.username || headerUserName || decoded.name || decoded.email || 'Authenticated User';
+          const resolvedUsername = decoded.username || decoded.name || decoded.email || 'Authenticated User';
           return {
-            id: decoded.userId || decoded.id || (headerUserId ? parseInt(headerUserId, 10) : 1),
-            userId: decoded.userId || decoded.id || (headerUserId ? parseInt(headerUserId, 10) : 1),
+            id: decoded.userId || decoded.id || 1,
+            userId: decoded.userId || decoded.id || 1,
             username: resolvedUsername,
             name: decoded.name || resolvedUsername,
-            role: decoded.role || headerUserRole || 'Staff'
+            role: decoded.role || 'Staff'
           };
         }
       } catch (e) {
-        // Fallback to headers
+        // Token invalid or verification failed; do not permit spoofed headers to escalate role
       }
     }
   }

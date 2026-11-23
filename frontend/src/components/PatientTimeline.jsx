@@ -194,6 +194,8 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
     }))
   ].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 
+  const totalEncounterCount = (counts.hfCount || 0) + (counts.stemiCount || 0) + (counts.nstemiCount || 0) || timelineEvents.length || 0;
+
   const dq = calculateDataQualityScore(record);
 
   const handleEditPatientSuccess = (updatedPatientData) => {
@@ -300,7 +302,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
             </div>
             <div className="text-center bg-slate-50 border border-slate-100 px-3.5 py-2 rounded-xl">
               <span className="block text-slate-400 text-[10px] font-bold uppercase">Timeline Records</span>
-              <span className="block text-lg font-black text-slate-800">{timelineEvents.length}</span>
+              <span className="block text-lg font-black text-slate-800">{totalEncounterCount}</span>
             </div>
           </div>
         </div>
@@ -427,7 +429,7 @@ export default function PatientTimeline({ record, onBack, onAddEventClick, onEdi
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>Longitudinal Case Summary ({timelineEvents.length || 3})</span>
+          <span>Longitudinal Case Summary ({totalEncounterCount})</span>
         </button>
         <button
           onClick={() => setActiveTab('hf')}

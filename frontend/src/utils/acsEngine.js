@@ -665,6 +665,20 @@ export function filterAcsCohort(cohort, filters = {}, registryType = 'ALL', char
       return false;
     }
 
+    // Vital Status Filter: 'All Records' vs 'Exclude Death Records' vs 'Deceased Only'
+    if (activeFilters.vitalStatus && activeFilters.vitalStatus !== 'All Records') {
+      const isDead = Boolean(
+        patient.death === true || patient.death === 'Yes' || patient.death === 'yes' ||
+        patient.death === 1 || patient.death === '1' || patient.outcomes?.death === 'Yes'
+      );
+      if ((activeFilters.vitalStatus === 'Exclude Death Records' || activeFilters.vitalStatus === 'Living Only') && isDead) {
+        return false;
+      }
+      if (activeFilters.vitalStatus === 'Deceased Only' && !isDead) {
+        return false;
+      }
+    }
+
     // Global TIMI Risk Score Bucket Filter
     if (activeFilters.timiTier && activeFilters.timiTier !== 'ALL') {
       const score = patient.timiScore || 0;
@@ -826,6 +840,7 @@ export function computeAcsAnalytics(cohort = [], registryType = 'STEMI') {
     return {
       kpi: {
         totalRecords: 0,
+        uniquePatients: 0,
         stemiCount: 0,
         nstemiCount: 0,
         meanAge: 0,
@@ -861,6 +876,15 @@ export function computeAcsAnalytics(cohort = [], registryType = 'STEMI') {
   }
 
   // --- Row 1: Top-Level KPI Computations ---
+  const uniquePatientsMap = new Map();
+  cohort.forEach(p => {
+    const key = p.regPatientId || p.reg_patient_id || p.uhid || p.mrNo || p.id;
+    if (key && !uniquePatientsMap.has(key)) {
+      uniquePatientsMap.set(key, p);
+    }
+  });
+  const uniquePatients = uniquePatientsMap.size || total;
+
   const stemiCount = cohort.filter(p => p.registryType === 'STEMI').length;
   const nstemiCount = cohort.filter(p => p.registryType === 'NSTEMI').length;
 
@@ -1255,6 +1279,7 @@ export function computeAcsAnalytics(cohort = [], registryType = 'STEMI') {
   return {
     kpi: {
       totalRecords: total,
+      uniquePatients,
       stemiCount,
       nstemiCount,
       meanAge,

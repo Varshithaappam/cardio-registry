@@ -311,6 +311,10 @@ function mapDbRowToPatient(row) {
     deathNote: row.death_note || '',
     dischargeDate: row.discharge_date,
     visitDate: row.visit_date,
+    insuranceMode: row.insurance_mode || 'Direct',
+    insurance_mode: row.insurance_mode || 'Direct',
+    paymentMode: row.insurance_mode || 'Direct',
+    payment_mode: row.insurance_mode || 'Direct',
     bloodPressureSitting: `${sbp}/${dbp}`,
     heartRate: hr,
     potassium: k,
@@ -359,6 +363,7 @@ async function getPatientsCohort(options = {}) {
           fa.death_note,
           ha.visit_id,
           ha.visit_date,
+          ha.insurance_mode,
           ha.treating_cardiologist,
           COALESCE(ha.treating_cardiologist, 'Dr. K. Sridhar') AS consultant_name,
           ha.present_diagnosis,
@@ -459,6 +464,13 @@ async function getPatientsCohort(options = {}) {
             efPercent: row.ef_percent,
             functionalStatus: row.nyha_class,
             comorbidities: comorbidities,
+            hasHtn: Boolean(row.has_htn),
+            hasDm: Boolean(row.has_dm),
+            hasCad: Boolean(row.has_cad),
+            hasCkd: Boolean(row.has_ckd || hasRenal),
+            hypertension: Boolean(row.has_htn),
+            diabetes: Boolean(row.has_dm),
+            cad: Boolean(row.has_cad),
             death: row.is_death === 1 || isDeathHome || isDeathHospital,
             deathDate,
             deathHome: isDeathHome,
@@ -482,6 +494,10 @@ async function getPatientsCohort(options = {}) {
             secondaryContactPhone: row.secondary_contact_phone || '',
             secondary_contact_phone: row.secondary_contact_phone || '',
             pincode: row.pincode || '',
+            insuranceMode: row.insurance_mode || 'Direct',
+            insurance_mode: row.insurance_mode || 'Direct',
+            paymentMode: row.insurance_mode || 'Direct',
+            payment_mode: row.insurance_mode || 'Direct',
             prescribedDrugsSummary: activeDrugs.join(', ') || 'No GDMT Recorded on Ingest',
 
             // 6 Drug Prescribed flags (1 or 0)
@@ -572,7 +588,8 @@ async function getPatientsCohort(options = {}) {
         t1.valsartan, t1.losartan, t1.telmisartan, t1.olmesartan, t1.arb_other,
         t1.arb_not_used_elevated_creatinine, t1.arb_not_used_hyperkalemia, t1.arb_not_used_hypotension,
         t1.spironolactone, t1.eplerenone,
-        t1.aldosterone_not_used_hyperkalemia, t1.aldosterone_not_used_elevated_creatinine
+        t1.aldosterone_not_used_hyperkalemia, t1.aldosterone_not_used_elevated_creatinine,
+        ha.insurance_mode
       FROM hf_registry hr
       LEFT JOIN patient_demographics p ON p.reg_patient_id = hr.reg_patient_id
       LEFT JOIN hf_administrative ha ON ha.hf_id = hr.hf_id

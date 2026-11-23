@@ -91,7 +91,7 @@ function autoFitColumns(worksheet, minWidth = 10, maxWidth = 45) {
 /**
  * Build Sheet1: Scoped exactly up to "Current device therapy" following mapping.xlsx rules
  */
-function buildSheet1(workbook, patients, sheet1Data = null, wsSheet1 = null) {
+export function buildSheet1(workbook, patients, sheet1Data = null, wsSheet1 = null) {
   const ws = wsSheet1 || workbook.addWorksheet('Sheet1');
   const finalExportRows = [];
 

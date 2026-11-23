@@ -22,7 +22,9 @@ import {
   Stethoscope,
   Database,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Filter,
+  X
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -132,6 +134,7 @@ export default function NstemiDashboard() {
   const [isLoadingDb, setIsLoadingDb] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [chartFilters, setChartFilters] = useState({});
+  const [vitalStatus, setVitalStatus] = useState('All Records'); // 'All Records' | 'Exclude Death Records' | 'Deceased Only'
 
   // Load from live database
   const loadData = useCallback(async () => {
@@ -152,6 +155,12 @@ export default function NstemiDashboard() {
     loadData();
   }, [loadData]);
 
+  // Compute deaths and living breakdown for instant feedback
+  const deathsCount = useMemo(() => {
+    return dbCohort.filter(p => p.death === true || p.death === 'Yes' || p.death === 'yes' || p.death === 1).length;
+  }, [dbCohort]);
+  const livingCount = dbCohort.length - deathsCount;
+
   // Toggle chart-level cross filters (clicking an element toggles it on; clicking again toggles it off)
   const handleChartFilterToggle = useCallback((dimension, value) => {
     setChartFilters(prev => {
@@ -170,10 +179,10 @@ export default function NstemiDashboard() {
     setChartFilters({});
   }, []);
 
-  // Active live cohort dynamically filtered based on interactive chart cross-filters
+  // Active live cohort dynamically filtered based on vitalStatus and interactive chart cross-filters
   const activeCohort = useMemo(() => {
-    return filterAcsCohort(dbCohort, {}, 'NSTEMI', chartFilters);
-  }, [dbCohort, chartFilters]);
+    return filterAcsCohort(dbCohort, { vitalStatus }, 'NSTEMI', chartFilters);
+  }, [dbCohort, vitalStatus, chartFilters]);
 
   // Compute analytics dynamically
   const analytics = useMemo(() => {
@@ -256,6 +265,60 @@ export default function NstemiDashboard() {
       </div>
 
       {/* =========================================================================
+          VITAL STATUS FILTER BAR (Total vs. Exclude Death Records vs. Deceased Only)
+         ========================================================================= */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-3 shadow-2xs flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-bold text-slate-500 uppercase tracking-wider text-[11px] flex items-center gap-1.5 mr-1">
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
+            Vital Status:
+          </span>
+
+          <div className="inline-flex rounded-xl p-1 bg-slate-100 border border-slate-200">
+            {[
+              { id: 'All Records', label: 'All Records', count: dbCohort.length, desc: 'Evaluates all NSTEMI records' },
+              { id: 'Exclude Death Records', label: 'Exclude Death Records (Living Only)', count: livingCount, desc: 'Filters out mortality cases' },
+              { id: 'Deceased Only', label: 'Deceased Only', count: deathsCount, desc: 'Mortality audit view' }
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setVitalStatus(tab.id)}
+                className={`px-3 py-1.5 rounded-lg font-bold text-xs transition cursor-pointer flex items-center gap-1.5 ${
+                  vitalStatus === tab.id
+                    ? tab.id === 'Deceased Only'
+                      ? 'bg-rose-600 text-white shadow-xs'
+                      : 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+                title={tab.desc}
+              >
+                <span>{tab.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold ${
+                  vitalStatus === tab.id
+                    ? tab.id === 'Deceased Only' ? 'bg-rose-700 text-white' : 'bg-slate-100 text-slate-800'
+                    : 'bg-slate-200/60 text-slate-600'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {vitalStatus !== 'All Records' && (
+          <div className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200 flex items-center gap-1.5">
+            <span>Active Cohort: {activeCohort.length} of {dbCohort.length} patients</span>
+            <button
+              onClick={() => setVitalStatus('All Records')}
+              className="ml-1 text-rose-600 hover:text-rose-800 font-bold underline cursor-pointer"
+            >
+              Reset
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* =========================================================================
           INTERACTIVE CHART CROSS-FILTER PILLS & RESET BANNER
          ========================================================================= */}
       {Object.keys(chartFilters).length > 0 && (
@@ -298,10 +361,32 @@ export default function NstemiDashboard() {
       )}
 
       {/* =========================================================================
-          ROW 1: TOP-LEVEL KPI STAT CARDS (5 Cards in 5-Column Grid)
+          ROW 1: TOP-LEVEL KPI STAT CARDS (6 Cards in 6-Column Grid)
          ========================================================================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        {/* Card 1: Total Records */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* Card 1: Unique Patients (UHIDs) */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+          <div className="flex items-center justify-between text-slate-400 mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">PATIENT'S (UHID'S)</span>
+            <div className="p-1 bg-teal-50 text-teal-600 rounded-lg">
+              <Users className="w-3.5 h-3.5 text-teal-600" />
+            </div>
+          </div>
+          <div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-black text-slate-900 font-mono tracking-tight">
+                {kpi.uniquePatients || kpi.totalRecords}
+              </span>
+              <span className="text-xs font-bold text-slate-500">Patients</span>
+            </div>
+          </div>
+          <div className="mt-2 text-[10px] text-slate-400 font-semibold flex items-center justify-between">
+            <span className="text-teal-700 font-bold">Unique Demographics</span>
+            <span className="text-slate-400">{kpi.uniquePatients || kpi.totalRecords} UHIDs</span>
+          </div>
+        </div>
+
+        {/* Card 2: Total Records */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400 mb-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">TOTAL NSTEMI RECORDS</span>

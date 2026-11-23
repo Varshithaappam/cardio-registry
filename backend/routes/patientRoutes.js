@@ -24,18 +24,18 @@ router.post("/:id/confirm-match", authenticateToken, patientController.confirmMa
 router.post("/reject-match", authenticateToken, patientController.rejectMatch);
 router.post("/:id/reject-match", authenticateToken, patientController.rejectMatch);
 
-// Get Patient Match Audit History
-router.get("/audit", authenticateToken, patientController.getAuditLogs);
+// Get Patient Match Audit History (Restricted to ADMIN)
+router.get("/audit", authenticateToken, requireRole('ADMIN'), patientController.getAuditLogs);
 
 // Get Patient Counts
 router.get("/counts/all", authenticateToken, patientController.getAllPatientCounts);
 router.get("/counts/:regPatientId", authenticateToken, patientController.getPatientCounts);
 
-// GDMT Clinical Intelligence & Cohort Analytics Endpoint
-router.get("/gdmt-cohort", patientController.getGdmtCohort);
-router.get("/hf-export-sheet1", patientController.getHfSheet1Export);
-router.get("/stemi-cohort", patientController.getStemiCohort);
-router.get("/nstemi-cohort", patientController.getNstemiCohort);
+// GDMT Clinical Intelligence & Cohort Analytics Endpoints (Protected by authenticateToken)
+router.get("/gdmt-cohort", authenticateToken, patientController.getGdmtCohort);
+router.get("/hf-export-sheet1", authenticateToken, patientController.getHfSheet1Export);
+router.get("/stemi-cohort", authenticateToken, patientController.getStemiCohort);
+router.get("/nstemi-cohort", authenticateToken, patientController.getNstemiCohort);
 
 // Get All Patients
 router.get("/", authenticateToken, patientController.getAllPatients);
@@ -49,7 +49,7 @@ router.get("/:id", authenticateToken, patientController.getPatientById);
 // Update Patient
 router.put("/:id", authenticateToken, patientController.updatePatient);
 
-// Delete Patient
-router.delete("/:id", authenticateToken, patientController.deletePatient);
+// Delete Patient (Restricted to ADMIN, CLINICIAN)
+router.delete("/:id", authenticateToken, requireRole('ADMIN', 'CLINICIAN'), patientController.deletePatient);
 
 module.exports = router;

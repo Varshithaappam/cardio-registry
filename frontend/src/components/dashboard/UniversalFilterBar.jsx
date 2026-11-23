@@ -56,6 +56,22 @@ export default function UniversalFilterBar({
             <option value="Female">Female</option>
           </select>
 
+          {/* Vital Status Filter (Total vs. Exclude Death Records vs. Deceased Only) */}
+          <select
+            value={filters.vitalStatus || 'All Records'}
+            onChange={(e) => onFilterChange('vitalStatus', e.target.value)}
+            className={`text-xs border rounded-lg px-2.5 py-1.5 font-medium transition cursor-pointer focus:outline-hidden focus:ring-1 focus:ring-teal-500 ${
+              filters.vitalStatus && filters.vitalStatus !== 'All Records'
+                ? 'bg-rose-50 text-rose-700 border-rose-300 font-bold'
+                : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+            }`}
+            title="Filter cohort by vital status (All vs. Living Only vs. Deceased Only)"
+          >
+            <option value="All Records">Status: All Records</option>
+            <option value="Exclude Death Records">Status: Exclude Death Records (Living Only)</option>
+            <option value="Deceased Only">Status: Deceased Only</option>
+          </select>
+
           {/* Age Range Filter */}
           <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs">
             <span className="text-slate-500 font-medium">Age:</span>
@@ -139,6 +155,7 @@ export default function UniversalFilterBar({
           {(filters.registry !== 'All Registries' ||
             filters.phenotype !== 'All Phenotypes' ||
             filters.gender !== 'All Genders' ||
+            (filters.vitalStatus && filters.vitalStatus !== 'All Records') ||
             filters.minAge ||
             filters.maxAge ||
             filters.startDate ||

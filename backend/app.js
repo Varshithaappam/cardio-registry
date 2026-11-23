@@ -37,32 +37,34 @@ const nurseFollowUpReportRoutes = require("./routes/nurseFollowUpReportRoutes");
 const nstemiRoutes = require("./routes/nstemiRoutes");
 const stemiRoutes = require("./routes/stemiRoutes");
 const mpiConfigRoutes = require("./routes/mpiConfigRoutes");
+const executiveDashboardRoutes = require("./routes/executiveDashboardRoutes");
 
 const hfRegistryController = require('./controllers/hfRegistryController');
-const { authenticateToken } = require('./middleware/authMiddleware');
+const { authenticateToken, requireRole } = require('./middleware/authMiddleware');
 
 const validationRoutes = require("./routes/validationRoutes");
 
 // API Routes
-app.use("/api", validationRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api", validationRoutes);
 app.use("/api/mpi-config", mpiConfigRoutes);
 app.use("/api/hf-registry", hfRegistryRoutes);
 app.post("/api/resolve-staging", authenticateToken, patientController.resolveStaging);
 app.use("/api/patients", patientRoutes);
-app.get("/api/audit", authenticateToken, patientController.getAuditLogs);
+app.get("/api/audit", authenticateToken, requireRole('ADMIN'), patientController.getAuditLogs);
 app.use("/api/nurse-dashboard", nurseFollowUpReportRoutes);
 app.use("/api/nurse-followup-report", nurseFollowUpReportRoutes);
 app.use("/api/hf-form", hfFormRoutes);
 app.use("/api/hf-assessment", hfRoutes);
 app.use("/api/nstemi", nstemiRoutes);
 app.use("/api/stemi", stemiRoutes);
+app.use("/api/executive-dashboard", executiveDashboardRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/hf-files", hfFilesRoutes);
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/uploads", authenticateToken, express.static(path.join(__dirname, "uploads")));
 app.get('/api/hf/history/:regPatientId', authenticateToken, hfController.getHfHistory);
-app.patch('/api/hf/:id/undelete', authenticateToken, hfRegistryController.undeleteRecord);
-app.put('/api/hf/:id/undelete', authenticateToken, hfRegistryController.undeleteRecord);
+app.patch('/api/hf/:id/undelete', authenticateToken, requireRole('ADMIN', 'CLINICIAN'), hfRegistryController.undeleteRecord);
+app.put('/api/hf/:id/undelete', authenticateToken, requireRole('ADMIN', 'CLINICIAN'), hfRegistryController.undeleteRecord);
 
 // Handle Unknown Routes
 app.use((req, res) => {

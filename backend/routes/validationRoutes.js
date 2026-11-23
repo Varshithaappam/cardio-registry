@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const sql = require('mssql');
+const { authenticateToken } = require('../middleware/authMiddleware');
 
 /**
  * Strict whitelist mapping allowed tables, their physical table names,
@@ -58,7 +59,7 @@ const ALLOWED_TARGETS = {
  * Returns:
  *  { success: true, isUnique: true | false, table, column }
  */
-router.get('/check-unique', async (req, res) => {
+router.get('/check-unique', authenticateToken, async (req, res) => {
   try {
     const { table, column, value, excludeId } = req.query;
 

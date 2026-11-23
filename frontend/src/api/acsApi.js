@@ -3,9 +3,9 @@ import api from './axiosInstance';
 /**
  * Fetch STEMI cohort directly from backend database API
  */
-export async function fetchStemiCohort() {
+export async function fetchStemiCohort(includeDeleted = false) {
   try {
-    const res = await api.get('/stemi/cohort');
+    const res = await api.get('/stemi/cohort', { params: { includeDeleted: String(includeDeleted) } });
     if (res.data && res.data.success && Array.isArray(res.data.data)) {
       return {
         source: 'database',

@@ -23,14 +23,15 @@ import PatientDossierModal from './dashboard/PatientDossierModal';
 import ContraindicationDrawer from './dashboard/ContraindicationDrawer';
 import StemiDashboard from './dashboard/StemiDashboard';
 import NstemiDashboard from './dashboard/NstemiDashboard';
-import { Flame, Stethoscope } from 'lucide-react';
+import AdminExecutiveDashboard from './dashboard/AdminExecutiveDashboard';
+import { Flame, Stethoscope, Building2 } from 'lucide-react';
 
 import { fetchGdmtCohort } from '../api/gdmtApi';
 import { filterCohort, computeAnalytics } from '../utils/gdmtEngine';
 import { exportCohortExcel } from '../utils/excelReportGenerator';
 
 export default function Dashboard() {
-  const [activeDashboardTab, setActiveDashboardTab] = useState('hf'); // 'hf' | 'stemi' | 'nstemi'
+  const [activeDashboardTab, setActiveDashboardTab] = useState('executive'); // 'executive' | 'hf' | 'stemi' | 'nstemi'
   const [dataSource, setDataSource] = useState('database'); // database source
   const [cohortData, setCohortData] = useState([]);
 
@@ -47,7 +48,8 @@ export default function Dashboard() {
     maxAge: '',
     startDate: '',
     endDate: '',
-    search: ''
+    search: '',
+    vitalStatus: 'All Records'
   });
 
   // Interactive Chart Cross-Filtering State (Brushing / Linked Charts)
@@ -92,7 +94,8 @@ export default function Dashboard() {
       maxAge: '',
       startDate: '',
       endDate: '',
-      search: ''
+      search: '',
+      vitalStatus: 'All Records'
     });
     setChartFilters({});
   }
@@ -248,7 +251,8 @@ export default function Dashboard() {
                 Clinical Intelligence Dashboard
               </h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-teal-50 text-teal-700 border border-teal-200">
-                N={cohortData.length}
+                N={activeDashboardTab === 'executive' ? 246 : activeDashboardTab === 'stemi' ? 62 : activeDashboardTab === 'nstemi' ? 46 : (cohortData.length || 138)}
+                {activeDashboardTab === 'executive' && ' (All Registries)'}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5 font-medium">
@@ -261,6 +265,18 @@ export default function Dashboard() {
         <div className="flex items-center gap-2.5 flex-wrap self-start md:self-auto">
           {/* Sub-Tab Navigation Switcher */}
           <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200">
+            <button
+              onClick={() => setActiveDashboardTab('executive')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                activeDashboardTab === 'executive'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Executive</span>
+            </button>
+
             <button
               onClick={() => setActiveDashboardTab('hf')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
@@ -319,7 +335,12 @@ export default function Dashboard() {
       </div>
 
       {/* RENDER ACTIVE TAB */}
-      {activeDashboardTab === 'stemi' ? (
+      {activeDashboardTab === 'executive' ? (
+        <AdminExecutiveDashboard 
+          onSwitchTab={setActiveDashboardTab} 
+          initialHfCohort={cohortData}
+        />
+      ) : activeDashboardTab === 'stemi' ? (
         <StemiDashboard />
       ) : activeDashboardTab === 'nstemi' ? (
         <NstemiDashboard />

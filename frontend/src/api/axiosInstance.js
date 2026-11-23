@@ -14,6 +14,19 @@ const api = axios.create({
 // Attach token and authenticated user headers to outgoing requests
 api.interceptors.request.use(
   (config) => {
+    // Explicitly exclude authentication endpoints from carrying old/stale credentials or tokens
+    const isAuthRequest = config.url && (config.url.includes('/auth/login') || config.url.includes('/auth/register'));
+    if (isAuthRequest) {
+      if (config.headers) {
+        delete config.headers.Authorization;
+        delete config.headers['Authorization'];
+        delete config.headers['X-User-Name'];
+        delete config.headers['X-User-Id'];
+        delete config.headers['X-User-Role'];
+      }
+      return config;
+    }
+
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
 
     if (token) {
@@ -49,8 +62,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
+    const isLoginRequest = Boolean(error.config?.url && error.config.url.includes('/auth/login'));
 
-    if (status === 401 || status === 403) {
+    if (!isLoginRequest && (status === 401 || status === 403)) {
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
       sessionStorage.clear();
@@ -60,12 +74,14 @@ api.interceptors.response.use(
       }
     }
 
-    // Attach user-friendly error mapping to error object and sanitize data.message
-    const friendly = getFriendlyErrorMessage(error);
-    error.friendlyError = friendly;
-    if (error.response?.data) {
-      error.response.data.message = friendly.message;
-      error.response.data.title = friendly.title;
+    // Attach user-friendly error mapping to error object and sanitize data.message (preserve raw login errors)
+    if (!isLoginRequest) {
+      const friendly = getFriendlyErrorMessage(error);
+      error.friendlyError = friendly;
+      if (error.response?.data) {
+        error.response.data.message = friendly.message;
+        error.response.data.title = friendly.title;
+      }
     }
 
     return Promise.reject(error);

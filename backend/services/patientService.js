@@ -830,7 +830,7 @@ async function getLongitudinalDossier(regPatientId) {
         try {
             const hfData = await hfService.getHfAssessment(row.hf_id);
             if (hfData) {
-                hfAssessments.push({ ...hfData, hf_id: row.hf_id, status: row.status });
+                hfAssessments.push({ ...hfData, hf_id: row.hf_id, status: row.status, created_at: row.created_at });
             }
         } catch (e) {
             console.error(`Error loading HF assessment ${row.hf_id}:`, e.message);
@@ -1002,7 +1002,7 @@ async function getLongitudinalDossier(regPatientId) {
 
         const baseHf = hfa.hf_registry_no ? String(hfa.hf_registry_no).trim() : `hf${String(hfa.hf_id).padStart(5, '0')}`;
         const formattedRecordId = /^HF-/i.test(baseHf) ? baseHf : `HF-${baseHf}`;
-        const admissionDate = formatDossierDate(hfa.date_of_admission || hfa.inpatientDetails?.dateOfAdmission || hfa.date_of_visit_hospitalization || encDate);
+        const admissionDate = formatDossierDate(hfa.date_of_admission || hfa.inpatientDetails?.dateOfAdmission || hfa.date_of_visit_hospitalization || hfa.assessmentDate || hfa.assessment_date || encDate);
 
         encounters.push({
             type: 'HF',
@@ -1390,6 +1390,7 @@ async function getLongitudinalDossier(regPatientId) {
         .map(e => ({
             date: e.formattedDate,
             displayDate: e.formattedDate,
+            admissionDate: e.admissionDate || e.formattedDate,
             lvef: e.lvef,
             sbp: e.sbp,
             dbp: e.dbp,
@@ -1538,9 +1539,11 @@ async function getLongitudinalDossier(regPatientId) {
         };
     });
 
-    // Detailed Episode Dossiers (Recent encounters: each up to 3 HF, STEMI, NSTEMI)
-    const episodeDossiers = summaryEncounters.map((enc, idx) => {
-        const epNum = summaryEncounters.length - idx;
+    // Detailed Episode Dossiers across ALL real encounters (sorted reverse-chronologically)
+    const sortedAllEncounters = [...allEncounters].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+    const episodeDossiers = sortedAllEncounters.map((enc, idx) => {
+        const epNum = sortedAllEncounters.length - idx;
         return {
             episodeNumber: epNum,
             type: enc.type,
@@ -1661,7 +1664,8 @@ async function getLongitudinalDossier(regPatientId) {
         },
         chartData,
         revascularizationLedger,
-        episodeDossiers
+        episodeDossiers,
+        allEpisodeDossiers: episodeDossiers
     };
 }
 

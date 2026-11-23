@@ -3,7 +3,7 @@ const { getPool, sql } = require('../config/db');
 /**
  * Fetch and map all STEMI registry records from database tables
  */
-async function getStemiCohortFromDb(includeDeleted = true) {
+async function getStemiCohortFromDb(includeDeleted = false) {
   const pool = await getPool();
   const whereClause = includeDeleted ? '' : 'WHERE s.is_deleted = 0 OR s.is_deleted IS NULL';
   const query = `
@@ -15,18 +15,22 @@ async function getStemiCohortFromDb(includeDeleted = true) {
       clin.typical_angina, clin.atypical_chest_pain, clin.breathlessness, clin.syncope_presyncope, clin.timi_total_score,
       clin.age_gt_75, clin.age_65_to_74, clin.history_dm_htn_angina, clin.sbp_lt_100, clin.heart_rate_gt_100,
       clin.killip_class_ii_to_iv, clin.anterior_mi_or_lbbb, clin.weight_lt_67kg, clin.reperfusion_gt_4hrs, clin.st_deviation_at_admission,
+      clin.elevated_crp, clin.elevated_bnp, clin.lvf, clin.vt_vf, clin.bbb_chb,
       treat.pami, treat.thrombolysis, treat.conservative, treat.none, treat.door_to_balloon_time, treat.door_to_needle_time,
       treat.drug_tenecteplase, treat.drug_stk, treat.drug_reteplase, treat.drug_uk,
       treat.vessel_lad, treat.vessel_rca, treat.vessel_lcx, treat.vessel_diagonal, treat.vessel_lmca, treat.vessel_om, treat.vessel_pda, treat.vessel_ramus,
       treat.procedural_success, treat.timi_flow,
       outc.death, outc.remi_for_stemi, outc.cva_thrombotic, outc.cva_hemorrhagic, outc.major_bleeding, outc.outcome_none, outc.discharge_other_medication,
-      outc.aspirin, outc.statin, outc.beta_blocker, outc.clopidogrel, outc.ticagrelor, outc.nitrate, outc.nicorandil, outc.calcium_channel_blocker, outc.prasugrel, outc.ranolazine, outc.trimetazidine, outc.ivabradine
+      outc.aspirin, outc.statin, outc.beta_blocker, outc.clopidogrel, outc.ticagrelor, outc.nitrate, outc.nicorandil, outc.calcium_channel_blocker, outc.prasugrel, outc.ranolazine, outc.trimetazidine, outc.ivabradine,
+      hosp.total_cost, hosp.total_hospital_stay_days, hosp.iccu_hours, hosp.stepdown_icu_hours, hosp.floor_days,
+      hosp.bed_charges, hosp.drugs_disposables_cost, hosp.package_cost, hosp.laboratory_cost, hosp.non_invasive_lab_cost, hosp.consultation_cost, hosp.radiology_cost, hosp.miscellaneous_cost
     FROM stemi_registry s
     LEFT JOIN patient_demographics p ON s.reg_patient_id = p.reg_patient_id
     LEFT JOIN stemi_administrative adm ON s.stemi_id = adm.stemi_id
     LEFT JOIN stemi_clinical_assessment clin ON s.stemi_id = clin.stemi_id
     LEFT JOIN stemi_treatment_strategy treat ON s.stemi_id = treat.stemi_id
     LEFT JOIN stemi_outcomes outc ON s.stemi_id = outc.stemi_id
+    LEFT JOIN stemi_hospitalization hosp ON s.stemi_id = hosp.stemi_id
     ${whereClause}
     ORDER BY s.stemi_id ASC
   `;
@@ -190,6 +194,11 @@ async function getStemiCohortFromDb(includeDeleted = true) {
       chd_risk_factors_ge_3: p.chd_risk_factors_ge_3 === 'Yes',
       prior_coronary_stenosis_gt_50: p.prior_coronary_stenosis_gt_50 === 'Yes',
       st_deviation_at_admission: p.st_deviation_at_admission === 'Yes',
+      elevated_crp: p.elevated_crp === 'Yes' || p.elevated_crp === true,
+      elevated_bnp: p.elevated_bnp === 'Yes' || p.elevated_bnp === true,
+      lvf: p.lvf === 'Yes' || p.lvf === true,
+      vt_vf: p.vt_vf === 'Yes' || p.vt_vf === true,
+      bbb_chb: p.bbb_chb === 'Yes' || p.bbb_chb === true,
       anginal_episodes_ge_2_last_24hrs: p.anginal_episodes_ge_2_last_24hrs === 'Yes',
       elevated_serum_cardiac_markers: p.elevated_serum_cardiac_markers === 'Yes',
       treatmentStrategy: strategy,
@@ -243,7 +252,25 @@ async function getStemiCohortFromDb(includeDeleted = true) {
       discharge_prasugrel: p.prasugrel === 'Yes',
       discharge_ranolazine: p.ranolazine === 'Yes',
       discharge_trimetazidine: p.trimetazidine === 'Yes',
-      discharge_ivabradine: p.ivabradine === 'Yes'
+      discharge_ivabradine: p.ivabradine === 'Yes',
+      totalCost: p.total_cost != null ? Number(p.total_cost) : null,
+      total_cost: p.total_cost != null ? Number(p.total_cost) : null,
+      totalStayDays: p.total_hospital_stay_days != null ? Number(p.total_hospital_stay_days) : null,
+      total_hospital_stay_days: p.total_hospital_stay_days != null ? Number(p.total_hospital_stay_days) : null,
+      iccuHours: p.iccu_hours != null ? Number(p.iccu_hours) : null,
+      iccu_hours: p.iccu_hours != null ? Number(p.iccu_hours) : null,
+      stepdownIcuHours: p.stepdown_icu_hours != null ? Number(p.stepdown_icu_hours) : null,
+      stepdown_icu_hours: p.stepdown_icu_hours != null ? Number(p.stepdown_icu_hours) : null,
+      floorDays: p.floor_days != null ? Number(p.floor_days) : null,
+      floor_days: p.floor_days != null ? Number(p.floor_days) : null,
+      bed_charges: p.bed_charges != null ? Number(p.bed_charges) : null,
+      drugs_disposables_cost: p.drugs_disposables_cost != null ? Number(p.drugs_disposables_cost) : null,
+      package_cost: p.package_cost != null ? Number(p.package_cost) : null,
+      laboratory_cost: p.laboratory_cost != null ? Number(p.laboratory_cost) : null,
+      non_invasive_lab_cost: p.non_invasive_lab_cost != null ? Number(p.non_invasive_lab_cost) : null,
+      consultation_cost: p.consultation_cost != null ? Number(p.consultation_cost) : null,
+      radiology_cost: p.radiology_cost != null ? Number(p.radiology_cost) : null,
+      miscellaneous_cost: p.miscellaneous_cost != null ? Number(p.miscellaneous_cost) : null
     };
   });
 }
@@ -264,18 +291,22 @@ async function getNstemiCohortFromDb() {
       clin.killip_class_ii_to_iv, clin.anterior_mi_or_lbbb, clin.weight_lt_67kg, clin.reperfusion_gt_4hrs,
       clin.chd_risk_factors_ge_3, clin.prior_coronary_stenosis_gt_50, clin.st_deviation_at_admission,
       clin.anginal_episodes_ge_2_last_24hrs, clin.elevated_serum_cardiac_markers,
+      clin.elevated_crp, clin.elevated_bnp, clin.lvf, clin.vt_vf, clin.bbb_chb,
       treat.pami, treat.thrombolysis, treat.conservative, treat.none, treat.door_to_balloon_time, treat.door_to_needle_time,
       treat.drug_tenecteplase, treat.drug_stk, treat.drug_reteplase, treat.drug_uk,
       treat.vessel_lad, treat.vessel_rca, treat.vessel_lcx, treat.vessel_diagonal, treat.vessel_lmca, treat.vessel_om, treat.vessel_pda, treat.vessel_ramus,
       treat.procedural_success, treat.timi_flow,
       outc.death, outc.stemi_for_nonstemi, outc.remi_for_nstemi, outc.revascularization_recurrent_ischemia, outc.cva_thrombotic, outc.cva_hemorrhagic, outc.major_bleeding, outc.outcome_none, outc.discharge_other_medication,
-      outc.aspirin, outc.statin, outc.beta_blocker, outc.clopidogrel, outc.ticagrelor, outc.nitrate, outc.nicorandil, outc.calcium_channel_blocker, outc.prasugrel, outc.ranolazine, outc.trimetazidine, outc.ivabradine
+      outc.aspirin, outc.statin, outc.beta_blocker, outc.clopidogrel, outc.ticagrelor, outc.nitrate, outc.nicorandil, outc.calcium_channel_blocker, outc.prasugrel, outc.ranolazine, outc.trimetazidine, outc.ivabradine,
+      hosp.total_cost, hosp.total_hospital_stay_days, hosp.iccu_hours, hosp.stepdown_icu_hours, hosp.floor_days,
+      hosp.bed_charges, hosp.drugs_disposables_cost, hosp.package_cost, hosp.laboratory_cost, hosp.non_invasive_lab_cost, hosp.consultation_cost, hosp.radiology_cost, hosp.miscellaneous_cost
     FROM nstemi_registry n
     LEFT JOIN patient_demographics p ON n.reg_patient_id = p.reg_patient_id
     LEFT JOIN nstemi_administrative adm ON n.nstemi_id = adm.nstemi_id
     LEFT JOIN nstemi_clinical_assessment clin ON n.nstemi_id = clin.nstemi_id
     LEFT JOIN nstemi_treatment_strategy treat ON n.nstemi_id = treat.nstemi_id
     LEFT JOIN nstemi_outcomes outc ON n.nstemi_id = outc.nstemi_id
+    LEFT JOIN nstemi_hospitalization hosp ON n.nstemi_id = hosp.nstemi_id
     WHERE n.is_deleted = 0 OR n.is_deleted IS NULL
     ORDER BY n.nstemi_id ASC
   `;
@@ -444,6 +475,11 @@ async function getNstemiCohortFromDb() {
       chd_risk_factors_ge_3: p.chd_risk_factors_ge_3 === 'Yes',
       prior_coronary_stenosis_gt_50: p.prior_coronary_stenosis_gt_50 === 'Yes',
       st_deviation_at_admission: p.st_deviation_at_admission === 'Yes',
+      elevated_crp: p.elevated_crp === 'Yes' || p.elevated_crp === true,
+      elevated_bnp: p.elevated_bnp === 'Yes' || p.elevated_bnp === true,
+      lvf: p.lvf === 'Yes' || p.lvf === true,
+      vt_vf: p.vt_vf === 'Yes' || p.vt_vf === true,
+      bbb_chb: p.bbb_chb === 'Yes' || p.bbb_chb === true,
       anginal_episodes_ge_2_last_24hrs: p.anginal_episodes_ge_2_last_24hrs === 'Yes',
       elevated_serum_cardiac_markers: p.elevated_serum_cardiac_markers === 'Yes',
       treatmentStrategy: strategy,
@@ -498,7 +534,25 @@ async function getNstemiCohortFromDb() {
       discharge_prasugrel: p.prasugrel === 'Yes',
       discharge_ranolazine: p.ranolazine === 'Yes',
       discharge_trimetazidine: p.trimetazidine === 'Yes',
-      discharge_ivabradine: p.ivabradine === 'Yes'
+      discharge_ivabradine: p.ivabradine === 'Yes',
+      totalCost: p.total_cost != null ? Number(p.total_cost) : null,
+      total_cost: p.total_cost != null ? Number(p.total_cost) : null,
+      totalStayDays: p.total_hospital_stay_days != null ? Number(p.total_hospital_stay_days) : null,
+      total_hospital_stay_days: p.total_hospital_stay_days != null ? Number(p.total_hospital_stay_days) : null,
+      iccuHours: p.iccu_hours != null ? Number(p.iccu_hours) : null,
+      iccu_hours: p.iccu_hours != null ? Number(p.iccu_hours) : null,
+      stepdownIcuHours: p.stepdown_icu_hours != null ? Number(p.stepdown_icu_hours) : null,
+      stepdown_icu_hours: p.stepdown_icu_hours != null ? Number(p.stepdown_icu_hours) : null,
+      floorDays: p.floor_days != null ? Number(p.floor_days) : null,
+      floor_days: p.floor_days != null ? Number(p.floor_days) : null,
+      bed_charges: p.bed_charges != null ? Number(p.bed_charges) : null,
+      drugs_disposables_cost: p.drugs_disposables_cost != null ? Number(p.drugs_disposables_cost) : null,
+      package_cost: p.package_cost != null ? Number(p.package_cost) : null,
+      laboratory_cost: p.laboratory_cost != null ? Number(p.laboratory_cost) : null,
+      non_invasive_lab_cost: p.non_invasive_lab_cost != null ? Number(p.non_invasive_lab_cost) : null,
+      consultation_cost: p.consultation_cost != null ? Number(p.consultation_cost) : null,
+      radiology_cost: p.radiology_cost != null ? Number(p.radiology_cost) : null,
+      miscellaneous_cost: p.miscellaneous_cost != null ? Number(p.miscellaneous_cost) : null
     };
   });
 }

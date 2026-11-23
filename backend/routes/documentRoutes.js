@@ -4,7 +4,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const db = require("../config/db");
-const { authenticateToken } = require("../middleware/authMiddleware");
+const { authenticateToken, requireRole } = require("../middleware/authMiddleware");
 
 // Configure Multer Storage
 const storage = multer.diskStorage({
@@ -134,8 +134,8 @@ router.get("/:hf_id", authenticateToken, async (req, res) => {
     }
 });
 
-// DELETE Endpoint: Remove Document
-router.delete("/:id", authenticateToken, async (req, res) => {
+// DELETE Endpoint: Remove Document (Restricted to ADMIN, CLINICIAN)
+router.delete("/:id", authenticateToken, requireRole('ADMIN', 'CLINICIAN'), async (req, res) => {
     try {
         const id = req.params.id;
         const { recordset: rows } = await db.query(
