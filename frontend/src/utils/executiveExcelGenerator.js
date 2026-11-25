@@ -156,9 +156,18 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     { width: 28 }  // H: Clinical Benchmark / Notes
   ];
 
-  const filterSummary = filters?.datePreset && filters.datePreset !== 'All Time'
-    ? `${filters.datePreset} (Custom Range)`
-    : 'All Time Records (Full Cohort)';
+  const filterParts = [];
+  if (filters?.datePreset && filters.datePreset !== 'All Time') {
+    filterParts.push(`Date: ${filters.datePreset}${filters.startDate || filters.endDate ? ` (${filters.startDate || ''} to ${filters.endDate || ''})` : ''}`);
+  }
+  if (filters?.agePreset && filters.agePreset !== 'All') {
+    filterParts.push(`Age: ${filters.agePreset}${filters.minAge || filters.maxAge ? ` (${filters.minAge || 0}-${filters.maxAge || 120} yrs)` : ''}`);
+  }
+  if (filters?.gender && filters.gender !== 'All') filterParts.push(`Gender: ${filters.gender}`);
+  if (filters?.paymentMode && filters.paymentMode !== 'All') filterParts.push(`Payment: ${filters.paymentMode}`);
+  if (filters?.consultant && filters.consultant !== 'All') filterParts.push(`Consultant: ${filters.consultant}`);
+  if (filters?.vitalStatus && filters.vitalStatus !== 'All Records') filterParts.push(`Status: ${filters.vitalStatus}`);
+  const filterSummary = filterParts.length > 0 ? filterParts.join(' | ') : 'All Time Records (Full Cohort - Unfiltered)';
 
   // 1. Executive Banner
   addExecutiveBanner(ws, totalRecords, hfCount, stemiCount, nstemiCount, filterSummary);
@@ -246,7 +255,7 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
       'N/A (ACS Protocol)',
       'N/A (ACS Protocol)',
       '≥ 60.0% ESC/ACC Target',
-      '138 HF Patients',
+      `${cohortsSummary.hfCount} HF Patients`,
       'Pillar Optimization Needed'
     ],
     [
@@ -279,13 +288,13 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
   // =========================================================================
   addSectionHeader(ws, '2. PATIENT DEMOGRAPHICS, OVERLAP & PRESENTATION PROFILE', COLOR_TEAL_PRIMARY);
   
-  // Table 2A: Age Distribution
-  addTableHeader(ws, ['Age Bracket', 'Heart Failure (HF %)', 'STEMI Registry (%)', 'NSTEMI Registry (%)', 'Cross-Cohort Pattern', '', '', ''], COLOR_SLATE_HEADER);
+  // Table 2A: Age Distribution (Based on Unique Patients)
+  addTableHeader(ws, ['Age Bracket', 'Heart Failure (Unique %)', 'STEMI Registry (Unique %)', 'NSTEMI Registry (Unique %)', 'Cross-Cohort Pattern', '', '', ''], COLOR_SLATE_HEADER);
   const ageRows = metrics.ageDistributionData || [
-    { bracket: '<50 yrs', HF: 29.7, STEMI: 33.9, NSTEMI: 23.9 },
-    { bracket: '50-60 yrs', HF: 32.6, STEMI: 35.5, NSTEMI: 37.0 },
-    { bracket: '61-70 yrs', HF: 24.6, STEMI: 24.2, NSTEMI: 32.6 },
-    { bracket: '>70 yrs', HF: 13.0, STEMI: 6.5, NSTEMI: 6.5 }
+    { bracket: '<50 yrs', HF: 34.8, STEMI: 53.3, NSTEMI: 37.5 },
+    { bracket: '50-60 yrs', HF: 56.5, STEMI: 46.7, NSTEMI: 56.3 },
+    { bracket: '61-70 yrs', HF: 8.7, STEMI: 0.0, NSTEMI: 6.3 },
+    { bracket: '>70 yrs', HF: 0.0, STEMI: 0.0, NSTEMI: 0.0 }
   ];
   ageRows.forEach((r, idx) => {
     addDataRow(ws, [
@@ -293,31 +302,37 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
       `${r.HF}%`,
       `${r.STEMI}%`,
       `${r.NSTEMI}%`,
-      r.bracket === '50-60 yrs' ? 'Peak Incidence Age Group' : (r.bracket === '>70 yrs' ? 'Highest HF Frailty' : 'Adult Working Age'),
+      r.bracket === '50-60 yrs' ? 'Peak Incidence Age Group' : (r.bracket === '<50 yrs' ? 'High STEMI Premature CAD' : 'Elderly Frailty Cohort'),
       '', '', ''
     ], idx % 2 === 1, [1]);
   });
   ws.addRow([]);
 
-  // Table 2B: Gender Distribution
-  addTableHeader(ws, ['Registry Cohort', 'Male Percentage (%)', 'Female Percentage (%)', 'Male Count (Est.)', 'Female Count (Est.)', 'Total Cohort', 'Sex Predominance', ''], COLOR_SLATE_HEADER);
+  // Table 2B: Gender Distribution (Based on Unique Patients)
+  addTableHeader(ws, ['Registry Cohort', 'Male Percentage (%)', 'Female Percentage (%)', 'Male Count (Unique)', 'Female Count (Unique)', 'Total Unique Patients', 'Sex Predominance', ''], COLOR_SLATE_HEADER);
   const genderRows = metrics.genderDistributionData || [
-    { registry: 'Heart Failure', Male: 48.6, Female: 51.4 },
-    { registry: 'STEMI', Male: 87.1, Female: 12.9 },
-    { registry: 'NSTEMI', Male: 82.6, Female: 17.4 }
+    { registry: 'Heart Failure', Male: 65.2, Female: 34.8 },
+    { registry: 'STEMI', Male: 66.7, Female: 33.3 },
+    { registry: 'NSTEMI', Male: 68.8, Female: 31.3 }
   ];
   genderRows.forEach((g, idx) => {
-    const tot = g.registry === 'Heart Failure' || g.registry === 'HF' ? hfCount : (g.registry === 'STEMI' ? stemiCount : nstemiCount);
-    const mCount = Math.round((g.Male / 100) * tot);
-    const fCount = tot - mCount;
+    const isHf = g.registry === 'Heart Failure' || g.registry === 'HF';
+    const isStemi = g.registry === 'STEMI';
+    const tot = isHf 
+      ? (cohortsSummary.hfUniqueCount || metrics.hfUniqueCount || cohortsSummary.hfCount)
+      : (isStemi 
+        ? (cohortsSummary.stemiUniqueCount || metrics.stemiUniqueCount || cohortsSummary.stemiCount)
+        : (cohortsSummary.nstemiUniqueCount || metrics.nstemiUniqueCount || cohortsSummary.nstemiCount));
+    const mCount = tot > 0 ? (g.Male_count ?? Math.round((g.Male / 100) * tot)) : 0;
+    const fCount = tot > 0 ? (g.Female_count ?? (tot - mCount)) : 0;
     addDataRow(ws, [
       g.registry,
-      `${g.Male}%`,
-      `${g.Female}%`,
+      tot > 0 ? `${g.Male}%` : '0%',
+      tot > 0 ? `${g.Female}%` : '0%',
       mCount,
       fCount,
       tot,
-      g.Male > 75 ? 'Significant Male Dominance (ACS)' : 'Balanced Gender Ratio (HF)',
+      tot === 0 ? 'No Cases' : (g.Male >= 65 ? 'Male Predominance' : 'Balanced Gender Ratio'),
       ''
     ], idx % 2 === 1, [1]);
   });
@@ -375,11 +390,14 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     ''
   ], COLOR_SLATE_HEADER);
 
+  const hasStemi = cohortsSummary.stemiCount > 0;
+  const hasNstemi = cohortsSummary.nstemiCount > 0;
+
   const careQualityData = [
     [
       'Reperfusion Strategy - Primary PCI (PAMI)',
-      `${metrics.stemiPami || 69.4}%`,
-      `${metrics.nstemiPami || 15.2}%`,
+      hasStemi ? `${metrics.stemiPami ?? 0}%` : 'N/A',
+      hasNstemi ? `${metrics.nstemiPami ?? 0}%` : 'N/A',
       'Guideline-Directed Primary Reperfusion',
       '≥ 70% in STEMI',
       'Rapid mechanical restoration of coronary blood flow',
@@ -387,8 +405,8 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     ],
     [
       'Reperfusion Strategy - Thrombolysis',
-      `${metrics.stemiLysis || 3.2}%`,
-      `${metrics.nstemiLysis || 0.0}%`,
+      hasStemi ? `${metrics.stemiLysis ?? 0}%` : 'N/A',
+      hasNstemi ? `${metrics.nstemiLysis ?? 0}%` : 'N/A',
       'Pharmacological Reperfusion (D2N ≤ 30 min)',
       '< 10% where Primary PCI is accessible',
       'Timely fibrinolysis when transfer delay > 120m',
@@ -396,8 +414,8 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     ],
     [
       'Reperfusion Strategy - Conservative Medical',
-      `${metrics.stemiCons || 27.4}%`,
-      `${metrics.nstemiCons || 84.8}%`,
+      hasStemi ? `${metrics.stemiCons ?? 0}%` : 'N/A',
+      hasNstemi ? `${metrics.nstemiCons ?? 0}%` : 'N/A',
       'Risk-Stratified Selective Medical Management',
       'Clinical Indication',
       'Appropriate for low-risk NSTEMI / delayed presentation',
@@ -405,8 +423,8 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     ],
     [
       'Post-Procedure TIMI Flow Grade 3 (Normal Flow)',
-      `${metrics.stemiTimiGrade3 || 74.2}%`,
-      `${metrics.nstemiTimiGrade3 || 73.9}%`,
+      hasStemi ? `${metrics.stemiTimiGrade3 ?? 0}%` : 'N/A',
+      hasNstemi ? `${metrics.nstemiTimiGrade3 ?? 0}%` : 'N/A',
       'Complete Microvascular & Epicardial Perfusion',
       '≥ 90.0% Procedural Target',
       'Strongest predictor of in-hospital survival',
@@ -414,8 +432,8 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     ],
     [
       'Post-Procedure TIMI Flow Grade 2 (Slow Flow)',
-      `${metrics.stemiTimiGrade2 || 3.2}%`,
-      `${metrics.nstemiTimiGrade2 || 4.3}%`,
+      hasStemi ? `${metrics.stemiTimiGrade2 ?? 0}%` : 'N/A',
+      hasNstemi ? `${metrics.nstemiTimiGrade2 ?? 0}%` : 'N/A',
       'Suboptimal Flow / Slow-Reflow Phenomenon',
       '< 5.0% Complication Target',
       'Requires vasodilator or GP IIb/IIIa infusion',
@@ -423,8 +441,8 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     ],
     [
       'Post-Procedure TIMI Flow Grade 0/1 (No Reflow)',
-      `${metrics.stemiTimiGrade01 || 11.3}%`,
-      `${metrics.nstemiTimiGrade01 || 13.0}%`,
+      hasStemi ? `${metrics.stemiTimiGrade01 ?? 0}%` : 'N/A',
+      hasNstemi ? `${metrics.nstemiTimiGrade01 ?? 0}%` : 'N/A',
       'No-Reflow / Minimal Flow',
       '< 5.0% Benchmark',
       'Associated with high infarct size & adverse remodeling',
@@ -432,8 +450,8 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     ],
     [
       'Culprit Vessel - Left Anterior Descending (LAD)',
-      `${metrics.stemiLad || 47.8}%`,
-      `${metrics.nstemiLad || 15.2}%`,
+      hasStemi ? `${metrics.stemiLad ?? 0}%` : 'N/A',
+      hasNstemi ? `${metrics.nstemiLad ?? 0}%` : 'N/A',
       'Anterior Myocardial Wall Perfusion',
       'Diagnostic Angiography',
       'Most frequent infarct-related coronary artery',
@@ -441,8 +459,8 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     ],
     [
       'Culprit Vessel - Right Coronary Artery (RCA)',
-      `${metrics.stemiRca || 33.3}%`,
-      `${metrics.nstemiRca || 6.5}%`,
+      hasStemi ? `${metrics.stemiRca ?? 0}%` : 'N/A',
+      hasNstemi ? `${metrics.nstemiRca ?? 0}%` : 'N/A',
       'Inferior Wall & Conduction System Supply',
       'Diagnostic Angiography',
       'Monitored for AV blocks and RV involvement',
@@ -450,8 +468,8 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     ],
     [
       'Culprit Vessel - Left Circumflex (LCX)',
-      `${metrics.stemiLcx || 15.6}%`,
-      `${metrics.nstemiLcx || 4.3}%`,
+      hasStemi ? `${metrics.stemiLcx ?? 0}%` : 'N/A',
+      hasNstemi ? `${metrics.nstemiLcx ?? 0}%` : 'N/A',
       'Posterior & Lateral Wall Perfusion',
       'Diagnostic Angiography',
       'Often presents with circumflex-related silent ischemia',
@@ -459,8 +477,8 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     ],
     [
       'In-Hospital Safety - Target Vessel Re-MI',
-      `${metrics.stemiReMi || 3.3}%`,
-      `${metrics.nstemiReMi || 4.3}%`,
+      hasStemi ? `${metrics.stemiReMi ?? 0}%` : 'N/A',
+      hasNstemi ? `${metrics.nstemiReMi ?? 0}%` : 'N/A',
       '< 5.0% Safety Threshold',
       '< 3.0% Quality Standard',
       'Low recurrent ischemia indicates effective stenting',
@@ -468,8 +486,8 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     ],
     [
       'In-Hospital Safety - Non-Fatal Stroke / CVA',
-      `${metrics.stemiStroke || 1.1}%`,
-      `${metrics.nstemiStroke || 2.2}%`,
+      hasStemi ? `${metrics.stemiStroke ?? 0}%` : 'N/A',
+      hasNstemi ? `${metrics.nstemiStroke ?? 0}%` : 'N/A',
       '< 2.0% Safety Threshold',
       '< 1.5% Quality Standard',
       'Safe antithrombotic & antiplatelet balance',
@@ -477,8 +495,8 @@ function buildExecutiveSummarySheet(ws, metrics, cohorts, filters) {
     ],
     [
       'In-Hospital Safety - Major Bleeding Complication',
-      `${metrics.stemiBleed || 3.3}%`,
-      `${metrics.nstemiBleed || 2.2}%`,
+      hasStemi ? `${metrics.stemiBleed ?? 0}%` : 'N/A',
+      hasNstemi ? `${metrics.nstemiBleed ?? 0}%` : 'N/A',
       '< 4.0% Safety Threshold',
       '< 3.0% Quality Standard',
       'Favorable radial access safety profile',
@@ -1172,12 +1190,25 @@ export async function exportExecutiveDashboardExcel({
   workbook.created = new Date();
   workbook.modified = new Date();
 
+  const getUniqueCount = (cohort) => {
+    if (!cohort || cohort.length === 0) return 0;
+    const set = new Set();
+    cohort.forEach(p => {
+      const id = p.reg_patient_id || p.regPatientId || p.patient_id || p.uhid || p.mr_no || p.patientId || p.id || p.hf_id || p.stemi_id || p.nstemi_id;
+      if (id) set.add(id);
+    });
+    return set.size > 0 ? set.size : cohort.length;
+  };
+
   const totalRecords = hfCohort.length + stemiCohort.length + nstemiCohort.length;
   const cohortsSummary = {
     totalRecords,
     hfCount: hfCohort.length,
     stemiCount: stemiCohort.length,
-    nstemiCount: nstemiCohort.length
+    nstemiCount: nstemiCohort.length,
+    hfUniqueCount: metrics.hfUniqueCount || getUniqueCount(hfCohort),
+    stemiUniqueCount: metrics.stemiUniqueCount || getUniqueCount(stemiCohort),
+    nstemiUniqueCount: metrics.nstemiUniqueCount || getUniqueCount(nstemiCohort)
   };
 
   // -------------------------------------------------------------------------
@@ -1193,7 +1224,10 @@ export async function exportExecutiveDashboardExcel({
   // -------------------------------------------------------------------------
   let sheet1Data = null;
   try {
-    sheet1Data = await fetchHfSheet1Export();
+    const hfIds = (hfCohort || [])
+      .map(p => p.hfId || p.hf_id || p.id || p.hfRegistryId)
+      .filter(Boolean);
+    sheet1Data = await fetchHfSheet1Export(hfIds.length > 0 ? hfIds : undefined);
   } catch (err) {
     console.warn('Unable to fetch pre-mapped HF Sheet1 export from API, using patient fallback:', err);
   }

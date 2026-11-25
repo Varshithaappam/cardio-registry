@@ -1081,13 +1081,23 @@ export function computeAcsAnalytics(cohort = [], registryType = 'STEMI') {
   defaultStrategies.forEach(k => { strategyCounts[k] = 0; });
 
   cohort.forEach(p => {
-    let s = p.treatmentStrategy || 'Conservative';
-    if (s === 'Early Invasive') s = 'PAMI';
-    else if (s === 'Selective Invasive') s = 'Conservative';
-    else if (s === 'Unspecified / Deferred' || s === 'Unspecified') {
-      s = 'Conservative';
+    const isPami = p.pami === true || p.pami === 'Yes' || p.pami === 1 || p.pami === '1' || String(p.treatmentStrategy || '').includes('PAMI') || String(p.treatmentStrategy || '').includes('Early Invasive');
+    const isLysis = p.thrombolysis === true || p.thrombolysis === 'Yes' || p.thrombolysis === 1 || p.thrombolysis === '1' || String(p.treatmentStrategy || '').toLowerCase().includes('thrombo') || String(p.treatmentStrategy || '').toLowerCase().includes('lysis');
+    const isCons = p.conservative === true || p.conservative === 'Yes' || p.conservative === 1 || p.conservative === '1' || String(p.treatmentStrategy || '').toLowerCase().includes('cons') || String(p.treatmentStrategy || '').includes('Selective Invasive');
+
+    if (isLysis) {
+      strategyCounts['Thrombolysis'] = (strategyCounts['Thrombolysis'] || 0) + 1;
+    } else if (isPami) {
+      strategyCounts['PAMI'] = (strategyCounts['PAMI'] || 0) + 1;
+    } else if (isCons) {
+      strategyCounts['Conservative'] = (strategyCounts['Conservative'] || 0) + 1;
+    } else {
+      let s = p.treatmentStrategy || 'Conservative';
+      if (s === 'Early Invasive') s = 'PAMI';
+      else if (s === 'Selective Invasive') s = 'Conservative';
+      else if (s === 'Unspecified / Deferred' || s === 'Unspecified') s = 'Conservative';
+      strategyCounts[s] = (strategyCounts[s] || 0) + 1;
     }
-    strategyCounts[s] = (strategyCounts[s] || 0) + 1;
   });
 
   const treatmentStrategy = Object.entries(strategyCounts)

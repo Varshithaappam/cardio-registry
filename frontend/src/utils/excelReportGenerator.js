@@ -97,9 +97,22 @@ export function buildSheet1(workbook, patients, sheet1Data = null, wsSheet1 = nu
 
   // If backend provided pre-processed sheet1Data adhering to literal column name mapping rules
   if (sheet1Data && Array.isArray(sheet1Data.headers) && Array.isArray(sheet1Data.rows)) {
-    const allowedHfIds = new Set((patients || []).map(p => Number(p.hfId)).filter(Boolean));
-    const allowedUhids = new Set((patients || []).map(p => String(p.uhid || '').trim().toUpperCase()).filter(Boolean));
-    const filterActive = Boolean(patients && patients.length > 0 && (allowedHfIds.size > 0 || allowedUhids.size > 0));
+    const allowedHfIds = new Set(
+      (patients || [])
+        .map(p => {
+          const raw = p.hfId || p.hf_id || p.id || p.hfRegistryId;
+          const num = raw != null ? parseInt(String(raw).replace(/\D/g, ''), 10) : null;
+          return !isNaN(num) && num > 0 ? num : null;
+        })
+        .filter(Boolean)
+    );
+    const allowedUhids = new Set(
+      (patients || [])
+        .flatMap(p => [p.uhid, p.mr_no, p.patient_id, p.patientId, p.reg_patient_id, p.regPatientId])
+        .filter(Boolean)
+        .map(u => String(u).trim().toUpperCase())
+    );
+    const filterActive = Boolean(patients && (allowedHfIds.size > 0 || allowedUhids.size > 0));
 
     // If filters are active, match the filtered cohort by HF ID or UHID
     const filteredRows = sheet1Data.rows.filter(rowVals => {
@@ -112,7 +125,7 @@ export function buildSheet1(workbook, patients, sheet1Data = null, wsSheet1 = nu
 
       // Check UHID / Identifier (column index 1)
       const rowUhid = String(rowVals[1] || '').trim().toUpperCase();
-      if (rowUhid && allowedUhids.has(rowUhid)) return true;
+      if (rowUhid && (allowedUhids.has(rowUhid) || [...allowedUhids].some(u => rowUhid.includes(u) || u.includes(rowUhid)))) return true;
 
       return false;
     });

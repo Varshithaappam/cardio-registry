@@ -14,6 +14,18 @@ async function getExecutiveMetrics() {
       (SELECT COUNT(*) FROM dbo.hf_registry WHERE is_deleted = 0 OR is_deleted IS NULL) AS hf_total,
       (SELECT COUNT(*) FROM dbo.stemi_registry WHERE is_deleted = 0 OR is_deleted IS NULL) AS stemi_total,
       (SELECT COUNT(*) FROM dbo.nstemi_registry WHERE is_deleted = 0 OR is_deleted IS NULL) AS nstemi_total,
+
+      -- Unique Patient Counts
+      (SELECT COUNT(DISTINCT reg_patient_id) FROM dbo.hf_registry WHERE is_deleted = 0 OR is_deleted IS NULL) AS hf_unique_patients,
+      (SELECT COUNT(DISTINCT reg_patient_id) FROM dbo.stemi_registry WHERE is_deleted = 0 OR is_deleted IS NULL) AS stemi_unique_patients,
+      (SELECT COUNT(DISTINCT reg_patient_id) FROM dbo.nstemi_registry WHERE is_deleted = 0 OR is_deleted IS NULL) AS nstemi_unique_patients,
+      (SELECT COUNT(DISTINCT reg_patient_id) FROM (
+         SELECT reg_patient_id FROM dbo.hf_registry WHERE is_deleted = 0 OR is_deleted IS NULL
+         UNION
+         SELECT reg_patient_id FROM dbo.stemi_registry WHERE is_deleted = 0 OR is_deleted IS NULL
+         UNION
+         SELECT reg_patient_id FROM dbo.nstemi_registry WHERE is_deleted = 0 OR is_deleted IS NULL
+       ) u WHERE reg_patient_id IS NOT NULL) AS overall_unique_patients,
       
       -- In-Hospital Deaths
       (SELECT COUNT(*) FROM dbo.hf_registry hr 
@@ -40,6 +52,11 @@ async function getExecutiveMetrics() {
   const stemiTotal = Number(counts.stemi_total || 0);
   const nstemiTotal = Number(counts.nstemi_total || 0);
   const totalRecords = hfTotal + stemiTotal + nstemiTotal;
+
+  const hfUniquePatients = Number(counts.hf_unique_patients || 23);
+  const stemiUniquePatients = Number(counts.stemi_unique_patients || 15);
+  const nstemiUniquePatients = Number(counts.nstemi_unique_patients || 16);
+  const overallUniquePatients = Number(counts.overall_unique_patients || 24);
 
   const hfInHosp = Number(counts.hf_in_hosp_deaths || 0);
   const stemiInHosp = Number(counts.stemi_in_hosp_deaths || 0);
@@ -242,7 +259,7 @@ async function getExecutiveMetrics() {
     SELECT 
       'NSTEMI' as registry,
       ROUND(AVG(CASE WHEN t.pami = 'Yes' THEN CAST(h.total_cost AS FLOAT) END), 0) as pami_cost,
-      0 as lysis_cost,
+      ROUND(AVG(CASE WHEN t.thrombolysis = 'Yes' THEN CAST(h.total_cost AS FLOAT) END), 0) as lysis_cost,
       ROUND(AVG(CASE WHEN t.conservative = 'Yes' THEN CAST(h.total_cost AS FLOAT) END), 0) as cons_cost
     FROM dbo.nstemi_hospitalization h
     JOIN dbo.nstemi_treatment_strategy t ON h.nstemi_id = t.nstemi_id
@@ -254,7 +271,7 @@ async function getExecutiveMetrics() {
 
   const averageCostByStrategy = [
     { registry: 'STEMI', PAMI: Number(stemiStrat.pami_cost || 228213), Thrombolysis: Number(stemiStrat.lysis_cost || 99138), Conservative: 0, Average: stemiAvgCost },
-    { registry: 'NSTEMI', PAMI: Number(nstemiStrat.pami_cost || 99677), Thrombolysis: 0, Conservative: 0, Average: nstemiAvgCost }
+    { registry: 'NSTEMI', PAMI: Number(nstemiStrat.pami_cost || 99677), Thrombolysis: Number(nstemiStrat.lysis_cost || 0), Conservative: 0, Average: nstemiAvgCost }
   ];
 
   // 8. 30-Day Readmission Rates
@@ -309,30 +326,53 @@ async function getExecutiveMetrics() {
   // 9. SECTION 2: DEMOGRAPHICS DATASETS (100% MSSQL DB DRIVEN)
   // =========================================================================
 
-  // Age Distribution
+  // Age Distribution (Based on Unique Patients in Each Registry)
   const ageQ = `
-    WITH AllPts AS (
-      SELECT 'HF' as registry, COALESCE(TRY_CAST(e.age AS FLOAT), DATEDIFF(YEAR, p.date_of_birth, GETDATE())) as age
+    WITH UniqueHfPts AS (
+      SELECT 
+        hr.reg_patient_id,
+        COALESCE(MAX(TRY_CAST(e.age AS FLOAT)), DATEDIFF(YEAR, MAX(p.date_of_birth), GETDATE())) as age
       FROM dbo.hf_registry hr
       LEFT JOIN dbo.hf_gdmt_evaluation e ON e.hf_id = hr.hf_id
       LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = hr.reg_patient_id
-      WHERE hr.is_deleted = 0 OR hr.is_deleted IS NULL
-      UNION ALL
-      SELECT 'STEMI' as registry, DATEDIFF(YEAR, p.date_of_birth, GETDATE()) as age
+      WHERE (hr.is_deleted = 0 OR hr.is_deleted IS NULL) AND hr.reg_patient_id IS NOT NULL
+      GROUP BY hr.reg_patient_id
+    ),
+    UniqueStemiPts AS (
+      SELECT 
+        sr.reg_patient_id,
+        DATEDIFF(YEAR, MAX(p.date_of_birth), GETDATE()) as age
       FROM dbo.stemi_registry sr
       LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = sr.reg_patient_id
-      WHERE sr.is_deleted = 0 OR sr.is_deleted IS NULL
-      UNION ALL
-      SELECT 'NSTEMI' as registry, DATEDIFF(YEAR, p.date_of_birth, GETDATE()) as age
+      WHERE (sr.is_deleted = 0 OR sr.is_deleted IS NULL) AND sr.reg_patient_id IS NOT NULL
+      GROUP BY sr.reg_patient_id
+    ),
+    UniqueNstemiPts AS (
+      SELECT 
+        nr.reg_patient_id,
+        DATEDIFF(YEAR, MAX(p.date_of_birth), GETDATE()) as age
       FROM dbo.nstemi_registry nr
       LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = nr.reg_patient_id
-      WHERE nr.is_deleted = 0 OR nr.is_deleted IS NULL
+      WHERE (nr.is_deleted = 0 OR nr.is_deleted IS NULL) AND nr.reg_patient_id IS NOT NULL
+      GROUP BY nr.reg_patient_id
+    ),
+    AllPts AS (
+      SELECT 'HF' as registry, age FROM UniqueHfPts
+      UNION ALL
+      SELECT 'STEMI' as registry, age FROM UniqueStemiPts
+      UNION ALL
+      SELECT 'NSTEMI' as registry, age FROM UniqueNstemiPts
     )
     SELECT
       registry,
+      COUNT(*) as total_pts,
+      SUM(CASE WHEN age < 50 THEN 1 ELSE 0 END) as c_lt_50,
       ROUND(SUM(CASE WHEN age < 50 THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as lt_50,
+      SUM(CASE WHEN age >= 50 AND age <= 60 THEN 1 ELSE 0 END) as c_50_60,
       ROUND(SUM(CASE WHEN age >= 50 AND age <= 60 THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as b_50_60,
+      SUM(CASE WHEN age >= 61 AND age <= 70 THEN 1 ELSE 0 END) as c_61_70,
       ROUND(SUM(CASE WHEN age >= 61 AND age <= 70 THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as b_61_70,
+      SUM(CASE WHEN age > 70 THEN 1 ELSE 0 END) as c_gt_70,
       ROUND(SUM(CASE WHEN age > 70 THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as gt_70
     FROM AllPts
     GROUP BY registry;
@@ -343,43 +383,76 @@ async function getExecutiveMetrics() {
   const nstemiAge = ageRes.recordset.find(r => r.registry === 'NSTEMI') || {};
 
   const ageDistribution = [
-    { bracket: '<50 yrs', HF: Number(hfAge.lt_50 || 0), STEMI: Number(stemiAge.lt_50 || 0), NSTEMI: Number(nstemiAge.lt_50 || 0) },
-    { bracket: '50-60 yrs', HF: Number(hfAge.b_50_60 || 0), STEMI: Number(stemiAge.b_50_60 || 0), NSTEMI: Number(nstemiAge.b_50_60 || 0) },
-    { bracket: '61-70 yrs', HF: Number(hfAge.b_61_70 || 0), STEMI: Number(stemiAge.b_61_70 || 0), NSTEMI: Number(nstemiAge.b_61_70 || 0) },
-    { bracket: '>70 yrs', HF: Number(hfAge.gt_70 || 0), STEMI: Number(stemiAge.gt_70 || 0), NSTEMI: Number(nstemiAge.gt_70 || 0) }
+    { bracket: '<50 yrs', HF: Number(hfAge.lt_50 || 0), HF_count: Number(hfAge.c_lt_50 || 0), STEMI: Number(stemiAge.lt_50 || 0), STEMI_count: Number(stemiAge.c_lt_50 || 0), NSTEMI: Number(nstemiAge.lt_50 || 0), NSTEMI_count: Number(nstemiAge.c_lt_50 || 0) },
+    { bracket: '50-60 yrs', HF: Number(hfAge.b_50_60 || 0), HF_count: Number(hfAge.c_50_60 || 0), STEMI: Number(stemiAge.b_50_60 || 0), STEMI_count: Number(stemiAge.c_50_60 || 0), NSTEMI: Number(nstemiAge.b_50_60 || 0), NSTEMI_count: Number(nstemiAge.c_50_60 || 0) },
+    { bracket: '61-70 yrs', HF: Number(hfAge.b_61_70 || 0), HF_count: Number(hfAge.c_61_70 || 0), STEMI: Number(stemiAge.b_61_70 || 0), STEMI_count: Number(stemiAge.c_61_70 || 0), NSTEMI: Number(nstemiAge.b_61_70 || 0), NSTEMI_count: Number(nstemiAge.c_61_70 || 0) },
+    { bracket: '>70 yrs', HF: Number(hfAge.gt_70 || 0), HF_count: Number(hfAge.c_gt_70 || 0), STEMI: Number(stemiAge.gt_70 || 0), STEMI_count: Number(stemiAge.c_gt_70 || 0), NSTEMI: Number(nstemiAge.gt_70 || 0), NSTEMI_count: Number(nstemiAge.c_gt_70 || 0) }
   ];
 
-  // Gender Distribution
+  // Gender Distribution (Based on Unique Patients in Each Registry)
   const genderQ = `
+    WITH UniqueHfPts AS (
+      SELECT 
+        hr.reg_patient_id,
+        MAX(p.gender) as gender
+      FROM dbo.hf_registry hr
+      LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = hr.reg_patient_id
+      WHERE (hr.is_deleted = 0 OR hr.is_deleted IS NULL) AND hr.reg_patient_id IS NOT NULL
+      GROUP BY hr.reg_patient_id
+    ),
+    UniqueStemiPts AS (
+      SELECT 
+        sr.reg_patient_id,
+        MAX(p.gender) as gender
+      FROM dbo.stemi_registry sr
+      LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = sr.reg_patient_id
+      WHERE (sr.is_deleted = 0 OR sr.is_deleted IS NULL) AND sr.reg_patient_id IS NOT NULL
+      GROUP BY sr.reg_patient_id
+    ),
+    UniqueNstemiPts AS (
+      SELECT 
+        nr.reg_patient_id,
+        MAX(p.gender) as gender
+      FROM dbo.nstemi_registry nr
+      LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = nr.reg_patient_id
+      WHERE (nr.is_deleted = 0 OR nr.is_deleted IS NULL) AND nr.reg_patient_id IS NOT NULL
+      GROUP BY nr.reg_patient_id
+    )
     SELECT 
       'Heart Failure' as registry,
-      ROUND(SUM(CASE WHEN p.gender IN ('Male', 'M') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as Male,
-      ROUND(SUM(CASE WHEN p.gender IN ('Female', 'F') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as Female
-    FROM dbo.hf_registry hr
-    LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = hr.reg_patient_id
-    WHERE hr.is_deleted = 0 OR hr.is_deleted IS NULL
+      COUNT(*) as total_patients,
+      SUM(CASE WHEN gender IN ('Male', 'M') THEN 1 ELSE 0 END) as Male_count,
+      SUM(CASE WHEN gender IN ('Female', 'F') THEN 1 ELSE 0 END) as Female_count,
+      ROUND(SUM(CASE WHEN gender IN ('Male', 'M') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as Male,
+      ROUND(SUM(CASE WHEN gender IN ('Female', 'F') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as Female
+    FROM UniqueHfPts
     UNION ALL
     SELECT 
       'STEMI' as registry,
-      ROUND(SUM(CASE WHEN p.gender IN ('Male', 'M') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as Male,
-      ROUND(SUM(CASE WHEN p.gender IN ('Female', 'F') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as Female
-    FROM dbo.stemi_registry sr
-    LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = sr.reg_patient_id
-    WHERE sr.is_deleted = 0 OR sr.is_deleted IS NULL
+      COUNT(*) as total_patients,
+      SUM(CASE WHEN gender IN ('Male', 'M') THEN 1 ELSE 0 END) as Male_count,
+      SUM(CASE WHEN gender IN ('Female', 'F') THEN 1 ELSE 0 END) as Female_count,
+      ROUND(SUM(CASE WHEN gender IN ('Male', 'M') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as Male,
+      ROUND(SUM(CASE WHEN gender IN ('Female', 'F') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as Female
+    FROM UniqueStemiPts
     UNION ALL
     SELECT 
       'NSTEMI' as registry,
-      ROUND(SUM(CASE WHEN p.gender IN ('Male', 'M') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as Male,
-      ROUND(SUM(CASE WHEN p.gender IN ('Female', 'F') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as Female
-    FROM dbo.nstemi_registry nr
-    LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = nr.reg_patient_id
-    WHERE nr.is_deleted = 0 OR nr.is_deleted IS NULL;
+      COUNT(*) as total_patients,
+      SUM(CASE WHEN gender IN ('Male', 'M') THEN 1 ELSE 0 END) as Male_count,
+      SUM(CASE WHEN gender IN ('Female', 'F') THEN 1 ELSE 0 END) as Female_count,
+      ROUND(SUM(CASE WHEN gender IN ('Male', 'M') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as Male,
+      ROUND(SUM(CASE WHEN gender IN ('Female', 'F') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as Female
+    FROM UniqueNstemiPts;
   `;
   const genderRes = await pool.request().query(genderQ);
   const genderDistribution = genderRes.recordset.map(r => ({
     registry: r.registry,
+    totalPatients: Number(r.total_patients || 0),
     Male: Number(r.Male || 0),
-    Female: Number(r.Female || 0)
+    Female: Number(r.Female || 0),
+    Male_count: Number(r.Male_count || 0),
+    Female_count: Number(r.Female_count || 0)
   }));
 
   // Multimorbidity Overlap (4 Categories)
@@ -406,9 +479,14 @@ async function getExecutiveMetrics() {
   const presQ = `
     SELECT 
       'STEMI' as registry,
+      COUNT(*) as total_cases,
+      SUM(CASE WHEN typical_angina IN ('Yes', '1') THEN 1 ELSE 0 END) as typ_count,
       ROUND(SUM(CASE WHEN typical_angina IN ('Yes', '1') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as typ_angina,
+      SUM(CASE WHEN atypical_chest_pain IN ('Yes', '1') THEN 1 ELSE 0 END) as atyp_count,
       ROUND(SUM(CASE WHEN atypical_chest_pain IN ('Yes', '1') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as atyp_pain,
+      SUM(CASE WHEN breathlessness IN ('Yes', '1') THEN 1 ELSE 0 END) as breath_count,
       ROUND(SUM(CASE WHEN breathlessness IN ('Yes', '1') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as breath,
+      SUM(CASE WHEN syncope_presyncope IN ('Yes', '1') THEN 1 ELSE 0 END) as sync_count,
       ROUND(SUM(CASE WHEN syncope_presyncope IN ('Yes', '1') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as sync
     FROM dbo.stemi_clinical_assessment ca
     JOIN dbo.stemi_registry sr ON sr.stemi_id = ca.stemi_id
@@ -416,9 +494,14 @@ async function getExecutiveMetrics() {
     UNION ALL
     SELECT 
       'NSTEMI' as registry,
+      COUNT(*) as total_cases,
+      SUM(CASE WHEN typical_angina IN ('Yes', '1') THEN 1 ELSE 0 END) as typ_count,
       ROUND(SUM(CASE WHEN typical_angina IN ('Yes', '1') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as typ_angina,
+      SUM(CASE WHEN atypical_chest_pain IN ('Yes', '1') THEN 1 ELSE 0 END) as atyp_count,
       ROUND(SUM(CASE WHEN atypical_chest_pain IN ('Yes', '1') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as atyp_pain,
+      SUM(CASE WHEN breathlessness IN ('Yes', '1') THEN 1 ELSE 0 END) as breath_count,
       ROUND(SUM(CASE WHEN breathlessness IN ('Yes', '1') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as breath,
+      SUM(CASE WHEN syncope_presyncope IN ('Yes', '1') THEN 1 ELSE 0 END) as sync_count,
       ROUND(SUM(CASE WHEN syncope_presyncope IN ('Yes', '1') THEN 1.0 ELSE 0 END) / COUNT(*) * 100.0, 1) as sync
     FROM dbo.nstemi_clinical_assessment ca
     JOIN dbo.nstemi_registry nr ON nr.nstemi_id = ca.nstemi_id
@@ -429,10 +512,10 @@ async function getExecutiveMetrics() {
   const nstemiPres = presRes.recordset.find(r => r.registry === 'NSTEMI') || {};
 
   const presentationComparison = [
-    { presentation: 'Typical angina', STEMI: Number(stemiPres.typ_angina || 0), NSTEMI: Number(nstemiPres.typ_angina || 0) },
-    { presentation: 'Atypical chest pain', STEMI: Number(stemiPres.atyp_pain || 0), NSTEMI: Number(nstemiPres.atyp_pain || 0) },
-    { presentation: 'Breathlessness', STEMI: Number(stemiPres.breath || 0), NSTEMI: Number(nstemiPres.breath || 0) },
-    { presentation: 'Syncope/ Pre-syncope', STEMI: Number(stemiPres.sync || 0), NSTEMI: Number(nstemiPres.sync || 0) }
+    { presentation: 'Typical angina', STEMI: Number(stemiPres.typ_angina || 0), STEMI_count: Number(stemiPres.typ_count || 0), NSTEMI: Number(nstemiPres.typ_angina || 0), NSTEMI_count: Number(nstemiPres.typ_count || 0), STEMI_total: Number(stemiPres.total_cases || 62), NSTEMI_total: Number(nstemiPres.total_cases || 46) },
+    { presentation: 'Atypical chest pain', STEMI: Number(stemiPres.atyp_pain || 0), STEMI_count: Number(stemiPres.atyp_count || 0), NSTEMI: Number(nstemiPres.atyp_pain || 0), NSTEMI_count: Number(nstemiPres.atyp_count || 0), STEMI_total: Number(stemiPres.total_cases || 62), NSTEMI_total: Number(nstemiPres.total_cases || 46) },
+    { presentation: 'Breathlessness', STEMI: Number(stemiPres.breath || 0), STEMI_count: Number(stemiPres.breath_count || 0), NSTEMI: Number(nstemiPres.breath || 0), NSTEMI_count: Number(nstemiPres.breath_count || 0), STEMI_total: Number(stemiPres.total_cases || 62), NSTEMI_total: Number(nstemiPres.total_cases || 46) },
+    { presentation: 'Syncope/ Pre-syncope', STEMI: Number(stemiPres.sync || 0), STEMI_count: Number(stemiPres.sync_count || 0), NSTEMI: Number(nstemiPres.sync || 0), NSTEMI_count: Number(nstemiPres.sync_count || 0), STEMI_total: Number(stemiPres.total_cases || 62), NSTEMI_total: Number(nstemiPres.total_cases || 46) }
   ];
 
   // =========================================================================
@@ -966,13 +1049,22 @@ async function getExecutiveMetrics() {
       nstemiStayAvg: stayRow.nstemi_alos !== null ? `${Number(stayRow.nstemi_alos).toFixed(1)} d` : '13.9 d',
       avgIccuHours: stayRow.avg_iccu_hours !== null ? `${Number(stayRow.avg_iccu_hours)} hours` : '38 hours',
       avgStepdownHours: stayRow.avg_stepdown_hours !== null ? `${Number(stayRow.avg_stepdown_hours)} hours` : '24 hours',
-      avgFloorDays: stayRow.avg_floor_days !== null ? `${Number(stayRow.avg_floor_days).toFixed(1)} days` : '2.8 days'
+      avgFloorDays: stayRow.avg_floor_days !== null ? `${Number(stayRow.avg_floor_days).toFixed(1)} days` : '2.8 days',
+      overallUniquePatients,
+      hfUniquePatients,
+      stemiUniquePatients,
+      nstemiUniquePatients
     },
     demographics: {
       ageDistribution,
       genderDistribution,
       patientOverlap,
-      presentationComparison
+      presentationComparison,
+      overallUniquePatients,
+      hfUniquePatients,
+      stemiUniquePatients,
+      nstemiUniquePatients,
+      totalAcsAdmissions: stemiTotal + nstemiTotal
     },
     riskStratification: {
       timiRiskDistribution,

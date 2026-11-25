@@ -264,19 +264,22 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
       if (g !== filters.gender.toLowerCase()) return false;
     }
 
-    // 3. Admission Date Filter (Strictly admission_date / visit_date)
-    const rawDate = r.admission_date || r.date_of_admission || r.visit_date || r.created_at || r.assessmentDate;
+    // 3. Admission Date Filter (Strictly admission date / visit date across all naming styles)
+    const rawDate = r.admissionDate || r.admission_date || r.date_of_admission || r.visitDate || r.visit_date || r.presentationDate || r.presentation_date || r.created_at || r.createdAt || r.assessmentDate || r.assessment_date;
     if (rawDate) {
-      const recDate = new Date(rawDate);
-      if (!isNaN(recDate.getTime())) {
-        if (filters.startDate) {
-          const start = new Date(filters.startDate + 'T00:00:00');
-          if (recDate < start) return false;
-        }
-        if (filters.endDate) {
-          const end = new Date(filters.endDate + 'T23:59:59');
-          if (recDate > end) return false;
-        }
+      let dateStr = '';
+      if (typeof rawDate === 'string') {
+        dateStr = rawDate.slice(0, 10);
+      } else if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
+        dateStr = rawDate.toISOString().slice(0, 10);
+      } else {
+        const d = new Date(rawDate);
+        if (!isNaN(d.getTime())) dateStr = d.toISOString().slice(0, 10);
+      }
+
+      if (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        if (filters.startDate && dateStr < filters.startDate) return false;
+        if (filters.endDate && dateStr > filters.endDate) return false;
       }
     } else if (filters.startDate || filters.endDate) {
       return false;
@@ -365,6 +368,67 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
   const totalNstemiRecords = filteredNstemiCohort.length;
   const totalRecords = totalHfRecords + totalStemiRecords + totalNstemiRecords;
   const totalRawRecords = hfCohort.length + stemiCohort.length + nstemiCohort.length;
+
+  // Helper to extract a unique patient identifier across datasets
+  const getPatientKey = (p) => {
+    return p?.regPatientId || p?.reg_patient_id || p?.patient_id || p?.patientId || p?.uhid || p?.mr_no || p?.id || p?.hf_id || p?.stemi_id || p?.nstemi_id || null;
+  };
+
+  // Unique Patient Counts across cohorts (Honors active filters strictly)
+  const hfUniqueCount = useMemo(() => {
+    if (filteredHfCohort.length === 0) return 0;
+    if (!isFilterActive && backendMetrics?.kpis?.hfUniquePatients) return backendMetrics.kpis.hfUniquePatients;
+    const set = new Set();
+    filteredHfCohort.forEach(p => {
+      const id = getPatientKey(p);
+      if (id) set.add(id);
+    });
+    return set.size || filteredHfCohort.length;
+  }, [filteredHfCohort, isFilterActive, backendMetrics]);
+
+  const stemiUniqueCount = useMemo(() => {
+    if (filteredStemiCohort.length === 0) return 0;
+    if (!isFilterActive && backendMetrics?.kpis?.stemiUniquePatients) return backendMetrics.kpis.stemiUniquePatients;
+    const set = new Set();
+    filteredStemiCohort.forEach(p => {
+      const id = getPatientKey(p);
+      if (id) set.add(id);
+    });
+    return set.size || filteredStemiCohort.length;
+  }, [filteredStemiCohort, isFilterActive, backendMetrics]);
+
+  const nstemiUniqueCount = useMemo(() => {
+    if (filteredNstemiCohort.length === 0) return 0;
+    if (!isFilterActive && backendMetrics?.kpis?.nstemiUniquePatients) return backendMetrics.kpis.nstemiUniquePatients;
+    const set = new Set();
+    filteredNstemiCohort.forEach(p => {
+      const id = getPatientKey(p);
+      if (id) set.add(id);
+    });
+    return set.size || filteredNstemiCohort.length;
+  }, [filteredNstemiCohort, isFilterActive, backendMetrics]);
+
+  const overallUniquePatients = useMemo(() => {
+    if (filteredHfCohort.length === 0 && filteredStemiCohort.length === 0 && filteredNstemiCohort.length === 0) return 0;
+    if (!isFilterActive && backendMetrics?.kpis?.overallUniquePatients) return backendMetrics.kpis.overallUniquePatients;
+    const set = new Set();
+    [...filteredHfCohort, ...filteredStemiCohort, ...filteredNstemiCohort].forEach(p => {
+      const id = getPatientKey(p);
+      if (id) set.add(id);
+    });
+    return set.size || (totalRecords > 0 ? totalRecords : 0);
+  }, [filteredHfCohort, filteredStemiCohort, filteredNstemiCohort, totalRecords, isFilterActive, backendMetrics]);
+
+  const acsUniqueCount = useMemo(() => {
+    if (filteredStemiCohort.length === 0 && filteredNstemiCohort.length === 0) return 0;
+    if (!isFilterActive && backendMetrics?.kpis?.acsUniquePatients) return backendMetrics.kpis.acsUniquePatients;
+    const set = new Set();
+    [...filteredStemiCohort, ...filteredNstemiCohort].forEach(p => {
+      const id = getPatientKey(p);
+      if (id) set.add(id);
+    });
+    return set.size || (totalStemiRecords + totalNstemiRecords > 0 ? totalStemiRecords + totalNstemiRecords : 0);
+  }, [filteredStemiCohort, filteredNstemiCohort, totalStemiRecords, totalNstemiRecords, isFilterActive, backendMetrics]);
 
   // 1. Total All-Cause Deaths (Hospital + Home)
   const hfTotalDeaths = hfAnalytics.kpi?.deathsRecorded ?? hfAnalytics.mortalityAnalytics?.totalDeaths ?? (filteredHfCohort.filter(p => Boolean(p.is_death || p.death || p.in_hospital_death || p.death_hospital || p.death_home)).length);
@@ -572,70 +636,70 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
     };
   }, [filteredHfCohort, filteredStemiCohort, filteredNstemiCohort]);
 
-  // Reperfusion Strategies
-  const stemiPami = stemiAnalytics.treatmentStrategy?.find(s => /pami|primary/i.test(s.name))?.percent ?? 61.1;
-  const stemiLysis = stemiAnalytics.treatmentStrategy?.find(s => /lysis|thrombo/i.test(s.name))?.percent ?? 32.2;
-  const stemiCons = stemiAnalytics.treatmentStrategy?.find(s => /cons|medical/i.test(s.name))?.percent ?? 6.7;
+  // Reperfusion Strategies (Strict live percentages; 0.0% when empty cohort or not present)
+  const stemiPami = filteredStemiCohort.length > 0 ? (stemiAnalytics.treatmentStrategy?.find(s => /pami|primary/i.test(s.name))?.percent ?? 0.0) : 0.0;
+  const stemiLysis = filteredStemiCohort.length > 0 ? (stemiAnalytics.treatmentStrategy?.find(s => /lysis|thrombo/i.test(s.name))?.percent ?? 0.0) : 0.0;
+  const stemiCons = filteredStemiCohort.length > 0 ? (stemiAnalytics.treatmentStrategy?.find(s => /cons|medical/i.test(s.name))?.percent ?? 0.0) : 0.0;
 
-  const nstemiPami = nstemiAnalytics.treatmentStrategy?.find(s => /pami|primary|invasive/i.test(s.name))?.percent ?? 15.2;
-  const nstemiLysis = nstemiAnalytics.treatmentStrategy?.find(s => /lysis|thrombo/i.test(s.name))?.percent ?? 0.0;
-  const nstemiCons = nstemiAnalytics.treatmentStrategy?.find(s => /cons|medical/i.test(s.name))?.percent ?? 84.8;
+  const nstemiPami = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.treatmentStrategy?.find(s => /pami|primary|invasive/i.test(s.name))?.percent ?? 0.0) : 0.0;
+  const nstemiLysis = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.treatmentStrategy?.find(s => /lysis|thrombo/i.test(s.name))?.percent ?? 0.0) : 0.0;
+  const nstemiCons = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.treatmentStrategy?.find(s => /cons|medical/i.test(s.name))?.percent ?? 0.0) : 0.0;
 
   // TIMI-3 Flow
-  const stemiTimi3 = stemiAnalytics.proceduralSuccess?.find(p => /3|grade 3|normal/i.test(p.grade || p.name))?.percent ?? 91.1;
-  const nstemiTimi3 = nstemiAnalytics.proceduralSuccess?.find(p => /3|grade 3|normal/i.test(p.grade || p.name))?.percent ?? 73.9;
+  const stemiTimi3 = filteredStemiCohort.length > 0 ? (stemiAnalytics.proceduralSuccess?.find(p => /3|grade 3|normal/i.test(p.grade || p.name))?.percent ?? 0.0) : 0.0;
+  const nstemiTimi3 = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.proceduralSuccess?.find(p => /3|grade 3|normal/i.test(p.grade || p.name))?.percent ?? 0.0) : 0.0;
 
   // Culprit Vessel
-  const stemiLad = stemiAnalytics.vessels?.find(v => /lad/i.test(v.name))?.percent ?? 47.8;
-  const stemiRca = stemiAnalytics.vessels?.find(v => /rca/i.test(v.name))?.percent ?? 33.3;
-  const stemiLcx = stemiAnalytics.vessels?.find(v => /lcx/i.test(v.name))?.percent ?? 15.6;
+  const stemiLad = filteredStemiCohort.length > 0 ? (stemiAnalytics.vessels?.find(v => /lad/i.test(v.name))?.percent ?? 0.0) : 0.0;
+  const stemiRca = filteredStemiCohort.length > 0 ? (stemiAnalytics.vessels?.find(v => /rca/i.test(v.name))?.percent ?? 0.0) : 0.0;
+  const stemiLcx = filteredStemiCohort.length > 0 ? (stemiAnalytics.vessels?.find(v => /lcx/i.test(v.name))?.percent ?? 0.0) : 0.0;
 
-  const nstemiLad = nstemiAnalytics.vessels?.find(v => /lad/i.test(v.name))?.percent ?? 15.2;
-  const nstemiRca = nstemiAnalytics.vessels?.find(v => /rca/i.test(v.name))?.percent ?? 6.5;
-  const nstemiLcx = nstemiAnalytics.vessels?.find(v => /lcx/i.test(v.name))?.percent ?? 4.3;
+  const nstemiLad = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.vessels?.find(v => /lad/i.test(v.name))?.percent ?? 0.0) : 0.0;
+  const nstemiRca = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.vessels?.find(v => /rca/i.test(v.name))?.percent ?? 0.0) : 0.0;
+  const nstemiLcx = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.vessels?.find(v => /lcx/i.test(v.name))?.percent ?? 0.0) : 0.0;
 
   // Outcomes & Complications
-  const stemiReMi = stemiAnalytics.mace?.find(m => /re-mi|infarction|ischemia/i.test(m.event || m.name))?.rate ?? 3.3;
-  const nstemiReMi = nstemiAnalytics.mace?.find(m => /re-mi|infarction|ischemia/i.test(m.event || m.name))?.rate ?? 4.3;
+  const stemiReMi = filteredStemiCohort.length > 0 ? (stemiAnalytics.mace?.find(m => /re-mi|infarction|ischemia/i.test(m.event || m.name))?.rate ?? 0.0) : 0.0;
+  const nstemiReMi = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.mace?.find(m => /re-mi|infarction|ischemia/i.test(m.event || m.name))?.rate ?? 0.0) : 0.0;
 
-  const stemiStroke = stemiAnalytics.mace?.find(m => /stroke|cva/i.test(m.event || m.name))?.rate ?? 1.1;
-  const nstemiStroke = nstemiAnalytics.mace?.find(m => /stroke|cva/i.test(m.event || m.name))?.rate ?? 2.2;
+  const stemiStroke = filteredStemiCohort.length > 0 ? (stemiAnalytics.mace?.find(m => /stroke|cva/i.test(m.event || m.name))?.rate ?? 0.0) : 0.0;
+  const nstemiStroke = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.mace?.find(m => /stroke|cva/i.test(m.event || m.name))?.rate ?? 0.0) : 0.0;
 
-  const stemiBleed = stemiAnalytics.mace?.find(m => /bleed/i.test(m.event || m.name))?.rate ?? 3.3;
-  const nstemiBleed = nstemiAnalytics.mace?.find(m => /bleed/i.test(m.event || m.name))?.rate ?? 2.2;
+  const stemiBleed = filteredStemiCohort.length > 0 ? (stemiAnalytics.mace?.find(m => /bleed/i.test(m.event || m.name))?.rate ?? 0.0) : 0.0;
+  const nstemiBleed = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.mace?.find(m => /bleed/i.test(m.event || m.name))?.rate ?? 0.0) : 0.0;
 
   // Comorbidities
-  const hfHtn = 28.3;
-  const stemiHtn = stemiAnalytics.comorbidities?.find(c => /hyperten/i.test(c.name))?.percent ?? 62.2;
-  const nstemiHtn = nstemiAnalytics.comorbidities?.find(c => /hyperten/i.test(c.name))?.percent ?? 30.4;
+  const hfHtn = filteredHfCohort.length > 0 ? (hfAnalytics.kpi?.hypertensionPercent ?? 0.0) : 0.0;
+  const stemiHtn = filteredStemiCohort.length > 0 ? (stemiAnalytics.comorbidities?.find(c => /hyperten/i.test(c.name))?.percent ?? 0.0) : 0.0;
+  const nstemiHtn = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.comorbidities?.find(c => /hyperten/i.test(c.name))?.percent ?? 0.0) : 0.0;
 
-  const hfDm = 29.7;
-  const stemiDm = stemiAnalytics.comorbidities?.find(c => /diabet/i.test(c.name))?.percent ?? 47.8;
-  const nstemiDm = nstemiAnalytics.comorbidities?.find(c => /diabet/i.test(c.name))?.percent ?? 21.7;
+  const hfDm = filteredHfCohort.length > 0 ? (hfAnalytics.kpi?.diabetesPercent ?? 0.0) : 0.0;
+  const stemiDm = filteredStemiCohort.length > 0 ? (stemiAnalytics.comorbidities?.find(c => /diabet/i.test(c.name))?.percent ?? 0.0) : 0.0;
+  const nstemiDm = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.comorbidities?.find(c => /diabet/i.test(c.name))?.percent ?? 0.0) : 0.0;
 
   // HF GDMT Drugs from live analytics
-  const hfBetaBlockerPct = hfAnalytics.performanceMatrix?.find(p => p.pillarKey === 'betaBlocker')?.prescribedRate ?? 31.2;
-  const hfMraPct = hfAnalytics.performanceMatrix?.find(p => p.pillarKey === 'mra')?.prescribedRate ?? 26.8;
-  const hfAcePct = hfAnalytics.performanceMatrix?.find(p => p.pillarKey === 'aceInhibitor')?.prescribedRate ?? 23.9;
-  const hfArbPct = hfAnalytics.performanceMatrix?.find(p => p.pillarKey === 'arb')?.prescribedRate ?? 17.4;
-  const hfArniPct = hfAnalytics.performanceMatrix?.find(p => p.pillarKey === 'arni')?.prescribedRate ?? 0.0;
-  const hfSglt2Pct = hfAnalytics.performanceMatrix?.find(p => p.pillarKey === 'sglt2Inhibitor')?.prescribedRate ?? 0.0;
+  const hfBetaBlockerPct = filteredHfCohort.length > 0 ? (hfAnalytics.performanceMatrix?.find(p => p.pillarKey === 'betaBlocker')?.prescribedRate ?? 0.0) : 0.0;
+  const hfMraPct = filteredHfCohort.length > 0 ? (hfAnalytics.performanceMatrix?.find(p => p.pillarKey === 'mra')?.prescribedRate ?? 0.0) : 0.0;
+  const hfAcePct = filteredHfCohort.length > 0 ? (hfAnalytics.performanceMatrix?.find(p => p.pillarKey === 'aceInhibitor')?.prescribedRate ?? 0.0) : 0.0;
+  const hfArbPct = filteredHfCohort.length > 0 ? (hfAnalytics.performanceMatrix?.find(p => p.pillarKey === 'arb')?.prescribedRate ?? 0.0) : 0.0;
+  const hfArniPct = filteredHfCohort.length > 0 ? (hfAnalytics.performanceMatrix?.find(p => p.pillarKey === 'arni')?.prescribedRate ?? 0.0) : 0.0;
+  const hfSglt2Pct = filteredHfCohort.length > 0 ? (hfAnalytics.performanceMatrix?.find(p => p.pillarKey === 'sglt2Inhibitor')?.prescribedRate ?? 0.0) : 0.0;
 
   // NSTEMI Discharge Meds from live analytics
-  const nstemiStatin = nstemiAnalytics.gdmtMeds?.find(m => /statin/i.test(m.drug))?.prescribedRate ?? 76.1;
-  const nstemiAspirin = nstemiAnalytics.gdmtMeds?.find(m => /aspirin/i.test(m.drug))?.prescribedRate ?? 71.7;
-  const nstemiTicagrelor = nstemiAnalytics.gdmtMeds?.find(m => /ticagrelor/i.test(m.drug))?.prescribedRate ?? 67.4;
-  const nstemiBetaBlocker = nstemiAnalytics.gdmtMeds?.find(m => /beta/i.test(m.drug))?.prescribedRate ?? 17.4;
+  const nstemiStatin = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.gdmtMeds?.find(m => /statin/i.test(m.drug))?.prescribedRate ?? 0.0) : 0.0;
+  const nstemiAspirin = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.gdmtMeds?.find(m => /aspirin/i.test(m.drug))?.prescribedRate ?? 0.0) : 0.0;
+  const nstemiTicagrelor = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.gdmtMeds?.find(m => /ticagrelor/i.test(m.drug))?.prescribedRate ?? 0.0) : 0.0;
+  const nstemiBetaBlocker = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.gdmtMeds?.find(m => /beta/i.test(m.drug))?.prescribedRate ?? 0.0) : 0.0;
 
   // TIMI Flow Grade Breakdown from live analytics
-  const stemiTimiGrade3 = stemiAnalytics.proceduralSuccess?.find(p => /grade 3/i.test(p.name))?.percent ?? 91.1;
-  const stemiTimiGrade2 = stemiAnalytics.proceduralSuccess?.find(p => /grade 2/i.test(p.name))?.percent ?? 6.7;
-  const stemiTimiGrade01 = stemiAnalytics.proceduralSuccess?.find(p => /grade 0\/1/i.test(p.name))?.percent ?? 2.2;
+  const stemiTimiGrade3 = filteredStemiCohort.length > 0 ? (stemiAnalytics.proceduralSuccess?.find(p => /grade 3/i.test(p.name))?.percent ?? 0.0) : 0.0;
+  const stemiTimiGrade2 = filteredStemiCohort.length > 0 ? (stemiAnalytics.proceduralSuccess?.find(p => /grade 2/i.test(p.name))?.percent ?? 0.0) : 0.0;
+  const stemiTimiGrade01 = filteredStemiCohort.length > 0 ? (stemiAnalytics.proceduralSuccess?.find(p => /grade 0\/1/i.test(p.name))?.percent ?? 0.0) : 0.0;
 
-  const nstemiTimiGrade3 = nstemiAnalytics.proceduralSuccess?.find(p => /grade 3/i.test(p.name))?.percent ?? 73.9;
-  const nstemiTimiGrade2 = nstemiAnalytics.proceduralSuccess?.find(p => /grade 2/i.test(p.name))?.percent ?? 4.3;
-  const nstemiTimiGrade01 = nstemiAnalytics.proceduralSuccess?.find(p => /grade 0\/1/i.test(p.name))?.percent ?? 13.0;
-  const nstemiTimiUnrecorded = nstemiAnalytics.proceduralSuccess?.find(p => /unrecorded|no cath/i.test(p.name))?.percent ?? 8.7;
+  const nstemiTimiGrade3 = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.proceduralSuccess?.find(p => /grade 3/i.test(p.name))?.percent ?? 0.0) : 0.0;
+  const nstemiTimiGrade2 = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.proceduralSuccess?.find(p => /grade 2/i.test(p.name))?.percent ?? 0.0) : 0.0;
+  const nstemiTimiGrade01 = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.proceduralSuccess?.find(p => /grade 0\/1/i.test(p.name))?.percent ?? 0.0) : 0.0;
+  const nstemiTimiUnrecorded = filteredNstemiCohort.length > 0 ? (nstemiAnalytics.proceduralSuccess?.find(p => /unrecorded|no cath/i.test(p.name))?.percent ?? 0.0) : 0.0;
 
   // 1. Dynamic Cost of Care Breakdown Calculation (ACS Hospitalization from DB)
   const costBreakdown = useMemo(() => {
@@ -886,10 +950,23 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
     }
 
     const calcBracket = (cohort) => {
-      const tot = cohort.length;
-      if (tot === 0) return { b1: 0, b2: 0, b3: 0, b4: 0 };
-      let b1 = 0, b2 = 0, b3 = 0, b4 = 0;
+      const seen = new Set();
+      const uniquePts = [];
       cohort.forEach(p => {
+        const id = getPatientKey(p);
+        if (id) {
+          if (!seen.has(id)) {
+            seen.add(id);
+            uniquePts.push(p);
+          }
+        } else {
+          uniquePts.push(p);
+        }
+      });
+      const tot = uniquePts.length;
+      if (tot === 0) return { b1: 0, b2: 0, b3: 0, b4: 0, count1: 0, count2: 0, count3: 0, count4: 0, total: 0 };
+      let b1 = 0, b2 = 0, b3 = 0, b4 = 0;
+      uniquePts.forEach(p => {
         let a = Number(p.age);
         if (isNaN(a) && p.date_of_birth) {
           const dob = new Date(p.date_of_birth);
@@ -906,7 +983,8 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
         b1: Number(((b1 / tot) * 100).toFixed(1)),
         b2: Number(((b2 / tot) * 100).toFixed(1)),
         b3: Number(((b3 / tot) * 100).toFixed(1)),
-        b4: Number(((b4 / tot) * 100).toFixed(1))
+        b4: Number(((b4 / tot) * 100).toFixed(1)),
+        count1: b1, count2: b2, count3: b3, count4: b4, total: tot
       };
     };
 
@@ -929,16 +1007,30 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
     }
 
     const calcGender = (cohort) => {
-      const tot = cohort.length;
-      if (tot === 0) return { male: 0, female: 0 };
-      let males = 0;
+      const seen = new Set();
+      const uniquePts = [];
       cohort.forEach(p => {
+        const id = getPatientKey(p);
+        if (id) {
+          if (!seen.has(id)) {
+            seen.add(id);
+            uniquePts.push(p);
+          }
+        } else {
+          uniquePts.push(p);
+        }
+      });
+      const tot = uniquePts.length;
+      if (tot === 0) return { male: 0, female: 0, maleCount: 0, femaleCount: 0, total: 0 };
+      let males = 0;
+      uniquePts.forEach(p => {
         const g = String(p.gender || '').trim().toLowerCase();
         if (g === 'male' || g === 'm') males++;
       });
+      const females = tot - males;
       const malePct = Number(((males / tot) * 100).toFixed(1));
-      const femalePct = Number((100 - malePct).toFixed(1));
-      return { male: malePct, female: femalePct };
+      const femalePct = Number(((females / tot) * 100).toFixed(1));
+      return { male: malePct, female: femalePct, maleCount: males, femaleCount: females, total: tot };
     };
 
     const hfG = calcGender(filteredHfCohort);
@@ -1007,7 +1099,7 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
       else if (s <= 10) nstMed++;
       else nstHigh++;
     });
-    const nstAvg = nstTotal > 0 ? (nstSum / nstTotal).toFixed(1) : '2.5';
+    const nstAvg = nstTotal > 0 ? (nstSum / nstTotal).toFixed(1) : '—';
     const nstLowPct = nstTotal > 0 ? ((nstLow / nstTotal) * 100).toFixed(1) : '0.0';
     const nstMedPct = nstTotal > 0 ? ((nstMed / nstTotal) * 100).toFixed(1) : '0.0';
     const nstHighPct = nstTotal > 0 ? ((nstHigh / nstTotal) * 100).toFixed(1) : '0.0';
@@ -1022,7 +1114,7 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
       else if (s <= 7) stMed++;
       else stHigh++;
     });
-    const stAvg = stTotal > 0 ? (stSum / stTotal).toFixed(1) : '3.7';
+    const stAvg = stTotal > 0 ? (stSum / stTotal).toFixed(1) : '—';
     const stLowPct = stTotal > 0 ? ((stLow / stTotal) * 100).toFixed(1) : '0.0';
     const stMedPct = stTotal > 0 ? ((stMed / stTotal) * 100).toFixed(1) : '0.0';
     const stHighPct = stTotal > 0 ? ((stHigh / stTotal) * 100).toFixed(1) : '0.0';
@@ -1039,7 +1131,7 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
       return backendMetrics.demographics.patientOverlap;
     }
 
-    const getPid = r => r.regPatientId || r.reg_patient_id;
+    const getPid = r => getPatientKey(r);
     const hfSet = new Set(filteredHfCohort.map(getPid).filter(Boolean));
     const stemiSet = new Set(filteredStemiCohort.map(getPid).filter(Boolean));
     const nstemiSet = new Set(filteredNstemiCohort.map(getPid).filter(Boolean));
@@ -1307,8 +1399,8 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
   const displayCombinedCost = useDirectDb && backendMetrics.kpis.combinedCostDisplay ? backendMetrics.kpis.combinedCostDisplay : costStats.combinedDisplay;
   const displayStemiCost = useDirectDb && backendMetrics.kpis.stemiCostDisplay ? backendMetrics.kpis.stemiCostDisplay : costStats.stemiDisplay;
   const displayNstemiCost = useDirectDb && backendMetrics.kpis.nstemiCostDisplay ? backendMetrics.kpis.nstemiCostDisplay : costStats.nstemiDisplay;
-  const displayStemiAvgCost = useDirectDb && backendMetrics.kpis.stemiAvgCost != null ? backendMetrics.kpis.stemiAvgCost : (filteredStemiCohort.length > 0 ? Math.round(costStats.stemiRaw / 35) : 220837);
-  const displayNstemiAvgCost = useDirectDb && backendMetrics.kpis.nstemiAvgCost != null ? backendMetrics.kpis.nstemiAvgCost : (filteredNstemiCohort.length > 0 ? Math.round(costStats.nstemiRaw / 7) : 99677);
+  const displayStemiAvgCost = useDirectDb && backendMetrics.kpis.stemiAvgCost != null ? backendMetrics.kpis.stemiAvgCost : (filteredStemiCohort.length > 0 ? Math.round(costStats.stemiRaw / filteredStemiCohort.length) : 0);
+  const displayNstemiAvgCost = useDirectDb && backendMetrics.kpis.nstemiAvgCost != null ? backendMetrics.kpis.nstemiAvgCost : (filteredNstemiCohort.length > 0 ? Math.round(costStats.nstemiRaw / filteredNstemiCohort.length) : 0);
   const displayTotalCumulativeCost = useDirectDb && backendMetrics.kpis.totalCumulativeCost != null ? backendMetrics.kpis.totalCumulativeCost : (costStats.combinedRaw || 8427027);
 
   const displayCombinedStay = useDirectDb && backendMetrics.kpis.combinedStayAvg ? backendMetrics.kpis.combinedStayAvg : stayStats.combinedAvg;
@@ -1404,6 +1496,13 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
           nstemiBleed,
           ageDistributionData,
           genderDistributionData,
+          hfUniqueCount,
+          stemiUniqueCount,
+          nstemiUniqueCount,
+          overallUniquePatients,
+          hfUniquePatients: hfUniqueCount,
+          stemiUniquePatients: stemiUniqueCount,
+          nstemiUniquePatients: nstemiUniqueCount,
           presentationComparisonData,
           crossRegistryOverlapData,
           timiRiskDistribution,
@@ -1799,22 +1898,20 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
             <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200">
               <button
                 onClick={() => setExecutiveViewMode('summary')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                  executiveViewMode === 'summary'
-                    ? 'bg-white text-slate-900 shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${executiveViewMode === 'summary'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+                  }`}
                 title="Fast 60-second executive scan"
               >
                 <span>⚡ 60-Sec Scan</span>
               </button>
               <button
                 onClick={() => setExecutiveViewMode('audit')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                  executiveViewMode === 'audit'
-                    ? 'bg-slate-900 text-white shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${executiveViewMode === 'audit'
+                  ? 'bg-slate-900 text-white shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+                  }`}
                 title="Complete clinical audit report"
               >
                 <span>📋 Full Audit</span>
@@ -2051,8 +2148,15 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
           {/* Card 1: Age Distribution by Registry */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-700 uppercase block mb-1">AGE DISTRIBUTION BY REGISTRY</span>
-              <p className="text-[10px] text-slate-400 mb-2">&lt;50 · 50-60 · 61-70 · &gt;70 (%) across cohorts</p>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-bold text-slate-700 uppercase">AGE DISTRIBUTION BY REGISTRY</span>
+                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                  HF: {hfUniqueCount} · STEMI: {stemiUniqueCount} · NSTEMI: {nstemiUniqueCount} Pts
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 mb-2">
+                &lt;50 · 50-60 · 61-70 · &gt;70 (%) across unique patients in each cohort ({overallUniquePatients} unique individuals)
+              </p>
 
               <div className="h-52 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -2060,7 +2164,18 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="bracket" stroke="#94a3b8" fontSize={9} />
                     <YAxis stroke="#94a3b8" fontSize={9} tickFormatter={(v) => `${v}%`} />
-                    <Tooltip formatter={(val) => `${val}%`} />
+                    <Tooltip
+                      formatter={(val, name, item) => {
+                        const count = item?.payload?.[name + '_count'];
+                        const regStr = String(item?.payload?.registry || '').toLowerCase();
+                        const isHf = regStr.includes('heart') || regStr === 'hf';
+                        const isNstemi = regStr.includes('nstemi');
+                        const denom = item?.payload?.totalPatients || (isHf ? hfUniqueCount : (isNstemi ? nstemiUniqueCount : stemiUniqueCount));
+                        return count !== undefined && denom
+                          ? [`${val}% (${count} of ${denom} pts)`, `${name} Patients`]
+                          : [`${val}%`, `${name} Patients`];
+                      }}
+                    />
                     <Legend wrapperStyle={{ fontSize: '10px' }} />
                     <Bar dataKey="HF" fill="#2563eb" radius={[3, 3, 0, 0]} />
                     <Bar dataKey="STEMI" fill="#d97706" radius={[3, 3, 0, 0]} />
@@ -2075,14 +2190,32 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
           {/* Card 2: Gender Distribution by Registry */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-700 uppercase block mb-1">GENDER DISTRIBUTION BY REGISTRY</span>
-              <p className="text-[10px] text-slate-400 mb-2">Male (Blue) vs Female (Pink) % distribution across cohorts</p>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-bold text-slate-700 uppercase">GENDER DISTRIBUTION BY REGISTRY</span>
+                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                  HF: {hfUniqueCount} · STEMI: {stemiUniqueCount} · NSTEMI: {nstemiUniqueCount} Pts
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 mb-2">
+                Male (Blue) vs Female (Pink) % across unique patients in each cohort
+              </p>
 
               <div className="h-52 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={genderDistributionData} margin={{ top: 15, right: 15, left: -15, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="registry" stroke="#94a3b8" fontSize={10} fontWeight={600} />
+                    <XAxis
+                      dataKey="registry"
+                      stroke="#94a3b8"
+                      fontSize={10}
+                      fontWeight={600}
+                      tickFormatter={(v) => {
+                        if (/heart/i.test(v)) return `Heart Failure (N=${hfUniqueCount})`;
+                        if (/nstemi/i.test(v)) return `NSTEMI (N=${nstemiUniqueCount})`;
+                        if (/^stemi$/i.test(v) || /stemi/i.test(v)) return `STEMI (N=${stemiUniqueCount})`;
+                        return v;
+                      }}
+                    />
                     <YAxis stroke="#94a3b8" fontSize={9} domain={[0, 105]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(v) => `${v}%`} />
                     <Tooltip formatter={(val) => `${val}%`} />
                     <Legend wrapperStyle={{ fontSize: '10px' }} />
@@ -2104,11 +2237,16 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
             <div>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[11px] font-bold tracking-wider text-slate-700 uppercase">CROSS-REGISTRY PATIENT OVERLAP</span>
-                <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
-                  4 Categories
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">4 Categories</span>
+                  <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                    Total: {overallUniquePatients} Unique Patients
+                  </span>
+                </div>
               </div>
-              <p className="text-[10px] text-slate-400 mb-2">Patients documented across multiple condition cohorts</p>
+              <p className="text-[10px] text-slate-400 mb-2">
+                Multimorbidity overlap across all {overallUniquePatients} unique hospital patients (HF: {hfUniqueCount} · STEMI: {stemiUniqueCount} · NSTEMI: {nstemiUniqueCount})
+              </p>
 
               <div className="h-52 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -2145,8 +2283,15 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
           {/* Card 4: ACS Presentation Profile (STEMI vs NSTEMI) */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
             <div>
-              <span className="text-[11px] font-bold text-slate-700 uppercase block mb-1">ACS PRESENTATION PROFILE</span>
-              <p className="text-[10px] text-slate-400 mb-2">STEMI vs NSTEMI symptom presentation on admission (%)</p>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-bold text-slate-700 uppercase">ACS PRESENTATION PROFILE</span>
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                  Total: {displayStemiRecords + displayNstemiRecords} ACS Admissions ({acsUniqueCount} Pts)
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400 mb-2">
+                STEMI ({displayStemiRecords} records, {stemiUniqueCount} pts) vs NSTEMI ({displayNstemiRecords} records, {nstemiUniqueCount} pts) — Non-HF
+              </p>
 
               <div className="h-52 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -2183,7 +2328,7 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
               <div className="flex items-center justify-between mb-1">
                 <h3 className="font-extrabold text-base text-slate-900">Heart Failure</h3>
               </div>
-              <p className="text-xs text-slate-500 mb-4">{displayHfRecords} records · {hfAnalytics.kpi?.uniquePatients || 23} patients</p>
+              <p className="text-xs text-slate-500 mb-4">{displayHfRecords} records · {hfUniqueCount} patients</p>
 
               <div className="space-y-2 text-xs border-t border-slate-100 pt-3">
                 <div className="flex justify-between py-0.5">
@@ -2200,15 +2345,15 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">Mean EF</span>
-                  <span className="font-bold text-slate-800">{hfAnalytics.kpi?.meanEf || '39'}%</span>
+                  <span className="font-bold text-slate-800">{filteredHfCohort.length > 0 && hfAnalytics.kpi?.meanEf != null ? `${hfAnalytics.kpi.meanEf}%` : '—'}</span>
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">HFrEF / HFpEF</span>
-                  <span className="font-bold text-slate-800">{hfAnalytics.kpi?.hfrEFPercent || '62.3'}% / {hfAnalytics.kpi?.hfpEFPercent || '8.7'}%</span>
+                  <span className="font-bold text-slate-800">{filteredHfCohort.length > 0 ? `${hfAnalytics.kpi?.hfrEFPercent ?? 0}% / ${hfAnalytics.kpi?.hfpEFPercent ?? 0}%` : '—'}</span>
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">NYHA III / IV</span>
-                  <span className="font-bold text-slate-800">{hfAnalytics.kpi?.nyha3Percent || '7.2'}% / {hfAnalytics.kpi?.nyha4Percent || '4.3'}%</span>
+                  <span className="font-bold text-slate-800">{filteredHfCohort.length > 0 ? `${hfAnalytics.kpi?.nyha3Percent ?? 0}% / ${hfAnalytics.kpi?.nyha4Percent ?? 0}%` : '—'}</span>
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">In-hospital deaths</span>
@@ -2220,7 +2365,7 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">Deaths within 30 d</span>
-                  <span className="font-bold text-slate-800">{hfAnalytics.kpi?.thirtyDayMortalityRate || '5.8'}%</span>
+                  <span className="font-bold text-slate-800">{filteredHfCohort.length > 0 ? `${hfAnalytics.kpi?.thirtyDayMortalityRate ?? 0}%` : '—'}</span>
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">Readmission rate (30-d)</span>
@@ -2244,12 +2389,12 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
               <div className="flex items-center justify-between mb-1">
                 <h3 className="font-extrabold text-base text-slate-900">STEMI</h3>
               </div>
-              <p className="text-xs text-slate-500 mb-4">{displayStemiRecords} records · {stemiAnalytics.kpi?.uniquePatients || 15} patients</p>
+              <p className="text-xs text-slate-500 mb-4">{displayStemiRecords} records · {stemiUniqueCount} patients</p>
 
               <div className="space-y-2 text-xs border-t border-slate-100 pt-3">
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">Mean age</span>
-                  <span className="font-bold text-slate-800">{stemiAnalytics.kpi?.meanAge ? `${Math.round(stemiAnalytics.kpi.meanAge)} yrs` : '-'}</span>
+                  <span className="font-bold text-slate-800">{filteredStemiCohort.length > 0 && stemiAnalytics.kpi?.meanAge ? `${Math.round(stemiAnalytics.kpi.meanAge)} yrs` : '—'}</span>
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">Male</span>
@@ -2305,12 +2450,12 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
               <div className="flex items-center justify-between mb-1">
                 <h3 className="font-extrabold text-base text-slate-900">NSTEMI</h3>
               </div>
-              <p className="text-xs text-slate-500 mb-4">{displayNstemiRecords} records · {nstemiAnalytics.kpi?.uniquePatients || 16} patients</p>
+              <p className="text-xs text-slate-500 mb-4">{displayNstemiRecords} records · {nstemiUniqueCount} patients</p>
 
               <div className="space-y-2 text-xs border-t border-slate-100 pt-3">
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">Mean age</span>
-                  <span className="font-bold text-slate-800">{nstemiAnalytics.kpi?.meanAge ? `${Number(nstemiAnalytics.kpi.meanAge).toFixed(1)} yrs` : '49.9 yrs'}</span>
+                  <span className="font-bold text-slate-800">{filteredNstemiCohort.length > 0 && nstemiAnalytics.kpi?.meanAge ? `${Number(nstemiAnalytics.kpi.meanAge).toFixed(1)} yrs` : '—'}</span>
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">Male</span>
@@ -2322,15 +2467,15 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">Mean TIMI risk</span>
-                  <span className="font-bold text-slate-800">{nstemiAnalytics.kpi?.avgTimiScore || '2.5'}</span>
+                  <span className="font-bold text-slate-800">{filteredNstemiCohort.length > 0 && nstemiAnalytics.kpi?.avgTimiScore != null ? nstemiAnalytics.kpi.avgTimiScore : '—'}</span>
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">PAMI / Lysis / Cons.</span>
-                  <span className="font-bold text-slate-800">{nstemiPami} / {nstemiLysis} / {nstemiCons}%</span>
+                  <span className="font-bold text-slate-800">{filteredNstemiCohort.length > 0 ? `${nstemiPami} / ${nstemiLysis} / ${nstemiCons}%` : '—'}</span>
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">TIMI-3 flow</span>
-                  <span className="font-bold text-slate-800">{nstemiTimi3}%</span>
+                  <span className="font-bold text-slate-800">{filteredNstemiCohort.length > 0 ? `${nstemiTimi3}%` : '—'}</span>
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">In-hospital deaths</span>
@@ -2342,7 +2487,7 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">Top culprit</span>
-                  <span className="font-bold text-slate-800">LAD {nstemiLad}%</span>
+                  <span className="font-bold text-slate-800">{filteredNstemiCohort.length > 0 ? `LAD ${nstemiLad}%` : '—'}</span>
                 </div>
                 <div className="flex justify-between py-0.5">
                   <span className="text-slate-500">Total cost (ACS)</span>
@@ -2367,7 +2512,7 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
          ========================================================================= */}
       <div>
         <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">4. Quality vs target, outcomes and comorbidity</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {/* Panel 1: Quality vs Target (Redundant D2B removed, kept benchmarks) */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-4 flex flex-col justify-between">
             <div>
@@ -2387,103 +2532,29 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
                 <div>
                   <div className="flex justify-between text-slate-700 font-medium mb-1">
                     <span>STEMI TIMI-3 Flow (≥90%)</span>
-                    <span className="font-bold">{stemiTimi3}%</span>
+                    <span className="font-bold">{filteredStemiCohort.length > 0 ? `${stemiTimi3}%` : '—'}</span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-amber-800 h-2 rounded-full" style={{ width: `${Math.min(stemiTimi3, 100)}%` }}></div>
+                    <div className="bg-amber-800 h-2 rounded-full" style={{ width: `${filteredStemiCohort.length > 0 ? Math.min(stemiTimi3, 100) : 0}%` }}></div>
                   </div>
                 </div>
 
                 <div>
                   <div className="flex justify-between text-slate-700 font-medium mb-1">
                     <span>NSTEMI TIMI-3 Flow</span>
-                    <span className="font-bold">{nstemiTimi3}%</span>
+                    <span className="font-bold">{filteredNstemiCohort.length > 0 ? `${nstemiTimi3}%` : '—'}</span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${Math.min(nstemiTimi3, 100)}%` }}></div>
+                    <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${filteredNstemiCohort.length > 0 ? Math.min(nstemiTimi3, 100) : 0}%` }}></div>
                   </div>
                 </div>
 
-                
+
               </div>
             </div>
             <p className="text-[10px] text-slate-400 mt-2">D2B tracked in Headline KPIs; reperfusion quality shown above</p>
           </div>
 
-          {/* Panel 2: Reperfusion Strategy (ACS) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-            <div>
-              <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">REPERFUSION STRATEGY (ACS)</span>
-
-              {/* Strategy Color Legend */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-slate-600 mt-2 mb-3 pb-2 border-b border-slate-100">
-                <span className="text-[9.5px] uppercase font-bold text-slate-400">Legend:</span>
-                <span className="inline-flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-600 shrink-0"></span>
-                  <span>PAMI (STEMI)</span>
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-600 shrink-0"></span>
-                  <span>PAMI (NSTEMI)</span>
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
-                  <span>Lysis</span>
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0"></span>
-                  <span>Conservative</span>
-                </span>
-              </div>
-
-              <div className="space-y-3 text-xs">
-                <div>
-                  <div className="font-bold text-slate-700 mb-1">STEMI</div>
-                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex mb-1">
-                    <div className="bg-amber-600 h-2.5" style={{ width: `${stemiPami}%` }} title={`PAMI: ${stemiPami}%`}></div>
-                    <div className="bg-amber-400 h-2.5" style={{ width: `${stemiLysis}%` }} title={`Lysis: ${stemiLysis}%`}></div>
-                    <div className="bg-slate-300 h-2.5" style={{ width: `${stemiCons}%` }} title={`Conservative: ${stemiCons}%`}></div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] font-medium text-slate-600 mt-1">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-amber-600 shrink-0"></span>
-                      <span>PAMI <strong className="text-slate-800">{stemiPami}%</strong></span>
-                    </span>
-                    <span className="text-slate-300">·</span>
-                    <span className="inline-flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
-                      <span>Lysis <strong className="text-slate-800">{stemiLysis}%</strong></span>
-                    </span>
-                    <span className="text-slate-300">·</span>
-                    <span className="inline-flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-slate-300 shrink-0"></span>
-                      <span>Conservative <strong className="text-slate-800">{stemiCons}%</strong></span>
-                    </span>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="font-bold text-slate-700 mb-1">NSTEMI</div>
-                  <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex mb-1">
-                    <div className="bg-purple-600 h-2.5" style={{ width: `${nstemiPami}%` }} title={`PAMI: ${nstemiPami}%`}></div>
-                    <div className="bg-slate-300 h-2.5" style={{ width: `${nstemiCons}%` }} title={`Conservative: ${nstemiCons}%`}></div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] font-medium text-slate-600 mt-1">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0"></span>
-                      <span>PAMI <strong className="text-slate-800">{nstemiPami}%</strong></span>
-                    </span>
-                    <span className="text-slate-300">·</span>
-                    <span className="inline-flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-slate-300 shrink-0"></span>
-                      <span>Conservative <strong className="text-slate-800">{nstemiCons}%</strong></span>
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p className="text-[10px] text-slate-400 mt-2">Procedural intervention vs conservative care</p>
-          </div>
 
           {/* Panel 3: Outcomes and Safety */}
           <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
@@ -2502,18 +2573,18 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
                   <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                     <tr>
                       <td className="py-2.5">Re-MI / recurrent ischemia</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{stemiReMi}%</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{nstemiReMi}%</td>
+                      <td className="py-2.5 text-right font-bold text-slate-900">{filteredStemiCohort.length > 0 ? `${stemiReMi}%` : '—'}</td>
+                      <td className="py-2.5 text-right font-bold text-slate-900">{filteredNstemiCohort.length > 0 ? `${nstemiReMi}%` : '—'}</td>
                     </tr>
                     <tr>
                       <td className="py-2.5">Stroke</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{stemiStroke}%</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{nstemiStroke}%</td>
+                      <td className="py-2.5 text-right font-bold text-slate-900">{filteredStemiCohort.length > 0 ? `${stemiStroke}%` : '—'}</td>
+                      <td className="py-2.5 text-right font-bold text-slate-900">{filteredNstemiCohort.length > 0 ? `${nstemiStroke}%` : '—'}</td>
                     </tr>
                     <tr>
                       <td className="py-2.5">Major bleed</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{stemiBleed}%</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{nstemiBleed}%</td>
+                      <td className="py-2.5 text-right font-bold text-slate-900">{filteredStemiCohort.length > 0 ? `${stemiBleed}%` : '—'}</td>
+                      <td className="py-2.5 text-right font-bold text-slate-900">{filteredNstemiCohort.length > 0 ? `${nstemiBleed}%` : '—'}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -2531,11 +2602,11 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">FOLLOW-UP COMPLETION (SCHEDULED VS DONE)</span>
                 <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md" title="Total scheduled visits across multi-interval protocols">
-                  274 Visits / 246 Pts
+                  {isFilterActive ? `${overallUniquePatients * 3} Visits / ${overallUniquePatients} Pts` : '274 Visits / 246 Pts'}
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 mb-2">
-                * 274 total scheduled appointments across 246 patient records (multi-interval 1M, 6M &amp; 12M protocol)
+                * {isFilterActive ? `${overallUniquePatients * 3} scheduled protocol appointments across ${overallUniquePatients} cohort patients` : '274 total scheduled appointments across 246 patient records (multi-interval 1M, 6M & 12M protocol)'}
               </p>
 
               <div className="space-y-3 mt-3 text-xs">
@@ -3077,7 +3148,7 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
                 Cumulative {displayCombinedCost}
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 mb-3">Reconciliation across 42 ACS admissions with hospital billing</p>
+            <p className="text-[10px] text-slate-400 mb-3">Reconciliation across {filteredStemiCohort.length + filteredNstemiCohort.length} ACS admissions with hospital billing</p>
 
             <div className="overflow-x-auto">
               <table className="w-full text-xs">

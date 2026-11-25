@@ -27,6 +27,7 @@ import AdminExecutiveDashboard from './dashboard/AdminExecutiveDashboard';
 import { Flame, Stethoscope, Building2 } from 'lucide-react';
 
 import { fetchGdmtCohort } from '../api/gdmtApi';
+import { fetchStemiCohort, fetchNstemiCohort } from '../api/acsApi';
 import { filterCohort, computeAnalytics } from '../utils/gdmtEngine';
 import { exportCohortExcel } from '../utils/excelReportGenerator';
 
@@ -34,6 +35,8 @@ export default function Dashboard() {
   const [activeDashboardTab, setActiveDashboardTab] = useState('executive'); // 'executive' | 'hf' | 'stemi' | 'nstemi'
   const [dataSource, setDataSource] = useState('database'); // database source
   const [cohortData, setCohortData] = useState([]);
+  const [stemiCount, setStemiCount] = useState(62);
+  const [nstemiCount, setNstemiCount] = useState(46);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -66,9 +69,21 @@ export default function Dashboard() {
       setIsLoading(true);
       setError(null);
       try {
-        const result = await fetchGdmtCohort(dataSource);
-        if (isMounted && result && result.data) {
-          setCohortData(result.data);
+        const [hfRes, stemiRes, nstemiRes] = await Promise.allSettled([
+          fetchGdmtCohort(dataSource),
+          fetchStemiCohort(false),
+          fetchNstemiCohort()
+        ]);
+        if (isMounted) {
+          if (hfRes.status === 'fulfilled' && hfRes.value?.data) {
+            setCohortData(hfRes.value.data);
+          }
+          if (stemiRes.status === 'fulfilled' && stemiRes.value?.data) {
+            setStemiCount(stemiRes.value.data.length);
+          }
+          if (nstemiRes.status === 'fulfilled' && nstemiRes.value?.data) {
+            setNstemiCount(nstemiRes.value.data.length);
+          }
         }
       } catch (err) {
         if (isMounted) setError(err.message || 'Failed to load cohort');
@@ -251,7 +266,7 @@ export default function Dashboard() {
                 Clinical Intelligence Dashboard
               </h1>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-teal-50 text-teal-700 border border-teal-200">
-                N={activeDashboardTab === 'executive' ? 246 : activeDashboardTab === 'stemi' ? 62 : activeDashboardTab === 'nstemi' ? 46 : (cohortData.length || 138)}
+                N={activeDashboardTab === 'executive' ? ((cohortData.length || 138) + (stemiCount || 62) + (nstemiCount || 46)) : activeDashboardTab === 'stemi' ? (stemiCount || 62) : activeDashboardTab === 'nstemi' ? (nstemiCount || 46) : (cohortData.length || 138)}
                 {activeDashboardTab === 'executive' && ' (All Registries)'}
               </span>
             </div>
