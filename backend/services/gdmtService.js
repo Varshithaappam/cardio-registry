@@ -136,12 +136,15 @@ function mapDbRowToPatient(row) {
   const deathHospital = String(row.death_hospital).toLowerCase() === 'yes';
   const deathLocation = deathHome ? 'Home' : (deathHospital ? 'Hospital' : null);
 
-  // Comorbidities compilation (strictly from hf_final_clinical_assessment)
+  // Comorbidities compilation (strictly from hf_final_clinical_assessment & patient_demographics)
   const comorbidities = [];
-  const hasDM = String(row.diabetes_mellitus).toLowerCase() === 'yes';
-  const hasHTN = String(row.fa_htn).toLowerCase() === 'yes';
-  const hasRF = String(row.fa_rf).toLowerCase() === 'yes';
+  const hasDM = String(row.diabetes_mellitus).toLowerCase() === 'yes' || String(row.p_dm).toLowerCase() === 'yes';
+  const hasHTN = String(row.fa_htn).toLowerCase() === 'yes' || String(row.p_htn).toLowerCase() === 'yes';
+  const hasRF = String(row.fa_rf).toLowerCase() === 'yes' || String(row.p_rf).toLowerCase() === 'yes';
   const hasCAD = String(row.cad).toLowerCase() === 'yes';
+  const hasSmoking = String(row.fa_smoking).toLowerCase() === 'yes' || String(row.p_smoking).toLowerCase() === 'yes';
+  const hasCopd = String(row.fa_copd).toLowerCase() === 'yes';
+  const hasCva = String(row.fa_cva).toLowerCase() === 'yes' || String(row.history_stroke).toLowerCase() === 'yes';
 
   if (hasDM) comorbidities.push('Diabetes mellitus');
   if (hasHTN) comorbidities.push('Hypertension');
@@ -302,6 +305,17 @@ function mapDbRowToPatient(row) {
     efPercent: ef,
     functionalStatus,
     comorbidities: comorbidities.length > 0 ? comorbidities : ['Hypertension', 'Ischemic Heart Disease'],
+    hasHtn: hasHTN,
+    hasDm: hasDM,
+    hasCad: hasCAD,
+    hasCkd: hasRF,
+    hypertension: hasHTN,
+    diabetes: hasDM,
+    cad: hasCAD,
+    smoking: hasSmoking,
+    copd: hasCopd,
+    cva: hasCva,
+    renalFailure: hasRF,
     death,
     deathDate: row.death_date,
     deathHome,
@@ -361,6 +375,16 @@ async function getPatientsCohort(options = {}) {
           p.pincode,
           fa.death_reason,
           fa.death_note,
+          fa.hypertension AS fa_hypertension,
+          fa.diabetes_mellitus AS fa_diabetes,
+          fa.smoking AS fa_smoking,
+          fa.copd AS fa_copd,
+          fa.cva AS fa_cva,
+          p.hypertension AS p_hypertension,
+          p.diabetes AS p_diabetes,
+          p.smoking AS p_smoking,
+          p.renal_failure AS p_renal_failure,
+          ia.history_stroke,
           ha.visit_id,
           ha.visit_date,
           ha.insurance_mode,
@@ -413,11 +437,38 @@ async function getPatientsCohort(options = {}) {
             diagCombined.includes('ckd')
           );
 
+          const hasHtn = Boolean(
+            row.has_htn ||
+            String(row.fa_hypertension || '').trim().toLowerCase() === 'yes' ||
+            String(row.p_hypertension || '').trim().toLowerCase() === 'yes'
+          );
+          const hasDm = Boolean(
+            row.has_dm ||
+            String(row.fa_diabetes || '').trim().toLowerCase() === 'yes' ||
+            String(row.p_diabetes || '').trim().toLowerCase() === 'yes'
+          );
+          const hasSmoking = Boolean(
+            String(row.fa_smoking || '').trim().toLowerCase() === 'yes' ||
+            String(row.p_smoking || '').trim().toLowerCase() === 'yes'
+          );
+          const hasCopd = Boolean(String(row.fa_copd || '').trim().toLowerCase() === 'yes');
+          const hasCva = Boolean(
+            String(row.fa_cva || '').trim().toLowerCase() === 'yes' ||
+            String(row.history_stroke || '').trim().toLowerCase() === 'yes'
+          );
+          const hasRenalFull = Boolean(
+            hasRenal ||
+            String(row.p_renal_failure || '').trim().toLowerCase() === 'yes'
+          );
+
           const comorbidities = [];
-          if (row.has_dm) comorbidities.push('Diabetes mellitus');
-          if (row.has_htn) comorbidities.push('Hypertension');
-          if (hasRenal) comorbidities.push('Renal failure / CKD');
+          if (hasDm) comorbidities.push('Diabetes mellitus');
+          if (hasHtn) comorbidities.push('Hypertension');
+          if (hasRenalFull) comorbidities.push('Renal failure / CKD');
           if (row.has_cad) comorbidities.push('Coronary Artery Disease (CAD)');
+          if (hasSmoking) comorbidities.push('Smoking');
+          if (hasCopd) comorbidities.push('COPD');
+          if (hasCva) comorbidities.push('CVA / Stroke');
 
           const activeDrugs = [];
           if (row.rx_beta_blocker) activeDrugs.push('Beta Blocker (Bisoprolol/Carvedilol)');
@@ -464,13 +515,16 @@ async function getPatientsCohort(options = {}) {
             efPercent: row.ef_percent,
             functionalStatus: row.nyha_class,
             comorbidities: comorbidities,
-            hasHtn: Boolean(row.has_htn),
-            hasDm: Boolean(row.has_dm),
+            hasHtn,
+            hasDm,
             hasCad: Boolean(row.has_cad),
-            hasCkd: Boolean(row.has_ckd || hasRenal),
-            hypertension: Boolean(row.has_htn),
-            diabetes: Boolean(row.has_dm),
+            hasCkd: Boolean(row.has_ckd || hasRenalFull),
+            hypertension: hasHtn,
+            diabetes: hasDm,
             cad: Boolean(row.has_cad),
+            smoking: hasSmoking,
+            copd: hasCopd,
+            cva: hasCva,
             death: row.is_death === 1 || isDeathHome || isDeathHospital,
             deathDate,
             deathHome: isDeathHome,
@@ -508,7 +562,7 @@ async function getPatientsCohort(options = {}) {
             mra: row.rx_mra,
             sglt2Inhibitor: row.rx_sglt2_inhibitor,
 
-            renalFailure: hasRenal,
+            renalFailure: hasRenalFull,
             otherAdmissionReason: row.other_admission_reason || '',
             previousDiagnosis: row.previous_diagnosis || '',
 
@@ -548,6 +602,7 @@ async function getPatientsCohort(options = {}) {
         p.gender,
         p.hypertension as p_htn,
         p.diabetes as p_dm,
+        p.smoking as p_smoking,
         p.renal_failure as p_rf,
         ha.visit_date,
         ha.discharge_date,
@@ -580,6 +635,7 @@ async function getPatientsCohort(options = {}) {
         fa.hfpef,
         fa.nyha_class_1, fa.nyha_class_2, fa.nyha_class_3, fa.nyha_class_4,
         fa.cad, fa.renal_failure as fa_rf, fa.diabetes_mellitus, fa.hypertension as fa_htn,
+        fa.smoking as fa_smoking, fa.copd as fa_copd, fa.cva as fa_cva,
         fa.mace_death, fa.death_date, fa.death_home, fa.death_hospital, fa.death_reason, fa.death_note,
         t1.carvedilol, t1.bisoprolol, t1.metoprolol_succinate, t1.nebivolol, t1.beta_blocker_other,
         t1.beta_not_used_bradycardia, t1.beta_not_used_heart_blocks, t1.beta_not_used_copd_asthma, t1.beta_not_used_hypotension,
@@ -746,7 +802,7 @@ function calculateCohortAnalytics(patients) {
     const comorbStr = (p.comorbidities || []).join(' ').toLowerCase();
     if (comorbStr.includes('diabet') || comorbStr.includes('dm')) countDM++;
     if (comorbStr.includes('hyperten') || comorbStr.includes('htn')) countHTN++;
-    
+
     const hasRenal = Boolean(
       (p.creatinine !== null && p.creatinine !== undefined && Number(p.creatinine) > 2.5) ||
       p.renalFailure ||

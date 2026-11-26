@@ -68,57 +68,63 @@ async function getExecutiveMetrics() {
   const nstemiTotalDeaths = nstemiInHosp;
   const totalAllCauseDeaths = hfTotalDeaths + stemiTotalDeaths + nstemiTotalDeaths;
 
-  // 2. Cost of Care (STEMI & NSTEMI Hospitalization)
+  // 2. Cost of Care (STEMI & NSTEMI Hospitalization - active non-deleted records only)
   const costQuery = `
     WITH StemiCost AS (
       SELECT 
-        SUM(COALESCE(total_cost, 
-          COALESCE(bed_charges, 0) + COALESCE(drugs_disposables_cost, 0) + COALESCE(package_cost, 0) +
-          COALESCE(laboratory_cost, 0) + COALESCE(non_invasive_lab_cost, 0) + COALESCE(consultation_cost, 0) +
-          COALESCE(radiology_cost, 0) + COALESCE(miscellaneous_cost, 0)
+        SUM(COALESCE(h.total_cost, 
+          COALESCE(h.bed_charges, 0) + COALESCE(h.drugs_disposables_cost, 0) + COALESCE(h.package_cost, 0) +
+          COALESCE(h.laboratory_cost, 0) + COALESCE(h.non_invasive_lab_cost, 0) + COALESCE(h.consultation_cost, 0) +
+          COALESCE(h.radiology_cost, 0) + COALESCE(h.miscellaneous_cost, 0)
         )) AS stemi_cost_raw,
-        SUM(COALESCE(bed_charges, 0)) as bed_charges,
-        SUM(COALESCE(drugs_disposables_cost, 0)) as drugs_disposables_cost,
-        SUM(COALESCE(package_cost, 0)) as package_cost,
-        SUM(COALESCE(laboratory_cost, 0)) as laboratory_cost,
-        SUM(COALESCE(non_invasive_lab_cost, 0)) as non_invasive_lab_cost,
-        SUM(COALESCE(consultation_cost, 0)) as consultation_cost,
-        SUM(COALESCE(radiology_cost, 0)) as radiology_cost,
-        SUM(COALESCE(miscellaneous_cost, 0)) as miscellaneous_cost,
-        COUNT(CASE WHEN total_cost > 0 OR bed_charges > 0 THEN 1 END) as patients_with_cost
-      FROM dbo.stemi_hospitalization
+        SUM(COALESCE(h.bed_charges, 0)) as bed_charges,
+        SUM(COALESCE(h.drugs_disposables_cost, 0)) as drugs_disposables_cost,
+        SUM(COALESCE(h.package_cost, 0)) as package_cost,
+        SUM(COALESCE(h.laboratory_cost, 0)) as laboratory_cost,
+        SUM(COALESCE(h.non_invasive_lab_cost, 0)) as non_invasive_lab_cost,
+        SUM(COALESCE(h.consultation_cost, 0)) as consultation_cost,
+        SUM(COALESCE(h.radiology_cost, 0)) as radiology_cost,
+        SUM(COALESCE(h.miscellaneous_cost, 0)) as miscellaneous_cost,
+        COUNT(CASE WHEN h.total_cost > 0 OR h.bed_charges > 0 OR h.package_cost > 0 THEN 1 END) as patients_with_cost
+      FROM dbo.stemi_hospitalization h
+      JOIN dbo.stemi_registry s ON s.stemi_id = h.stemi_id
+      WHERE s.is_deleted = 0 OR s.is_deleted IS NULL
     ),
     NstemiCost AS (
       SELECT 
-        SUM(COALESCE(total_cost, 
-          COALESCE(bed_charges, 0) + COALESCE(drugs_disposables_cost, 0) + COALESCE(package_cost, 0) +
-          COALESCE(laboratory_cost, 0) + COALESCE(non_invasive_lab_cost, 0) + COALESCE(consultation_cost, 0) +
-          COALESCE(radiology_cost, 0) + COALESCE(miscellaneous_cost, 0)
+        SUM(COALESCE(h.total_cost, 
+          COALESCE(h.bed_charges, 0) + COALESCE(h.drugs_disposables_cost, 0) + COALESCE(h.package_cost, 0) +
+          COALESCE(h.laboratory_cost, 0) + COALESCE(h.non_invasive_lab_cost, 0) + COALESCE(h.consultation_cost, 0) +
+          COALESCE(h.radiology_cost, 0) + COALESCE(h.miscellaneous_cost, 0)
         )) AS nstemi_cost_raw,
-        SUM(COALESCE(bed_charges, 0)) as bed_charges,
-        SUM(COALESCE(drugs_disposables_cost, 0)) as drugs_disposables_cost,
-        SUM(COALESCE(package_cost, 0)) as package_cost,
-        SUM(COALESCE(laboratory_cost, 0)) as laboratory_cost,
-        SUM(COALESCE(non_invasive_lab_cost, 0)) as non_invasive_lab_cost,
-        SUM(COALESCE(consultation_cost, 0)) as consultation_cost,
-        SUM(COALESCE(radiology_cost, 0)) as radiology_cost,
-        SUM(COALESCE(miscellaneous_cost, 0)) as miscellaneous_cost,
-        COUNT(CASE WHEN total_cost > 0 OR bed_charges > 0 THEN 1 END) as patients_with_cost
-      FROM dbo.nstemi_hospitalization
+        SUM(COALESCE(h.bed_charges, 0)) as bed_charges,
+        SUM(COALESCE(h.drugs_disposables_cost, 0)) as drugs_disposables_cost,
+        SUM(COALESCE(h.package_cost, 0)) as package_cost,
+        SUM(COALESCE(h.laboratory_cost, 0)) as laboratory_cost,
+        SUM(COALESCE(h.non_invasive_lab_cost, 0)) as non_invasive_lab_cost,
+        SUM(COALESCE(h.consultation_cost, 0)) as consultation_cost,
+        SUM(COALESCE(h.radiology_cost, 0)) as radiology_cost,
+        SUM(COALESCE(h.miscellaneous_cost, 0)) as miscellaneous_cost,
+        COUNT(CASE WHEN h.total_cost > 0 OR h.bed_charges > 0 OR h.package_cost > 0 THEN 1 END) as patients_with_cost
+      FROM dbo.nstemi_hospitalization h
+      JOIN dbo.nstemi_registry n ON n.nstemi_id = h.nstemi_id
+      WHERE n.is_deleted = 0 OR n.is_deleted IS NULL
     )
     SELECT 
-      s.stemi_cost_raw,
-      n.nstemi_cost_raw,
-      (s.stemi_cost_raw + n.nstemi_cost_raw) AS combined_cost_raw,
-      (s.bed_charges + n.bed_charges) AS total_bed_charges,
-      (s.drugs_disposables_cost + n.drugs_disposables_cost) AS total_drugs_cost,
-      (s.package_cost + n.package_cost) AS total_package_cost,
-      (s.laboratory_cost + n.laboratory_cost) AS total_lab_cost,
-      (s.non_invasive_lab_cost + n.non_invasive_lab_cost) AS total_non_invasive_cost,
-      (s.consultation_cost + n.consultation_cost) AS total_consult_cost,
-      (s.radiology_cost + n.radiology_cost) AS total_radiology_cost,
-      (s.miscellaneous_cost + n.miscellaneous_cost) AS total_misc_cost,
-      (s.patients_with_cost + n.patients_with_cost) AS total_patients_with_cost
+      COALESCE(s.stemi_cost_raw, 0) AS stemi_cost_raw,
+      COALESCE(n.nstemi_cost_raw, 0) AS nstemi_cost_raw,
+      (COALESCE(s.stemi_cost_raw, 0) + COALESCE(n.nstemi_cost_raw, 0)) AS combined_cost_raw,
+      (COALESCE(s.bed_charges, 0) + COALESCE(n.bed_charges, 0)) AS total_bed_charges,
+      (COALESCE(s.drugs_disposables_cost, 0) + COALESCE(n.drugs_disposables_cost, 0)) AS total_drugs_cost,
+      (COALESCE(s.package_cost, 0) + COALESCE(n.package_cost, 0)) AS total_package_cost,
+      (COALESCE(s.laboratory_cost, 0) + COALESCE(n.laboratory_cost, 0)) AS total_lab_cost,
+      (COALESCE(s.non_invasive_lab_cost, 0) + COALESCE(n.non_invasive_lab_cost, 0)) AS total_non_invasive_cost,
+      (COALESCE(s.consultation_cost, 0) + COALESCE(n.consultation_cost, 0)) AS total_consult_cost,
+      (COALESCE(s.radiology_cost, 0) + COALESCE(n.radiology_cost, 0)) AS total_radiology_cost,
+      (COALESCE(s.miscellaneous_cost, 0) + COALESCE(n.miscellaneous_cost, 0)) AS total_misc_cost,
+      s.patients_with_cost AS stemi_patients_with_cost,
+      n.patients_with_cost AS nstemi_patients_with_cost,
+      (COALESCE(s.patients_with_cost, 0) + COALESCE(n.patients_with_cost, 0)) AS total_patients_with_cost
     FROM StemiCost s, NstemiCost n;
   `;
   const costRes = await pool.request().query(costQuery);
@@ -127,6 +133,8 @@ async function getExecutiveMetrics() {
   const stemiCostRaw = Number(costRow.stemi_cost_raw || 0);
   const nstemiCostRaw = Number(costRow.nstemi_cost_raw || 0);
   const combinedCostRaw = Number(costRow.combined_cost_raw || 0);
+  const stemiCostCount = Number(costRow.stemi_patients_with_cost || 0);
+  const nstemiCostCount = Number(costRow.nstemi_patients_with_cost || 0);
   const costDenom = Number(costRow.total_patients_with_cost || 1) || 1;
 
   const formatCr = (val) => {
@@ -134,26 +142,30 @@ async function getExecutiveMetrics() {
     return `₹ ${(val / 10000000).toFixed(2)} Cr`;
   };
 
-  // 3. Length of Stay (ALOS)
+  // 3. Length of Stay (ALOS - active non-deleted records only)
   const stayQuery = `
     WITH CohortStay AS (
       SELECT 
         'STEMI' AS registry,
-        COALESCE(total_hospital_stay_days, (COALESCE(iccu_hours, 0)/24.0 + COALESCE(stepdown_icu_hours, 0)/24.0 + COALESCE(floor_days, 0))) AS stay_days,
-        COALESCE(iccu_hours, 0) as iccu_hours,
-        COALESCE(stepdown_icu_hours, 0) as stepdown_icu_hours,
-        COALESCE(floor_days, 0) as floor_days
-      FROM dbo.stemi_hospitalization
-      WHERE total_hospital_stay_days > 0 OR iccu_hours > 0 OR floor_days > 0
+        COALESCE(h.total_hospital_stay_days, (COALESCE(h.iccu_hours, 0)/24.0 + COALESCE(h.stepdown_icu_hours, 0)/24.0 + COALESCE(h.floor_days, 0))) AS stay_days,
+        COALESCE(h.iccu_hours, 0) as iccu_hours,
+        COALESCE(h.stepdown_icu_hours, 0) as stepdown_icu_hours,
+        COALESCE(h.floor_days, 0) as floor_days
+      FROM dbo.stemi_hospitalization h
+      JOIN dbo.stemi_registry s ON s.stemi_id = h.stemi_id
+      WHERE (s.is_deleted = 0 OR s.is_deleted IS NULL)
+        AND (h.total_hospital_stay_days > 0 OR h.iccu_hours > 0 OR h.floor_days > 0)
       UNION ALL
       SELECT
         'NSTEMI' AS registry,
-        COALESCE(total_hospital_stay_days, (COALESCE(iccu_hours, 0)/24.0 + COALESCE(stepdown_icu_hours, 0)/24.0 + COALESCE(floor_days, 0))) AS stay_days,
-        COALESCE(iccu_hours, 0) as iccu_hours,
-        COALESCE(stepdown_icu_hours, 0) as stepdown_icu_hours,
-        COALESCE(floor_days, 0) as floor_days
-      FROM dbo.nstemi_hospitalization
-      WHERE total_hospital_stay_days > 0 OR iccu_hours > 0 OR floor_days > 0
+        COALESCE(h.total_hospital_stay_days, (COALESCE(h.iccu_hours, 0)/24.0 + COALESCE(h.stepdown_icu_hours, 0)/24.0 + COALESCE(h.floor_days, 0))) AS stay_days,
+        COALESCE(h.iccu_hours, 0) as iccu_hours,
+        COALESCE(h.stepdown_icu_hours, 0) as stepdown_icu_hours,
+        COALESCE(h.floor_days, 0) as floor_days
+      FROM dbo.nstemi_hospitalization h
+      JOIN dbo.nstemi_registry n ON n.nstemi_id = h.nstemi_id
+      WHERE (n.is_deleted = 0 OR n.is_deleted IS NULL)
+        AND (h.total_hospital_stay_days > 0 OR h.iccu_hours > 0 OR h.floor_days > 0)
     )
     SELECT 
       ROUND(AVG(CAST(stay_days AS FLOAT)), 1) AS combined_alos,
@@ -167,24 +179,28 @@ async function getExecutiveMetrics() {
   const stayRes = await pool.request().query(stayQuery);
   const stayRow = stayRes.recordset[0] || {};
 
-  // 4. Timeliness (D2B, D2N, and Early Cath)
+  // 4. Timeliness (D2B, D2N, and Early Cath - active non-deleted records only)
   const timelinessQuery = `
     WITH TimelinessData AS (
       SELECT
         'STEMI' AS registry,
-        CASE WHEN door_to_balloon_time <= 90 THEN 1 ELSE 0 END AS is_compliant,
-        door_to_balloon_time,
-        door_to_needle_time
-      FROM dbo.stemi_treatment_strategy
-      WHERE door_to_balloon_time IS NOT NULL AND door_to_balloon_time > 0
+        CASE WHEN t.door_to_balloon_time <= 90 THEN 1 ELSE 0 END AS is_compliant,
+        t.door_to_balloon_time,
+        t.door_to_needle_time
+      FROM dbo.stemi_treatment_strategy t
+      JOIN dbo.stemi_registry s ON s.stemi_id = t.stemi_id
+      WHERE (s.is_deleted = 0 OR s.is_deleted IS NULL)
+        AND t.door_to_balloon_time IS NOT NULL AND t.door_to_balloon_time > 0
       UNION ALL
       SELECT
         'NSTEMI' AS registry,
-        CASE WHEN (door_to_balloon_time / 60.0) < 24 THEN 1 ELSE 0 END AS is_compliant,
-        door_to_balloon_time,
-        door_to_needle_time
-      FROM dbo.nstemi_treatment_strategy
-      WHERE door_to_balloon_time IS NOT NULL AND door_to_balloon_time > 0
+        CASE WHEN (t.door_to_balloon_time / 60.0) < 24 THEN 1 ELSE 0 END AS is_compliant,
+        t.door_to_balloon_time,
+        t.door_to_needle_time
+      FROM dbo.nstemi_treatment_strategy t
+      JOIN dbo.nstemi_registry n ON n.nstemi_id = t.nstemi_id
+      WHERE (n.is_deleted = 0 OR n.is_deleted IS NULL)
+        AND t.door_to_balloon_time IS NOT NULL AND t.door_to_balloon_time > 0
     )
     SELECT 
       ROUND(SUM(CAST(is_compliant AS FLOAT)) / COUNT(*) * 100.0, 1) AS combined_met,
@@ -242,10 +258,26 @@ async function getExecutiveMetrics() {
 
   const totalCostPerAdmission = costBreakdown.reduce((s, item) => s + item.amount, 0);
   const totalCumulativeCost = costBreakdown.reduce((s, item) => s + item.totalAmount, 0);
-  const stemiAvgCost = Math.round(stemiCostRaw / 35);
-  const nstemiAvgCost = Math.round(nstemiCostRaw / 7);
+  const stemiAvgCost = stemiCostCount > 0 ? Math.round(stemiCostRaw / stemiCostCount) : 0;
+  const nstemiAvgCost = nstemiCostCount > 0 ? Math.round(nstemiCostRaw / nstemiCostCount) : 0;
 
-  // 7. Average Cost Per Admission by Strategy
+  // 6b. Visual Cost Component Composition (Cath Lab vs Drugs vs Beds vs Labs vs Other)
+  const cathLabTotal = Number(costRow.total_package_cost || 0);
+  const drugsTotal = Number(costRow.total_drugs_cost || 0);
+  const bedsTotal = Number(costRow.total_bed_charges || 0);
+  const labsTotal = Number(costRow.total_lab_cost || 0) + Number(costRow.total_non_invasive_cost || 0);
+  const otherTotal = Number(costRow.total_consult_cost || 0) + Number(costRow.total_radiology_cost || 0) + Number(costRow.total_misc_cost || 0);
+  const compGrandTotal = (cathLabTotal + drugsTotal + bedsTotal + labsTotal + otherTotal) || 1;
+
+  const costComponentComposition = [
+    { name: 'Cath Lab / Stents', amount: cathLabTotal, avgAmount: Math.round(cathLabTotal / costDenom), percent: Number(((cathLabTotal / compGrandTotal) * 100).toFixed(1)), color: '#2563eb' },
+    { name: 'Labs & Diagnostics', amount: labsTotal, avgAmount: Math.round(labsTotal / costDenom), percent: Number(((labsTotal / compGrandTotal) * 100).toFixed(1)), color: '#7c3aed' },
+    { name: 'Drugs & Disposables', amount: drugsTotal, avgAmount: Math.round(drugsTotal / costDenom), percent: Number(((drugsTotal / compGrandTotal) * 100).toFixed(1)), color: '#0d9488' },
+    { name: 'Beds & ICU', amount: bedsTotal, avgAmount: Math.round(bedsTotal / costDenom), percent: Number(((bedsTotal / compGrandTotal) * 100).toFixed(1)), color: '#d97706' },
+    { name: 'Consults & Other', amount: otherTotal, avgAmount: Math.round(otherTotal / costDenom), percent: Number(((otherTotal / compGrandTotal) * 100).toFixed(1)), color: '#64748b' }
+  ];
+
+  // 7. Average Cost Per Admission by Strategy (Active records only)
   const stratCostQuery = `
     SELECT 
       'STEMI' as registry,
@@ -253,8 +285,9 @@ async function getExecutiveMetrics() {
       ROUND(AVG(CASE WHEN t.thrombolysis = 'Yes' THEN CAST(h.total_cost AS FLOAT) END), 0) as lysis_cost,
       ROUND(AVG(CASE WHEN t.conservative = 'Yes' THEN CAST(h.total_cost AS FLOAT) END), 0) as cons_cost
     FROM dbo.stemi_hospitalization h
+    JOIN dbo.stemi_registry s ON s.stemi_id = h.stemi_id
     JOIN dbo.stemi_treatment_strategy t ON h.stemi_id = t.stemi_id
-    WHERE h.total_cost > 0
+    WHERE (s.is_deleted = 0 OR s.is_deleted IS NULL) AND h.total_cost > 0
     UNION ALL
     SELECT 
       'NSTEMI' as registry,
@@ -262,17 +295,203 @@ async function getExecutiveMetrics() {
       ROUND(AVG(CASE WHEN t.thrombolysis = 'Yes' THEN CAST(h.total_cost AS FLOAT) END), 0) as lysis_cost,
       ROUND(AVG(CASE WHEN t.conservative = 'Yes' THEN CAST(h.total_cost AS FLOAT) END), 0) as cons_cost
     FROM dbo.nstemi_hospitalization h
+    JOIN dbo.nstemi_registry n ON n.nstemi_id = h.nstemi_id
     JOIN dbo.nstemi_treatment_strategy t ON h.nstemi_id = t.nstemi_id
-    WHERE h.total_cost > 0;
+    WHERE (n.is_deleted = 0 OR n.is_deleted IS NULL) AND h.total_cost > 0;
   `;
   const stratRes = await pool.request().query(stratCostQuery);
   const stemiStrat = stratRes.recordset.find(r => r.registry === 'STEMI') || {};
   const nstemiStrat = stratRes.recordset.find(r => r.registry === 'NSTEMI') || {};
 
   const averageCostByStrategy = [
-    { registry: 'STEMI', PAMI: Number(stemiStrat.pami_cost || 228213), Thrombolysis: Number(stemiStrat.lysis_cost || 99138), Conservative: 0, Average: stemiAvgCost },
-    { registry: 'NSTEMI', PAMI: Number(nstemiStrat.pami_cost || 99677), Thrombolysis: Number(nstemiStrat.lysis_cost || 0), Conservative: 0, Average: nstemiAvgCost }
+    { registry: 'STEMI', PAMI: Number(stemiStrat.pami_cost || 0), Thrombolysis: Number(stemiStrat.lysis_cost || 0), Conservative: Number(stemiStrat.cons_cost || 0), Average: stemiAvgCost },
+    { registry: 'NSTEMI', PAMI: Number(nstemiStrat.pami_cost || 0), Thrombolysis: Number(nstemiStrat.lysis_cost || 0), Conservative: Number(nstemiStrat.cons_cost || 0), Average: nstemiAvgCost }
   ];
+
+  // 7b. Detailed ACS Financial Records for Culprit Vessel, TIMI Risk Tier & Payer Realization (100% Real DB)
+  const acsFinancialQuery = `
+    SELECT
+      'STEMI' AS registry,
+      s.stemi_id AS record_id,
+      s.reg_patient_id,
+      COALESCE(h.total_cost,
+        COALESCE(h.bed_charges, 0) + COALESCE(h.drugs_disposables_cost, 0) + COALESCE(h.package_cost, 0) +
+        COALESCE(h.laboratory_cost, 0) + COALESCE(h.non_invasive_lab_cost, 0) + COALESCE(h.consultation_cost, 0) +
+        COALESCE(h.radiology_cost, 0) + COALESCE(h.miscellaneous_cost, 0)
+      ) AS total_cost,
+      t.pami, t.thrombolysis, t.conservative,
+      t.vessel_lad, t.vessel_rca, t.vessel_lcx, t.vessel_lmca,
+      ca.timi_total_score,
+      COALESCE(
+        NULLIF(NULLIF(LTRIM(RTRIM(p.insurance_mode)), ''), 'Unknown'),
+        (SELECT TOP 1 ha.insurance_mode FROM dbo.hf_registry hr JOIN dbo.hf_administrative ha ON hr.hf_id = ha.hf_id WHERE hr.reg_patient_id = s.reg_patient_id AND (hr.is_deleted = 0 OR hr.is_deleted IS NULL) AND ha.insurance_mode IS NOT NULL AND LTRIM(RTRIM(ha.insurance_mode)) <> '' ORDER BY hr.hf_id DESC),
+        'Direct / Cash'
+      ) AS payer_mode
+    FROM dbo.stemi_registry s
+    JOIN dbo.stemi_hospitalization h ON s.stemi_id = h.stemi_id
+    LEFT JOIN dbo.stemi_treatment_strategy t ON s.stemi_id = t.stemi_id
+    LEFT JOIN dbo.stemi_clinical_assessment ca ON s.stemi_id = ca.stemi_id
+    LEFT JOIN dbo.patient_demographics p ON s.reg_patient_id = p.reg_patient_id
+    WHERE (s.is_deleted = 0 OR s.is_deleted IS NULL)
+      AND (h.total_cost > 0 OR h.bed_charges > 0 OR h.package_cost > 0)
+
+    UNION ALL
+
+    SELECT
+      'NSTEMI' AS registry,
+      n.nstemi_id AS record_id,
+      n.reg_patient_id,
+      COALESCE(h.total_cost,
+        COALESCE(h.bed_charges, 0) + COALESCE(h.drugs_disposables_cost, 0) + COALESCE(h.package_cost, 0) +
+        COALESCE(h.laboratory_cost, 0) + COALESCE(h.non_invasive_lab_cost, 0) + COALESCE(h.consultation_cost, 0) +
+        COALESCE(h.radiology_cost, 0) + COALESCE(h.miscellaneous_cost, 0)
+      ) AS total_cost,
+      t.pami, t.thrombolysis, t.conservative,
+      t.vessel_lad, t.vessel_rca, t.vessel_lcx, t.vessel_lmca,
+      ca.timi_total_score,
+      COALESCE(
+        NULLIF(NULLIF(LTRIM(RTRIM(p.insurance_mode)), ''), 'Unknown'),
+        (SELECT TOP 1 ha.insurance_mode FROM dbo.hf_registry hr JOIN dbo.hf_administrative ha ON hr.hf_id = ha.hf_id WHERE hr.reg_patient_id = n.reg_patient_id AND (hr.is_deleted = 0 OR hr.is_deleted IS NULL) AND ha.insurance_mode IS NOT NULL AND LTRIM(RTRIM(ha.insurance_mode)) <> '' ORDER BY hr.hf_id DESC),
+        'Direct / Cash'
+      ) AS payer_mode
+    FROM dbo.nstemi_registry n
+    JOIN dbo.nstemi_hospitalization h ON n.nstemi_id = h.nstemi_id
+    LEFT JOIN dbo.nstemi_treatment_strategy t ON n.nstemi_id = t.nstemi_id
+    LEFT JOIN dbo.nstemi_clinical_assessment ca ON n.nstemi_id = ca.nstemi_id
+    LEFT JOIN dbo.patient_demographics p ON n.reg_patient_id = p.reg_patient_id
+    WHERE (n.is_deleted = 0 OR n.is_deleted IS NULL)
+      AND (h.total_cost > 0 OR h.bed_charges > 0 OR h.package_cost > 0);
+  `;
+  const acsFinRes = await pool.request().query(acsFinancialQuery);
+  const acsFinRows = acsFinRes.recordset || [];
+
+  const isYesVal = v => v === 'Yes' || v === '1' || v === 1 || v === true;
+
+  // Graph 2: Cost by Culprit Vessel & Procedural Acuity (LAD vs RCA vs LCx vs Multivessel)
+  const vesselBuckets = {
+    LAD: { sum: 0, count: 0, pamiSum: 0, pamiCount: 0, nonPamiSum: 0, nonPamiCount: 0 },
+    RCA: { sum: 0, count: 0, pamiSum: 0, pamiCount: 0, nonPamiSum: 0, nonPamiCount: 0 },
+    LCx: { sum: 0, count: 0, pamiSum: 0, pamiCount: 0, nonPamiSum: 0, nonPamiCount: 0 },
+    Multivessel: { sum: 0, count: 0, pamiSum: 0, pamiCount: 0, nonPamiSum: 0, nonPamiCount: 0 },
+    'Conservative / Non-PCI': { sum: 0, count: 0, pamiSum: 0, pamiCount: 0, nonPamiSum: 0, nonPamiCount: 0 }
+  };
+
+  acsFinRows.forEach(r => {
+    const cost = Number(r.total_cost || 0);
+    if (cost <= 0) return;
+    const lad = isYesVal(r.vessel_lad);
+    const rca = isYesVal(r.vessel_rca);
+    const lcx = isYesVal(r.vessel_lcx);
+    const lmca = isYesVal(r.vessel_lmca);
+    const majorCount = (lad ? 1 : 0) + (rca ? 1 : 0) + (lcx ? 1 : 0) + (lmca ? 1 : 0);
+
+    let bucketKey = 'Conservative / Non-PCI';
+    if (lmca || majorCount > 1) bucketKey = 'Multivessel';
+    else if (lad) bucketKey = 'LAD';
+    else if (rca) bucketKey = 'RCA';
+    else if (lcx) bucketKey = 'LCx';
+
+    const b = vesselBuckets[bucketKey];
+    b.sum += cost;
+    b.count++;
+    if (isYesVal(r.pami)) {
+      b.pamiSum += cost;
+      b.pamiCount++;
+    } else {
+      b.nonPamiSum += cost;
+      b.nonPamiCount++;
+    }
+  });
+
+  const costByCulpritVessel = ['LAD', 'RCA', 'LCx', 'Multivessel', ...(vesselBuckets['Conservative / Non-PCI'].count > 0 ? ['Conservative / Non-PCI'] : [])].map(key => {
+    const b = vesselBuckets[key];
+    return {
+      vessel: key,
+      avgCost: b.count > 0 ? Math.round(b.sum / b.count) : 0,
+      pamiAvgCost: b.pamiCount > 0 ? Math.round(b.pamiSum / b.pamiCount) : 0,
+      nonPamiAvgCost: b.nonPamiCount > 0 ? Math.round(b.nonPamiSum / b.nonPamiCount) : 0,
+      totalCost: b.sum,
+      count: b.count,
+      pamiCount: b.pamiCount,
+      nonPamiCount: b.nonPamiCount,
+      pamiPct: b.count > 0 ? Number(((b.pamiCount / b.count) * 100).toFixed(1)) : 0
+    };
+  });
+
+  // Graph 3: Risk-Adjusted Cost by TIMI Risk Tier (Low vs Medium vs High Risk)
+  const timiTierBuckets = {
+    'Low Risk': { sum: 0, count: 0, stemiSum: 0, stemiCount: 0, nstemiSum: 0, nstemiCount: 0 },
+    'Medium Risk': { sum: 0, count: 0, stemiSum: 0, stemiCount: 0, nstemiSum: 0, nstemiCount: 0 },
+    'High Risk': { sum: 0, count: 0, stemiSum: 0, stemiCount: 0, nstemiSum: 0, nstemiCount: 0 }
+  };
+
+  acsFinRows.forEach(r => {
+    const cost = Number(r.total_cost || 0);
+    if (cost <= 0) return;
+    const score = Number(r.timi_total_score ?? 0);
+    const tier = r.registry === 'STEMI'
+      ? (score <= 3 ? 'Low Risk' : score <= 7 ? 'Medium Risk' : 'High Risk')
+      : (score <= 4 ? 'Low Risk' : score <= 10 ? 'Medium Risk' : 'High Risk');
+
+    const t = timiTierBuckets[tier];
+    t.sum += cost;
+    t.count++;
+    if (r.registry === 'STEMI') {
+      t.stemiSum += cost;
+      t.stemiCount++;
+    } else {
+      t.nstemiSum += cost;
+      t.nstemiCount++;
+    }
+  });
+
+  const costByTimiTier = ['Low Risk', 'Medium Risk', 'High Risk'].map(tier => {
+    const t = timiTierBuckets[tier];
+    return {
+      tier,
+      avgCost: t.count > 0 ? Math.round(t.sum / t.count) : 0,
+      stemiAvgCost: t.stemiCount > 0 ? Math.round(t.stemiSum / t.stemiCount) : 0,
+      nstemiAvgCost: t.nstemiCount > 0 ? Math.round(t.nstemiSum / t.nstemiCount) : 0,
+      totalCost: t.sum,
+      count: t.count,
+      stemiCount: t.stemiCount,
+      nstemiCount: t.nstemiCount
+    };
+  });
+
+  // Graph 4: Average Cost & Revenue Realization by Payer Scheme (Insurance vs Arogyasree vs Govt vs Cash)
+  const payerSchemeBuckets = {
+    Insurance: { sum: 0, count: 0, color: '#2563eb' },
+    Arogyasree: { sum: 0, count: 0, color: '#0d9488' },
+    Govt: { sum: 0, count: 0, color: '#d97706' },
+    Cash: { sum: 0, count: 0, color: '#64748b' }
+  };
+
+  acsFinRows.forEach(r => {
+    const cost = Number(r.total_cost || 0);
+    if (cost <= 0) return;
+    const m = String(r.payer_mode || '').trim().toLowerCase();
+    let scheme = 'Cash';
+    if (m.includes('private') || m.includes('insurance') || m.includes('tpa')) scheme = 'Insurance';
+    else if (m.includes('arogya')) scheme = 'Arogyasree';
+    else if (m.includes('gov') || m.includes('cghs') || m.includes('echs')) scheme = 'Govt';
+
+    payerSchemeBuckets[scheme].sum += cost;
+    payerSchemeBuckets[scheme].count++;
+  });
+
+  const totalRealizedAll = Object.values(payerSchemeBuckets).reduce((s, v) => s + v.sum, 0) || 1;
+  const costAndRevenueByPayer = ['Insurance', 'Arogyasree', 'Govt', 'Cash'].map(scheme => {
+    const p = payerSchemeBuckets[scheme];
+    return {
+      scheme,
+      avgCost: p.count > 0 ? Math.round(p.sum / p.count) : 0,
+      totalRevenue: p.sum,
+      count: p.count,
+      sharePct: Number(((p.sum / totalRealizedAll) * 100).toFixed(1)),
+      color: p.color
+    };
+  });
 
   // 8. 30-Day Readmission Rates
   const readmQuery = `
@@ -985,6 +1204,73 @@ async function getExecutiveMetrics() {
     };
   });
 
+  // Cross-Registry Common Risk Factors (HF vs STEMI vs NSTEMI)
+  const crossRiskQ = `
+    SELECT 'HF' as reg,
+      COUNT(*) as total,
+      SUM(CASE WHEN e.has_htn = 1 OR fa.hypertension IN ('Yes','1') OR p.hypertension IN ('Yes','1') THEN 1 ELSE 0 END) as htn,
+      SUM(CASE WHEN e.has_dm = 1 OR fa.diabetes_mellitus IN ('Yes','1') OR p.diabetes IN ('Yes','1') THEN 1 ELSE 0 END) as dm,
+      SUM(CASE WHEN fa.smoking IN ('Yes','1') OR p.smoking IN ('Yes','1') THEN 1 ELSE 0 END) as smoking,
+      SUM(CASE WHEN e.has_ckd = 1 OR fa.renal_failure IN ('Yes','1') OR ha.renal_failure IN ('Yes','1') OR p.renal_failure IN ('Yes','1') THEN 1 ELSE 0 END) as rf,
+      SUM(CASE WHEN e.has_cad = 1 OR fa.cad IN ('Yes','1') THEN 1 ELSE 0 END) as cad,
+      SUM(CASE WHEN fa.copd IN ('Yes','1') THEN 1 ELSE 0 END) as copd,
+      SUM(CASE WHEN fa.cva IN ('Yes','1') OR CAST(ia.history_stroke AS NVARCHAR(10)) IN ('Yes','1') THEN 1 ELSE 0 END) as cva
+    FROM dbo.hf_registry hr
+    LEFT JOIN dbo.hf_gdmt_evaluation e ON e.hf_id = hr.hf_id
+    LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = hr.reg_patient_id
+    LEFT JOIN dbo.hf_final_clinical_assessment fa ON fa.hf_id = hr.hf_id
+    LEFT JOIN dbo.hf_administrative ha ON ha.hf_id = hr.hf_id
+    LEFT JOIN dbo.hf_initial_assessment ia ON ia.hf_id = hr.hf_id
+    WHERE hr.is_deleted = 0 OR hr.is_deleted IS NULL
+
+    UNION ALL
+
+    SELECT 'STEMI' as reg,
+      COUNT(*) as total,
+      SUM(CASE WHEN adm.hypertension IN ('Yes','1') OR p.hypertension IN ('Yes','1') THEN 1 ELSE 0 END) as htn,
+      SUM(CASE WHEN adm.diabetes IN ('Yes','1') OR p.diabetes IN ('Yes','1') THEN 1 ELSE 0 END) as dm,
+      SUM(CASE WHEN adm.smoking IN ('Yes','1') OR p.smoking IN ('Yes','1') THEN 1 ELSE 0 END) as smoking,
+      SUM(CASE WHEN adm.renal_failure IN ('Yes','1') OR p.renal_failure IN ('Yes','1') THEN 1 ELSE 0 END) as rf,
+      SUM(CASE WHEN adm.prior_acs IN ('Yes','1') OR adm.prior_ptca IN ('Yes','1') OR adm.prior_cabg IN ('Yes','1') THEN 1 ELSE 0 END) as cad,
+      SUM(CASE WHEN adm.copd IN ('Yes','1') THEN 1 ELSE 0 END) as copd,
+      SUM(CASE WHEN adm.cva IN ('Yes','1') THEN 1 ELSE 0 END) as cva
+    FROM dbo.stemi_registry s
+    LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = s.reg_patient_id
+    LEFT JOIN dbo.stemi_administrative adm ON adm.stemi_id = s.stemi_id
+    WHERE s.is_deleted = 0 OR s.is_deleted IS NULL
+
+    UNION ALL
+
+    SELECT 'NSTEMI' as reg,
+      COUNT(*) as total,
+      SUM(CASE WHEN adm.hypertension IN ('Yes','1') OR p.hypertension IN ('Yes','1') THEN 1 ELSE 0 END) as htn,
+      SUM(CASE WHEN adm.diabetes IN ('Yes','1') OR p.diabetes IN ('Yes','1') THEN 1 ELSE 0 END) as dm,
+      SUM(CASE WHEN adm.smoking IN ('Yes','1') OR p.smoking IN ('Yes','1') THEN 1 ELSE 0 END) as smoking,
+      SUM(CASE WHEN adm.renal_failure IN ('Yes','1') OR p.renal_failure IN ('Yes','1') THEN 1 ELSE 0 END) as rf,
+      SUM(CASE WHEN adm.prior_acs IN ('Yes','1') OR adm.prior_ptca IN ('Yes','1') OR adm.prior_cabg IN ('Yes','1') THEN 1 ELSE 0 END) as cad,
+      SUM(CASE WHEN adm.copd IN ('Yes','1') THEN 1 ELSE 0 END) as copd,
+      SUM(CASE WHEN adm.cva IN ('Yes','1') THEN 1 ELSE 0 END) as cva
+    FROM dbo.nstemi_registry n
+    LEFT JOIN dbo.patient_demographics p ON p.reg_patient_id = n.reg_patient_id
+    LEFT JOIN dbo.nstemi_administrative adm ON adm.nstemi_id = n.nstemi_id
+    WHERE n.is_deleted = 0 OR n.is_deleted IS NULL;
+  `;
+  const crossRiskRes = await pool.request().query(crossRiskQ);
+  const crHf = crossRiskRes.recordset.find(r => r.reg === 'HF') || { total: 1 };
+  const crSt = crossRiskRes.recordset.find(r => r.reg === 'STEMI') || { total: 1 };
+  const crNst = crossRiskRes.recordset.find(r => r.reg === 'NSTEMI') || { total: 1 };
+  const pctOf = (cnt, tot) => (tot > 0 ? Number(((Number(cnt || 0) / Number(tot)) * 100).toFixed(1)) : 0);
+
+  const crossRegistryRiskFactors = [
+    { name: 'Hypertension', HF: pctOf(crHf.htn, crHf.total), HF_count: Number(crHf.htn || 0), STEMI: pctOf(crSt.htn, crSt.total), STEMI_count: Number(crSt.htn || 0), NSTEMI: pctOf(crNst.htn, crNst.total), NSTEMI_count: Number(crNst.htn || 0) },
+    { name: 'Smoking', HF: pctOf(crHf.smoking, crHf.total), HF_count: Number(crHf.smoking || 0), STEMI: pctOf(crSt.smoking, crSt.total), STEMI_count: Number(crSt.smoking || 0), NSTEMI: pctOf(crNst.smoking, crNst.total), NSTEMI_count: Number(crNst.smoking || 0) },
+    { name: 'Diabetes', HF: pctOf(crHf.dm, crHf.total), HF_count: Number(crHf.dm || 0), STEMI: pctOf(crSt.dm, crSt.total), STEMI_count: Number(crSt.dm || 0), NSTEMI: pctOf(crNst.dm, crNst.total), NSTEMI_count: Number(crNst.dm || 0) },
+    { name: 'Renal Failure / CKD', HF: pctOf(crHf.rf, crHf.total), HF_count: Number(crHf.rf || 0), STEMI: pctOf(crSt.rf, crSt.total), STEMI_count: Number(crSt.rf || 0), NSTEMI: pctOf(crNst.rf, crNst.total), NSTEMI_count: Number(crNst.rf || 0) },
+    { name: 'Prior CAD / ACS', HF: pctOf(crHf.cad, crHf.total), HF_count: Number(crHf.cad || 0), STEMI: pctOf(crSt.cad, crSt.total), STEMI_count: Number(crSt.cad || 0), NSTEMI: pctOf(crNst.cad, crNst.total), NSTEMI_count: Number(crNst.cad || 0) },
+    { name: 'CVA / Stroke', HF: pctOf(crHf.cva, crHf.total), HF_count: Number(crHf.cva || 0), STEMI: pctOf(crSt.cva, crSt.total), STEMI_count: Number(crSt.cva || 0), NSTEMI: pctOf(crNst.cva, crNst.total), NSTEMI_count: Number(crNst.cva || 0) },
+    { name: 'COPD', HF: pctOf(crHf.copd, crHf.total), HF_count: Number(crHf.copd || 0), STEMI: pctOf(crSt.copd, crSt.total), STEMI_count: Number(crSt.copd || 0), NSTEMI: pctOf(crNst.copd, crNst.total), NSTEMI_count: Number(crNst.copd || 0) }
+  ];
+
   // Return Master Object
   return {
     kpis: {
@@ -1068,10 +1354,15 @@ async function getExecutiveMetrics() {
     },
     riskStratification: {
       timiRiskDistribution,
-      riskFactors
+      riskFactors,
+      crossRegistryRiskFactors
     },
     monthlyTrends,
     costBreakdown,
+    costComponentComposition,
+    costByCulpritVessel,
+    costByTimiTier,
+    costAndRevenueByPayer,
     totalCostPerAdmission,
     totalCumulativeCost,
     averageCostByStrategy,

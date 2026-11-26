@@ -10,6 +10,11 @@ async function getStemiCohortFromDb(includeDeleted = false) {
     SELECT 
       s.stemi_id, s.reg_patient_id, s.acs_no, s.ip_no, s.admission_date, s.discharge_date, s.primary_consultant, s.is_deleted,
       p.patient_name, p.gender, p.date_of_birth, p.mr_no, p.uhid, p.phone_no, p.ip_no AS patient_ip_no,
+      p.hypertension AS p_hypertension, p.diabetes AS p_diabetes, p.smoking AS p_smoking, p.renal_failure AS p_renal_failure,
+      COALESCE(
+        NULLIF(NULLIF(LTRIM(RTRIM(p.insurance_mode)), ''), 'Unknown'),
+        (SELECT TOP 1 ha.insurance_mode FROM dbo.hf_registry hr JOIN dbo.hf_administrative ha ON hr.hf_id = ha.hf_id WHERE hr.reg_patient_id = s.reg_patient_id AND (hr.is_deleted = 0 OR hr.is_deleted IS NULL) AND ha.insurance_mode IS NOT NULL AND LTRIM(RTRIM(ha.insurance_mode)) <> '' ORDER BY hr.hf_id DESC)
+      ) AS resolved_insurance_mode,
       DATEDIFF(year, p.date_of_birth, ISNULL(s.admission_date, GETDATE())) as age,
       adm.hypertension, adm.diabetes, adm.smoking, adm.renal_failure, adm.copd, adm.cva, adm.prior_acs, adm.prior_ptca, adm.prior_cabg, adm.other_background,
       clin.typical_angina, clin.atypical_chest_pain, clin.breathlessness, clin.syncope_presyncope, clin.timi_total_score,
@@ -94,12 +99,16 @@ async function getStemiCohortFromDb(includeDeleted = false) {
     if (isSyncope) presentationList.push('Syncope/ Pre-syncope');
     const presentation = presentationList.length > 0 ? presentationList.join(', ') : 'N/A';
 
-    // Comorbidities (show all selected by comma separation)
+    // Comorbidities (show all selected by comma separation; include patient_demographics flags)
+    const isHtn = p.hypertension === 'Yes' || p.p_hypertension === 'Yes';
+    const isDm = p.diabetes === 'Yes' || p.p_diabetes === 'Yes';
+    const isSmoking = p.smoking === 'Yes' || p.p_smoking === 'Yes';
+    const isRf = p.renal_failure === 'Yes' || p.p_renal_failure === 'Yes';
     const comorbList = [];
-    if (p.hypertension === 'Yes') comorbList.push('Hypertension');
-    if (p.diabetes === 'Yes') comorbList.push('Diabetes');
-    if (p.smoking === 'Yes') comorbList.push('Smoking');
-    if (p.renal_failure === 'Yes') comorbList.push('Renal Failure');
+    if (isHtn) comorbList.push('Hypertension');
+    if (isDm) comorbList.push('Diabetes');
+    if (isSmoking) comorbList.push('Smoking');
+    if (isRf) comorbList.push('Renal Failure');
     if (p.copd === 'Yes') comorbList.push('COPD');
     if (p.cva === 'Yes') comorbList.push('CVA');
     if (p.prior_acs === 'Yes') comorbList.push('Prior ACS');
@@ -165,11 +174,15 @@ async function getStemiCohortFromDb(includeDeleted = false) {
       atypical_chest_pain: isAtypical,
       breathlessness: isBreath,
       syncope_presyncope: isSyncope,
-      hypertension: p.hypertension === 'Yes',
-      diabetes: p.diabetes === 'Yes',
-      smoking: p.smoking === 'Yes',
-      renalFailure: p.renal_failure === 'Yes',
-      renal_failure: p.renal_failure === 'Yes',
+      hypertension: isHtn,
+      diabetes: isDm,
+      smoking: isSmoking,
+      renalFailure: isRf,
+      renal_failure: isRf,
+      insuranceMode: p.resolved_insurance_mode || 'Direct / Cash',
+      insurance_mode: p.resolved_insurance_mode || 'Direct / Cash',
+      paymentMode: p.resolved_insurance_mode || 'Direct / Cash',
+      payment_mode: p.resolved_insurance_mode || 'Direct / Cash',
       copd: p.copd === 'Yes',
       cva: p.cva === 'Yes',
       priorAcs: p.prior_acs === 'Yes',
@@ -284,6 +297,11 @@ async function getNstemiCohortFromDb() {
     SELECT 
       n.nstemi_id, n.reg_patient_id, n.acs_no, n.ip_no, n.admission_date, n.discharge_date, n.primary_consultant,
       p.patient_name, p.gender, p.date_of_birth, p.mr_no, p.uhid, p.phone_no, p.ip_no AS patient_ip_no,
+      p.hypertension AS p_hypertension, p.diabetes AS p_diabetes, p.smoking AS p_smoking, p.renal_failure AS p_renal_failure,
+      COALESCE(
+        NULLIF(NULLIF(LTRIM(RTRIM(p.insurance_mode)), ''), 'Unknown'),
+        (SELECT TOP 1 ha.insurance_mode FROM dbo.hf_registry hr JOIN dbo.hf_administrative ha ON hr.hf_id = ha.hf_id WHERE hr.reg_patient_id = n.reg_patient_id AND (hr.is_deleted = 0 OR hr.is_deleted IS NULL) AND ha.insurance_mode IS NOT NULL AND LTRIM(RTRIM(ha.insurance_mode)) <> '' ORDER BY hr.hf_id DESC)
+      ) AS resolved_insurance_mode,
       DATEDIFF(year, p.date_of_birth, ISNULL(n.admission_date, GETDATE())) as age,
       adm.hypertension, adm.diabetes, adm.smoking, adm.renal_failure, adm.copd, adm.cva, adm.prior_acs, adm.prior_ptca, adm.prior_cabg, adm.other_background,
       clin.typical_angina, clin.atypical_chest_pain, clin.breathlessness, clin.syncope_presyncope, clin.timi_total_score,
@@ -371,12 +389,16 @@ async function getNstemiCohortFromDb() {
     if (isSyncope) presentationList.push('Syncope/ Pre-syncope');
     const presentation = presentationList.length > 0 ? presentationList.join(', ') : 'N/A';
 
-    // Comorbidities (show all selected by comma separation)
+    // Comorbidities (show all selected by comma separation; include patient_demographics flags)
+    const isHtn = p.hypertension === 'Yes' || p.p_hypertension === 'Yes';
+    const isDm = p.diabetes === 'Yes' || p.p_diabetes === 'Yes';
+    const isSmoking = p.smoking === 'Yes' || p.p_smoking === 'Yes';
+    const isRf = p.renal_failure === 'Yes' || p.p_renal_failure === 'Yes';
     const comorbList = [];
-    if (p.hypertension === 'Yes') comorbList.push('Hypertension');
-    if (p.diabetes === 'Yes') comorbList.push('Diabetes');
-    if (p.smoking === 'Yes') comorbList.push('Smoking');
-    if (p.renal_failure === 'Yes') comorbList.push('Renal Failure');
+    if (isHtn) comorbList.push('Hypertension');
+    if (isDm) comorbList.push('Diabetes');
+    if (isSmoking) comorbList.push('Smoking');
+    if (isRf) comorbList.push('Renal Failure');
     if (p.copd === 'Yes') comorbList.push('COPD');
     if (p.cva === 'Yes') comorbList.push('CVA');
     if (p.prior_acs === 'Yes') comorbList.push('Prior ACS');
@@ -446,11 +468,15 @@ async function getNstemiCohortFromDb() {
       atypical_chest_pain: isAtypical,
       breathlessness: isBreath,
       syncope_presyncope: isSyncope,
-      hypertension: p.hypertension === 'Yes',
-      diabetes: p.diabetes === 'Yes',
-      smoking: p.smoking === 'Yes',
-      renalFailure: p.renal_failure === 'Yes',
-      renal_failure: p.renal_failure === 'Yes',
+      hypertension: isHtn,
+      diabetes: isDm,
+      smoking: isSmoking,
+      renalFailure: isRf,
+      renal_failure: isRf,
+      insuranceMode: p.resolved_insurance_mode || 'Direct / Cash',
+      insurance_mode: p.resolved_insurance_mode || 'Direct / Cash',
+      paymentMode: p.resolved_insurance_mode || 'Direct / Cash',
+      payment_mode: p.resolved_insurance_mode || 'Direct / Cash',
       copd: p.copd === 'Yes',
       cva: p.cva === 'Yes',
       priorAcs: p.prior_acs === 'Yes',

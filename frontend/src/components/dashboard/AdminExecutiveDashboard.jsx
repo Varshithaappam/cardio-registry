@@ -40,6 +40,7 @@ import {
   Line,
   BarChart,
   Bar,
+  ComposedChart,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -72,6 +73,38 @@ const formatLakhOrCr = (val) => {
   return `₹ ${num.toLocaleString('en-IN')}`;
 };
 
+// Basis Pill Badge (C = Current / Unique Patients, H = History Also / All Encounters, HC = Hybrid)
+const BasisBadge = ({ type = 'H', compact = false }) => {
+  if (type === 'C') {
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9.5px] font-extrabold tracking-wide uppercase bg-sky-50 text-sky-700 border border-sky-200 shrink-0"
+        title="CURRENT: Based on unique patients / most recent clinical status"
+      >
+        <span>{compact ? 'C' : 'C · Current'}</span>
+      </span>
+    );
+  }
+  if (type === 'HC') {
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9.5px] font-extrabold tracking-wide uppercase bg-purple-50 text-purple-700 border border-purple-200 shrink-0"
+        title="HYBRID: Chronic comorbidities Current, acute markers History Also, alive/deceased denominator Current"
+      >
+        <span>{compact ? 'H/C' : 'H/C · Hybrid'}</span>
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9.5px] font-extrabold tracking-wide uppercase bg-amber-50 text-amber-700 border border-amber-200 shrink-0"
+      title="HISTORY ALSO: Based on all admissions / clinical encounters"
+    >
+      <span>{compact ? 'H' : 'H · History Also'}</span>
+    </span>
+  );
+};
+
 export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort = [] }) {
   // Raw Cohort States
   const [hfCohort, setHfCohort] = useState(initialHfCohort || []);
@@ -81,6 +114,7 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
   const [isLoading, setIsLoading] = useState(!initialHfCohort || initialHfCohort.length === 0);
   const [error, setError] = useState(null);
   const [riskRegistry, setRiskRegistry] = useState('NSTEMI');
+  const [activeExecTab, setActiveExecTab] = useState('overview'); // 'overview' | 'financial'
   const [executiveViewMode, setExecutiveViewMode] = useState('summary'); // 'summary' (60-sec scan) | 'audit' (full audit)
   const [isClinicalAuditOpen, setIsClinicalAuditOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -1161,28 +1195,229 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
     ];
   }, [filteredHfCohort, filteredStemiCohort, filteredNstemiCohort, isFilterActive, backendMetrics]);
 
-  // Dynamic Cross-Registry Comorbidity Comparison
+  // Dynamic Cross-Registry Common Risk Factors Comparison (HF vs STEMI vs NSTEMI)
   const comorbidityComparisonData = useMemo(() => {
     const calcComorbid = (cohort, checkFn) => {
       const tot = cohort.length;
-      if (tot === 0) return 0;
-      return Number(((cohort.filter(checkFn).length / tot) * 100).toFixed(1));
+      if (tot === 0) return { pct: 0, count: 0 };
+      const count = cohort.filter(checkFn).length;
+      return { pct: Number(((count / tot) * 100).toFixed(1)), count };
     };
 
-    const hasHtn = p => Boolean(p.hypertension === true || p.hypertension === 'Yes' || p.hypertension === 1 || p.htn);
-    const hasDm = p => Boolean(p.diabetes === true || p.diabetes === 'Yes' || p.diabetes === 1 || p.dm);
+    const hasHtn = p => Boolean(p.hypertension === true || p.hypertension === 'Yes' || p.hypertension === 1 || p.htn || p.hasHtn || p.has_htn);
+    const hasDm = p => Boolean(p.diabetes === true || p.diabetes === 'Yes' || p.diabetes === 1 || p.dm || p.hasDm || p.has_dm);
     const hasSmoke = p => Boolean(p.smoking === true || p.smoking === 'Yes' || p.smoking === 1);
-    const hasRf = p => Boolean(p.renal_failure === true || p.renalFailure || p.ckd || (p.creatinine && Number(p.creatinine) > 2.0));
-    const hasCad = p => Boolean(p.prior_acs || p.priorAcs || p.cad || p.priorCad || p.priorMi || p.prior_ptca);
+    const hasRf = p => Boolean(p.renal_failure === true || p.renalFailure || p.ckd || p.hasCkd || p.has_ckd || (p.creatinine && Number(p.creatinine) > 2.0));
+    const hasCad = p => Boolean(p.prior_acs || p.priorAcs || p.prior_ptca || p.priorPtca || p.prior_cabg || p.priorCabg || p.cad || p.hasCad || p.has_cad || p.priorCad || p.priorMi);
+    const hasCva = p => Boolean(p.cva === true || p.cva === 'Yes' || p.cva === 1 || p.stroke === true);
+    const hasCopd = p => Boolean(p.copd === true || p.copd === 'Yes' || p.copd === 1);
+
+    const buildRow = (name, fn) => {
+      const hf = calcComorbid(filteredHfCohort, fn);
+      const st = calcComorbid(filteredStemiCohort, fn);
+      const nst = calcComorbid(filteredNstemiCohort, fn);
+      return {
+        name,
+        HF: hf.pct,
+        HF_count: hf.count,
+        STEMI: st.pct,
+        STEMI_count: st.count,
+        NSTEMI: nst.pct,
+        NSTEMI_count: nst.count
+      };
+    };
 
     return [
-      { name: 'Hypertension', HF: calcComorbid(filteredHfCohort, hasHtn), STEMI: calcComorbid(filteredStemiCohort, hasHtn), NSTEMI: calcComorbid(filteredNstemiCohort, hasHtn) },
-      { name: 'Diabetes', HF: calcComorbid(filteredHfCohort, hasDm), STEMI: calcComorbid(filteredStemiCohort, hasDm), NSTEMI: calcComorbid(filteredNstemiCohort, hasDm) },
-      { name: 'Smoking', HF: calcComorbid(filteredHfCohort, hasSmoke), STEMI: calcComorbid(filteredStemiCohort, hasSmoke), NSTEMI: calcComorbid(filteredNstemiCohort, hasSmoke) },
-      { name: 'Renal Failure', HF: calcComorbid(filteredHfCohort, hasRf), STEMI: calcComorbid(filteredStemiCohort, hasRf), NSTEMI: calcComorbid(filteredNstemiCohort, hasRf) },
-      { name: 'Prior CAD/ACS', HF: calcComorbid(filteredHfCohort, hasCad), STEMI: calcComorbid(filteredStemiCohort, hasCad), NSTEMI: calcComorbid(filteredNstemiCohort, hasCad) }
+      buildRow('Hypertension', hasHtn),
+      buildRow('Smoking', hasSmoke),
+      buildRow('Diabetes', hasDm),
+      buildRow('Renal Failure / CKD', hasRf),
+      buildRow('Prior CAD / ACS', hasCad),
+      buildRow('CVA / Stroke', hasCva),
+      buildRow('COPD', hasCopd)
     ];
   }, [filteredHfCohort, filteredStemiCohort, filteredNstemiCohort]);
+
+  // Helper to get billed cost from any ACS record
+  const getAcsBilledCost = (p) => {
+    const direct = p.totalCost ?? p.total_cost ?? p.totalHospitalCost ?? p.cost;
+    if (direct !== null && direct !== undefined && !isNaN(Number(direct)) && Number(direct) > 0) {
+      return Number(direct);
+    }
+    const comp = (
+      Number(p.bed_charges || 0) +
+      Number(p.drugs_disposables_cost || 0) +
+      Number(p.package_cost || 0) +
+      Number(p.laboratory_cost || 0) +
+      Number(p.non_invasive_lab_cost || 0) +
+      Number(p.consultation_cost || 0) +
+      Number(p.radiology_cost || 0) +
+      Number(p.miscellaneous_cost || 0)
+    );
+    return comp > 0 ? comp : 0;
+  };
+
+  // New Financial Graph 1: Visual Cost Component Composition (Cath Lab vs Drugs vs Beds vs Labs)
+  const costComponentComposition = useMemo(() => {
+    const allAcs = [...filteredStemiCohort, ...filteredNstemiCohort].filter(p => getAcsBilledCost(p) > 0);
+    const denom = allAcs.length > 0 ? allAcs.length : 1;
+
+    let cathLab = 0, drugs = 0, beds = 0, labs = 0, other = 0;
+    allAcs.forEach(p => {
+      cathLab += Number(p.package_cost || 0);
+      drugs += Number(p.drugs_disposables_cost || 0);
+      beds += Number(p.bed_charges || 0);
+      labs += Number(p.laboratory_cost || 0) + Number(p.non_invasive_lab_cost || 0);
+      other += Number(p.consultation_cost || 0) + Number(p.radiology_cost || 0) + Number(p.miscellaneous_cost || 0);
+    });
+
+    const grand = (cathLab + drugs + beds + labs + other) || 1;
+    return [
+      { name: 'Cath Lab / Stents', amount: cathLab, avgAmount: Math.round(cathLab / denom), percent: Number(((cathLab / grand) * 100).toFixed(1)), color: '#2563eb' },
+      { name: 'Labs & Diagnostics', amount: labs, avgAmount: Math.round(labs / denom), percent: Number(((labs / grand) * 100).toFixed(1)), color: '#7c3aed' },
+      { name: 'Drugs & Disposables', amount: drugs, avgAmount: Math.round(drugs / denom), percent: Number(((drugs / grand) * 100).toFixed(1)), color: '#0d9488' },
+      { name: 'Beds & ICU', amount: beds, avgAmount: Math.round(beds / denom), percent: Number(((beds / grand) * 100).toFixed(1)), color: '#d97706' },
+      { name: 'Consults & Other', amount: other, avgAmount: Math.round(other / denom), percent: Number(((other / grand) * 100).toFixed(1)), color: '#64748b' }
+    ];
+  }, [filteredStemiCohort, filteredNstemiCohort]);
+
+  // New Financial Graph 2: Cost by Culprit Vessel & Procedural Acuity (LAD vs RCA vs LCx vs Multivessel)
+  const costByCulpritVessel = useMemo(() => {
+    const isYes = v => v === true || v === 'Yes' || v === 'yes' || v === 1 || v === '1';
+    const buckets = {
+      LAD: { sum: 0, count: 0, pamiSum: 0, pamiCount: 0, nonPamiSum: 0, nonPamiCount: 0 },
+      RCA: { sum: 0, count: 0, pamiSum: 0, pamiCount: 0, nonPamiSum: 0, nonPamiCount: 0 },
+      LCx: { sum: 0, count: 0, pamiSum: 0, pamiCount: 0, nonPamiSum: 0, nonPamiCount: 0 },
+      Multivessel: { sum: 0, count: 0, pamiSum: 0, pamiCount: 0, nonPamiSum: 0, nonPamiCount: 0 },
+      'Conservative / Non-PCI': { sum: 0, count: 0, pamiSum: 0, pamiCount: 0, nonPamiSum: 0, nonPamiCount: 0 }
+    };
+
+    [...filteredStemiCohort, ...filteredNstemiCohort].forEach(p => {
+      const cost = getAcsBilledCost(p);
+      if (cost <= 0) return;
+      const lad = isYes(p.vessel_lad);
+      const rca = isYes(p.vessel_rca);
+      const lcx = isYes(p.vessel_lcx);
+      const lmca = isYes(p.vessel_lmca);
+      const majorCount = (lad ? 1 : 0) + (rca ? 1 : 0) + (lcx ? 1 : 0) + (lmca ? 1 : 0);
+
+      let key = 'Conservative / Non-PCI';
+      if (lmca || majorCount > 1) key = 'Multivessel';
+      else if (lad) key = 'LAD';
+      else if (rca) key = 'RCA';
+      else if (lcx) key = 'LCx';
+
+      const b = buckets[key];
+      b.sum += cost;
+      b.count++;
+      const strat = String(p.treatmentStrategy || p.strategy || '').toLowerCase();
+      const isPami = isYes(p.pami) || strat.includes('pami') || strat.includes('primary');
+      if (isPami) {
+        b.pamiSum += cost;
+        b.pamiCount++;
+      } else {
+        b.nonPamiSum += cost;
+        b.nonPamiCount++;
+      }
+    });
+
+    const keys = ['LAD', 'RCA', 'LCx', 'Multivessel', ...(buckets['Conservative / Non-PCI'].count > 0 ? ['Conservative / Non-PCI'] : [])];
+    return keys.map(key => {
+      const b = buckets[key];
+      return {
+        vessel: key,
+        avgCost: b.count > 0 ? Math.round(b.sum / b.count) : 0,
+        pamiAvgCost: b.pamiCount > 0 ? Math.round(b.pamiSum / b.pamiCount) : 0,
+        nonPamiAvgCost: b.nonPamiCount > 0 ? Math.round(b.nonPamiSum / b.nonPamiCount) : 0,
+        totalCost: b.sum,
+        count: b.count,
+        pamiCount: b.pamiCount,
+        nonPamiCount: b.nonPamiCount,
+        pamiPct: b.count > 0 ? Number(((b.pamiCount / b.count) * 100).toFixed(1)) : 0
+      };
+    });
+  }, [filteredStemiCohort, filteredNstemiCohort]);
+
+  // New Financial Graph 3: Risk-Adjusted Cost by TIMI Risk Tier (Low vs Medium vs High Risk)
+  const costByTimiTier = useMemo(() => {
+    const tiers = {
+      'Low Risk': { sum: 0, count: 0, stemiSum: 0, stemiCount: 0, nstemiSum: 0, nstemiCount: 0 },
+      'Medium Risk': { sum: 0, count: 0, stemiSum: 0, stemiCount: 0, nstemiSum: 0, nstemiCount: 0 },
+      'High Risk': { sum: 0, count: 0, stemiSum: 0, stemiCount: 0, nstemiSum: 0, nstemiCount: 0 }
+    };
+
+    filteredStemiCohort.forEach(p => {
+      const cost = getAcsBilledCost(p);
+      if (cost <= 0) return;
+      const s = Number(p.timiScore ?? p.timi_total_score ?? p.timi_risk_score ?? 0);
+      const tier = s <= 3 ? 'Low Risk' : s <= 7 ? 'Medium Risk' : 'High Risk';
+      tiers[tier].sum += cost;
+      tiers[tier].count++;
+      tiers[tier].stemiSum += cost;
+      tiers[tier].stemiCount++;
+    });
+
+    filteredNstemiCohort.forEach(p => {
+      const cost = getAcsBilledCost(p);
+      if (cost <= 0) return;
+      const s = Number(p.timiScore ?? p.timi_total_score ?? p.timi_risk_score ?? 0);
+      const tier = s <= 4 ? 'Low Risk' : s <= 10 ? 'Medium Risk' : 'High Risk';
+      tiers[tier].sum += cost;
+      tiers[tier].count++;
+      tiers[tier].nstemiSum += cost;
+      tiers[tier].nstemiCount++;
+    });
+
+    return ['Low Risk', 'Medium Risk', 'High Risk'].map(tier => {
+      const t = tiers[tier];
+      return {
+        tier,
+        avgCost: t.count > 0 ? Math.round(t.sum / t.count) : 0,
+        stemiAvgCost: t.stemiCount > 0 ? Math.round(t.stemiSum / t.stemiCount) : 0,
+        nstemiAvgCost: t.nstemiCount > 0 ? Math.round(t.nstemiSum / t.nstemiCount) : 0,
+        totalCost: t.sum,
+        count: t.count,
+        stemiCount: t.stemiCount,
+        nstemiCount: t.nstemiCount
+      };
+    });
+  }, [filteredStemiCohort, filteredNstemiCohort]);
+
+  // New Financial Graph 4: Average Cost & Revenue Realization by Payer Scheme (Insurance vs Arogyasree vs Govt vs Cash)
+  const costAndRevenueByPayer = useMemo(() => {
+    const schemes = {
+      Insurance: { sum: 0, count: 0, color: '#2563eb' },
+      Arogyasree: { sum: 0, count: 0, color: '#0d9488' },
+      Govt: { sum: 0, count: 0, color: '#d97706' },
+      Cash: { sum: 0, count: 0, color: '#64748b' }
+    };
+
+    [...filteredStemiCohort, ...filteredNstemiCohort].forEach(p => {
+      const cost = getAcsBilledCost(p);
+      if (cost <= 0) return;
+      const mode = String(p.insuranceMode || p.insurance_mode || p.paymentMode || p.payment_mode || '').trim().toLowerCase();
+      let scheme = 'Cash';
+      if (mode.includes('private') || mode.includes('insurance') || mode.includes('tpa')) scheme = 'Insurance';
+      else if (mode.includes('arogya')) scheme = 'Arogyasree';
+      else if (mode.includes('gov') || mode.includes('cghs') || mode.includes('echs')) scheme = 'Govt';
+
+      schemes[scheme].sum += cost;
+      schemes[scheme].count++;
+    });
+
+    const totalAll = Object.values(schemes).reduce((s, v) => s + v.sum, 0) || 1;
+    return ['Insurance', 'Arogyasree', 'Govt', 'Cash'].map(scheme => {
+      const s = schemes[scheme];
+      return {
+        scheme,
+        avgCost: s.count > 0 ? Math.round(s.sum / s.count) : 0,
+        totalRevenue: s.sum,
+        count: s.count,
+        sharePct: Number(((s.sum / totalAll) * 100).toFixed(1)),
+        color: s.color
+      };
+    });
+  }, [filteredStemiCohort, filteredNstemiCohort]);
 
   // Trends Over Time Data (Strict live aggregation from database cohorts)
   const monthlyTrends = useMemo(() => {
@@ -1399,19 +1634,42 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
   const displayCombinedCost = useDirectDb && backendMetrics.kpis.combinedCostDisplay ? backendMetrics.kpis.combinedCostDisplay : costStats.combinedDisplay;
   const displayStemiCost = useDirectDb && backendMetrics.kpis.stemiCostDisplay ? backendMetrics.kpis.stemiCostDisplay : costStats.stemiDisplay;
   const displayNstemiCost = useDirectDb && backendMetrics.kpis.nstemiCostDisplay ? backendMetrics.kpis.nstemiCostDisplay : costStats.nstemiDisplay;
-  const displayStemiAvgCost = useDirectDb && backendMetrics.kpis.stemiAvgCost != null ? backendMetrics.kpis.stemiAvgCost : (filteredStemiCohort.length > 0 ? Math.round(costStats.stemiRaw / filteredStemiCohort.length) : 0);
-  const displayNstemiAvgCost = useDirectDb && backendMetrics.kpis.nstemiAvgCost != null ? backendMetrics.kpis.nstemiAvgCost : (filteredNstemiCohort.length > 0 ? Math.round(costStats.nstemiRaw / filteredNstemiCohort.length) : 0);
-  const displayTotalCumulativeCost = useDirectDb && backendMetrics.kpis.totalCumulativeCost != null ? backendMetrics.kpis.totalCumulativeCost : (costStats.combinedRaw || 8427027);
+  const billedStemiCount = useMemo(() => filteredStemiCohort.filter(p => getAcsBilledCost(p) > 0).length, [filteredStemiCohort]);
+  const billedNstemiCount = useMemo(() => filteredNstemiCohort.filter(p => getAcsBilledCost(p) > 0).length, [filteredNstemiCohort]);
+  const displayStemiAvgCost = useDirectDb && backendMetrics.kpis.stemiAvgCost != null ? backendMetrics.kpis.stemiAvgCost : (billedStemiCount > 0 ? Math.round(costStats.stemiRaw / billedStemiCount) : 0);
+  const displayNstemiAvgCost = useDirectDb && backendMetrics.kpis.nstemiAvgCost != null ? backendMetrics.kpis.nstemiAvgCost : (billedNstemiCount > 0 ? Math.round(costStats.nstemiRaw / billedNstemiCount) : 0);
+  const displayTotalCumulativeCost = useDirectDb && backendMetrics.kpis.totalCumulativeCost != null ? backendMetrics.kpis.totalCumulativeCost : (costStats.combinedRaw || 0);
 
   const displayCombinedStay = useDirectDb && backendMetrics.kpis.combinedStayAvg ? backendMetrics.kpis.combinedStayAvg : stayStats.combinedAvg;
   const displayStemiStay = useDirectDb && backendMetrics.kpis.stemiStayAvg ? backendMetrics.kpis.stemiStayAvg : stayStats.stemiAvg;
   const displayNstemiStay = useDirectDb && backendMetrics.kpis.nstemiStayAvg ? backendMetrics.kpis.nstemiStayAvg : stayStats.nstemiAvg;
 
-  // Active Cost, Stay, and Payer Collections
+  // Active Cost, Stay, Risk, and Payer Collections
   const activeCostBreakdown = (!isFilterActive && backendMetrics?.costBreakdown?.length > 0) ? backendMetrics.costBreakdown : costBreakdown;
   const activeTotalCostPerAdmission = (!isFilterActive && backendMetrics?.totalCostPerAdmission) ? backendMetrics.totalCostPerAdmission : totalCostPerAdmission;
   const activeAverageCostData = (!isFilterActive && backendMetrics?.averageCostByStrategy?.length > 0) ? backendMetrics.averageCostByStrategy : averageCostData;
   const activeCostByPayerData = (!isFilterActive && backendMetrics?.costByPayer?.length > 0) ? backendMetrics.costByPayer : costByPayerData;
+  const activeCrossRegistryRiskFactors = (!isFilterActive && backendMetrics?.riskStratification?.crossRegistryRiskFactors?.length > 0)
+    ? backendMetrics.riskStratification.crossRegistryRiskFactors
+    : comorbidityComparisonData;
+  const activeCostComponentComposition = (!isFilterActive && backendMetrics?.costComponentComposition?.length > 0)
+    ? backendMetrics.costComponentComposition
+    : costComponentComposition;
+  const activeCostByCulpritVessel = (!isFilterActive && backendMetrics?.costByCulpritVessel?.length > 0)
+    ? backendMetrics.costByCulpritVessel
+    : costByCulpritVessel;
+  const activeCostByTimiTier = (!isFilterActive && backendMetrics?.costByTimiTier?.length > 0)
+    ? backendMetrics.costByTimiTier
+    : costByTimiTier;
+  const activeCostAndRevenueByPayer = (!isFilterActive && backendMetrics?.costAndRevenueByPayer?.length > 0)
+    ? backendMetrics.costAndRevenueByPayer
+    : costAndRevenueByPayer;
+  const activeBilledAcsCount = useMemo(() => {
+    if (!isFilterActive && backendMetrics?.costAndRevenueByPayer?.length > 0) {
+      return backendMetrics.costAndRevenueByPayer.reduce((s, x) => s + (x.count || 0), 0);
+    }
+    return [...filteredStemiCohort, ...filteredNstemiCohort].filter(p => getAcsBilledCost(p) > 0).length;
+  }, [isFilterActive, backendMetrics, filteredStemiCohort, filteredNstemiCohort]);
   const activeDetailedStayStats = (!isFilterActive && backendMetrics?.kpis) ? {
     iccuHours: backendMetrics.kpis.avgIccuHours,
     stepdownHours: backendMetrics.kpis.avgStepdownHours,
@@ -1506,12 +1764,16 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
           presentationComparisonData,
           crossRegistryOverlapData,
           timiRiskDistribution,
-          comorbidityComparisonData,
+          comorbidityComparisonData: activeCrossRegistryRiskFactors,
           monthlyTrends,
           costBreakdown: activeCostBreakdown,
           totalCostPerAdmission: activeTotalCostPerAdmission,
           averageCostData: activeAverageCostData,
           costByPayerData: activeCostByPayerData,
+          costComponentComposition: activeCostComponentComposition,
+          costByCulpritVessel: activeCostByCulpritVessel,
+          costByTimiTier: activeCostByTimiTier,
+          costAndRevenueByPayer: activeCostAndRevenueByPayer,
           riskFactorsChartData
         }
       });
@@ -1536,6 +1798,46 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-16 font-sans">
+      {/* =========================================================================
+          EXECUTIVE SUB-TAB SWITCHER (2 TABS: Executive Overview · Financial)
+         ========================================================================= */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 gap-1">
+          <button
+            onClick={() => setActiveExecTab('overview')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer ${activeExecTab === 'overview'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+              }`}
+          >
+            <Activity className="w-3.5 h-3.5" />
+            <span>Executive Overview</span>
+          </button>
+
+          <button
+            onClick={() => setActiveExecTab('financial')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 cursor-pointer ${activeExecTab === 'financial'
+                ? 'bg-blue-700 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+              }`}
+          >
+            <DollarSign className="w-3.5 h-3.5" />
+            <span>Financial</span>
+          </button>
+        </div>
+
+        <div className="text-[11px] text-slate-500 font-medium flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>
+              {activeExecTab === 'overview'
+                ? 'Clinical Quality, Epidemiology & Cross-Registry Risk Profile'
+                : `Financial Stewardship & Cost Analytics · ${activeBilledAcsCount} Billed ACS Admissions`}
+            </span>
+          </span>
+        </div>
+      </div>
+
       {/* =========================================================================
           GLOBAL FILTERS & ACTION BAR (Full Interactive Controls & Brackets)
          ========================================================================= */}
@@ -1895,28 +2197,30 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
 
           {/* Right Action Group: View mode, Filter indicator & Export Button */}
           <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200">
-              <button
-                onClick={() => setExecutiveViewMode('summary')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${executiveViewMode === 'summary'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                title="Fast 60-second executive scan"
-              >
-                <span>⚡ 60-Sec Scan</span>
-              </button>
-              <button
-                onClick={() => setExecutiveViewMode('audit')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${executiveViewMode === 'audit'
-                  ? 'bg-slate-900 text-white shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                title="Complete clinical audit report"
-              >
-                <span>📋 Full Audit</span>
-              </button>
-            </div>
+            {activeExecTab === 'overview' && (
+              <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200">
+                <button
+                  onClick={() => setExecutiveViewMode('summary')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${executiveViewMode === 'summary'
+                    ? 'bg-white text-slate-900 shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  title="Fast 60-second executive scan"
+                >
+                  <span>⚡ 60-Sec Scan</span>
+                </button>
+                <button
+                  onClick={() => setExecutiveViewMode('audit')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${executiveViewMode === 'audit'
+                    ? 'bg-slate-900 text-white shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  title="Complete clinical audit report"
+                >
+                  <span>📋 Full Audit</span>
+                </button>
+              </div>
+            )}
 
             {isFilterActive && (
               <div className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 animate-pulse">
@@ -1946,1346 +2250,1863 @@ export default function AdminExecutiveDashboard({ onSwitchTab, initialHfCohort =
         </div>
       </div>
 
-      {/* =========================================================================
-          SECTION 1: HEADLINE KPIS (8 Command Cards - Dynamic MSSQL DB Driven)
+      {activeExecTab === 'overview' && (
+        <>
+          {/* =========================================================================
+          SECTION 1: HEADLINE KPIS (7 Clinical & Operational Cards - Cost Excluded)
          ========================================================================= */}
-      <div>
-        <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">1. Headline KPIs</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-3">
-          {/* Card 1: Total Records */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
-            <div>
-              <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase block" title="Total Records">TOTAL RECORDS</span>
-              <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1">{displayTotalRecords}</div>
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h2 className="text-sm font-bold text-slate-900 tracking-tight">1. Headline KPIs</h2>
+              <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-500">
+                <BasisBadge type="C" />
+                <span>Unique Patients</span>
+                <span className="text-slate-300">·</span>
+                <BasisBadge type="H" />
+                <span>All Encounters</span>
+              </div>
             </div>
-            <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">HF</span>
-                <span className="font-bold text-slate-800">{displayHfRecords}</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3">
+              {/* Card 1: Total Records */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
+                <div>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase" title="Total Records">TOTAL RECORDS</span>
+                    <BasisBadge type="H" compact />
+                  </div>
+                  <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1">{displayTotalRecords}</div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">HF</span>
+                    <span className="font-bold text-slate-800">{displayHfRecords}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">STEMI</span>
+                    <span className="font-bold text-slate-800">{displayStemiRecords}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">NSTEMI</span>
+                    <span className="font-bold text-slate-800">{displayNstemiRecords}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">STEMI</span>
-                <span className="font-bold text-slate-800">{displayStemiRecords}</span>
+
+              {/* Card 2: Total Mortality (All-Cause: Hospital + Home) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
+                <div>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase" title="Total Mortality">TOTAL MORTALITY</span>
+                    <BasisBadge type="C" compact />
+                  </div>
+                  <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1 flex items-baseline gap-1.5">
+                    <span>{displayOverallMortality}%</span>
+                    <span className="text-[10px] font-semibold text-slate-400">({displayTotalDeaths} deaths)</span>
+                  </div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">HF</span>
+                    <span className="font-bold text-slate-800">{displayHfMortality}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">STEMI</span>
+                    <span className="font-bold text-slate-800">{displayStemiMortality}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">NSTEMI</span>
+                    <span className="font-bold text-slate-800">{displayNstemiMortality}%</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">NSTEMI</span>
-                <span className="font-bold text-slate-800">{displayNstemiRecords}</span>
+
+              {/* Card 3: In-Hospital Mortality (Strictly In-Hospital Deaths) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
+                <div>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] font-bold tracking-tight text-rose-600 uppercase" title="In-Hospital Mortality">IN-HOSPITAL MORTALITY</span>
+                    <BasisBadge type="H" compact />
+                  </div>
+                  <div className="text-2xl xl:text-3xl font-extrabold text-rose-600 mt-1 flex items-baseline gap-1.5">
+                    <span>{displayOverallInHospMortality}%</span>
+                    <span className="text-[10px] font-semibold text-rose-400">({displayTotalInHospDeaths} in-hosp)</span>
+                  </div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">HF</span>
+                    <span className="font-bold text-slate-800">{displayHfInHospMortality}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">STEMI</span>
+                    <span className="font-bold text-slate-800">{displayStemiInHospMortality}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">NSTEMI</span>
+                    <span className="font-bold text-slate-800">{displayNstemiInHospMortality}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: 30-Day Readmission Rate */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
+                <div>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase" title="Readmission Rate">READMISSION RATE</span>
+                    <BasisBadge type="H" compact />
+                  </div>
+                  <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1 flex items-baseline gap-1.5">
+                    <span>{displayOverallReadmissionRate}%</span>
+                    <span className="text-[10px] font-semibold text-slate-400">({displayTotalReadmissions} readm)</span>
+                  </div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">HF</span>
+                    <span className="font-bold text-slate-800">{displayHfReadmissionRate}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">STEMI</span>
+                    <span className="font-bold text-slate-800">{displayStemiReadmissionRate}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">NSTEMI</span>
+                    <span className="font-bold text-slate-800">{displayNstemiReadmissionRate}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 5: Reperfusion Timeliness Met (Combined STEMI + NSTEMI) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
+                <div>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase" title="Door-to-Balloon Met">DOOR-TO-BALLOON MET</span>
+                    <BasisBadge type="H" compact />
+                  </div>
+                  <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1">{displayTimelinessRate}%</div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
+                  <div className="flex justify-between items-center text-slate-400">
+                    <span className="font-normal">HF</span>
+                    <span className="text-[10px] font-normal italic">Medical GDMT</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">STEMI <span className="text-[9.5px] text-slate-400">(≤90m)</span></span>
+                    <span className="font-bold text-slate-800">{displayD2bStemiRate}%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">NSTEMI <span className="text-[9.5px] text-slate-400">(&lt;24h)</span></span>
+                    <span className="font-bold text-slate-800">{displayCathNstemiRate}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 6: HF GDMT Adherence */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
+                <div>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase" title="HF GDMT Adherence">HF GDMT ADHERENCE</span>
+                    <BasisBadge type="C" compact />
+                  </div>
+                  <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1">{hfGdmtAdherence}%</div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">HF Cohort</span>
+                    <span className="font-bold text-slate-800">{displayHfRecords}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">0 Drugs</span>
+                    <span className="font-bold text-rose-600">{hfZeroDrugsPercent}%</span>
+                  </div>
+                  <div className="flex justify-between items-center text-slate-400">
+                    <span className="font-normal">Target</span>
+                    <span className="text-[10px] font-semibold text-emerald-600">4 Pillars</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 7: Average Length of Stay (Combined STEMI + NSTEMI) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
+                <div>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase" title="Average Length of Stay">AVG LENGTH OF STAY</span>
+                    <BasisBadge type="H" compact />
+                  </div>
+                  <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1">{displayCombinedStay}</div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
+                  <div className="flex justify-between items-center text-slate-400">
+                    <span className="font-normal">HF</span>
+                    <span className="text-[10px] font-normal italic">Medical GDMT</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">STEMI</span>
+                    <span className="font-bold text-slate-800">{displayStemiStay}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 font-normal">NSTEMI</span>
+                    <span className="font-bold text-slate-800">{displayNstemiStay}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Card 2: Total Mortality (All-Cause: Hospital + Home) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
-            <div>
-              <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase block" title="Total Mortality">TOTAL MORTALITY</span>
-              <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1 flex items-baseline gap-1.5">
-                <span>{displayOverallMortality}%</span>
-                <span className="text-[10px] font-semibold text-slate-400">({displayTotalDeaths} deaths)</span>
-              </div>
-            </div>
-            <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">HF</span>
-                <span className="font-bold text-slate-800">{displayHfMortality}%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">STEMI</span>
-                <span className="font-bold text-slate-800">{displayStemiMortality}%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">NSTEMI</span>
-                <span className="font-bold text-slate-800">{displayNstemiMortality}%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: In-Hospital Mortality (Strictly In-Hospital Deaths) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
-            <div>
-              <span className="text-[10px] font-bold tracking-tight text-rose-600 uppercase block" title="In-Hospital Mortality">IN-HOSPITAL MORTALITY</span>
-              <div className="text-2xl xl:text-3xl font-extrabold text-rose-600 mt-1 flex items-baseline gap-1.5">
-                <span>{displayOverallInHospMortality}%</span>
-                <span className="text-[10px] font-semibold text-rose-400">({displayTotalInHospDeaths} in-hosp)</span>
-              </div>
-            </div>
-            <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">HF</span>
-                <span className="font-bold text-slate-800">{displayHfInHospMortality}%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">STEMI</span>
-                <span className="font-bold text-slate-800">{displayStemiInHospMortality}%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">NSTEMI</span>
-                <span className="font-bold text-slate-800">{displayNstemiInHospMortality}%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 4: 30-Day Readmission Rate */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
-            <div>
-              <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase block" title="Readmission Rate">READMISSION RATE</span>
-              <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1 flex items-baseline gap-1.5">
-                <span>{displayOverallReadmissionRate}%</span>
-                <span className="text-[10px] font-semibold text-slate-400">({displayTotalReadmissions} readm)</span>
-              </div>
-            </div>
-            <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">HF</span>
-                <span className="font-bold text-slate-800">{displayHfReadmissionRate}%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">STEMI</span>
-                <span className="font-bold text-slate-800">{displayStemiReadmissionRate}%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">NSTEMI</span>
-                <span className="font-bold text-slate-800">{displayNstemiReadmissionRate}%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 5: Reperfusion Timeliness Met (Combined STEMI + NSTEMI) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
-            <div>
-              <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase block" title="Door-to-Balloon Met">DOOR-TO-BALLOON MET</span>
-              <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1">{displayTimelinessRate}%</div>
-            </div>
-            <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
-              <div className="flex justify-between items-center text-slate-400">
-                <span className="font-normal">HF</span>
-                <span className="text-[10px] font-normal italic">Medical GDMT</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">STEMI <span className="text-[9.5px] text-slate-400">(≤90m)</span></span>
-                <span className="font-bold text-slate-800">{displayD2bStemiRate}%</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">NSTEMI <span className="text-[9.5px] text-slate-400">(&lt;24h)</span></span>
-                <span className="font-bold text-slate-800">{displayCathNstemiRate}%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 6: HF GDMT Adherence */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
-            <div>
-              <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase block" title="HF GDMT Adherence">HF GDMT ADHERENCE</span>
-              <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1">{hfGdmtAdherence}%</div>
-            </div>
-            <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">HF Cohort</span>
-                <span className="font-bold text-slate-800">{displayHfRecords}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">0 Drugs</span>
-                <span className="font-bold text-rose-600">{hfZeroDrugsPercent}%</span>
-              </div>
-              <div className="flex justify-between items-center text-slate-400">
-                <span className="font-normal">Target</span>
-                <span className="text-[10px] font-semibold text-emerald-600">4 Pillars</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 7: Total Revenue / Cost of Care (Combined STEMI + NSTEMI) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
-            <div>
-              <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase block" title="Total Revenue / Cost">TOTAL REVENUE / COST</span>
-              <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1">{displayCombinedCost}</div>
-            </div>
-            <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
-              <div className="flex justify-between items-center text-slate-400">
-                <span className="font-normal">HF</span>
-                <span className="text-[10px] font-normal italic">Medical GDMT</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">STEMI</span>
-                <span className="font-bold text-slate-800">{displayStemiCost}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">NSTEMI</span>
-                <span className="font-bold text-slate-800">{displayNstemiCost}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 8: Average Length of Stay (Combined STEMI + NSTEMI) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-2xs flex flex-col justify-between min-h-[155px]">
-            <div>
-              <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase block" title="Average Length of Stay">AVG LENGTH OF STAY</span>
-              <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1">{displayCombinedStay}</div>
-            </div>
-            <div className="text-[11px] text-slate-600 font-medium mt-2 pt-2 border-t border-slate-100 space-y-1 leading-snug">
-              <div className="flex justify-between items-center text-slate-400">
-                <span className="font-normal">HF</span>
-                <span className="text-[10px] font-normal italic">Medical GDMT</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">STEMI</span>
-                <span className="font-bold text-slate-800">{displayStemiStay}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-400 font-normal">NSTEMI</span>
-                <span className="font-bold text-slate-800">{displayNstemiStay}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================================
+          {/* =========================================================================
           SECTION 2: PATIENT DEMOGRAPHICS & BASELINE PROFILE
          ========================================================================= */}
-      <div>
-        <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">2. Patient Demographics & Baseline Profile</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Card 1: Age Distribution by Registry */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold text-slate-700 uppercase">AGE DISTRIBUTION BY REGISTRY</span>
-                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
-                  HF: {hfUniqueCount} · STEMI: {stemiUniqueCount} · NSTEMI: {nstemiUniqueCount} Pts
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 mb-2">
-                &lt;50 · 50-60 · 61-70 · &gt;70 (%) across unique patients in each cohort ({overallUniquePatients} unique individuals)
-              </p>
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">2. Patient Demographics & Baseline Profile</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Card 1: Age Distribution by Registry */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[11px] font-bold text-slate-700 uppercase">AGE DISTRIBUTION BY REGISTRY</span>
+                    <div className="flex items-center gap-1.5">
+                      <BasisBadge type="C" />
+                      <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                        HF: {hfUniqueCount} · STEMI: {stemiUniqueCount} · NSTEMI: {nstemiUniqueCount} Pts
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mb-2">
+                    &lt;50 · 50-60 · 61-70 · &gt;70 (%) across unique patients in each cohort ({overallUniquePatients} unique individuals)
+                  </p>
 
-              <div className="h-52 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={ageDistributionData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="bracket" stroke="#94a3b8" fontSize={9} />
-                    <YAxis stroke="#94a3b8" fontSize={9} tickFormatter={(v) => `${v}%`} />
-                    <Tooltip
-                      formatter={(val, name, item) => {
-                        const count = item?.payload?.[name + '_count'];
-                        const regStr = String(item?.payload?.registry || '').toLowerCase();
-                        const isHf = regStr.includes('heart') || regStr === 'hf';
-                        const isNstemi = regStr.includes('nstemi');
-                        const denom = item?.payload?.totalPatients || (isHf ? hfUniqueCount : (isNstemi ? nstemiUniqueCount : stemiUniqueCount));
-                        return count !== undefined && denom
-                          ? [`${val}% (${count} of ${denom} pts)`, `${name} Patients`]
-                          : [`${val}%`, `${name} Patients`];
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    <Bar dataKey="HF" fill="#2563eb" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="STEMI" fill="#d97706" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="NSTEMI" fill="#7c3aed" radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                  <div className="h-52 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={ageDistributionData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis dataKey="bracket" stroke="#94a3b8" fontSize={9} />
+                        <YAxis stroke="#94a3b8" fontSize={9} tickFormatter={(v) => `${v}%`} />
+                        <Tooltip
+                          formatter={(val, name, item) => {
+                            const count = item?.payload?.[name + '_count'];
+                            const regStr = String(item?.payload?.registry || '').toLowerCase();
+                            const isHf = regStr.includes('heart') || regStr === 'hf';
+                            const isNstemi = regStr.includes('nstemi');
+                            const denom = item?.payload?.totalPatients || (isHf ? hfUniqueCount : (isNstemi ? nstemiUniqueCount : stemiUniqueCount));
+                            return count !== undefined && denom
+                              ? [`${val}% (${count} of ${denom} pts)`, `${name} Patients`]
+                              : [`${val}%`, `${name} Patients`];
+                          }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        <Bar dataKey="HF" fill="#2563eb" radius={[3, 3, 0, 0]} />
+                        <Bar dataKey="STEMI" fill="#d97706" radius={[3, 3, 0, 0]} />
+                        <Bar dataKey="NSTEMI" fill="#7c3aed" radius={[3, 3, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2">Dynamic age distribution across all 3 patient cohorts</p>
               </div>
-            </div>
-            <p className="text-[10px] text-slate-400 mt-2">Dynamic age distribution across all 3 patient cohorts</p>
-          </div>
 
-          {/* Card 2: Gender Distribution by Registry */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold text-slate-700 uppercase">GENDER DISTRIBUTION BY REGISTRY</span>
-                <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
-                  HF: {hfUniqueCount} · STEMI: {stemiUniqueCount} · NSTEMI: {nstemiUniqueCount} Pts
-                </span>
+              {/* Card 2: Gender Distribution by Registry */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[11px] font-bold text-slate-700 uppercase">GENDER DISTRIBUTION BY REGISTRY</span>
+                    <div className="flex items-center gap-1.5">
+                      <BasisBadge type="C" />
+                      <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                        HF: {hfUniqueCount} · STEMI: {stemiUniqueCount} · NSTEMI: {nstemiUniqueCount} Pts
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mb-2">
+                    Male (Blue) vs Female (Pink) % across unique patients in each cohort
+                  </p>
+
+                  <div className="h-52 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={genderDistributionData} margin={{ top: 15, right: 15, left: -15, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis
+                          dataKey="registry"
+                          stroke="#94a3b8"
+                          fontSize={10}
+                          fontWeight={600}
+                          tickFormatter={(v) => {
+                            if (/heart/i.test(v)) return `Heart Failure (N=${hfUniqueCount})`;
+                            if (/nstemi/i.test(v)) return `NSTEMI (N=${nstemiUniqueCount})`;
+                            if (/^stemi$/i.test(v) || /stemi/i.test(v)) return `STEMI (N=${stemiUniqueCount})`;
+                            return v;
+                          }}
+                        />
+                        <YAxis stroke="#94a3b8" fontSize={9} domain={[0, 105]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(v) => `${v}%`} />
+                        <Tooltip formatter={(val) => `${val}%`} />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        <Bar dataKey="Male" fill="#2563eb" radius={[3, 3, 0, 0]}>
+                          <LabelList dataKey="Male" position="top" formatter={(v) => `${v}%`} fontSize={9} fill="#1d4ed8" fontWeight={700} />
+                        </Bar>
+                        <Bar dataKey="Female" fill="#ec4899" radius={[3, 3, 0, 0]}>
+                          <LabelList dataKey="Female" position="top" formatter={(v) => `${v}%`} fontSize={9} fill="#db2777" fontWeight={700} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2">Computed directly from patient demographics records</p>
               </div>
-              <p className="text-[10px] text-slate-400 mb-2">
-                Male (Blue) vs Female (Pink) % across unique patients in each cohort
-              </p>
 
-              <div className="h-52 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={genderDistributionData} margin={{ top: 15, right: 15, left: -15, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis
-                      dataKey="registry"
-                      stroke="#94a3b8"
-                      fontSize={10}
-                      fontWeight={600}
-                      tickFormatter={(v) => {
-                        if (/heart/i.test(v)) return `Heart Failure (N=${hfUniqueCount})`;
-                        if (/nstemi/i.test(v)) return `NSTEMI (N=${nstemiUniqueCount})`;
-                        if (/^stemi$/i.test(v) || /stemi/i.test(v)) return `STEMI (N=${stemiUniqueCount})`;
-                        return v;
-                      }}
-                    />
-                    <YAxis stroke="#94a3b8" fontSize={9} domain={[0, 105]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(v) => `${v}%`} />
-                    <Tooltip formatter={(val) => `${val}%`} />
-                    <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    <Bar dataKey="Male" fill="#2563eb" radius={[3, 3, 0, 0]}>
-                      <LabelList dataKey="Male" position="top" formatter={(v) => `${v}%`} fontSize={9} fill="#1d4ed8" fontWeight={700} />
-                    </Bar>
-                    <Bar dataKey="Female" fill="#ec4899" radius={[3, 3, 0, 0]}>
-                      <LabelList dataKey="Female" position="top" formatter={(v) => `${v}%`} fontSize={9} fill="#db2777" fontWeight={700} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            <p className="text-[10px] text-slate-400 mt-2">Computed directly from patient demographics records</p>
-          </div>
+              {/* Card 3: Patient Multimorbidity (Cross-Registry Overlap) - 4 Categories Bar Chart */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[11px] font-bold tracking-wider text-slate-700 uppercase">CROSS-REGISTRY PATIENT OVERLAP</span>
+                    <div className="flex items-center gap-1.5">
+                      <BasisBadge type="C" />
+                      <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">4 Categories</span>
+                      <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                        Total: {overallUniquePatients} Unique Patients
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mb-2">
+                    Multimorbidity overlap across all {overallUniquePatients} unique hospital patients (HF: {hfUniqueCount} · STEMI: {stemiUniqueCount} · NSTEMI: {nstemiUniqueCount})
+                  </p>
 
-          {/* Card 3: Patient Multimorbidity (Cross-Registry Overlap) - 4 Categories Bar Chart */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold tracking-wider text-slate-700 uppercase">CROSS-REGISTRY PATIENT OVERLAP</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">4 Categories</span>
-                  <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
-                    Total: {overallUniquePatients} Unique Patients
-                  </span>
+                  <div className="h-52 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={crossRegistryOverlapData} margin={{ top: 20, right: 15, left: -15, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} interval={0} />
+                        <YAxis stroke="#94a3b8" fontSize={10} domain={[0, 20]} allowDecimals={false} />
+                        <Tooltip
+                          formatter={(val) => [`${val} Patients`, 'Patient Count']}
+                          contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                        />
+                        <Bar dataKey="patients" radius={[6, 6, 0, 0]}>
+                          <LabelList
+                            dataKey="patients"
+                            position="top"
+                            fontSize={11}
+                            fontWeight={700}
+                            formatter={(v) => `${v} pts`}
+                          />
+                          {crossRegistryOverlapData.map((entry, index) => (
+                            <Cell key={`overlap-cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-2 text-center text-[11px] font-medium mt-3 flex items-center justify-center gap-1.5">
+                  <span>Patient IDs linked across HF, STEMI, and NSTEMI longitudinal registry cohorts</span>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-400 mb-2">
-                Multimorbidity overlap across all {overallUniquePatients} unique hospital patients (HF: {hfUniqueCount} · STEMI: {stemiUniqueCount} · NSTEMI: {nstemiUniqueCount})
-              </p>
 
-              <div className="h-52 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={crossRegistryOverlapData} margin={{ top: 20, right: 15, left: -15, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} interval={0} />
-                    <YAxis stroke="#94a3b8" fontSize={10} domain={[0, 20]} allowDecimals={false} />
-                    <Tooltip
-                      formatter={(val) => [`${val} Patients`, 'Patient Count']}
-                      contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
-                    />
-                    <Bar dataKey="patients" radius={[6, 6, 0, 0]}>
-                      <LabelList
-                        dataKey="patients"
-                        position="top"
-                        fontSize={11}
-                        fontWeight={700}
-                        formatter={(v) => `${v} pts`}
-                      />
-                      {crossRegistryOverlapData.map((entry, index) => (
-                        <Cell key={`overlap-cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+              {/* Card 4: ACS Presentation Profile (STEMI vs NSTEMI) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[11px] font-bold text-slate-700 uppercase">ACS PRESENTATION PROFILE</span>
+                    <div className="flex items-center gap-1.5">
+                      <BasisBadge type="H" />
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                        Total: {displayStemiRecords + displayNstemiRecords} ACS Admissions ({acsUniqueCount} Pts)
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mb-2">
+                    STEMI ({displayStemiRecords} records, {stemiUniqueCount} pts) vs NSTEMI ({displayNstemiRecords} records, {nstemiUniqueCount} pts) — Non-HF
+                  </p>
+
+                  <div className="h-52 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={presentationComparisonData} margin={{ top: 15, right: 15, left: -15, bottom: 12 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis dataKey="presentation" stroke="#94a3b8" fontSize={9.5} interval={0} height={26} />
+                        <YAxis stroke="#94a3b8" fontSize={9} domain={[0, 105]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(v) => `${v}%`} />
+                        <Tooltip formatter={(val) => `${val}%`} />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        <Bar dataKey="STEMI" fill="#d97706" radius={[3, 3, 0, 0]}>
+                          <LabelList dataKey="STEMI" position="top" formatter={(v) => `${v}%`} fontSize={9} fill="#b45309" fontWeight={700} />
+                        </Bar>
+                        <Bar dataKey="NSTEMI" fill="#7c3aed" radius={[3, 3, 0, 0]}>
+                          <LabelList dataKey="NSTEMI" position="top" formatter={(v) => `${v}%`} fontSize={9} fill="#6d28d9" fontWeight={700} />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2">Combined presentation comparison across ACS admissions</p>
               </div>
-            </div>
-
-            <div className="bg-slate-50 border border-slate-200 text-slate-700 rounded-xl p-2 text-center text-[11px] font-medium mt-3 flex items-center justify-center gap-1.5">
-              <span>Patient IDs linked across HF, STEMI, and NSTEMI longitudinal registry cohorts</span>
             </div>
           </div>
 
-          {/* Card 4: ACS Presentation Profile (STEMI vs NSTEMI) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold text-slate-700 uppercase">ACS PRESENTATION PROFILE</span>
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
-                  Total: {displayStemiRecords + displayNstemiRecords} ACS Admissions ({acsUniqueCount} Pts)
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 mb-2">
-                STEMI ({displayStemiRecords} records, {stemiUniqueCount} pts) vs NSTEMI ({displayNstemiRecords} records, {nstemiUniqueCount} pts) — Non-HF
-              </p>
-
-              <div className="h-52 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={presentationComparisonData} margin={{ top: 15, right: 15, left: -15, bottom: 12 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="presentation" stroke="#94a3b8" fontSize={9.5} interval={0} height={26} />
-                    <YAxis stroke="#94a3b8" fontSize={9} domain={[0, 105]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(v) => `${v}%`} />
-                    <Tooltip formatter={(val) => `${val}%`} />
-                    <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    <Bar dataKey="STEMI" fill="#d97706" radius={[3, 3, 0, 0]}>
-                      <LabelList dataKey="STEMI" position="top" formatter={(v) => `${v}%`} fontSize={9} fill="#b45309" fontWeight={700} />
-                    </Bar>
-                    <Bar dataKey="NSTEMI" fill="#7c3aed" radius={[3, 3, 0, 0]}>
-                      <LabelList dataKey="NSTEMI" position="top" formatter={(v) => `${v}%`} fontSize={9} fill="#6d28d9" fontWeight={700} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-            <p className="text-[10px] text-slate-400 mt-2">Combined presentation comparison across ACS admissions</p>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          SECTION 3: THREE REGISTRIES SIDE BY SIDE
+          {/* =========================================================================
+          SECTION 3: THREE REGISTRIES SIDE BY SIDE (Current vs History Containers)
          ========================================================================= */}
-      <div>
-        <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">3. Three registries side by side</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Card 1: Heart Failure */}
-          <div className="bg-white border-t-4 border-t-blue-600 border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-extrabold text-base text-slate-900">Heart Failure</h3>
-              </div>
-              <p className="text-xs text-slate-500 mb-4">{displayHfRecords} records · {hfUniqueCount} patients</p>
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h2 className="text-sm font-bold text-slate-900 tracking-tight">3. Three registries side by side</h2>
+              <span className="text-[10.5px] text-slate-500 font-medium">
+                Each registry split into <strong className="text-sky-700">Current (Unique Patients)</strong> &amp; <strong className="text-amber-700">History Also (All Encounters)</strong>
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+              {/* Card 1: Heart Failure */}
+              <div className="bg-white border-t-4 border-t-blue-600 border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div className="space-y-3.5 flex-1 flex flex-col">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-extrabold text-base text-slate-900">Heart Failure</h3>
+                    <span className="text-[10.5px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                      {displayHfRecords} recs · {hfUniqueCount} pts
+                    </span>
+                  </div>
 
-              <div className="space-y-2 text-xs border-t border-slate-100 pt-3">
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Mean age</span>
-                  <span className="font-bold text-slate-800">{hfAnalytics.kpi?.meanAge ? `${Math.round(hfAnalytics.kpi.meanAge)} yrs` : '51 yrs'}</span>
+                  {/* Container 1: CURRENT */}
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl p-3.5 space-y-1.5 text-xs flex-1">
+                    <div className="flex items-center justify-between pb-1.5 mb-1 border-b border-sky-200/60">
+                      <span className="text-[10px] font-extrabold tracking-wider uppercase text-sky-800">Unique Patients</span>
+                      <BasisBadge type="C" />
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Mean age</span>
+                      <span className="font-bold text-slate-900">{hfAnalytics.kpi?.meanAge ? `${Math.round(hfAnalytics.kpi.meanAge)} yrs` : '51 yrs'}</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Male / Female</span>
+                      <span className="font-bold text-slate-900">{genderDistributionData[0].Male}% / {genderDistributionData[0].Female}%</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Mean EF</span>
+                      <span className="font-bold text-slate-900">{filteredHfCohort.length > 0 && hfAnalytics.kpi?.meanEf != null ? `${hfAnalytics.kpi.meanEf}%` : '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">HFrEF / HFpEF</span>
+                      <span className="font-bold text-slate-900">{filteredHfCohort.length > 0 ? `${hfAnalytics.kpi?.hfrEFPercent ?? 0}% / ${hfAnalytics.kpi?.hfpEFPercent ?? 0}%` : '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">NYHA III / IV</span>
+                      <span className="font-bold text-slate-900">{filteredHfCohort.length > 0 ? `${hfAnalytics.kpi?.nyha3Percent ?? 0}% / ${hfAnalytics.kpi?.nyha4Percent ?? 0}%` : '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Total deaths (All-cause)</span>
+                      <span className="font-bold text-slate-900">{displayHfTotalDeaths} ({displayHfMortality}%)</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Deaths within 30 d</span>
+                      <span className="font-bold text-slate-900">{filteredHfCohort.length > 0 ? `${hfAnalytics.kpi?.thirtyDayMortalityRate ?? 0}%` : '—'}</span>
+                    </div>
+                  </div>
+
+                  {/* Container 2: HISTORY ALSO */}
+                  <div className="bg-amber-50/40 border border-amber-200/70 rounded-xl p-3.5 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between pb-1.5 mb-1 border-b border-amber-200/60">
+                      <span className="text-[10px] font-extrabold tracking-wider uppercase text-amber-800">All Encounters</span>
+                      <BasisBadge type="H" />
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">In-hospital deaths</span>
+                      <span className="font-bold text-rose-600">{displayHfInHospDeaths} ({displayHfInHospMortality}%)</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Readmission rate (30-d)</span>
+                      <span className="font-bold text-slate-900">{displayHfReadmCount} ({displayHfReadmissionRate}%)</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Male</span>
-                  <span className="font-bold text-slate-800">{genderDistributionData[0].Male}%</span>
+
+                <button
+                  onClick={() => onSwitchTab('hf')}
+                  className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center justify-between group cursor-pointer"
+                >
+                  <span>View HF analytics</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition" />
+                </button>
+              </div>
+
+              {/* Card 2: STEMI */}
+              <div className="bg-white border-t-4 border-t-amber-600 border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div className="space-y-3.5 flex-1 flex flex-col">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-extrabold text-base text-slate-900">STEMI</h3>
+                    <span className="text-[10.5px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                      {displayStemiRecords} recs · {stemiUniqueCount} pts
+                    </span>
+                  </div>
+
+                  {/* Container 1: CURRENT */}
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl p-3.5 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between pb-1.5 mb-1 border-b border-sky-200/60">
+                      <span className="text-[10px] font-extrabold tracking-wider uppercase text-sky-800">Unique Patients</span>
+                      <BasisBadge type="C" />
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Mean age</span>
+                      <span className="font-bold text-slate-900">{filteredStemiCohort.length > 0 && stemiAnalytics.kpi?.meanAge ? `${Math.round(stemiAnalytics.kpi.meanAge)} yrs` : '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Male / Female</span>
+                      <span className="font-bold text-slate-900">{genderDistributionData[1].Male}% / {genderDistributionData[1].Female}%</span>
+                    </div>
+                  </div>
+
+                  {/* Container 2: HISTORY ALSO */}
+                  <div className="bg-amber-50/40 border border-amber-200/70 rounded-xl p-3.5 space-y-1.5 text-xs flex-1">
+                    <div className="flex items-center justify-between pb-1.5 mb-1 border-b border-amber-200/60">
+                      <span className="text-[10px] font-extrabold tracking-wider uppercase text-amber-800">All Encounters</span>
+                      <BasisBadge type="H" />
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Mean TIMI risk</span>
+                      <span className="font-bold text-slate-900">{stemiAnalytics.kpi?.avgTimiScore ?? '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">PAMI / Lysis / Cons.</span>
+                      <span className="font-bold text-slate-900">{stemiPami} / {stemiLysis} / {stemiCons}%</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">TIMI-3 flow</span>
+                      <span className="font-bold text-slate-900">{stemiTimi3}%</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">In-hospital deaths</span>
+                      <span className="font-bold text-rose-600">{displayStemiInHospDeaths} ({displayStemiInHospMortality}%)</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Readmission rate (30-d)</span>
+                      <span className="font-bold text-slate-900">{displayStemiReadmCount} ({displayStemiReadmissionRate}%)</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Top culprit</span>
+                      <span className="font-bold text-slate-900">LAD {stemiLad}%</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Female</span>
-                  <span className="font-bold text-slate-800">{genderDistributionData[0].Female}%</span>
+
+                <button
+                  onClick={() => onSwitchTab('stemi')}
+                  className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold text-amber-600 hover:text-amber-800 flex items-center justify-between group cursor-pointer"
+                >
+                  <span>View STEMI analytics</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition" />
+                </button>
+              </div>
+
+              {/* Card 3: NSTEMI */}
+              <div className="bg-white border-t-4 border-t-purple-600 border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div className="space-y-3.5 flex-1 flex flex-col">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-extrabold text-base text-slate-900">NSTEMI</h3>
+                    <span className="text-[10.5px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-md">
+                      {displayNstemiRecords} recs · {nstemiUniqueCount} pts
+                    </span>
+                  </div>
+
+                  {/* Container 1: CURRENT */}
+                  <div className="bg-sky-50/50 border border-sky-200/70 rounded-xl p-3.5 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between pb-1.5 mb-1 border-b border-sky-200/60">
+                      <span className="text-[10px] font-extrabold tracking-wider uppercase text-sky-800">Unique Patients</span>
+                      <BasisBadge type="C" />
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Mean age</span>
+                      <span className="font-bold text-slate-900">{filteredNstemiCohort.length > 0 && nstemiAnalytics.kpi?.meanAge ? `${Number(nstemiAnalytics.kpi.meanAge).toFixed(1)} yrs` : '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Male / Female</span>
+                      <span className="font-bold text-slate-900">{genderDistributionData[2].Male}% / {genderDistributionData[2].Female}%</span>
+                    </div>
+                  </div>
+
+                  {/* Container 2: HISTORY ALSO */}
+                  <div className="bg-amber-50/40 border border-amber-200/70 rounded-xl p-3.5 space-y-1.5 text-xs flex-1">
+                    <div className="flex items-center justify-between pb-1.5 mb-1 border-b border-amber-200/60">
+                      <span className="text-[10px] font-extrabold tracking-wider uppercase text-amber-800">All Encounters</span>
+                      <BasisBadge type="H" />
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Mean TIMI risk</span>
+                      <span className="font-bold text-slate-900">{filteredNstemiCohort.length > 0 && nstemiAnalytics.kpi?.avgTimiScore != null ? nstemiAnalytics.kpi.avgTimiScore : '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">PAMI / Lysis / Cons.</span>
+                      <span className="font-bold text-slate-900">{filteredNstemiCohort.length > 0 ? `${nstemiPami} / ${nstemiLysis} / ${nstemiCons}%` : '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">TIMI-3 flow</span>
+                      <span className="font-bold text-slate-900">{filteredNstemiCohort.length > 0 ? `${nstemiTimi3}%` : '—'}</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">In-hospital deaths</span>
+                      <span className="font-bold text-rose-600">{displayNstemiInHospDeaths} ({displayNstemiInHospMortality}%)</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Readmission rate (30-d)</span>
+                      <span className="font-bold text-slate-900">{displayNstemiReadmCount} ({displayNstemiReadmissionRate}%)</span>
+                    </div>
+                    <div className="flex justify-between py-0.5">
+                      <span className="text-slate-600">Top culprit</span>
+                      <span className="font-bold text-slate-900">{filteredNstemiCohort.length > 0 ? `LAD ${nstemiLad}%` : '—'}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Mean EF</span>
-                  <span className="font-bold text-slate-800">{filteredHfCohort.length > 0 && hfAnalytics.kpi?.meanEf != null ? `${hfAnalytics.kpi.meanEf}%` : '—'}</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">HFrEF / HFpEF</span>
-                  <span className="font-bold text-slate-800">{filteredHfCohort.length > 0 ? `${hfAnalytics.kpi?.hfrEFPercent ?? 0}% / ${hfAnalytics.kpi?.hfpEFPercent ?? 0}%` : '—'}</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">NYHA III / IV</span>
-                  <span className="font-bold text-slate-800">{filteredHfCohort.length > 0 ? `${hfAnalytics.kpi?.nyha3Percent ?? 0}% / ${hfAnalytics.kpi?.nyha4Percent ?? 0}%` : '—'}</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">In-hospital deaths</span>
-                  <span className="font-bold text-rose-600">{displayHfInHospDeaths} ({displayHfInHospMortality}%)</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Total deaths (All-cause)</span>
-                  <span className="font-bold text-slate-800">{displayHfTotalDeaths} ({displayHfMortality}%)</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Deaths within 30 d</span>
-                  <span className="font-bold text-slate-800">{filteredHfCohort.length > 0 ? `${hfAnalytics.kpi?.thirtyDayMortalityRate ?? 0}%` : '—'}</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Readmission rate (30-d)</span>
-                  <span className="font-bold text-slate-800">{displayHfReadmCount} ({displayHfReadmissionRate}%)</span>
-                </div>
+
+                <button
+                  onClick={() => onSwitchTab('nstemi')}
+                  className="mt-4 pt-3 border-t border-slate-100 text-xs font-bold text-purple-600 hover:text-purple-800 flex items-center justify-between group cursor-pointer"
+                >
+                  <span>View NSTEMI analytics</span>
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition" />
+                </button>
               </div>
             </div>
-
-            <button
-              onClick={() => onSwitchTab('hf')}
-              className="mt-5 text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 group cursor-pointer"
-            >
-              <span>View HF analytics</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition" />
-            </button>
           </div>
 
-          {/* Card 2: STEMI */}
-          <div className="bg-white border-t-4 border-t-amber-600 border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-extrabold text-base text-slate-900">STEMI</h3>
-              </div>
-              <p className="text-xs text-slate-500 mb-4">{displayStemiRecords} records · {stemiUniqueCount} patients</p>
-
-              <div className="space-y-2 text-xs border-t border-slate-100 pt-3">
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Mean age</span>
-                  <span className="font-bold text-slate-800">{filteredStemiCohort.length > 0 && stemiAnalytics.kpi?.meanAge ? `${Math.round(stemiAnalytics.kpi.meanAge)} yrs` : '—'}</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Male</span>
-                  <span className="font-bold text-slate-800">{genderDistributionData[1].Male}%</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Female</span>
-                  <span className="font-bold text-slate-800">{genderDistributionData[1].Female}%</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Mean TIMI risk</span>
-                  <span className="font-bold text-slate-800">{stemiAnalytics.kpi?.avgTimiScore}</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">PAMI / Lysis / Cons.</span>
-                  <span className="font-bold text-slate-800">{stemiPami} / {stemiLysis} / {stemiCons}%</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">TIMI-3 flow</span>
-                  <span className="font-bold text-slate-800">{stemiTimi3}%</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">In-hospital deaths</span>
-                  <span className="font-bold text-slate-800">{displayStemiInHospDeaths} ({displayStemiInHospMortality}%)</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Readmission rate (30-d)</span>
-                  <span className="font-bold text-slate-800">{displayStemiReadmCount} ({displayStemiReadmissionRate}%)</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Top culprit</span>
-                  <span className="font-bold text-slate-800">LAD {stemiLad}%</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Total cost (ACS)</span>
-                  <span className="font-bold text-slate-800">{displayStemiCost} <span className="font-normal text-slate-500">(Avg {formatINR(displayStemiAvgCost)})</span></span>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => onSwitchTab('stemi')}
-              className="mt-5 text-xs font-bold text-amber-600 hover:text-amber-800 flex items-center gap-1 group cursor-pointer"
-            >
-              <span>View STEMI analytics</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition" />
-            </button>
-          </div>
-
-          {/* Card 3: NSTEMI */}
-          <div className="bg-white border-t-4 border-t-purple-600 border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <h3 className="font-extrabold text-base text-slate-900">NSTEMI</h3>
-              </div>
-              <p className="text-xs text-slate-500 mb-4">{displayNstemiRecords} records · {nstemiUniqueCount} patients</p>
-
-              <div className="space-y-2 text-xs border-t border-slate-100 pt-3">
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Mean age</span>
-                  <span className="font-bold text-slate-800">{filteredNstemiCohort.length > 0 && nstemiAnalytics.kpi?.meanAge ? `${Number(nstemiAnalytics.kpi.meanAge).toFixed(1)} yrs` : '—'}</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Male</span>
-                  <span className="font-bold text-slate-800">{genderDistributionData[2].Male}%</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Female</span>
-                  <span className="font-bold text-slate-800">{genderDistributionData[2].Female}%</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Mean TIMI risk</span>
-                  <span className="font-bold text-slate-800">{filteredNstemiCohort.length > 0 && nstemiAnalytics.kpi?.avgTimiScore != null ? nstemiAnalytics.kpi.avgTimiScore : '—'}</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">PAMI / Lysis / Cons.</span>
-                  <span className="font-bold text-slate-800">{filteredNstemiCohort.length > 0 ? `${nstemiPami} / ${nstemiLysis} / ${nstemiCons}%` : '—'}</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">TIMI-3 flow</span>
-                  <span className="font-bold text-slate-800">{filteredNstemiCohort.length > 0 ? `${nstemiTimi3}%` : '—'}</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">In-hospital deaths</span>
-                  <span className="font-bold text-slate-800">{displayNstemiInHospDeaths} ({displayNstemiInHospMortality}%)</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Readmission rate (30-d)</span>
-                  <span className="font-bold text-slate-800">{displayNstemiReadmCount} ({displayNstemiReadmissionRate}%)</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Top culprit</span>
-                  <span className="font-bold text-slate-800">{filteredNstemiCohort.length > 0 ? `LAD ${nstemiLad}%` : '—'}</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span className="text-slate-500">Total cost (ACS)</span>
-                  <span className="font-bold text-slate-800">{displayNstemiCost} <span className="font-normal text-slate-500">(Avg {formatINR(displayNstemiAvgCost)})</span></span>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => onSwitchTab('nstemi')}
-              className="mt-5 text-xs font-bold text-purple-600 hover:text-purple-800 flex items-center gap-1 group cursor-pointer"
-            >
-              <span>View NSTEMI analytics</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================================
+          {/* =========================================================================
           SECTION 4: QUALITY VS TARGET, OUTCOMES AND COMORBIDITY
          ========================================================================= */}
-      <div>
-        <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">4. Quality vs target, outcomes and comorbidity</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {/* Panel 1: Quality vs Target (Redundant D2B removed, kept benchmarks) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-4 flex flex-col justify-between">
-            <div>
-              <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">QUALITY VS TARGET</span>
-
-              <div className="space-y-3 pt-2 text-xs">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">4. Quality vs target, outcomes and comorbidity</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {/* Panel 1: Quality vs Target (Redundant D2B removed, kept benchmarks) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs space-y-4 flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between text-slate-700 font-medium mb-1">
-                    <span>STEMI D2N {meanD2N} min (≤30)</span>
-                    <span className="font-bold">{d2nMetRate}% met</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">QUALITY VS TARGET</span>
+                    <BasisBadge type="H" />
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-amber-700 h-2 rounded-full" style={{ width: `${Math.min(d2nMetRate, 100)}%` }}></div>
+
+                  <div className="space-y-3 pt-2 text-xs">
+                    <div>
+                      <div className="flex justify-between text-slate-700 font-medium mb-1">
+                        <span>STEMI D2N {meanD2N} min (≤30)</span>
+                        <span className="font-bold">{d2nMetRate}% met</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div className="bg-amber-700 h-2 rounded-full" style={{ width: `${Math.min(d2nMetRate, 100)}%` }}></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-slate-700 font-medium mb-1">
+                        <span>STEMI TIMI-3 Flow (≥90%)</span>
+                        <span className="font-bold">{filteredStemiCohort.length > 0 ? `${stemiTimi3}%` : '—'}</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div className="bg-amber-800 h-2 rounded-full" style={{ width: `${filteredStemiCohort.length > 0 ? Math.min(stemiTimi3, 100) : 0}%` }}></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-slate-700 font-medium mb-1">
+                        <span>NSTEMI TIMI-3 Flow</span>
+                        <span className="font-bold">{filteredNstemiCohort.length > 0 ? `${nstemiTimi3}%` : '—'}</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${filteredNstemiCohort.length > 0 ? Math.min(nstemiTimi3, 100) : 0}%` }}></div>
+                      </div>
+                    </div>
+
+
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2">D2B tracked in Headline KPIs; reperfusion quality shown above</p>
+              </div>
+
+
+              {/* Panel 3: Outcomes and Safety */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">OUTCOMES AND SAFETY</span>
+                    <BasisBadge type="H" />
+                  </div>
+
+                  <div className="mt-3 text-xs">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-slate-100 text-slate-400 font-bold text-[10px] uppercase">
+                          <th className="pb-2">Clinical Outcome</th>
+                          <th className="pb-2 text-right">STEMI</th>
+                          <th className="pb-2 text-right">NSTEMI</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                        <tr>
+                          <td className="py-2.5">Re-MI / recurrent ischemia</td>
+                          <td className="py-2.5 text-right font-bold text-slate-900">{filteredStemiCohort.length > 0 ? `${stemiReMi}%` : '—'}</td>
+                          <td className="py-2.5 text-right font-bold text-slate-900">{filteredNstemiCohort.length > 0 ? `${nstemiReMi}%` : '—'}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2.5">Stroke</td>
+                          <td className="py-2.5 text-right font-bold text-slate-900">{filteredStemiCohort.length > 0 ? `${stemiStroke}%` : '—'}</td>
+                          <td className="py-2.5 text-right font-bold text-slate-900">{filteredNstemiCohort.length > 0 ? `${nstemiStroke}%` : '—'}</td>
+                        </tr>
+                        <tr>
+                          <td className="py-2.5">Major bleed</td>
+                          <td className="py-2.5 text-right font-bold text-slate-900">{filteredStemiCohort.length > 0 ? `${stemiBleed}%` : '—'}</td>
+                          <td className="py-2.5 text-right font-bold text-slate-900">{filteredNstemiCohort.length > 0 ? `${nstemiBleed}%` : '—'}</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
+                <p className="text-[11px] text-slate-400 mt-4 border-t border-slate-100 pt-2">
+                  Acute procedural safety events and complications
+                </p>
+              </div>
+
+              {/* Panel 4: Follow-up Completion (Scheduled vs Done) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between text-slate-700 font-medium mb-1">
-                    <span>STEMI TIMI-3 Flow (≥90%)</span>
-                    <span className="font-bold">{filteredStemiCohort.length > 0 ? `${stemiTimi3}%` : '—'}</span>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">FOLLOW-UP COMPLETION (SCHEDULED VS DONE)</span>
+                    <div className="flex items-center gap-1.5">
+                      <BasisBadge type="H" />
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md" title="Total scheduled visits across multi-interval protocols">
+                        {isFilterActive ? `${overallUniquePatients * 3} Visits / ${overallUniquePatients} Pts` : '274 Visits / 246 Pts'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-amber-800 h-2 rounded-full" style={{ width: `${filteredStemiCohort.length > 0 ? Math.min(stemiTimi3, 100) : 0}%` }}></div>
+                  <p className="text-[10px] text-slate-400 mb-2">
+                    * {isFilterActive ? `${overallUniquePatients * 3} scheduled protocol appointments across ${overallUniquePatients} cohort patients` : '274 total scheduled appointments across 246 patient records (multi-interval 1M, 6M & 12M protocol)'}
+                  </p>
+
+                  <div className="space-y-3 mt-3 text-xs">
+                    <div>
+                      <div className="flex justify-between text-slate-600 text-[11px] mb-1">
+                        <span>1st Follow-up (1-Month)</span>
+                        <span className="font-bold text-emerald-700">88% (241/274)</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div className="bg-emerald-600 h-2 rounded-full" style={{ width: '88%' }}></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-slate-600 text-[11px] mb-1">
+                        <span>2nd Follow-up (6-Month)</span>
+                        <span className="font-bold text-blue-700">72% (197/274)</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: '72%' }}></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-slate-600 text-[11px] mb-1">
+                        <span>3rd Follow-up (12-Month)</span>
+                        <span className="font-bold text-purple-700">58% (159/274)</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div className="bg-purple-600 h-2 rounded-full" style={{ width: '58%' }}></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-
-                <div>
-                  <div className="flex justify-between text-slate-700 font-medium mb-1">
-                    <span>NSTEMI TIMI-3 Flow</span>
-                    <span className="font-bold">{filteredNstemiCohort.length > 0 ? `${nstemiTimi3}%` : '—'}</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${filteredNstemiCohort.length > 0 ? Math.min(nstemiTimi3, 100) : 0}%` }}></div>
-                  </div>
-                </div>
-
-
+                <p className="text-[10px] text-slate-400 mt-2">Post-discharge longitudinal registry adherence</p>
               </div>
             </div>
-            <p className="text-[10px] text-slate-400 mt-2">D2B tracked in Headline KPIs; reperfusion quality shown above</p>
           </div>
 
-
-          {/* Panel 3: Outcomes and Safety */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-            <div>
-              <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">OUTCOMES AND SAFETY</span>
-
-              <div className="mt-3 text-xs">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-slate-400 font-bold text-[10px] uppercase">
-                      <th className="pb-2">Clinical Outcome</th>
-                      <th className="pb-2 text-right">STEMI</th>
-                      <th className="pb-2 text-right">NSTEMI</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                    <tr>
-                      <td className="py-2.5">Re-MI / recurrent ischemia</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{filteredStemiCohort.length > 0 ? `${stemiReMi}%` : '—'}</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{filteredNstemiCohort.length > 0 ? `${nstemiReMi}%` : '—'}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2.5">Stroke</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{filteredStemiCohort.length > 0 ? `${stemiStroke}%` : '—'}</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{filteredNstemiCohort.length > 0 ? `${nstemiStroke}%` : '—'}</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2.5">Major bleed</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{filteredStemiCohort.length > 0 ? `${stemiBleed}%` : '—'}</td>
-                      <td className="py-2.5 text-right font-bold text-slate-900">{filteredNstemiCohort.length > 0 ? `${nstemiBleed}%` : '—'}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <p className="text-[11px] text-slate-400 mt-4 border-t border-slate-100 pt-2">
-              Acute procedural safety events and complications
-            </p>
-          </div>
-
-          {/* Panel 4: Follow-up Completion (Scheduled vs Done) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">FOLLOW-UP COMPLETION (SCHEDULED VS DONE)</span>
-                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md" title="Total scheduled visits across multi-interval protocols">
-                  {isFilterActive ? `${overallUniquePatients * 3} Visits / ${overallUniquePatients} Pts` : '274 Visits / 246 Pts'}
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 mb-2">
-                * {isFilterActive ? `${overallUniquePatients * 3} scheduled protocol appointments across ${overallUniquePatients} cohort patients` : '274 total scheduled appointments across 246 patient records (multi-interval 1M, 6M & 12M protocol)'}
-              </p>
-
-              <div className="space-y-3 mt-3 text-xs">
-                <div>
-                  <div className="flex justify-between text-slate-600 text-[11px] mb-1">
-                    <span>1st Follow-up (1-Month)</span>
-                    <span className="font-bold text-emerald-700">88% (241/274)</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-emerald-600 h-2 rounded-full" style={{ width: '88%' }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-slate-600 text-[11px] mb-1">
-                    <span>2nd Follow-up (6-Month)</span>
-                    <span className="font-bold text-blue-700">72% (197/274)</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: '72%' }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-slate-600 text-[11px] mb-1">
-                    <span>3rd Follow-up (12-Month)</span>
-                    <span className="font-bold text-purple-700">58% (159/274)</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-purple-600 h-2 rounded-full" style={{ width: '58%' }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p className="text-[10px] text-slate-400 mt-2">Post-discharge longitudinal registry adherence</p>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================================
+          {/* =========================================================================
           SECTION 5: STANDARDIZED RISK SCORE STRATIFICATION (TIMI)
          ========================================================================= */}
-      <div>
-        <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">5. Standardized Risk Score Stratification (TIMI)</h2>
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] font-bold tracking-wider text-slate-700 uppercase">RISK SCORE DISTRIBUTION (TIMI)</span>
-            <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-              STEMI (Scale 0–16) · NSTEMI (Scale 0–21)
-            </span>
-          </div>
-          <p className="text-[10px] text-slate-400 mb-4">Standardized risk tier stratification with score ranges (Low, Medium, High)</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* NSTEMI TIMI Breakdown (Scale 0-21) */}
-            <div className="text-xs bg-slate-50/50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between text-slate-700 font-medium mb-2">
-                  <span className="font-semibold text-slate-800 text-sm">NSTEMI, n = {timiRiskDistribution.nstemi.total}</span>
-                  <span className="font-bold text-slate-600">mean {timiRiskDistribution.nstemi.avg} (Scale 0–21)</span>
-                </div>
-
-                <div className="w-full bg-slate-200 rounded-full h-3.5 overflow-hidden flex shadow-inner my-2">
-                  <div className="bg-emerald-500 h-3.5" style={{ width: `${timiRiskDistribution.nstemi.lowPct}%` }} title={`Low Risk (0-4): ${timiRiskDistribution.nstemi.lowPct}%`}></div>
-                  <div className="bg-amber-500 h-3.5" style={{ width: `${timiRiskDistribution.nstemi.medPct}%` }} title={`Medium Risk (5-10): ${timiRiskDistribution.nstemi.medPct}%`}></div>
-                  <div className="bg-rose-600 h-3.5" style={{ width: `${timiRiskDistribution.nstemi.highPct}%` }} title={`High Risk (11-21): ${timiRiskDistribution.nstemi.highPct}%`}></div>
-                </div>
-
-                <div className="flex justify-between items-center text-[11px] mt-2 font-semibold">
-                  <span className="text-emerald-700 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                    Low (0–4): {timiRiskDistribution.nstemi.lowPct}%
-                  </span>
-                  <span className="text-amber-700 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                    Medium (5–10): {timiRiskDistribution.nstemi.medPct}%
-                  </span>
-                  <span className="text-rose-700 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-600"></span>
-                    High (11–21): {timiRiskDistribution.nstemi.highPct}%
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">5. Standardized Risk Score Stratification (TIMI)</h2>
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-[11px] font-bold tracking-wider text-slate-700 uppercase">RISK SCORE DISTRIBUTION (TIMI)</span>
+                <div className="flex items-center gap-1.5">
+                  <BasisBadge type="H" />
+                  <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                    STEMI (Scale 0–16) · NSTEMI (Scale 0–21)
                   </span>
                 </div>
               </div>
-            </div>
+              <p className="text-[10px] text-slate-400 mb-4">Standardized risk tier stratification with score ranges (Low, Medium, High)</p>
 
-            {/* STEMI TIMI Breakdown (Scale 0-16) */}
-            <div className="text-xs bg-slate-50/50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between text-slate-700 font-medium mb-2">
-                  <span className="font-semibold text-slate-800 text-sm">STEMI, n = {timiRiskDistribution.stemi.total}</span>
-                  <span className="font-bold text-slate-600">mean {timiRiskDistribution.stemi.avg} (Scale 0–16)</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* NSTEMI TIMI Breakdown (Scale 0-21) */}
+                <div className="text-xs bg-slate-50/50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between text-slate-700 font-medium mb-2">
+                      <span className="font-semibold text-slate-800 text-sm">NSTEMI, n = {timiRiskDistribution.nstemi.total}</span>
+                      <span className="font-bold text-slate-600">mean {timiRiskDistribution.nstemi.avg} (Scale 0–21)</span>
+                    </div>
+
+                    <div className="w-full bg-slate-200 rounded-full h-3.5 overflow-hidden flex shadow-inner my-2">
+                      <div className="bg-emerald-500 h-3.5" style={{ width: `${timiRiskDistribution.nstemi.lowPct}%` }} title={`Low Risk (0-4): ${timiRiskDistribution.nstemi.lowPct}%`}></div>
+                      <div className="bg-amber-500 h-3.5" style={{ width: `${timiRiskDistribution.nstemi.medPct}%` }} title={`Medium Risk (5-10): ${timiRiskDistribution.nstemi.medPct}%`}></div>
+                      <div className="bg-rose-600 h-3.5" style={{ width: `${timiRiskDistribution.nstemi.highPct}%` }} title={`High Risk (11-21): ${timiRiskDistribution.nstemi.highPct}%`}></div>
+                    </div>
+
+                    <div className="flex justify-between items-center text-[11px] mt-2 font-semibold">
+                      <span className="text-emerald-700 flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        Low (0–4): {timiRiskDistribution.nstemi.lowPct}%
+                      </span>
+                      <span className="text-amber-700 flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                        Medium (5–10): {timiRiskDistribution.nstemi.medPct}%
+                      </span>
+                      <span className="text-rose-700 flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-600"></span>
+                        High (11–21): {timiRiskDistribution.nstemi.highPct}%
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="w-full bg-slate-200 rounded-full h-3.5 overflow-hidden flex shadow-inner my-2">
-                  <div className="bg-emerald-500 h-3.5" style={{ width: `${timiRiskDistribution.stemi.lowPct}%` }} title={`Low Risk (0-3): ${timiRiskDistribution.stemi.lowPct}%`}></div>
-                  <div className="bg-amber-500 h-3.5" style={{ width: `${timiRiskDistribution.stemi.medPct}%` }} title={`Medium Risk (4-7): ${timiRiskDistribution.stemi.medPct}%`}></div>
-                  <div className="bg-rose-600 h-3.5" style={{ width: `${timiRiskDistribution.stemi.highPct}%` }} title={`High Risk (8-16): ${timiRiskDistribution.stemi.highPct}%`}></div>
-                </div>
+                {/* STEMI TIMI Breakdown (Scale 0-16) */}
+                <div className="text-xs bg-slate-50/50 p-4 rounded-xl border border-slate-100 flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between text-slate-700 font-medium mb-2">
+                      <span className="font-semibold text-slate-800 text-sm">STEMI, n = {timiRiskDistribution.stemi.total}</span>
+                      <span className="font-bold text-slate-600">mean {timiRiskDistribution.stemi.avg} (Scale 0–16)</span>
+                    </div>
 
-                <div className="flex justify-between items-center text-[11px] mt-2 font-semibold">
-                  <span className="text-emerald-700 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                    Low (0–3): {timiRiskDistribution.stemi.lowPct}%
-                  </span>
-                  <span className="text-amber-700 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                    Medium (4–7): {timiRiskDistribution.stemi.medPct}%
-                  </span>
-                  <span className="text-rose-700 flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-600"></span>
-                    High (8–16): {timiRiskDistribution.stemi.highPct}%
-                  </span>
+                    <div className="w-full bg-slate-200 rounded-full h-3.5 overflow-hidden flex shadow-inner my-2">
+                      <div className="bg-emerald-500 h-3.5" style={{ width: `${timiRiskDistribution.stemi.lowPct}%` }} title={`Low Risk (0-3): ${timiRiskDistribution.stemi.lowPct}%`}></div>
+                      <div className="bg-amber-500 h-3.5" style={{ width: `${timiRiskDistribution.stemi.medPct}%` }} title={`Medium Risk (4-7): ${timiRiskDistribution.stemi.medPct}%`}></div>
+                      <div className="bg-rose-600 h-3.5" style={{ width: `${timiRiskDistribution.stemi.highPct}%` }} title={`High Risk (8-16): ${timiRiskDistribution.stemi.highPct}%`}></div>
+                    </div>
+
+                    <div className="flex justify-between items-center text-[11px] mt-2 font-semibold">
+                      <span className="text-emerald-700 flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        Low (0–3): {timiRiskDistribution.stemi.lowPct}%
+                      </span>
+                      <span className="text-amber-700 flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                        Medium (4–7): {timiRiskDistribution.stemi.medPct}%
+                      </span>
+                      <span className="text-rose-700 flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-600"></span>
+                        High (8–16): {timiRiskDistribution.stemi.highPct}%
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
+
             </div>
           </div>
 
-        </div>
-      </div>
-
-      {/* =========================================================================
-          COLLAPSIBLE CLINICAL AUDIT DRAWER (Granular Comorbidities & Medication Regimens)
+          {/* =========================================================================
+          SECTION 5B: COMMON RISK FACTORS ACROSS ALL REGISTRIES (HF · STEMI · NSTEMI)
          ========================================================================= */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl p-5 shadow-sm border border-slate-700">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="p-2.5 bg-white/10 rounded-xl text-teal-300">
-              <Activity className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm tracking-tight text-white">
-                  Granular Clinical Audit &amp; Comorbidity Deep-Dive
-                </h3>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded-md border border-teal-500/30">
-                  Audit View
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">5b. Risk Factors Across All Registries (Common Comparison)</h2>
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                <span className="text-[11px] font-bold tracking-wider text-slate-700 uppercase">
+                  CROSS-REGISTRY RISK FACTORS &amp; COMORBIDITY PREVALENCE (%)
                 </span>
+                <div className="flex items-center gap-1.5">
+                  <BasisBadge type="C" />
+                  <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                    HF (N={displayHfRecords}) · STEMI (N={displayStemiRecords}) · NSTEMI (N={displayNstemiRecords})
+                  </span>
+                </div>
               </div>
-              <p className="text-xs text-slate-300 mt-0.5">
-                {isClinicalAuditOpen || executiveViewMode === 'audit'
-                  ? 'Showing 20-factor alive vs deceased comorbidity analytics, granular discharge medication regimens, and TIMI procedural flow'
-                  : 'Detailed comorbidity prevalence (20 factors) and granular medication breakdowns collapsed for rapid 60-second executive scan'}
+              <p className="text-[10px] text-slate-400 mb-4">
+                Unified comparison of shared cardiovascular risk factors across Heart Failure, STEMI, and NSTEMI cohorts
+              </p>
+
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={activeCrossRegistryRiskFactors} margin={{ top: 18, right: 20, left: -10, bottom: 20 }} barGap={4} barCategoryGap="22%">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                    <XAxis dataKey="name" stroke="#64748b" fontSize={10.5} fontWeight={600} interval={0} />
+                    <YAxis stroke="#94a3b8" fontSize={10} domain={[0, 105]} ticks={[0, 25, 50, 75, 100]} tickFormatter={(v) => `${v}%`} />
+                    <Tooltip
+                      formatter={(value, name, entry) => {
+                        const cnt = entry?.payload?.[`${name}_count`];
+                        return cnt !== undefined ? [`${value}% (${cnt} records)`, name] : [`${value}%`, name];
+                      }}
+                      contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <Bar dataKey="HF" name="HF" fill="#2563eb" radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="HF" position="top" formatter={(v) => (v > 0 ? `${v}%` : '')} fontSize={9} fill="#1d4ed8" fontWeight={700} />
+                    </Bar>
+                    <Bar dataKey="STEMI" name="STEMI" fill="#d97706" radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="STEMI" position="top" formatter={(v) => (v > 0 ? `${v}%` : '')} fontSize={9} fill="#b45309" fontWeight={700} />
+                    </Bar>
+                    <Bar dataKey="NSTEMI" name="NSTEMI" fill="#7c3aed" radius={[4, 4, 0, 0]}>
+                      <LabelList dataKey="NSTEMI" position="top" formatter={(v) => (v > 0 ? `${v}%` : '')} fontSize={9} fill="#6d28d9" fontWeight={700} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <p className="text-[10px] text-slate-400 mt-2 border-t border-slate-100 pt-2">
+                Computed directly from Heart Failure, STEMI, NSTEMI registry assessments and patient demographics records
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setIsClinicalAuditOpen(prev => !prev)}
-            className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
-          >
-            {isClinicalAuditOpen || executiveViewMode === 'audit' ? (
-              <>
-                <span>Collapse Clinical Audit</span>
-                <ChevronUp className="w-4 h-4" />
-              </>
-            ) : (
-              <>
-                <span>Expand Clinical Audit (20 Factors &amp; Regimens)</span>
-                <ChevronDown className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </div>
 
-        {/* Audit Content rendered conditionally */}
-        {(isClinicalAuditOpen || executiveViewMode === 'audit') && (
-          <div className="mt-6 pt-6 border-t border-slate-700/60 space-y-6 text-slate-900">
-            {/* Part A: Risk Factors: Alive vs Deceased (Vertical Bar Chart with Registry Switcher) */}
-            <div className="bg-white rounded-xl p-5 shadow-xs w-full">
-              <div className="flex flex-wrap items-start justify-between gap-3 mb-1">
+          {/* =========================================================================
+          COLLAPSIBLE CLINICAL AUDIT DRAWER (Granular Comorbidities & Medication Regimens)
+         ========================================================================= */}
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-2xs overflow-hidden">
+            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="p-2.5 bg-white/10 rounded-xl text-teal-300 border border-white/10">
+                  <Activity className="w-5 h-5" />
+                </div>
                 <div>
-                  <h4 className="font-extrabold text-base text-slate-900 tracking-tight">
-                    {riskFactorsChartData.registry} risk factors: alive vs deceased
-                  </h4>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Sample: {riskFactorsChartData.aliveCount} alive, {riskFactorsChartData.deceasedCount} deceased. {riskFactorsChartData.subtitleDesc}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-sm tracking-tight text-white">
+                      Granular Clinical Audit &amp; Comorbidity Deep-Dive
+                    </h3>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded-md border border-teal-500/30">
+                      Audit View
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    {isClinicalAuditOpen || executiveViewMode === 'audit'
+                      ? '20-factor alive vs deceased risk stratification, GDMT & discharge regimens, and post-procedure TIMI flow'
+                      : 'Detailed comorbidity prevalence (20 factors) and granular medication breakdowns collapsed for rapid 60-second executive scan'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsClinicalAuditOpen(prev => !prev)}
+                className="px-4 py-2 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold rounded-xl text-xs transition flex items-center gap-2 shadow-xs cursor-pointer shrink-0"
+              >
+                {isClinicalAuditOpen || executiveViewMode === 'audit' ? (
+                  <>
+                    <span>Collapse Clinical Audit</span>
+                    <ChevronUp className="w-4 h-4" />
+                  </>
+                ) : (
+                  <>
+                    <span>Expand Clinical Audit (20 Factors &amp; Regimens)</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Audit Content rendered conditionally */}
+            {(isClinicalAuditOpen || executiveViewMode === 'audit') && (
+              <div className="p-5 bg-slate-50/60 space-y-5 text-slate-900 border-t border-slate-200">
+                {/* Part A: Risk Factors: Alive vs Deceased (Vertical Bar Chart with Registry Switcher) */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs w-full">
+                  <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-extrabold text-base text-slate-900 tracking-tight">
+                          {riskFactorsChartData.registry} risk factors: alive vs deceased
+                        </h4>
+                        <BasisBadge type="HC" />
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Sample: {riskFactorsChartData.aliveCount} alive, {riskFactorsChartData.deceasedCount} deceased. {riskFactorsChartData.subtitleDesc}
+                      </p>
+                    </div>
+
+                    {/* Filter Pills */}
+                    <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 gap-1">
+                      {['HF', 'STEMI', 'NSTEMI'].map(r => (
+                        <button
+                          key={r}
+                          onClick={() => setRiskRegistry(r)}
+                          className={`px-3.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${riskRegistry === r
+                            ? 'bg-white text-slate-900 shadow-2xs border border-slate-200'
+                            : 'text-slate-500 hover:text-slate-800'
+                            }`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 my-3 pb-2 border-b border-slate-100">
+                    <div className="flex items-center gap-4 text-xs font-semibold">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-[#0f766e]"></span>
+                        <span className="text-slate-700">Alive</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-3 h-3 rounded-xs bg-[#991b1b]"></span>
+                        <span className="text-slate-700">Deceased</span>
+                      </div>
+                    </div>
+                    <span className="text-[10.5px] text-slate-400 font-medium">
+                      Chronic comorbidities: Current · Acute admission markers: History Also · Alive/Deceased denominator: Current
+                    </span>
+                  </div>
+
+                  {/* Vertical Bar Chart with right: 75, bottom: 110, height: 110, minWidth: 1200 so Elevated CRP never clips */}
+                  <div className="overflow-x-auto pb-2 mt-2">
+                    <div style={{ minWidth: `${Math.max(1200, riskFactorsChartData.items.length * 68)}px`, height: 420 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={riskFactorsChartData.items.map(item => ({
+                            name: item.name,
+                            Alive: item.alivePct,
+                            Deceased: item.deadPct,
+                            aliveN: item.aliveN,
+                            deadN: item.deadN
+                          }))}
+                          margin={{ top: 25, right: 75, left: -10, bottom: 110 }}
+                          barGap={4}
+                          barCategoryGap="25%"
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                          <XAxis
+                            dataKey="name"
+                            stroke="#64748b"
+                            fontSize={11}
+                            fontWeight={500}
+                            interval={0}
+                            angle={-40}
+                            textAnchor="end"
+                            height={110}
+                            tick={{ dy: 5 }}
+                          />
+                          <YAxis
+                            stroke="#94a3b8"
+                            fontSize={10}
+                            domain={[0, 115]}
+                            ticks={[0, 25, 50, 75, 100]}
+                            tickFormatter={(v) => `${v}%`}
+                          />
+                          <Tooltip
+                            formatter={(value, name, entry) => [
+                              `${value}% (${name === 'Alive' ? entry.payload.aliveN : entry.payload.deadN} patients)`,
+                              name
+                            ]}
+                            contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                          />
+                          <Bar dataKey="Alive" fill="#0f766e" radius={[4, 4, 0, 0]}>
+                            <LabelList
+                              dataKey="Alive"
+                              position="top"
+                              formatter={(v) => (v > 0 ? `${v}%` : '')}
+                              fontSize={10}
+                              fill="#0f766e"
+                              fontWeight={700}
+                            />
+                          </Bar>
+                          <Bar dataKey="Deceased" fill="#991b1b" radius={[4, 4, 0, 0]}>
+                            <LabelList
+                              dataKey="Deceased"
+                              position="top"
+                              formatter={(v) => (v > 0 ? `${v}%` : '')}
+                              fontSize={10}
+                              fill="#991b1b"
+                              fontWeight={700}
+                            />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 mt-3 border-t border-slate-100 pt-2.5 leading-relaxed">
+                    {riskFactorsChartData.footerDesc}. Sorted by alive prevalence.
                   </p>
                 </div>
 
-                {/* Filter Pills */}
-                <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 gap-1">
-                  {['HF', 'STEMI', 'NSTEMI'].map(r => (
-                    <button
-                      key={r}
-                      onClick={() => setRiskRegistry(r)}
-                      className={`px-3.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${riskRegistry === r
-                        ? 'bg-white text-slate-900 shadow-2xs border border-slate-200'
-                        : 'text-slate-500 hover:text-slate-800'
-                        }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
+                {/* Part B: Granular Medication Regimens & Procedural TIMI Flow */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+                  {/* Card 1: HF: GDMT Drug Use (%) */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">HF: GDMT DRUG USE (%)</span>
+                        <BasisBadge type="C" />
+                      </div>
+                      <p className="text-[10px] text-slate-400 mb-3">Active HF therapy ({hfUniqueCount} pts · {displayHfRecords} records)</p>
+                      <div className="space-y-2.5 text-xs">
+                        {[
+                          { label: 'Beta blocker', pct: hfBetaBlockerPct },
+                          { label: 'MRA', pct: hfMraPct },
+                          { label: 'ACE inhibitor', pct: hfAcePct },
+                          { label: 'ARB', pct: hfArbPct },
+                          { label: 'ARNI · SGLT2i', pct: null, summary: `${hfArniPct}% · ${hfSglt2Pct}%` }
+                        ].map((item, idx) => (
+                          item.pct !== null ? (
+                            <div key={idx}>
+                              <div className="flex justify-between text-slate-700 font-medium mb-1">
+                                <span>{item.label}</span>
+                                <span className="font-bold text-slate-900">{item.pct}%</span>
+                              </div>
+                              <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: `${Math.min(item.pct, 100)}%` }}></div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div key={idx} className="flex justify-between pt-2 border-t border-slate-100 text-[11px] font-medium text-slate-500">
+                              <span>{item.label}</span>
+                              <span className="font-bold text-slate-800">{item.summary}</span>
+                            </div>
+                          )
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-3 pt-2 border-t border-slate-100">Guideline-directed 4-pillar coverage</p>
+                  </div>
+
+                  {/* Card 2: NSTEMI Discharge Medicines */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">NSTEMI DISCHARGE MEDICINES (%)</span>
+                        <BasisBadge type="H" />
+                      </div>
+                      <p className="text-[10px] text-slate-400 mb-3">Discharge Rx across {displayNstemiRecords} NSTEMI stays ({nstemiUniqueCount} pts)</p>
+                      <div className="space-y-2.5 text-xs">
+                        <div>
+                          <div className="flex justify-between text-slate-700 font-medium mb-1">
+                            <span>Statin</span>
+                            <span className="font-bold text-slate-900">{nstemiStatin}%</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${Math.min(nstemiStatin, 100)}%` }}></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-slate-700 font-medium mb-1">
+                            <span>Aspirin</span>
+                            <span className="font-bold text-slate-900">{nstemiAspirin}%</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${Math.min(nstemiAspirin, 100)}%` }}></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-slate-700 font-medium mb-1">
+                            <span>Ticagrelor</span>
+                            <span className="font-bold text-slate-900">{nstemiTicagrelor}%</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${Math.min(nstemiTicagrelor, 100)}%` }}></div>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-slate-700 font-medium mb-1">
+                            <span>Beta blocker</span>
+                            <span className="font-bold text-slate-900">{nstemiBetaBlocker}%</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${Math.min(nstemiBetaBlocker, 100)}%` }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-3 pt-2 border-t border-slate-100">Secondary prevention therapy at discharge</p>
+                  </div>
+
+                  {/* Card 3: Post-Procedure TIMI Flow */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-[11px] font-bold tracking-wider text-slate-500 uppercase">POST-PROCEDURE TIMI FLOW</span>
+                        <BasisBadge type="H" />
+                      </div>
+                      <p className="text-[10px] text-slate-400 mb-2">Angiographic flow across {displayStemiRecords + displayNstemiRecords} ACS procedures</p>
+
+                      {/* TIMI Flow Color Legend */}
+                      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] font-semibold text-slate-600 mb-3 pb-2 border-b border-slate-100">
+                        <span className="inline-flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-amber-600 shrink-0"></span>
+                          <span>Gr 3 (STEMI)</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0"></span>
+                          <span>Gr 3 (NSTEMI)</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+                          <span>Gr 2</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                          <span>Gr 0/1</span>
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-slate-300 shrink-0"></span>
+                          <span>Unrec.</span>
+                        </span>
+                      </div>
+
+                      <div className="space-y-3 text-xs">
+                        <div>
+                          <div className="font-bold text-slate-700 mb-1">STEMI</div>
+                          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex mt-1">
+                            <div className="bg-amber-600 h-2.5" style={{ width: `${stemiTimiGrade3}%` }} title={`Grade 3: ${stemiTimiGrade3}%`}></div>
+                            <div className="bg-amber-400 h-2.5" style={{ width: `${stemiTimiGrade2}%` }} title={`Grade 2: ${stemiTimiGrade2}%`}></div>
+                            <div className="bg-rose-500 h-2.5" style={{ width: `${stemiTimiGrade01}%` }} title={`Grade 0/1: ${stemiTimiGrade01}%`}></div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] font-medium text-slate-600 mt-1.5">
+                            <span className="inline-flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-amber-600 shrink-0"></span>
+                              <span>Grade 3 <strong className="text-slate-800">({stemiTimiGrade3}%)</strong></span>
+                            </span>
+                            <span className="text-slate-300">·</span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+                              <span>Grade 2 <strong className="text-slate-800">({stemiTimiGrade2}%)</strong></span>
+                            </span>
+                            <span className="text-slate-300">·</span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                              <span>Grade 0/1 <strong className="text-slate-800">({stemiTimiGrade01}%)</strong></span>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="font-bold text-slate-700 mb-1">NSTEMI</div>
+                          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex mt-1">
+                            <div className="bg-purple-600 h-2.5" style={{ width: `${nstemiTimiGrade3}%` }} title={`Grade 3: ${nstemiTimiGrade3}%`}></div>
+                            <div className="bg-purple-400 h-2.5" style={{ width: `${nstemiTimiGrade2}%` }} title={`Grade 2: ${nstemiTimiGrade2}%`}></div>
+                            <div className="bg-rose-500 h-2.5" style={{ width: `${nstemiTimiGrade01}%` }} title={`Grade 0/1: ${nstemiTimiGrade01}%`}></div>
+                            <div className="bg-slate-300 h-2.5" style={{ width: `${nstemiTimiUnrecorded}%` }} title={`Unrecorded: ${nstemiTimiUnrecorded}%`}></div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] font-medium text-slate-600 mt-1.5">
+                            <span className="inline-flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0"></span>
+                              <span>Grade 3 <strong className="text-slate-800">({nstemiTimiGrade3}%)</strong></span>
+                            </span>
+                            <span className="text-slate-300">·</span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0"></span>
+                              <span>Grade 2 <strong className="text-slate-800">({nstemiTimiGrade2}%)</strong></span>
+                            </span>
+                            <span className="text-slate-300">·</span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+                              <span>Grade 0/1 <strong className="text-slate-800">({nstemiTimiGrade01}%)</strong></span>
+                            </span>
+                            <span className="text-slate-300">·</span>
+                            <span className="inline-flex items-center gap-1">
+                              <span className="w-2 h-2 rounded-full bg-slate-300 shrink-0"></span>
+                              <span>Unrecorded <strong className="text-slate-800">({nstemiTimiUnrecorded}%)</strong></span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-3 pt-2 border-t border-slate-100">Epicardial perfusion grade post-PCI</p>
+                  </div>
                 </div>
               </div>
+            )}
+          </div>
 
-              {/* Legend */}
-              <div className="flex items-center gap-4 text-xs font-semibold my-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-xs bg-[#0f766e]"></span>
-                  <span className="text-slate-700">Alive</span>
+          {/* =========================================================================
+          SECTION 6: TRENDS OVER TIME (3 COMPLETE RECHARTS LINE CHARTS)
+         ========================================================================= */}
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">6. Trends over time (monthly admissions &amp; quality trends)</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Admissions per month */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
+                <div className="flex items-center justify-between gap-2 mb-0.5">
+                  <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">ADMISSIONS PER MONTH</span>
+                  <BasisBadge type="H" />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-xs bg-[#991b1b]"></span>
-                  <span className="text-slate-700">Deceased</span>
-                </div>
-              </div>
-
-              {/* Vertical Bar Chart with right: 75, bottom: 110, height: 110, minWidth: 1200 so Elevated CRP never clips */}
-              <div className="overflow-x-auto pb-2 mt-4">
-                <div style={{ minWidth: `${Math.max(1200, riskFactorsChartData.items.length * 68)}px`, height: 440 }}>
+                <p className="text-[10px] text-slate-400 mb-2">Monthly admission trajectories (HF, STEMI, NSTEMI)</p>
+                <div className="h-44 w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={riskFactorsChartData.items.map(item => ({
-                        name: item.name,
-                        Alive: item.alivePct,
-                        Deceased: item.deadPct,
-                        aliveN: item.aliveN,
-                        deadN: item.deadN
-                      }))}
-                      margin={{ top: 25, right: 75, left: -10, bottom: 110 }}
-                      barGap={4}
-                      barCategoryGap="25%"
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                      <XAxis
-                        dataKey="name"
-                        stroke="#64748b"
-                        fontSize={11}
-                        fontWeight={500}
-                        interval={0}
-                        angle={-40}
-                        textAnchor="end"
-                        height={110}
-                        tick={{ dy: 5 }}
-                      />
-                      <YAxis
-                        stroke="#94a3b8"
-                        fontSize={10}
-                        domain={[0, 115]}
-                        ticks={[0, 25, 50, 75, 100]}
-                        tickFormatter={(v) => `${v}%`}
-                      />
-                      <Tooltip
-                        formatter={(value, name, entry) => [
-                          `${value}% (${name === 'Alive' ? entry.payload.aliveN : entry.payload.deadN} patients)`,
-                          name
-                        ]}
-                        contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
-                      />
-                      <Bar dataKey="Alive" fill="#0f766e" radius={[4, 4, 0, 0]}>
-                        <LabelList
-                          dataKey="Alive"
-                          position="top"
-                          formatter={(v) => (v > 0 ? `${v}%` : '')}
-                          fontSize={10}
-                          fill="#0f766e"
-                          fontWeight={700}
-                        />
-                      </Bar>
-                      <Bar dataKey="Deceased" fill="#991b1b" radius={[4, 4, 0, 0]}>
-                        <LabelList
-                          dataKey="Deceased"
-                          position="top"
-                          formatter={(v) => (v > 0 ? `${v}%` : '')}
-                          fontSize={10}
-                          fill="#991b1b"
-                          fontWeight={700}
-                        />
-                      </Bar>
-                    </BarChart>
+                    <LineChart data={monthlyTrends}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} />
+                      <YAxis stroke="#94a3b8" fontSize={10} />
+                      <Tooltip />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      <Line type="monotone" name="HF" dataKey="HF" stroke="#2563eb" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line type="monotone" name="STEMI" dataKey="STEMI" stroke="#d97706" strokeWidth={2} dot={{ r: 2 }} />
+                      <Line type="monotone" name="NSTEMI" dataKey="NSTEMI" stroke="#7c3aed" strokeWidth={2} dot={{ r: 2 }} />
+                    </LineChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              <p className="text-[11px] text-slate-400 mt-3 border-t border-slate-100 pt-2.5 leading-relaxed">
-                {riskFactorsChartData.footerDesc}. Sorted by alive prevalence.
-              </p>
+              {/* Mortality Trend (In-Hospital Mortality Only) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
+                <div className="flex items-center justify-between gap-2 mb-0.5">
+                  <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">MORTALITY TREND</span>
+                  <BasisBadge type="H" />
+                </div>
+                <p className="text-[10px] text-slate-400 mb-2">Monthly in-hospital mortality rate (%)</p>
+                <div className="h-44 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={monthlyTrends}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} />
+                      <YAxis stroke="#94a3b8" fontSize={10} domain={[0, 'auto']} tickFormatter={(v) => `${v}%`} />
+                      <Tooltip formatter={(v, name) => (v != null ? [`${v}%`, name] : ['No data', name])} />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      <Line type="monotone" name="In-Hospital Death %" dataKey="InHospMortalityRate" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 3 }} connectNulls />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Door-to-Balloon & Door-to-Needle Trend */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
+                <div className="flex items-center justify-between gap-2 mb-0.5">
+                  <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">REPERFUSION TIME TREND (D2B & D2N)</span>
+                  <BasisBadge type="H" />
+                </div>
+                <p className="text-[10px] text-slate-400 mb-2">Monthly mean Door-to-Balloon (≤90m) &amp; Door-to-Needle (≤30m)</p>
+                <div className="h-44 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={monthlyTrends}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} />
+                      <YAxis stroke="#94a3b8" fontSize={10} domain={[0, 100]} tickFormatter={(v) => `${v}m`} />
+                      <Tooltip formatter={(v, name) => (v != null ? [`${v} min`, name] : ['No data', name])} />
+                      <Legend wrapperStyle={{ fontSize: '10px' }} />
+                      <Line type="monotone" name="Mean D2B" dataKey="D2B" stroke="#059669" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                      <Line type="monotone" name="Mean D2N" dataKey="D2N" stroke="#d97706" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </div>
+          </div>
+        </>
+      )}
 
-            {/* Part B: Granular Medication Regimens & Procedural TIMI Flow */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {/* Card 1: HF: GDMT Drug Use (%) */}
-              <div className="bg-white rounded-xl p-5 shadow-xs">
-                <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">HF: GDMT DRUG USE (%)</span>
-                <div className="mt-3 space-y-1.5 text-xs">
-                  <div className="flex justify-between py-1 border-b border-slate-50 font-medium">
-                    <span className="text-slate-600">Beta blocker</span>
-                    <span className="font-bold text-slate-900">{hfBetaBlockerPct}%</span>
+      {activeExecTab === 'financial' && (
+        <>
+          {/* =========================================================================
+              FINANCIAL TAB — HEADLINE FINANCIAL KPIS (5 Cards)
+             ========================================================================= */}
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h2 className="text-sm font-bold text-slate-900 tracking-tight">1. Financial &amp; Resource Headline KPIs</h2>
+              <BasisBadge type="H" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {/* Card 1: Total Revenue / Realized Spend */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase block">TOTAL REVENUE / COST (ACS)</span>
+                  <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1">{displayCombinedCost}</div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-3 pt-2 border-t border-slate-100 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-normal">STEMI</span>
+                    <span className="font-bold text-amber-700">{displayStemiCost}</span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-50 font-medium">
-                    <span className="text-slate-600">MRA</span>
-                    <span className="font-bold text-slate-900">{hfMraPct}%</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-50 font-medium">
-                    <span className="text-slate-600">ACE inhibitor</span>
-                    <span className="font-bold text-slate-900">{hfAcePct}%</span>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-slate-50 font-medium">
-                    <span className="text-slate-600">ARB</span>
-                    <span className="font-bold text-slate-900">{hfArbPct}%</span>
-                  </div>
-                  <div className="flex justify-between pt-1 font-medium text-slate-400">
-                    <span>ARNI {hfArniPct}% · SGLT2 inhibitor {hfSglt2Pct}%</span>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-normal">NSTEMI</span>
+                    <span className="font-bold text-purple-700">{displayNstemiCost}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Card 2: NSTEMI Discharge Medicines */}
-              <div className="bg-white rounded-xl p-5 shadow-xs">
-                <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">NSTEMI DISCHARGE MEDICINES (%)</span>
-                <div className="mt-3 space-y-2 text-xs">
-                  <div>
-                    <div className="flex justify-between text-slate-700 font-medium mb-1">
-                      <span>Statin</span>
-                      <span className="font-bold">{nstemiStatin}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${Math.min(nstemiStatin, 100)}%` }}></div>
-                    </div>
+              {/* Card 2: Average Cost per Admission */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase block">AVG COST / ADMISSION</span>
+                  <div className="text-2xl xl:text-3xl font-extrabold text-blue-700 mt-1">{formatINR(activeTotalCostPerAdmission)}</div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-3 pt-2 border-t border-slate-100 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-normal">STEMI Avg</span>
+                    <span className="font-bold text-slate-800">{formatINR(displayStemiAvgCost)}</span>
                   </div>
-                  <div>
-                    <div className="flex justify-between text-slate-700 font-medium mb-1">
-                      <span>Aspirin</span>
-                      <span className="font-bold">{nstemiAspirin}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${Math.min(nstemiAspirin, 100)}%` }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-slate-700 font-medium mb-1">
-                      <span>Ticagrelor</span>
-                      <span className="font-bold">{nstemiTicagrelor}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${Math.min(nstemiTicagrelor, 100)}%` }}></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-slate-700 font-medium mb-1">
-                      <span>Beta blocker</span>
-                      <span className="font-bold">{nstemiBetaBlocker}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                      <div className="bg-purple-600 h-1.5 rounded-full" style={{ width: `${Math.min(nstemiBetaBlocker, 100)}%` }}></div>
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-normal">NSTEMI Avg</span>
+                    <span className="font-bold text-slate-800">{formatINR(displayNstemiAvgCost)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Card 3: Post-Procedure TIMI Flow */}
-              <div className="bg-white rounded-xl p-5 shadow-xs">
-                <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">POST-PROCEDURE TIMI FLOW</span>
-
-                {/* TIMI Flow Color Legend */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-slate-600 mt-2 mb-3 pb-2 border-b border-slate-100">
-                  <span className="text-[9.5px] uppercase font-bold text-slate-400">Legend:</span>
-                  <span className="inline-flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-600 shrink-0"></span>
-                    <span>Grade 3 (STEMI)</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-purple-600 shrink-0"></span>
-                    <span>Grade 3 (NSTEMI)</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
-                    <span>Grade 2</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
-                    <span>Grade 0/1</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-slate-300 shrink-0"></span>
-                    <span>Unrecorded</span>
-                  </span>
-                </div>
-
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <div className="font-bold text-slate-700 mb-1">STEMI</div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex mt-1">
-                      <div className="bg-amber-600 h-2.5" style={{ width: `${stemiTimiGrade3}%` }} title={`Grade 3: ${stemiTimiGrade3}%`}></div>
-                      <div className="bg-amber-400 h-2.5" style={{ width: `${stemiTimiGrade2}%` }} title={`Grade 2: ${stemiTimiGrade2}%`}></div>
-                      <div className="bg-rose-500 h-2.5" style={{ width: `${stemiTimiGrade01}%` }} title={`Grade 0/1: ${stemiTimiGrade01}%`}></div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] font-medium text-slate-600 mt-1.5">
-                      <span className="inline-flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-amber-600 shrink-0"></span>
-                        <span>Grade 3 <strong className="text-slate-800">({stemiTimiGrade3}%)</strong></span>
-                      </span>
-                      <span className="text-slate-300">·</span>
-                      <span className="inline-flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
-                        <span>Grade 2 <strong className="text-slate-800">({stemiTimiGrade2}%)</strong></span>
-                      </span>
-                      <span className="text-slate-300">·</span>
-                      <span className="inline-flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
-                        <span>Grade 0/1 <strong className="text-slate-800">({stemiTimiGrade01}%)</strong></span>
-                      </span>
-                    </div>
+              {/* Card 3: Cath Lab / Package Share */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase block">CATH LAB &amp; STENT SHARE</span>
+                  <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1">
+                    {activeCostComponentComposition[0]?.percent ?? 0}%
                   </div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-3 pt-2 border-t border-slate-100 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-normal">Total Packages</span>
+                    <span className="font-bold text-blue-700">{formatLakhOrCr(activeCostComponentComposition[0]?.amount || 0)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-normal">Avg / Billed Case</span>
+                    <span className="font-bold text-slate-800">{formatINR(activeCostComponentComposition[0]?.avgAmount || 0)}</span>
+                  </div>
+                </div>
+              </div>
 
-                  <div>
-                    <div className="font-bold text-slate-700 mb-1">NSTEMI</div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden flex mt-1">
-                      <div className="bg-purple-600 h-2.5" style={{ width: `${nstemiTimiGrade3}%` }} title={`Grade 3: ${nstemiTimiGrade3}%`}></div>
-                      <div className="bg-purple-400 h-2.5" style={{ width: `${nstemiTimiGrade2}%` }} title={`Grade 2: ${nstemiTimiGrade2}%`}></div>
-                      <div className="bg-rose-500 h-2.5" style={{ width: `${nstemiTimiGrade01}%` }} title={`Grade 0/1: ${nstemiTimiGrade01}%`}></div>
-                      <div className="bg-slate-300 h-2.5" style={{ width: `${nstemiTimiUnrecorded}%` }} title={`Unrecorded: ${nstemiTimiUnrecorded}%`}></div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] font-medium text-slate-600 mt-1.5">
-                      <span className="inline-flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0"></span>
-                        <span>Grade 3 <strong className="text-slate-800">({nstemiTimiGrade3}%)</strong></span>
-                      </span>
-                      <span className="text-slate-300">·</span>
-                      <span className="inline-flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-purple-400 shrink-0"></span>
-                        <span>Grade 2 <strong className="text-slate-800">({nstemiTimiGrade2}%)</strong></span>
-                      </span>
-                      <span className="text-slate-300">·</span>
-                      <span className="inline-flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
-                        <span>Grade 0/1 <strong className="text-slate-800">({nstemiTimiGrade01}%)</strong></span>
-                      </span>
-                      <span className="text-slate-300">·</span>
-                      <span className="inline-flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-slate-300 shrink-0"></span>
-                        <span>Unrecorded <strong className="text-slate-800">({nstemiTimiUnrecorded}%)</strong></span>
-                      </span>
-                    </div>
+              {/* Card 4: Avg Length of Stay */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase block">AVG LENGTH OF STAY</span>
+                  <div className="text-2xl xl:text-3xl font-extrabold text-slate-900 mt-1">{displayCombinedStay}</div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-3 pt-2 border-t border-slate-100 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-normal">STEMI ALOS</span>
+                    <span className="font-bold text-slate-800">{displayStemiStay}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-normal">NSTEMI ALOS</span>
+                    <span className="font-bold text-slate-800">{displayNstemiStay}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 5: Billed ACS Admissions */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-bold tracking-tight text-slate-400 uppercase block">BILLED ACS ADMISSIONS</span>
+                  <div className="text-2xl xl:text-3xl font-extrabold text-emerald-700 mt-1">{activeBilledAcsCount}</div>
+                </div>
+                <div className="text-[11px] text-slate-600 font-medium mt-3 pt-2 border-t border-slate-100 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-normal">Total ACS Cohort</span>
+                    <span className="font-bold text-slate-800">{displayStemiRecords + displayNstemiRecords}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 font-normal">Cumulative Spend</span>
+                    <span className="font-bold text-slate-800">{formatLakhOrCr(displayTotalCumulativeCost)}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        )}
-      </div>
 
-      {/* =========================================================================
-          SECTION 6: TRENDS OVER TIME (4 COMPLETE RECHARTS LINE CHARTS)
-         ========================================================================= */}
-      <div>
-        <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">6. Trends over time (monthly admissions &amp; quality trends)</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Admissions per month */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
-            <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">ADMISSIONS PER MONTH</span>
-            <p className="text-[10px] text-slate-400 mb-2">Monthly admission trajectories (HF, STEMI, NSTEMI)</p>
-            <div className="h-44 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyTrends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} />
-                  <YAxis stroke="#94a3b8" fontSize={10} />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: '10px' }} />
-                  <Line type="monotone" name="HF" dataKey="HF" stroke="#2563eb" strokeWidth={2} dot={{ r: 2 }} />
-                  <Line type="monotone" name="STEMI" dataKey="STEMI" stroke="#d97706" strokeWidth={2} dot={{ r: 2 }} />
-                  <Line type="monotone" name="NSTEMI" dataKey="NSTEMI" stroke="#7c3aed" strokeWidth={2} dot={{ r: 2 }} />
-                </LineChart>
-              </ResponsiveContainer>
+          {/* =========================================================================
+              FINANCIAL TAB — 4 NEW CORE FINANCIAL INTELLIGENCE GRAPHS (100% DB DATA)
+             ========================================================================= */}
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h2 className="text-sm font-bold text-slate-900 tracking-tight">2. Cost Structure, Clinical Acuity &amp; Payer Realization</h2>
+              <BasisBadge type="H" />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* NEW GRAPH 1: Visual Cost Component Donut / Composition Bar (Cath Lab vs Drugs vs Beds vs Labs) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-bold tracking-wider text-slate-700 uppercase">
+                      COST COMPONENT COMPOSITION (CATH LAB VS DRUGS VS BEDS VS LABS)
+                    </span>
+                    <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+                      Total {formatLakhOrCr(displayTotalCumulativeCost)}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mb-3">
+                    Hospitalization billing breakdown across {activeBilledAcsCount} billed ACS admissions
+                  </p>
+
+                  {/* Composition Stacked Bar */}
+                  <div className="w-full h-4 rounded-full overflow-hidden flex shadow-inner bg-slate-100 mb-4">
+                    {activeCostComponentComposition.map((comp, idx) => (
+                      <div
+                        key={idx}
+                        style={{ width: `${comp.percent}%`, backgroundColor: comp.color }}
+                        title={`${comp.name}: ${comp.percent}% (${formatLakhOrCr(comp.amount)})`}
+                        className="h-4 transition-all"
+                      />
+                    ))}
+                  </div>
+
+                  {/* Donut + Breakdown List */}
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="h-48 w-48 shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={activeCostComponentComposition}
+                            dataKey="amount"
+                            nameKey="name"
+                            innerRadius={48}
+                            outerRadius={78}
+                            paddingAngle={3}
+                          >
+                            {activeCostComponentComposition.map((entry, index) => (
+                              <Cell key={`comp-cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(val, name, entry) => [`${formatLakhOrCr(val)} (${entry?.payload?.percent}%)`, name]} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="flex-1 w-full space-y-2 text-xs">
+                      {activeCostComponentComposition.map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-0">
+                          <span className="flex items-center gap-2 text-slate-700 font-medium">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }}></span>
+                            <span>{item.name}</span>
+                          </span>
+                          <div className="text-right">
+                            <span className="font-bold text-slate-900">{item.percent}%</span>
+                            <span className="text-slate-400 ml-1.5 text-[11px]">({formatLakhOrCr(item.amount)})</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-3 border-t border-slate-100 pt-2">
+                  Derived directly from stemi_hospitalization and nstemi_hospitalization component billing columns
+                </p>
+              </div>
+
+              {/* NEW GRAPH 2: Cost by Culprit Vessel & Procedural Acuity (LAD vs RCA vs LCx vs Multivessel) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-bold tracking-wider text-slate-700 uppercase">
+                      COST BY CULPRIT VESSEL &amp; PROCEDURAL ACUITY
+                    </span>
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                      LAD · RCA · LCx · Multivessel
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mb-3">
+                    Average billed cost per case stratified by culprit coronary anatomy and PAMI vs Non-PAMI acuity
+                  </p>
+
+                  <div className="h-52 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={activeCostByCulpritVessel} margin={{ top: 18, right: 15, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis dataKey="vessel" stroke="#64748b" fontSize={10} fontWeight={600} interval={0} />
+                        <YAxis stroke="#94a3b8" fontSize={9.5} tickFormatter={(v) => `₹${Math.round(v / 1000)}k`} />
+                        <Tooltip
+                          formatter={(value, name) => [formatINR(value), name]}
+                          labelFormatter={(label) => {
+                            const row = activeCostByCulpritVessel.find(v => v.vessel === label);
+                            return row ? `${label} (${row.count} cases · ${row.pamiPct}% PAMI)` : label;
+                          }}
+                          contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        <Bar dataKey="avgCost" name="Overall Avg Cost" fill="#2563eb" radius={[4, 4, 0, 0]}>
+                          <LabelList dataKey="avgCost" position="top" formatter={(v) => (v > 0 ? `₹${Math.round(v / 1000)}k` : '')} fontSize={9} fill="#1d4ed8" fontWeight={700} />
+                        </Bar>
+                        <Bar dataKey="pamiAvgCost" name="PAMI Avg Cost" fill="#d97706" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="nonPamiAvgCost" name="Non-PAMI / Thrombolysis" fill="#0d9488" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Case Count & PAMI Acuity Pills */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-2 border-t border-slate-100">
+                    {activeCostByCulpritVessel.slice(0, 4).map((v, idx) => (
+                      <div key={idx} className="bg-slate-50 rounded-xl p-2 border border-slate-100 text-[10.5px]">
+                        <div className="font-bold text-slate-800">{v.vessel}</div>
+                        <div className="text-slate-500 mt-0.5">{v.count} pts · {v.pamiPct}% PAMI</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2">
+                  Joined from treatment strategy culprit vessel flags and hospitalization billing
+                </p>
+              </div>
+
+              {/* NEW GRAPH 3: Risk-Adjusted Cost by TIMI Risk Tier (Low vs Medium vs High Risk) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-bold tracking-wider text-slate-700 uppercase">
+                      RISK-ADJUSTED COST BY TIMI RISK TIER
+                    </span>
+                    <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
+                      Low · Medium · High Risk
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mb-3">
+                    Average hospitalization cost across Low, Medium, and High TIMI clinical risk tiers (STEMI &amp; NSTEMI)
+                  </p>
+
+                  <div className="h-52 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={activeCostByTimiTier} margin={{ top: 18, right: 15, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis dataKey="tier" stroke="#64748b" fontSize={10.5} fontWeight={600} />
+                        <YAxis stroke="#94a3b8" fontSize={9.5} tickFormatter={(v) => `₹${Math.round(v / 1000)}k`} />
+                        <Tooltip
+                          formatter={(value, name) => [formatINR(value), name]}
+                          labelFormatter={(label) => {
+                            const row = activeCostByTimiTier.find(t => t.tier === label);
+                            return row ? `${label} (${row.count} cases · Total ${formatLakhOrCr(row.totalCost)})` : label;
+                          }}
+                          contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        <Bar dataKey="avgCost" name="Combined Avg Cost" fill="#0f766e" radius={[4, 4, 0, 0]}>
+                          <LabelList dataKey="avgCost" position="top" formatter={(v) => (v > 0 ? `₹${Math.round(v / 1000)}k` : '')} fontSize={9} fill="#0f766e" fontWeight={700} />
+                        </Bar>
+                        <Bar dataKey="stemiAvgCost" name="STEMI Avg Cost" fill="#d97706" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="nstemiAvgCost" name="NSTEMI Avg Cost" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Tier Summary Badges */}
+                  <div className="grid grid-cols-3 gap-2 mt-3 pt-2 border-t border-slate-100">
+                    {activeCostByTimiTier.map((t, idx) => (
+                      <div key={idx} className="bg-slate-50 rounded-xl p-2 border border-slate-100 text-[10.5px]">
+                        <div className="font-bold text-slate-800">{t.tier}</div>
+                        <div className="text-slate-500 mt-0.5">{t.count} pts · {formatLakhOrCr(t.totalCost)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2">
+                  STEMI tiers: Low (0–3), Med (4–7), High (8–16) · NSTEMI tiers: Low (0–4), Med (5–10), High (11–21)
+                </p>
+              </div>
+
+              {/* NEW GRAPH 4: Average Cost & Revenue Realization by Payer Scheme (Insurance vs Arogyasree vs Govt vs Cash) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-bold tracking-wider text-slate-700 uppercase">
+                      AVG COST &amp; REVENUE REALIZATION BY PAYER SCHEME
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                      Insurance · Arogyasree · Govt · Cash
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mb-3">
+                    Average cost per admission (bars) vs cumulative revenue realized (line) across payer schemes
+                  </p>
+
+                  <div className="h-52 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ComposedChart data={activeCostAndRevenueByPayer} margin={{ top: 18, right: 15, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis dataKey="scheme" stroke="#64748b" fontSize={10.5} fontWeight={600} />
+                        <YAxis yAxisId="left" stroke="#2563eb" fontSize={9.5} tickFormatter={(v) => `₹${Math.round(v / 1000)}k`} />
+                        <YAxis yAxisId="right" orientation="right" stroke="#059669" fontSize={9.5} tickFormatter={(v) => `₹${(v / 100000).toFixed(1)}L`} />
+                        <Tooltip
+                          formatter={(value, name) => [name.includes('Revenue') ? formatLakhOrCr(value) : formatINR(value), name]}
+                          labelFormatter={(label) => {
+                            const row = activeCostAndRevenueByPayer.find(p => p.scheme === label);
+                            return row ? `${label} (${row.count} billed cases · ${row.sharePct}% share)` : label;
+                          }}
+                          contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px' }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        <Bar yAxisId="left" dataKey="avgCost" name="Avg Cost / Admission" fill="#2563eb" radius={[4, 4, 0, 0]}>
+                          <LabelList dataKey="avgCost" position="top" formatter={(v) => (v > 0 ? `₹${Math.round(v / 1000)}k` : '')} fontSize={9} fill="#1d4ed8" fontWeight={700} />
+                        </Bar>
+                        <Line yAxisId="right" type="monotone" dataKey="totalRevenue" name="Total Revenue Realized" stroke="#059669" strokeWidth={2.5} dot={{ r: 4 }} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  {/* Payer Summary Strip */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3 pt-2 border-t border-slate-100">
+                    {activeCostAndRevenueByPayer.map((p, idx) => (
+                      <div key={idx} className="bg-slate-50 rounded-xl p-2 border border-slate-100 text-[10.5px]">
+                        <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></span>
+                          <span>{p.scheme}</span>
+                        </div>
+                        <div className="text-slate-500 mt-0.5">{p.count} pts · {formatLakhOrCr(p.totalRevenue)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-2">
+                  Linked from patient demographics &amp; administrative payer scheme with ACS hospitalization billing
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Mortality Trend */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
-            <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">MORTALITY TREND</span>
-            <p className="text-[10px] text-slate-400 mb-2">Monthly all-cause vs in-hospital mortality</p>
-            <div className="h-44 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyTrends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} />
-                  <YAxis stroke="#94a3b8" fontSize={10} domain={[0, 'auto']} tickFormatter={(v) => `${v}%`} />
-                  <Tooltip formatter={(v, name) => (v != null ? [`${v}%`, name] : ['No data', name])} />
-                  <Legend wrapperStyle={{ fontSize: '10px' }} />
-                  <Line type="monotone" name="All Deaths %" dataKey="AllMortalityRate" stroke="#e11d48" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-                  <Line type="monotone" name="In-Hospital Death %" dataKey="InHospMortalityRate" stroke="#7c3aed" strokeWidth={2} strokeDasharray="4 4" dot={{ r: 3 }} connectNulls />
-                </LineChart>
-              </ResponsiveContainer>
+          {/* =========================================================================
+              FINANCIAL TAB — MONTHLY COST TREND & DETAILED BILLING RECONCILIATION
+             ========================================================================= */}
+          <div>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h2 className="text-sm font-bold text-slate-900 tracking-tight">3. Monthly Cost Trends &amp; Detailed Billing Reconciliation</h2>
+              <BasisBadge type="H" />
             </div>
-          </div>
 
-          {/* Door-to-Balloon & Door-to-Needle Trend */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
-            <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">REPERFUSION TIME TREND (D2B & D2N)</span>
-            <p className="text-[10px] text-slate-400 mb-2">Monthly mean Door-to-Balloon (≤90m) & Door-to-Needle (≤30m)</p>
-            <div className="h-44 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyTrends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} />
-                  <YAxis stroke="#94a3b8" fontSize={10} domain={[0, 100]} tickFormatter={(v) => `${v}m`} />
-                  <Tooltip formatter={(v, name) => (v != null ? [`${v} min`, name] : ['No data', name])} />
-                  <Legend wrapperStyle={{ fontSize: '10px' }} />
-                  <Line type="monotone" name="Mean D2B" dataKey="D2B" stroke="#059669" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-                  <Line type="monotone" name="Mean D2N" dataKey="D2N" stroke="#d97706" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
+            {/* Cost per admission trend bar (COMPLETE WORKING LINE CHART) */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs mb-5">
+              <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">COST PER ADMISSION TREND (MONTHLY STEMI VS NSTEMI)</span>
+              <p className="text-xs text-slate-500 mt-0.5 mb-2">Average billed cost per admission across months</p>
 
-        {/* Cost per admission trend bar (COMPLETE WORKING LINE CHART) */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs mt-4">
-          <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">COST PER ADMISSION TREND (MONTHLY STEMI VS NSTEMI)</span>
-          <p className="text-xs text-slate-500 mt-0.5 mb-2">Average billed cost per admission across months</p>
-
-          <div className="h-48 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyTrends}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} />
-                <YAxis stroke="#94a3b8" fontSize={10} tickFormatter={(v) => `₹${v / 1000}k`} />
-                <Tooltip formatter={(value) => (value != null ? formatINR(value) : 'No data')} />
-                <Legend wrapperStyle={{ fontSize: '10px' }} />
-                <Line type="monotone" name="STEMI Avg Cost" dataKey="CostSTEMI" stroke="#d97706" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-                <Line type="monotone" name="NSTEMI Avg Cost" dataKey="CostNSTEMI" stroke="#7c3aed" strokeWidth={2} dot={{ r: 3 }} connectNulls />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-      {/* =========================================================================
-          SECTION 7: FINANCIAL & RESOURCE ANALYTICS - WITH COMPLETE WORKING GRAPHS
-         ========================================================================= */}
-      <div>
-        <h2 className="text-sm font-bold text-slate-900 mb-3 tracking-tight">7. Financial & resource analytics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Panel 1: Cost of Care Breakdown (ACS) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">COST OF CARE BREAKDOWN (ACS)</span>
-              <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
-                Cumulative {displayCombinedCost}
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-400 mb-3">Reconciliation across {filteredStemiCohort.length + filteredNstemiCohort.length} ACS admissions with hospital billing</p>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-slate-100 text-slate-400 text-[10px] uppercase font-bold text-left">
-                    <th className="pb-1.5 font-bold">Component</th>
-                    <th className="pb-1.5 font-bold text-right">Total Amount</th>
-                    <th className="pb-1.5 font-bold text-right">Avg / Pts</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 text-slate-700 font-medium">
-                  {activeCostBreakdown.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/50">
-                      <td className="py-1 text-slate-600">{item.label}</td>
-                      <td className="py-1 text-right font-semibold text-slate-800">
-                        {item.totalAmount ? formatLakhOrCr(item.totalAmount) : '—'}
-                      </td>
-                      <td className="py-1 text-right font-semibold text-slate-700">
-                        {formatINR(item.amount)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-slate-200 font-bold text-slate-900 text-xs">
-                    <td className="pt-2 text-slate-900 font-extrabold">Total ACS Cost</td>
-                    <td className="pt-2 text-right font-extrabold text-blue-700">
-                      {formatLakhOrCr(displayTotalCumulativeCost)}
-                    </td>
-                    <td className="pt-2 text-right font-extrabold text-blue-700">
-                      {formatINR(activeTotalCostPerAdmission)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-
-          {/* Panel 2: Average Cost per Admission & Payer (REAL RECHARTS GRAPHS) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-            <div>
-              <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">AVERAGE COST PER ADMISSION</span>
-              <p className="text-[10px] text-slate-400 mb-2">STEMI vs NSTEMI by reperfusion strategy (STEMI {displayStemiCost} · NSTEMI {displayNstemiCost})</p>
-
-              {/* Actual Recharts Bar Chart */}
-              <div className="h-44 w-full">
+              <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={activeAverageCostData} margin={{ top: 12, right: 15, left: -5, bottom: 20 }}>
+                  <LineChart data={monthlyTrends}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="registry" stroke="#94a3b8" fontSize={10} height={25} dy={5} />
-                    <YAxis stroke="#94a3b8" fontSize={9} tickFormatter={(v) => `₹${v / 1000}k`} />
-                    <Tooltip formatter={(value) => formatINR(value)} />
+                    <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} />
+                    <YAxis stroke="#94a3b8" fontSize={10} tickFormatter={(v) => `₹${v / 1000}k`} />
+                    <Tooltip formatter={(value) => (value != null ? formatINR(value) : 'No data')} />
                     <Legend wrapperStyle={{ fontSize: '10px' }} />
-                    <Bar dataKey="PAMI" fill="#d97706" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Thrombolysis" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Conservative" fill="#0284c7" radius={[4, 4, 0, 0]} />
-                  </BarChart>
+                    <Line type="monotone" name="STEMI Avg Cost" dataKey="CostSTEMI" stroke="#d97706" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                    <Line type="monotone" name="NSTEMI Avg Cost" dataKey="CostNSTEMI" stroke="#7c3aed" strokeWidth={2} dot={{ r: 3 }} connectNulls />
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-100">
-              <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">COST BY PAYER</span>
-              <p className="text-[10px] text-slate-400 mb-2">Insurance, Arogyasri, Government, Self-Pay distribution</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Panel 1: Cost of Care Breakdown (ACS) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">COST OF CARE BREAKDOWN (ACS)</span>
+                  <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
+                    Cumulative {displayCombinedCost}
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400 mb-3">Reconciliation across {filteredStemiCohort.length + filteredNstemiCohort.length} ACS admissions with hospital billing</p>
 
-              <div className="flex items-center gap-3">
-                <div className="h-28 w-28 shrink-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={activeCostByPayerData}
-                        dataKey="value"
-                        nameKey="name"
-                        innerRadius={28}
-                        outerRadius={48}
-                        paddingAngle={3}
-                      >
-                        {activeCostByPayerData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(val) => `${val}%`} />
-                    </PieChart>
-                  </ResponsiveContainer>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-400 text-[10px] uppercase font-bold text-left">
+                        <th className="pb-1.5 font-bold">Component</th>
+                        <th className="pb-1.5 font-bold text-right">Total Amount</th>
+                        <th className="pb-1.5 font-bold text-right">Avg / Pts</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 text-slate-700 font-medium">
+                      {activeCostBreakdown.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-slate-50/50">
+                          <td className="py-1 text-slate-600">{item.label}</td>
+                          <td className="py-1 text-right font-semibold text-slate-800">
+                            {item.totalAmount ? formatLakhOrCr(item.totalAmount) : '—'}
+                          </td>
+                          <td className="py-1 text-right font-semibold text-slate-700">
+                            {formatINR(item.amount)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="border-t-2 border-slate-200 font-bold text-slate-900 text-xs">
+                        <td className="pt-2 text-slate-900 font-extrabold">Total ACS Cost</td>
+                        <td className="pt-2 text-right font-extrabold text-blue-700">
+                          {formatLakhOrCr(displayTotalCumulativeCost)}
+                        </td>
+                        <td className="pt-2 text-right font-extrabold text-blue-700">
+                          {formatINR(activeTotalCostPerAdmission)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Panel 2: Average Cost per Admission & Payer (REAL RECHARTS GRAPHS) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">AVERAGE COST PER ADMISSION</span>
+                  <p className="text-[10px] text-slate-400 mb-2">STEMI vs NSTEMI by reperfusion strategy (STEMI {displayStemiCost} · NSTEMI {displayNstemiCost})</p>
+
+                  {/* Actual Recharts Bar Chart */}
+                  <div className="h-44 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={activeAverageCostData} margin={{ top: 12, right: 15, left: -5, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis dataKey="registry" stroke="#94a3b8" fontSize={10} height={25} dy={5} />
+                        <YAxis stroke="#94a3b8" fontSize={9} tickFormatter={(v) => `₹${v / 1000}k`} />
+                        <Tooltip formatter={(value) => formatINR(value)} />
+                        <Legend wrapperStyle={{ fontSize: '10px' }} />
+                        <Bar dataKey="PAMI" fill="#d97706" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Thrombolysis" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="Conservative" fill="#0284c7" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
 
-                <div className="space-y-1 text-[11px] font-medium text-slate-600 flex-1">
-                  {activeCostByPayerData.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></span>
-                        <span>{item.name}</span>
-                      </span>
-                      <span className="font-bold text-slate-800">{item.value}%</span>
+                <div className="mt-4 pt-3 border-t border-slate-100">
+                  <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">COST BY PAYER</span>
+                  <p className="text-[10px] text-slate-400 mb-2">Insurance, Arogyasri, Government, Self-Pay distribution</p>
+
+                  <div className="flex items-center gap-3">
+                    <div className="h-28 w-28 shrink-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={activeCostByPayerData}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={28}
+                            outerRadius={48}
+                            paddingAngle={3}
+                          >
+                            {activeCostByPayerData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(val) => `${val}%`} />
+                        </PieChart>
+                      </ResponsiveContainer>
                     </div>
-                  ))}
+
+                    <div className="space-y-1 text-[11px] font-medium text-slate-600 flex-1">
+                      {activeCostByPayerData.map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></span>
+                            <span>{item.name}</span>
+                          </span>
+                          <span className="font-bold text-slate-800">{item.value}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
+              </div>
+
+              {/* Panel 3: Length of Stay & Follow-up Completion (REAL METRICS & BARS) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
+                <div>
+                  <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">LENGTH OF STAY</span>
+                  <div className="space-y-2 text-xs mt-3 text-slate-700 font-medium">
+                    <div className="flex justify-between py-1 border-b border-slate-50">
+                      <span className="text-slate-500">ICCU stay</span>
+                      <span className="font-bold text-slate-800">{activeDetailedStayStats.iccuHours}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-slate-50">
+                      <span className="text-slate-500">Step-down ICU</span>
+                      <span className="font-bold text-slate-800">{activeDetailedStayStats.stepdownHours}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-slate-50">
+                      <span className="text-slate-500">Floor / General Ward</span>
+                      <span className="font-bold text-slate-800">{activeDetailedStayStats.floorDays}</span>
+                    </div>
+                    <div className="flex justify-between py-1 border-b border-slate-50">
+                      <span className="text-slate-500">Total Length of Stay</span>
+                      <span className="font-bold text-blue-700">{activeDetailedStayStats.totalStayDays}</span>
+                    </div>
+                    <div className="flex justify-between pt-1">
+                      <span className="text-slate-500">HF 30-day readmission rate</span>
+                      <span className="font-bold text-rose-600">{displayHfReadmissionRate}%</span>
+                    </div>
+                    <div className="flex justify-between pt-1">
+                      <span className="text-slate-500">Overall 30-day readmissions</span>
+                      <span className="font-bold text-slate-800">{displayTotalReadmissions} ({displayOverallReadmissionRate}%)</span>
+                    </div>
+                  </div>
+                </div>
+
+
               </div>
             </div>
           </div>
-
-          {/* Panel 3: Length of Stay & Follow-up Completion (REAL METRICS & BARS) */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-2xs flex flex-col justify-between">
-            <div>
-              <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">LENGTH OF STAY</span>
-              <div className="space-y-2 text-xs mt-3 text-slate-700 font-medium">
-                <div className="flex justify-between py-1 border-b border-slate-50">
-                  <span className="text-slate-500">ICCU stay</span>
-                  <span className="font-bold text-slate-800">{activeDetailedStayStats.iccuHours}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Step-down ICU</span>
-                  <span className="font-bold text-slate-800">{activeDetailedStayStats.stepdownHours}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Floor / General Ward</span>
-                  <span className="font-bold text-slate-800">{activeDetailedStayStats.floorDays}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-slate-50">
-                  <span className="text-slate-500">Total Length of Stay</span>
-                  <span className="font-bold text-blue-700">{activeDetailedStayStats.totalStayDays}</span>
-                </div>
-                <div className="flex justify-between pt-1">
-                  <span className="text-slate-500">HF 30-day readmission rate</span>
-                  <span className="font-bold text-rose-600">{displayHfReadmissionRate}%</span>
-                </div>
-                <div className="flex justify-between pt-1">
-                  <span className="text-slate-500">Overall 30-day readmissions</span>
-                  <span className="font-bold text-slate-800">{displayTotalReadmissions} ({displayOverallReadmissionRate}%)</span>
-                </div>
-              </div>
-            </div>
-
-
-          </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
